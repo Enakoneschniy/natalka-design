@@ -1,13 +1,16 @@
 {
-  "name": "natalka-design",
+  "name": "natalka",
   "private": true,
-  "version": "0.1.0",
-  "description": "Natalka — HTML/CSS design mockups",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
-    "serve": "python3 -m http.server 8080 --bind 0.0.0.0",
-    "shots": "node design/shots.mjs"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0"
+    "@biomejs/biome": "^2.2.4",
+    "turbo": "^2.5.8"
   }
 }

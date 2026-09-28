@@ -1,0 +1,58 @@
+[project]
+name = "natalka"
+version = "0.1.0"
+description = "Natalka — automated natal chart readings (monorepo root)"
+requires-python = ">=3.12"
+dependencies = [
+  "natalka-engine",
+  "natalka-document",
+  "natalka-texts",
+  "natalka-shared",
+  "natalka-worker",
+]
+
+[tool.uv.workspace]
+members = ["packages/*", "apps/worker"]
+
+[tool.uv.sources]
+natalka-engine = { workspace = true }
+natalka-document = { workspace = true }
+natalka-texts = { workspace = true }
+natalka-shared = { workspace = true }
+natalka-worker = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.13",
+  "mypy>=1.17",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["packages", "apps"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF", "PL", "T20", "PTH"]
+ignore = ["PLR0913", "PLR2004", "RUF001", "RUF002", "RUF003", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["PLR2004", "T20"]
+"**/scripts/**" = ["T20"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+mypy_path = "packages/engine/src:packages/document/src:packages/texts/src:packages/shared/src:apps/worker/src"
+packages = ["natalka_engine", "natalka_document", "natalka_texts", "natalka_shared", "natalka_worker"]
+
+[[tool.mypy.overrides]]
+module = ["swisseph", "reportlab.*", "svglib.*", "timezonefinder.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["packages", "apps/worker"]
+addopts = "-q"
