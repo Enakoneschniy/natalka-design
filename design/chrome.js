@@ -59,7 +59,30 @@
     </div>
   </footer>`;
 
+  // star field: fixed canvas behind everything, subtle and static (no twinkle noise)
+  function sky() {
+    const wrap = document.createElement('div'); wrap.className = 'sky'; wrap.setAttribute('aria-hidden', 'true');
+    const c = document.createElement('canvas'); wrap.appendChild(c);
+    document.body.prepend(wrap);
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = window.innerWidth, h = window.innerHeight;
+      c.width = w * dpr; c.height = h * dpr;
+      const ctx = c.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const n = Math.round((w * h) / 9000);
+      for (let i = 0; i < n; i++) {
+        const x = rnd() * w, y = rnd() * h, r = rnd() < 0.08 ? 1.3 : rnd() < 0.5 ? 0.9 : 0.6, a = 0.15 + rnd() * 0.55;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = rnd() < 0.12 ? `rgba(240,200,140,${a})` : `rgba(220,228,255,${a})`;
+        ctx.fill();
+      }
+    };
+    draw(); let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(draw, 150); });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
+    if (!document.body.hasAttribute('data-no-sky')) sky();
     document.querySelectorAll('[data-nav]').forEach(el => { el.outerHTML = NAV(el.dataset.nav, el.dataset.variant); });
     document.querySelectorAll('[data-footer]').forEach(el => { el.outerHTML = FOOTER; });
     document.querySelectorAll('[data-logo]').forEach(el => el.innerHTML = NATALKA.logoMark());

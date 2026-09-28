@@ -1,140 +1,104 @@
-/* Natalka — design tokens
-   Light theme by default, dark via [data-theme="dark"] on <html>. */
+/* Natalka — design tokens (dark, luminous) */
 
-@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
   /* surfaces & text */
-  --bg: #F7F8FC;
-  --surface: #FFFFFF;
-  --surface-2: #F1F3FA;
-  --text: #14172B;
-  --text-2: #5E6382;
-  --text-3: #6F7393;
-  --line: #DCDFEE;
-  --line-strong: #C4C8DE;
+  --bg: #06091A;
+  --bg-2: #0B1027;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --surface-solid: #10152C;
+  --text: #F4F1E8;
+  --text-2: #AEB2C8;
+  --text-3: #767B99;
+  --line: rgba(255, 255, 255, 0.10);
+  --line-strong: rgba(255, 255, 255, 0.20);
 
-  /* the only UI accent */
-  --accent: #2B47E0;
-  --accent-hover: #2138B8;
-  --accent-soft: #E7EBFC;
-  --accent-text-on: #FFFFFF;
-  --focus: 0 0 0 3px rgba(43, 71, 224, 0.28);
+  /* accent: warm gold */
+  --accent: #E7B75C;
+  --accent-2: #D6973A;
+  --accent-hover: #F2C978;
+  --accent-soft: rgba(231, 183, 92, 0.14);
+  --accent-text-on: #1A1204;
+  --focus: 0 0 0 3px rgba(231, 183, 92, 0.35);
 
-  /* astrology-only warm accent */
-  --astro: #E8934A;
-  --astro-soft: #FDF0E3;
+  /* atmosphere */
+  --glow: #4A5FE0;
+  --glow-2: #7C5CE6;
 
-  /* elements */
-  --fire: #D9553A;
-  --earth: #4C8A49;
-  --air: #3B8BD6;
-  --water: #6B5BD2;
-  --fire-soft: rgba(217, 85, 58, 0.10);
-  --earth-soft: rgba(76, 138, 73, 0.10);
-  --air-soft: rgba(59, 139, 214, 0.10);
-  --water-soft: rgba(107, 91, 210, 0.10);
+  /* astrology accent (Sun, highlighted planet, date marker) */
+  --astro: #F0B95B;
+  --astro-soft: rgba(240, 185, 91, 0.16);
+
+  /* elements (pastel on dark) */
+  --fire: #FF8E74;
+  --earth: #8FD48C;
+  --air: #82BBFF;
+  --water: #B49DFF;
+  --fire-soft: rgba(255, 142, 116, 0.14);
+  --earth-soft: rgba(143, 212, 140, 0.14);
+  --air-soft: rgba(130, 187, 255, 0.14);
+  --water-soft: rgba(180, 157, 255, 0.14);
 
   /* aspects */
-  --aspect-tense: #D9553A;
-  --aspect-harmonic: #2B47E0;
-  --aspect-neutral: #9A9EBB;
+  --aspect-tense: #FF7D68;
+  --aspect-harmonic: #86B4FF;
+  --aspect-neutral: #8A8FAC;
 
   /* states */
-  --danger: #BD2E27;
-  --danger-soft: #FBE9E7;
-  --success: #276F45;
-  --success-soft: #E4F3EA;
+  --danger: #FF8A78;
+  --danger-soft: rgba(255, 138, 120, 0.14);
+  --success: #7ED39B;
+  --success-soft: rgba(126, 211, 155, 0.14);
 
   /* wheel */
-  --wheel-line: #C4C8DE;
-  --wheel-line-strong: #14172B;
-  --wheel-glyph: #14172B;
-  --wheel-face: #FFFFFF;
-  --wheel-ring: #F7F8FC;
+  --wheel-line: rgba(255, 255, 255, 0.22);
+  --wheel-line-strong: #F4F1E8;
+  --wheel-glyph: #EAD7A6;
+  --wheel-sign: #EAD7A6;
+  --wheel-face: rgba(6, 9, 26, 0.35);
+  --wheel-ring: rgba(255, 255, 255, 0.035);
+  --wheel-sector: rgba(255, 255, 255, 0.025);
 
   /* shape */
   --r-field: 10px;
   --r-card: 16px;
   --r-pill: 999px;
-  --shadow-selected: 0 12px 32px rgba(20, 23, 43, 0.12), 0 2px 6px rgba(20, 23, 43, 0.06);
+  --shadow-selected: 0 0 0 1px rgba(231, 183, 92, 0.6), 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 80px rgba(231, 183, 92, 0.12);
 
   /* type */
-  --font-display: 'Unbounded', 'Golos Text', system-ui, sans-serif;
+  --font-display: 'Playfair Display', 'Georgia', serif;
   --font-text: 'Golos Text', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --fs-h1: 56px;
-  --fs-h2: 36px;
-  --fs-h3: 24px;
+  --fs-h1: 72px;
+  --fs-h2: 44px;
+  --fs-h3: 28px;
   --fs-h4: 18px;
   --fs-body: 17px;
   --fs-small: 15px;
   --fs-caption: 13px;
 
-  --lh-display: 1.12;
-  --lh-body: 1.55;
+  --lh-display: 1.08;
+  --lh-body: 1.6;
 
   /* layout */
-  --container: 1200px;
+  --container: 1240px;
   --gutter: 24px;
-  --section: 112px;
-
-  color-scheme: light;
-}
-
-[data-theme="dark"] {
-  --bg: #0F1120;
-  --surface: #171A2E;
-  --surface-2: #1D2137;
-  --text: #EEF0F8;
-  --text-2: #A3A8C6;
-  --text-3: #6C7194;
-  --line: #2A2E48;
-  --line-strong: #3A3F5E;
-
-  --accent: #6B82F0;
-  --accent-hover: #8397F3;
-  --accent-soft: #1F2648;
-  --accent-text-on: #0F1120;
-  --focus: 0 0 0 3px rgba(107, 130, 240, 0.4);
-
-  --astro: #E8934A;
-  --astro-soft: #3A2A1C;
-
-  --fire-soft: rgba(217, 85, 58, 0.18);
-  --earth-soft: rgba(76, 138, 73, 0.18);
-  --air-soft: rgba(59, 139, 214, 0.18);
-  --water-soft: rgba(107, 91, 210, 0.18);
-
-  --aspect-tense: #E5715A;
-  --aspect-harmonic: #6B82F0;
-  --aspect-neutral: #6C7194;
-
-  --danger: #E5715A;
-  --danger-soft: #3A211E;
-  --success: #5DBB82;
-  --success-soft: #1B3326;
-
-  --wheel-line: #3A3F5E;
-  --wheel-line-strong: #EEF0F8;
-  --wheel-glyph: #EEF0F8;
-  --wheel-face: #171A2E;
-  --wheel-ring: #1D2137;
-
-  --shadow-selected: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(107, 130, 240, 0.35);
+  --section: 128px;
 
   color-scheme: dark;
 }
 
 @media (max-width: 720px) {
   :root {
-    --fs-h1: 34px;
-    --fs-h2: 26px;
-    --fs-h3: 20px;
+    --fs-h1: 42px;
+    --fs-h2: 32px;
+    --fs-h3: 22px;
     --fs-h4: 17px;
     --fs-body: 16px;
     --gutter: 20px;
-    --section: 64px;
+    --section: 72px;
   }
 }

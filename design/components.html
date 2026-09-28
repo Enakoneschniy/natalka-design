@@ -39,16 +39,16 @@
 <section class="spec">
   <div class="container">
     <h2>Кольори</h2>
-    <p>Один UI-акцент — кобальт. Абрикос належить лише астрологічним об'єктам: Сонцю, виділеній планеті, маркеру дати.</p>
+    <p>Глибокий темно-синій фон, тепле золото як єдиний акцент, індигове свічення як атмосфера. Стихії — пастельні, лише в таблицях і бейджах.</p>
     <div class="swatches">
-      <div class="sw"><div class="c" style="background:var(--bg)"></div><div class="m">Фон<span>--bg</span></div></div>
-      <div class="sw"><div class="c" style="background:var(--surface)"></div><div class="m">Поверхня<span>--surface</span></div></div>
-      <div class="sw"><div class="c" style="background:var(--text)"></div><div class="m">Текст<span>--text</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--bg)"></div><div class="m">Фон<span>--bg #06091A</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--surface-solid)"></div><div class="m">Поверхня<span>--surface-solid</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--text)"></div><div class="m">Текст<span>--text #F4F1E8</span></div></div>
       <div class="sw"><div class="c" style="background:var(--text-2)"></div><div class="m">Вторинний<span>--text-2</span></div></div>
-      <div class="sw"><div class="c" style="background:var(--line)"></div><div class="m">Лінії<span>--line</span></div></div>
-      <div class="sw"><div class="c" style="background:var(--accent)"></div><div class="m">Кобальт<span>--accent</span></div></div>
-      <div class="sw"><div class="c" style="background:var(--accent-soft)"></div><div class="m">Підложка<span>--accent-soft</span></div></div>
-      <div class="sw"><div class="c" style="background:var(--astro)"></div><div class="m">Абрикос · астро<span>--astro</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--accent)"></div><div class="m">Золото · акцент<span>--accent #E7B75C</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--glow)"></div><div class="m">Індиго · свічення<span>--glow #4A5FE0</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--astro)"></div><div class="m">Сонце · астро<span>--astro #F0B95B</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--wheel-glyph)"></div><div class="m">Гліфи колеса<span>--wheel-glyph</span></div></div>
       <div class="sw"><div class="c" style="background:var(--fire)"></div><div class="m">Вогонь<span>--fire</span></div></div>
       <div class="sw"><div class="c" style="background:var(--earth)"></div><div class="m">Земля<span>--earth</span></div></div>
       <div class="sw"><div class="c" style="background:var(--air)"></div><div class="m">Повітря<span>--air</span></div></div>
@@ -60,11 +60,11 @@
 <section class="spec">
   <div class="container">
     <h2>Типографіка</h2>
-    <p>Unbounded для заголовків, Golos Text для тексту та інтерфейсу, JetBrains Mono для градусів, координат і часу.</p>
+    <p>Playfair Display для заголовків, Golos Text для тексту та інтерфейсу, JetBrains Mono для градусів, координат і часу.</p>
     <div class="type-sample">
-      <div><span class="caption">Unbounded 500 · 56/1.12</span><h1>Натальна карта, яку хочеться читати</h1></div>
-      <div><span class="caption">Unbounded 500 · 36</span><h2>Що входить у розбір</h2></div>
-      <div><span class="caption">Unbounded 400 · 24</span><h3>Сонце у Тельці — ваша опора</h3></div>
+      <div><span class="caption">Playfair 500 · 72/1.08</span><h1>Натальна карта, яку хочеться читати</h1></div>
+      <div><span class="caption">Playfair 500 · 44</span><h2>Що входить у розбір</h2></div>
+      <div><span class="caption">Playfair 500 · 28</span><h3>Сонце у Тельці — ваша опора</h3></div>
       <div><span class="caption">Golos Text 600 · 18</span><h4>Планети в знаках і домах</h4></div>
       <div><span class="caption">Golos Text 400 · 17/1.55</span><p>Ви цінуєте стабільність і вмієте доводити справи до кінця. Їжа, дотик, ґрунт під ногами — для вас це не дрібниці, а спосіб відчути себе вдома. Ґречність і послідовність — ваші тихі сильні сторони.</p></div>
       <div><span class="caption">JetBrains Mono 400 · 16</span><p class="mono">24°24′ ♉ · 50°27′ пн. ш. 30°31′ сх. д. · UTC+3 · 09:40</p></div>
@@ -75,7 +75,7 @@
 <section class="spec">
   <div class="container">
     <h2>Кнопки</h2>
-    <p>Висота 52 px, радіус 10 px. Один основний колір; чорна кнопка — лише для Apple Pay / Google Pay.</p>
+    <p>Висота 52 px, радіус 10 px. Золото — лише для головної дії; біла кнопка — Apple Pay / Google Pay.</p>
     <div class="stack">
       <div class="demo-row">
         <button class="btn btn-primary">Побудувати карту</button>
@@ -128,7 +128,7 @@
 <section class="spec">
   <div class="container">
     <h2>Картка продукту</h2>
-    <p>Рамка 1 px, радіус 16 px. Єдина тінь у системі — на обраній картці.</p>
+    <p>Скло: напівпрозора поверхня, рамка 1 px, радіус 16 px. Обрана картка — золота рамка зі свіченням.</p>
     <div class="grid grid-3" style="max-width:960px">
       <div class="card product">
         <h3>Натальна карта</h3>
@@ -162,7 +162,7 @@
 <section class="spec">
   <div class="container">
     <h2>Бейдж</h2>
-    <p>Планета, знак у кольорі стихії, за потреби — градус. Абрикосова підложка — тільки для Сонця або виділеного об'єкта.</p>
+    <p>Планета, знак у кольорі стихії, за потреби — градус. Золота підложка — тільки для Сонця або виділеного об'єкта.</p>
     <div class="demo-row">
       <span data-badge="sun"></span>
       <span data-badge="moon"></span>
@@ -183,7 +183,7 @@
 <section class="spec">
   <div class="container">
     <h2>Таблиця позицій і сітка аспектів</h2>
-    <p>Виділений рядок — абрикосова підложка. R — ретроградність. Напружені аспекти червоні, гармонійні — кобальт, з'єднання — нейтральні.</p>
+    <p>Виділений рядок — золота підложка. R — ретроградність. Напружені аспекти червоні, гармонійні — кобальт, з'єднання — нейтральні.</p>
     <div class="grid" style="grid-template-columns: 1fr auto; gap: 48px; align-items: start">
       <div class="card" style="padding:16px 8px" data-positions data-highlight="sun"></div>
       <div data-aspects></div>
@@ -196,7 +196,7 @@
     <h2>Колесо карти у трьох розмірах</h2>
     <p>Один компонент, побудований з даних. Повна деталізація для hero і PDF, компактна для превʼю та кабінету, знак для карток і аватарів.</p>
     <div class="wheels">
-      <div><div data-wheel="520" data-detail="full"></div><span class="caption">520 px · повне: градуси, доми, аспекти, підписи</span></div>
+      <div><div class="wheel-glow"><div data-wheel="520" data-detail="full"></div></div><span class="caption">520 px · повне: градуси, доми, аспекти, підписи</span></div>
       <div><div data-wheel="260" data-detail="compact"></div><span class="caption">260 px · компактне</span></div>
       <div><div data-wheel="96" data-detail="mark"></div><span class="caption">96 px · знак</span></div>
     </div>

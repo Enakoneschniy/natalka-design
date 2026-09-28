@@ -126,12 +126,13 @@ const NATALKA = (() => {
     const size = opts.size || 480;
     const detail = opts.detail || (size < 160 ? 'mark' : size < 360 ? 'compact' : 'full');
     const asc = chart.cusps[0];
-    const css = getComputedStyle(document.documentElement);
+    const css = getComputedStyle(container);
     const v = n => css.getPropertyValue(n).trim();
     const C = { line: v('--wheel-line'), strong: v('--wheel-line-strong'), glyph: v('--wheel-glyph'), face: v('--wheel-face'), ring: v('--wheel-ring'),
       astro: v('--astro'), accent: v('--accent'), text2: v('--text-2'), tense: v('--aspect-tense'), harm: v('--aspect-harmonic'), neu: v('--aspect-neutral'),
       el: { fire: v('--fire'), earth: v('--earth'), air: v('--air'), water: v('--water') },
-      elSoft: { fire: v('--fire-soft'), earth: v('--earth-soft'), air: v('--air-soft'), water: v('--water-soft') } };
+      elSoft: { fire: v('--fire-soft'), earth: v('--earth-soft'), air: v('--air-soft'), water: v('--water-soft') },
+      sign: v('--wheel-sign'), sector: v('--wheel-sector'), labelBg: v('--surface-solid') || v('--wheel-face') };
 
     const R = size / 2, cx = R, cy = R;
     // ASC on the left, zodiac counter-clockwise
@@ -164,14 +165,14 @@ const NATALKA = (() => {
       const el = ELEMENTS[i % 4];
       const [xo0, yo0] = pt(a0, rOuter), [xo1, yo1] = pt(a1, rOuter), [xi1, yi1] = pt(a1, rZodIn), [xi0, yi0] = pt(a0, rZodIn);
       const d = `M${xo0} ${yo0}A${rOuter} ${rOuter} 0 0 0 ${xo1} ${yo1}L${xi1} ${yi1}A${rZodIn} ${rZodIn} 0 0 1 ${xi0} ${yi0}Z`;
-      svg.appendChild(svgEl('path', { d, fill: C.elSoft[el], stroke: 'none' }));
+      svg.appendChild(svgEl('path', { d, fill: C.sector || C.elSoft[el], stroke: 'none' }));
       // divider
       const [dx0, dy0] = pt(a0, rZodIn), [dx1, dy1] = pt(a0, rOuter);
       svg.appendChild(svgEl('line', { x1: dx0, y1: dy0, x2: dx1, y2: dy1, stroke: C.line, 'stroke-width': swThin }));
       // sign glyph
       const gs = detail === 'mark' ? size * 0.11 : detail === 'compact' ? size * 0.055 : size * 0.042;
       const [gx, gy] = pt(a0 + 15, (rOuter + rZodIn) / 2);
-      svg.appendChild(glyph(SIGN_PATHS[i], gs, gx, gy, C.el[el], detail === 'mark' ? 2.2 : 1.9));
+      svg.appendChild(glyph(SIGN_PATHS[i], gs, gx, gy, C.sign || C.el[el], detail === 'mark' ? 2.2 : 1.9));
     }
     svg.appendChild(svgEl('circle', { cx, cy, r: rZodIn, fill: 'none', stroke: C.line, 'stroke-width': swMid }));
 
@@ -210,7 +211,7 @@ const NATALKA = (() => {
         // angle marker: small arrow head on zodiac ring
         const t = svgEl('text', { x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: C.strong, 'font-family': "'JetBrains Mono', monospace", 'font-weight': 500, 'font-size': size * 0.02 });
         t.textContent = label;
-        const bg = svgEl('rect', { x: lx - size * 0.022, y: ly - size * 0.013, width: size * 0.044, height: size * 0.026, rx: size * 0.006, fill: C.face, stroke: C.strong, 'stroke-width': swThin });
+        const bg = svgEl('rect', { x: lx - size * 0.022, y: ly - size * 0.013, width: size * 0.044, height: size * 0.026, rx: size * 0.006, fill: C.labelBg, stroke: C.strong, 'stroke-width': swThin });
         svg.appendChild(bg); svg.appendChild(t);
       }
     });
@@ -256,7 +257,7 @@ const NATALKA = (() => {
       svg.appendChild(svgEl('line', { x1: ax, y1: ay, x2: px, y2: py, stroke: isSun || isHl ? C.astro : C.line, 'stroke-width': swThin }));
       svg.appendChild(svgEl('circle', { cx: ax, cy: ay, r: Math.max(1.5, size * 0.006), fill: isSun || isHl ? C.astro : C.glyph }));
       const gs = detail === 'full' ? size * 0.045 : size * 0.06;
-      if (isHl) gP.appendChild(svgEl('circle', { cx: gx, cy: gy, r: gs * 0.85, fill: v('--astro-soft') }));
+      if (isHl || isSun) gP.appendChild(svgEl('circle', { cx: gx, cy: gy, r: gs * 0.9, fill: v('--astro-soft') }));
       gP.appendChild(glyph(PLANET_PATHS[p.id], gs, gx, gy, color, isSun ? 2 : 1.9));
       if (detail === 'full') {
         const [tx, ty] = pt(p.disp, rPlanet - R * (0.085 + p.lvl * 0.055));
@@ -333,13 +334,6 @@ const NATALKA = (() => {
   function initTheme() {
     const q = new URLSearchParams(location.search);
     if (q.get('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-    if (q.get('toggle') !== '0') {
-      const b = document.createElement('button');
-      b.className = 'theme-toggle'; b.type = 'button';
-      b.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? 'Світла тема' : 'Темна тема';
-      b.onclick = () => { const d = document.documentElement.getAttribute('data-theme') === 'dark'; if (d) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', 'dark'); b.textContent = d ? 'Темна тема' : 'Світла тема'; document.querySelectorAll('[data-wheel]').forEach(mount); };
-      document.body.appendChild(b);
-    }
   }
   function mount(el) {
     const o = el.dataset;
