@@ -6,6 +6,7 @@ Not exposed publicly; the web app proxies it. No database access here.
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import asdict
 from datetime import UTC
 from typing import Annotated, Any, Literal
 
@@ -23,6 +24,8 @@ from natalka_engine import (
 from natalka_engine.geo import zone_for
 from natalka_engine.timeutil import UnknownTimeZoneError
 from pydantic import BaseModel, Field, field_validator
+
+from .cities import CityDatabaseMissingError, search_cities
 
 app = FastAPI(title="Natalka internal API", version="0.1.0", docs_url=None, redoc_url=None)
 
@@ -98,6 +101,18 @@ def wheel(  # noqa: PLR0917 — query parameters
     return Response(
         svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"}
     )
+
+
+@app.get("/v1/cities")
+def cities(
+    q: Annotated[str, Query(min_length=2, max_length=80)],
+    limit: Annotated[int, Query(ge=1, le=20)] = 8,
+) -> dict[str, Any]:
+    try:
+        found = search_cities(q, limit)
+    except CityDatabaseMissingError as exc:
+        raise HTTPException(503, f"city database missing: {exc}") from exc
+    return {"cities": [asdict(city) for city in found]}
 
 
 @app.get("/v1/zone")

@@ -7,7 +7,7 @@
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
   "vars": {
-    // Internal calculation API. Overridden per environment; see .env.example.
-    "NATALKA_API_URL": "http://127.0.0.1:8000"
+    // Calculation API (Python engine in a Cloudflare Container). Locally: http://127.0.0.1:8000.
+    "NATALKA_API_URL": "https://natalka-api.ceo-63e.workers.dev"
   }
 }
