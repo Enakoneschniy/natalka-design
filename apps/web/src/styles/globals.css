@@ -444,7 +444,7 @@
 }
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 640px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 640px);
   gap: 48px;
   align-items: center;
 }
@@ -512,7 +512,9 @@
 .wheel-glow::before {
   content: '';
   position: absolute;
-  inset: -12%;
+  /* Flush with the wheel: a negative inset here reached past the page gutter and made the
+     whole page scrollable sideways. The blur already softens the edge. */
+  inset: 0;
   border-radius: 50%;
   background: radial-gradient(
     circle,
@@ -526,18 +528,35 @@
 .wheel-glow .wheel {
   filter: drop-shadow(0 0 18px rgba(140, 160, 255, 0.25));
 }
+/* Room for the orbit rings without letting them reach past the page gutter. */
+.hero-wheel .wheel {
+  width: 84%;
+  margin-inline: auto;
+}
+.orbit-box {
+  position: absolute;
+  /* `contain: paint` (not just overflow) is what keeps the spinning square ring out of the
+     page's scrollable area — otherwise its rotated bounding box makes the page scroll sideways. */
+  contain: paint;
+  pointer-events: none;
+}
+.orbit-box-1 {
+  inset: 6%;
+}
+.orbit-box-2 {
+  inset: 0;
+}
 .orbit {
   position: absolute;
+  inset: 0;
   border-radius: 50%;
   pointer-events: none;
 }
 .orbit-1 {
-  inset: -5%;
   border: 1px dashed rgba(255, 255, 255, 0.16);
   animation: spin 160s linear infinite;
 }
 .orbit-2 {
-  inset: -11%;
   border: 1px solid rgba(255, 255, 255, 0.07);
   animation: spin 90s linear infinite reverse;
 }
@@ -572,6 +591,20 @@
 }
 
 /* wheel interaction */
+.wheel {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* A long press on a chart label used to select the degree text and raise the system
+     copy/search menu, which also dropped the highlight. Nothing here is meant to be selected. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+.wheel text {
+  pointer-events: none;
+}
 .wheel-planet > * {
   transition: opacity 0.35s ease;
 }
@@ -1187,7 +1220,7 @@
 }
 .preview-grid {
   display: grid;
-  grid-template-columns: 520px 1fr;
+  grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
   gap: 48px;
   align-items: start;
 }
@@ -1195,6 +1228,9 @@
   padding: 20px;
 }
 .preview-wheel {
+  align-self: stretch;
+}
+.preview-wheel-sticky {
   position: sticky;
   top: 96px;
 }
@@ -1206,6 +1242,12 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
+}
+/* On a phone the table is wider than the screen; it scrolls inside its card instead of
+   stretching the grid column and pushing the whole page sideways. */
+.preview-side .card {
+  overflow-x: auto;
 }
 .aspect-block {
   display: grid;
@@ -1514,7 +1556,7 @@
 /* ---------- responsive, including foldables ---------- */
 @media (max-width: 1100px) {
   .hero-grid {
-    grid-template-columns: 1fr 480px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
     gap: 32px;
   }
 }
@@ -1618,27 +1660,30 @@
     font-size: 16px;
   }
 }
+/* Book-style foldable unfolded: two equal columns with the gutter over the hinge. The columns
+   stay fractional — absolute segment widths would be wider than the padded container and push
+   the whole page sideways. */
 @media (horizontal-viewport-segments: 2) {
   .hero-grid {
-    grid-template-columns: env(viewport-segment-width 0 0) env(viewport-segment-width 1 0);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0));
   }
 }
 
 @media (max-width: 1100px) {
   .preview-grid {
-    grid-template-columns: 420px 1fr;
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
     gap: 32px;
   }
 }
 @media (max-width: 900px) {
   .preview-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .core-grid {
     grid-template-columns: 1fr;
   }
-  .preview-wheel {
+  .preview-wheel-sticky {
     position: static;
     max-width: 520px;
     margin-inline: auto;
@@ -1689,10 +1734,10 @@
     height: 14px;
   }
 }
-/* Folded inner screen of a book-style foldable: chart beside the numbers again. */
+/* Same on the preview: chart on one leaf, numbers on the other. */
 @media (horizontal-viewport-segments: 2) {
   .preview-grid {
-    grid-template-columns: env(viewport-segment-width 0 0) env(viewport-segment-width 1 0);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0));
   }
   .preview-wheel {

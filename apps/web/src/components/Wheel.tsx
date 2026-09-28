@@ -75,8 +75,8 @@ export function Wheel({
       className={['wheel', focus ? 'is-focus' : '', className].filter(Boolean).join(' ')}
       role="img"
       aria-label="Natal chart"
-      style={{ width: '100%', height: 'auto', display: 'block' }}
       data-animate={animate || undefined}
+      onPointerDown={(event) => event.pointerType === 'touch' && setFocus(null)}
     >
       <circle
         cx={radii.c}
@@ -283,8 +283,15 @@ export function Wheel({
               key={p.body}
               className={`wheel-planet${isSun ? ' is-sun' : ''}${focus === p.body ? ' is-active' : ''}`}
               data-body={p.body}
-              onPointerEnter={() => setFocus(p.body)}
-              onPointerLeave={() => setFocus(null)}
+              // Touch has no hover: a tap pins the planet and tapping it again (or anywhere
+              // else on the chart) releases it. Mouse keeps the plain hover behaviour.
+              onPointerEnter={(event) => event.pointerType !== 'touch' && setFocus(p.body)}
+              onPointerLeave={(event) => event.pointerType !== 'touch' && setFocus(null)}
+              onPointerDown={(event) => {
+                if (event.pointerType !== 'touch') return;
+                event.stopPropagation();
+                setFocus(focus === p.body ? null : p.body);
+              }}
             >
               <line
                 x1={ax}

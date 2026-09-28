@@ -55,8 +55,15 @@ function Landing({ locale }: { locale: Locale }) {
           <div className="hero-wheel">
             <div className="wheel-glow">
               <Wheel facts={facts} size={640} animate />
-              <span className="orbit orbit-1" aria-hidden="true" />
-              <span className="orbit orbit-2" aria-hidden="true" />
+              {/* Each ring spins, and a spinning square box is wider than the page; the wrapper
+                  keeps that growth out of the layout. The ring is inscribed in it, so nothing
+                  visible is clipped. */}
+              <span className="orbit-box orbit-box-1" aria-hidden="true">
+                <span className="orbit orbit-1" />
+              </span>
+              <span className="orbit-box orbit-box-2" aria-hidden="true">
+                <span className="orbit orbit-2" />
+              </span>
             </div>
             <p className="hero-caption">
               <strong>{t('hero.demoName')}</strong>{' '}

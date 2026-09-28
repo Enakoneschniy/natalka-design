@@ -37,15 +37,16 @@ function readInput(search: Search): { input: BirthInput; city: string; name?: st
   };
 }
 
+/** Matches src/lib/demo-chart.json, which is what the demo actually renders. */
 const DEMO = {
   input: {
-    date: '1992-05-14',
-    time: '09:40',
-    latitude: 50.45,
-    longitude: 30.52,
-    zone: 'Europe/Kyiv',
+    date: '1994-05-15',
+    time: '15:25',
+    latitude: 45.1972,
+    longitude: 33.3664,
+    zone: 'Europe/Simferopol',
   },
-  city: 'Kyiv, UA',
+  city: 'Yevpatoriya, Crimea, UA',
 } as const;
 
 export default async function PreviewPage({
@@ -128,17 +129,21 @@ export default async function PreviewPage({
 
         <div className="preview-grid">
           <div className="preview-wheel">
-            <div className="wheel-glow">
-              <Wheel facts={facts} size={520} detail="full" animate />
+            {/* The grid item stretches to the row height and this inner block sticks inside it —
+                a sticky element that is exactly as tall as its container never moves. */}
+            <div className="preview-wheel-sticky">
+              <div className="wheel-glow">
+                <Wheel facts={facts} size={520} detail="full" animate />
+              </div>
+              <div className="preview-badges">
+                {sun ? <ChartBadge body="sun" longitude={sun.longitude} withDegree astro /> : null}
+                {moon ? <ChartBadge body="moon" longitude={moon.longitude} withDegree /> : null}
+                {facts.houses ? (
+                  <ChartBadge body="asc" longitude={facts.houses.asc} withDegree />
+                ) : null}
+              </div>
+              <p className="caption wheel-hint">{t('wheelHint')}</p>
             </div>
-            <div className="preview-badges">
-              {sun ? <ChartBadge body="sun" longitude={sun.longitude} withDegree astro /> : null}
-              {moon ? <ChartBadge body="moon" longitude={moon.longitude} withDegree /> : null}
-              {facts.houses ? (
-                <ChartBadge body="asc" longitude={facts.houses.asc} withDegree />
-              ) : null}
-            </div>
-            <p className="caption wheel-hint">{t('wheelHint')}</p>
           </div>
           <div className="preview-side">
             <h2 className="block-title">{t('positionsTitle')}</h2>
