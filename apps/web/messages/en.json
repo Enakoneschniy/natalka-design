@@ -195,7 +195,8 @@
     "back": "Back to the form",
     "positionsTitle": "Planet positions",
     "coreTitle": "The core of the chart",
-    "coreLead": "The three points every reading starts from: what you do, what you feel, and how you come across."
+    "coreLead": "The three points every reading starts from: what you do, what you feel, and how you come across.",
+    "wheelHint": "Hover a planet to highlight the aspects it makes."
   },
   "chart": {
     "planets": {

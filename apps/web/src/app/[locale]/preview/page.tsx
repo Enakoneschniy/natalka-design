@@ -123,11 +123,6 @@ export default async function PreviewPage({
                 .filter(Boolean)
                 .join(' · ')}
             </p>
-            <div className="preview-badges">
-              {sun ? <ChartBadge body="sun" longitude={sun.longitude} astro /> : null}
-              {moon ? <ChartBadge body="moon" longitude={moon.longitude} /> : null}
-              {facts.houses ? <ChartBadge body="asc" longitude={facts.houses.asc} /> : null}
-            </div>
           </div>
         </div>
 
@@ -136,6 +131,14 @@ export default async function PreviewPage({
             <div className="wheel-glow">
               <Wheel facts={facts} size={520} detail="full" animate />
             </div>
+            <div className="preview-badges">
+              {sun ? <ChartBadge body="sun" longitude={sun.longitude} withDegree astro /> : null}
+              {moon ? <ChartBadge body="moon" longitude={moon.longitude} withDegree /> : null}
+              {facts.houses ? (
+                <ChartBadge body="asc" longitude={facts.houses.asc} withDegree />
+              ) : null}
+            </div>
+            <p className="caption wheel-hint">{t('wheelHint')}</p>
           </div>
           <div className="preview-side">
             <h2 className="block-title">{t('positionsTitle')}</h2>

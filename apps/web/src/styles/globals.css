@@ -195,39 +195,25 @@
   }
 }
 
-/* Ambient sky behind everything: nebula wash plus a star canvas painted by <Sky/>. */
+/* Ambient sky behind everything: a tiled star field from <Sky/> plus a nebula wash.
+   Both span the whole document, not the viewport, so nothing cuts off on a long page. */
 .sky {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
+  background-repeat: repeat;
 }
 .sky::before {
   content: '';
   position: absolute;
-  inset: -20%;
-  background:
-    radial-gradient(ellipse 60% 45% at 78% 18%, rgba(74, 95, 224, 0.28), transparent 60%),
-    radial-gradient(ellipse 45% 40% at 12% 85%, rgba(124, 92, 230, 0.16), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 50% 110%, rgba(6, 9, 26, 0.9), transparent 60%);
-  animation: nebula 48s ease-in-out infinite alternate;
-}
-.sky canvas {
-  position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  /* The wash belongs to the first screen; below it the page fades into the plain background. */
+  background:
+    radial-gradient(ellipse 60% 520px at 78% 120px, rgba(74, 95, 224, 0.28), transparent 70%),
+    radial-gradient(ellipse 45% 420px at 12% 760px, rgba(124, 92, 230, 0.14), transparent 70%);
 }
-@keyframes nebula {
-  from {
-    transform: translate3d(-2%, -1%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(2%, 2%, 0) scale(1.06);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1190,9 +1176,14 @@
 .preview-badges {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  justify-content: center;
+  margin-top: 28px;
+}
+.wheel-hint {
+  text-align: center;
+  margin-top: 14px;
 }
 .preview-grid {
   display: grid;
