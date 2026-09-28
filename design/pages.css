@@ -28,9 +28,9 @@
 .toc .mono { color: var(--text-2); font-size: 14px; white-space: nowrap; }
 
 .spread { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; perspective: 1400px; }
-.page { background: #FBFAF6; border: 1px solid rgba(0,0,0,.08); border-radius: 4px; aspect-ratio: 210 / 297; padding: 7% 8%; display: flex; flex-direction: column; gap: 10px; font-size: 11px; line-height: 1.5; color: #14172B; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,.5);
+.page { background: #FBFAF6; border: 1px solid rgba(0,0,0,.08); border-radius: 4px; aspect-ratio: 210 / 297; padding: 7% 8%; display: flex; flex-direction: column; gap: 10px; font-size: 11px; line-height: 1.5; color: #14172B; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,.5); --text: #14172B;
   --wheel-line: #C4C8DE; --wheel-line-strong: #14172B; --wheel-glyph: #14172B; --wheel-sign: #8A6A2E; --wheel-face: #fff; --wheel-ring: #F3F1EA; --wheel-sector: rgba(0,0,0,.025); --surface-solid: #fff; --astro-soft: #FBEAD1; --text-2: #5E6382; }
-.page.page-cover { background: radial-gradient(ellipse 80% 60% at 50% 30%, #172049, #06091A 70%); color: #F4F1E8; border-color: rgba(255,255,255,.12);
+.page.page-cover { background: radial-gradient(ellipse 80% 60% at 50% 30%, #172049, #06091A 70%); color: #F4F1E8; --text: #F4F1E8; border-color: rgba(255,255,255,.12);
   --wheel-line: rgba(255,255,255,.22); --wheel-line-strong: #F4F1E8; --wheel-glyph: #EAD7A6; --wheel-sign: #EAD7A6; --wheel-face: transparent; --wheel-ring: rgba(255,255,255,.04); --wheel-sector: rgba(255,255,255,.025); --surface-solid: #10152C; --astro-soft: rgba(240,185,91,.16); --text-2: #AEB2C8; }
 .spread .page:first-child { transform: rotateY(6deg) translateX(4px); }
 .spread .page:last-child { transform: rotateY(-6deg) translateX(-4px); }
