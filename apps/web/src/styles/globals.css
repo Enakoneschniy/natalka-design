@@ -530,7 +530,7 @@
 }
 /* Room for the orbit rings without letting them reach past the page gutter. */
 .hero-wheel .wheel {
-  width: 84%;
+  width: 80%;
   margin-inline: auto;
 }
 .orbit-box {
@@ -541,14 +541,16 @@
   pointer-events: none;
 }
 .orbit-box-1 {
-  inset: 6%;
+  inset: 4%;
 }
 .orbit-box-2 {
   inset: 0;
 }
+/* Each ring sits a little inside its clipping box so the travelling dot and its glow, which
+   stick out past the ring, stay inside the box and are not cut off. */
 .orbit {
   position: absolute;
-  inset: 0;
+  inset: 3%;
   border-radius: 50%;
   pointer-events: none;
 }
@@ -567,9 +569,10 @@
   left: 50%;
   width: 6px;
   height: 6px;
+  margin-left: -3px;
   border-radius: 50%;
   background: var(--color-astro);
-  box-shadow: 0 0 12px 3px rgba(240, 185, 91, 0.7);
+  box-shadow: 0 0 10px 2px rgba(240, 185, 91, 0.7);
 }
 @keyframes spin {
   to {
