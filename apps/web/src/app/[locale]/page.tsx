@@ -33,7 +33,7 @@ function Landing({ locale }: { locale: Locale }) {
               <Link className="btn btn-primary btn-lg" href={`/${locale}/start`}>
                 {t('hero.cta')}
               </Link>
-              <Link className="btn btn-secondary btn-lg" href={`/${locale}/preview/demo`}>
+              <Link className="btn btn-secondary btn-lg" href={`/${locale}/preview?demo=1`}>
                 {t('hero.secondary')}
               </Link>
             </div>

@@ -130,5 +130,142 @@
   "unavailable": {
     "title": "Not available in your region",
     "text": "Natalka does not serve users from the Russian Federation. Payments from this region are not accepted and no documents are delivered."
+  },
+  "form": {
+    "title": "Birth details",
+    "lead": "The more precise, the more precise the chart. Everything except the time is required.",
+    "steps": {
+      "data": "Birth details",
+      "preview": "Free preview",
+      "payment": "Full reading"
+    },
+    "name": "Name",
+    "nameHint": "This is how the reading will address you",
+    "date": "Date of birth",
+    "datePlaceholder": "dd.mm.yyyy",
+    "time": "Time of birth",
+    "timePlaceholder": "hh:mm",
+    "timeHint": "Local time at the place of birth",
+    "unknownTime": "I don't know the exact time",
+    "unknownTimeTitle": "What changes without a time.",
+    "unknownTimeBody": "We build the chart for noon: planet positions and aspects stay accurate, but houses and the Ascendant cannot be calculated, so those sections are left out. The time is often written on the hospital record or in a medical file.",
+    "city": "Place of birth",
+    "cityPlaceholder": "Start typing a city",
+    "cityHint": "Coordinates and time zone are resolved automatically, including the daylight-saving rules of the year you were born",
+    "gender": "How the text should address you",
+    "genderHint": "Affects grammatical forms in the reading only. Nothing else",
+    "genders": {
+      "female": "She",
+      "male": "He",
+      "neutral": "Neutral"
+    },
+    "submit": "Build my chart",
+    "submitPending": "Building…",
+    "free": "Free. You'll see the chart right away.",
+    "north": "N",
+    "south": "S",
+    "east": "E",
+    "west": "W",
+    "errors": {
+      "date": "Enter the date as dd.mm.yyyy",
+      "time": "Enter the time as hh:mm, or tick that you don't know it",
+      "city": "Pick a city from the list"
+    }
+  },
+  "preview": {
+    "title": "{name}, here is your chart",
+    "titleAnonymous": "Here is your chart",
+    "edit": "Edit details",
+    "unknownTime": "time unknown · chart cast for noon",
+    "aspectsTitle": "Aspects",
+    "aspectsLead": "Angles between planets. Harmonious ones give ease, tense ones give energy that has to go somewhere. Your chart has {harmonious} harmonious and {tense} tense aspects.",
+    "legend": {
+      "conjunction": "Conjunction — the planets act together",
+      "trine": "Trine — an easy, natural flow",
+      "sextile": "Sextile — an opportunity you have to take",
+      "square": "Square — inner friction, a driver",
+      "opposition": "Opposition — two sides to reconcile"
+    },
+    "noHouses": "Houses and the Ascendant are not calculated: without an exact birth time they would be unreliable.",
+    "soonTitle": "The full reading",
+    "soonBody": "A 25–40 page PDF covering planets, houses and aspects in detail. We are finishing it now — the chart above already comes from the same calculations.",
+    "soonCta": "Coming soon",
+    "errorTitle": "The chart could not be built",
+    "errorBody": "Check the birth details and try again.",
+    "back": "Back to the form",
+    "positionsTitle": "Planet positions",
+    "coreTitle": "The core of the chart",
+    "coreLead": "The three points every reading starts from: what you do, what you feel, and how you come across."
+  },
+  "chart": {
+    "planets": {
+      "sun": "Sun",
+      "moon": "Moon",
+      "mercury": "Mercury",
+      "venus": "Venus",
+      "mars": "Mars",
+      "jupiter": "Jupiter",
+      "saturn": "Saturn",
+      "uranus": "Uranus",
+      "neptune": "Neptune",
+      "pluto": "Pluto",
+      "chiron": "Chiron",
+      "north_node": "North Node",
+      "south_node": "South Node",
+      "lilith": "Lilith",
+      "pars_fortunae": "Part of Fortune",
+      "vertex": "Vertex",
+      "asc": "Ascendant",
+      "mc": "MC",
+      "dsc": "Descendant",
+      "ic": "IC"
+    },
+    "signs": {
+      "aries": "Aries",
+      "taurus": "Taurus",
+      "gemini": "Gemini",
+      "cancer": "Cancer",
+      "leo": "Leo",
+      "virgo": "Virgo",
+      "libra": "Libra",
+      "scorpio": "Scorpio",
+      "sagittarius": "Sagittarius",
+      "capricorn": "Capricorn",
+      "aquarius": "Aquarius",
+      "pisces": "Pisces"
+    },
+    "in": {
+      "aries": "in Aries",
+      "taurus": "in Taurus",
+      "gemini": "in Gemini",
+      "cancer": "in Cancer",
+      "leo": "in Leo",
+      "virgo": "in Virgo",
+      "libra": "in Libra",
+      "scorpio": "in Scorpio",
+      "sagittarius": "in Sagittarius",
+      "capricorn": "in Capricorn",
+      "aquarius": "in Aquarius",
+      "pisces": "in Pisces"
+    },
+    "aspects": {
+      "conjunction": "Conjunction",
+      "opposition": "Opposition",
+      "trine": "Trine",
+      "square": "Square",
+      "sextile": "Sextile",
+      "quincunx": "Quincunx",
+      "semisextile": "Semisextile",
+      "semisquare": "Semisquare",
+      "sesquiquadrate": "Sesquiquadrate"
+    },
+    "table": {
+      "planet": "Planet",
+      "sign": "Sign",
+      "degree": "Degree",
+      "house": "House",
+      "retro": "R"
+    },
+    "houseShort": "house {n}"
   }
 }
