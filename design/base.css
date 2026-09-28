@@ -298,3 +298,49 @@ h4, .h4 { font-family: var(--font-text); font-weight: 600; font-size: var(--fs-h
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- wheel interaction states ---------- */
+.wheel-planet { cursor: pointer; }
+.wheel-planet > * { transition: opacity .35s ease; }
+.wheel-aspect { transition: opacity .35s ease, stroke-width .2s ease; }
+.wheel.is-focus .wheel-planet:not(.is-active) > * { opacity: .28; }
+.wheel.is-focus .wheel-aspect:not(.is-active) { opacity: .08; }
+.wheel.is-focus .wheel-aspect.is-active { stroke-opacity: 1; }
+.wheel.is-focus .wheel-planet.is-active path { filter: drop-shadow(0 0 6px rgba(240,185,91,.9)); }
+.positions tr[data-planet] { cursor: pointer; transition: background .2s; }
+.positions tr.is-active td { background: rgba(255,255,255,.06); }
+.positions tr.is-active td:first-child { border-radius: 8px 0 0 8px; }
+.positions tr.is-active td:last-child { border-radius: 0 8px 8px 0; }
+.wheel-sign { transform-box: fill-box; transform-origin: center; }
+.wheel-halo { animation: halo 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes halo { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.35); opacity: .45; } }
+
+/* ---------- ambient motion ---------- */
+.sky::before { animation: nebula 48s ease-in-out infinite alternate; }
+@keyframes nebula { from { transform: translate3d(-2%, -1%, 0) scale(1); } to { transform: translate3d(2%, 2%, 0) scale(1.06); } }
+.sky .twinkle { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px 1px rgba(255,255,255,.7); animation: twinkle var(--d, 4s) ease-in-out var(--o, 0s) infinite; opacity: 0; }
+.sky .twinkle.warm { background: #F5D9A6; box-shadow: 0 0 6px 1px rgba(245,217,166,.7); }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: .9; transform: scale(1); } }
+.orbit { position: absolute; border-radius: 50%; pointer-events: none; }
+.orbit-1 { inset: -5%; border: 1px dashed rgba(255,255,255,.16); animation: wheel-rotate 160s linear infinite; }
+.orbit-2 { inset: -11%; border: 1px solid rgba(255,255,255,.07); animation: wheel-rotate 90s linear infinite reverse; }
+.orbit-2::before { content: ''; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: #F0B95B; box-shadow: 0 0 12px 3px rgba(240,185,91,.7); }
+.orbit-1::before { content: ''; position: absolute; top: 50%; right: -2px; width: 4px; height: 4px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 2px rgba(180,200,255,.8); }
+.hero-wheel .wheel-glow { transform-style: preserve-3d; will-change: transform; }
+.hero-wheel .wheel-glow::after { display: none; }
+
+/* buttons: gold shimmer on hover */
+.btn-primary { position: relative; overflow: hidden; }
+.btn-primary::after { content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent); transform: skewX(-20deg); transition: left .6s ease; }
+.btn-primary:hover::after { left: 130%; }
+.card { transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .3s, background .3s; }
+.product:hover { transform: translateY(-4px); border-color: rgba(255,255,255,.22); }
+
+/* page fade */
+body { animation: page-in .5s ease both; }
+body.is-leaving { animation: page-out .25s ease forwards; }
+@keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes page-out { to { opacity: 0; } }
+
+/* reveal defaults (motion.js sets initial state; keep visible without JS) */
+[data-reveal] { will-change: transform, opacity; }

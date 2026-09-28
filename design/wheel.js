@@ -120,7 +120,9 @@ const NATALKA = (() => {
   }
 
   // ---------- wheel ----------
-  // opts: { size, chart, detail: 'full'|'compact'|'mark', animate, highlight }
+  // opts: { size, chart, detail: 'full'|'compact'|'mark', highlight, responsive, interactive }
+  // Output is grouped (.wheel-zodiac, .wheel-ticks, .wheel-houses, .wheel-aspects, .wheel-planets)
+  // so motion.js can build the intro timeline and hover interactions from the DOM.
   function wheel(container, opts = {}) {
     const chart = opts.chart || SAMPLE;
     const size = opts.size || 480;
@@ -132,17 +134,12 @@ const NATALKA = (() => {
       astro: v('--astro'), accent: v('--accent'), text2: v('--text-2'), tense: v('--aspect-tense'), harm: v('--aspect-harmonic'), neu: v('--aspect-neutral'),
       el: { fire: v('--fire'), earth: v('--earth'), air: v('--air'), water: v('--water') },
       elSoft: { fire: v('--fire-soft'), earth: v('--earth-soft'), air: v('--air-soft'), water: v('--water-soft') },
-      sign: v('--wheel-sign'), sector: v('--wheel-sector'), labelBg: v('--surface-solid') || v('--wheel-face') };
+      sign: v('--wheel-sign'), sector: v('--wheel-sector'), labelBg: v('--surface-solid') || v('--wheel-face'), astroSoft: v('--astro-soft') };
 
     const R = size / 2, cx = R, cy = R;
     // ASC on the left, zodiac counter-clockwise
     const ang = lon => (norm(lon - asc)) * Math.PI / 180;
     const pt = (lon, r) => [cx - r * Math.cos(ang(lon)), cy + r * Math.sin(ang(lon))];
-    const arc = (r, a0, a1) => { // a0->a1 increasing longitude
-      const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r);
-      const large = norm(a1 - a0) > 180 ? 1 : 0;
-      return `M${x0} ${y0}A${r} ${r} 0 ${large} 0 ${x1} ${y1}`;
-    };
 
     const rOuter = R - 1;
     const rZodIn = detail === 'mark' ? R * 0.72 : R * 0.86;
@@ -152,71 +149,75 @@ const NATALKA = (() => {
     const rHouseIn = detail === 'full' ? R * 0.47 : R * 0.48;
     const rAspect = detail === 'full' ? R * 0.45 : detail === 'compact' ? R * 0.46 : R * 0.62;
     const swThin = Math.max(0.6, size / 900), swMid = Math.max(0.8, size / 600), swStrong = Math.max(1.2, size / 400);
+    const mono = "'JetBrains Mono', monospace";
 
-    const svg = svgEl('svg', { viewBox: `0 0 ${size} ${size}`, width: size, height: size, class: 'wheel', role: 'img', 'aria-label': 'Натальна карта' });
+    const svg = svgEl('svg', { viewBox: `0 0 ${size} ${size}`, width: size, height: size, class: `wheel wheel-${detail}`, role: 'img', 'aria-label': 'Натальна карта' });
     if (opts.responsive) { svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.width = '100%'; svg.style.height = 'auto'; }
 
     // face
-    svg.appendChild(svgEl('circle', { cx, cy, r: rOuter, fill: C.face, stroke: C.line, 'stroke-width': swMid }));
+    svg.appendChild(svgEl('circle', { cx, cy, r: rOuter, fill: C.face, stroke: C.line, 'stroke-width': swMid, class: 'wheel-face' }));
 
-    // zodiac ring: 12 sectors tinted by element
+    // zodiac ring
+    const gZ = svgEl('g', { class: 'wheel-zodiac' });
     for (let i = 0; i < 12; i++) {
       const a0 = i * 30, a1 = a0 + 30;
       const el = ELEMENTS[i % 4];
       const [xo0, yo0] = pt(a0, rOuter), [xo1, yo1] = pt(a1, rOuter), [xi1, yi1] = pt(a1, rZodIn), [xi0, yi0] = pt(a0, rZodIn);
-      const d = `M${xo0} ${yo0}A${rOuter} ${rOuter} 0 0 0 ${xo1} ${yo1}L${xi1} ${yi1}A${rZodIn} ${rZodIn} 0 0 1 ${xi0} ${yi0}Z`;
-      svg.appendChild(svgEl('path', { d, fill: C.sector || C.elSoft[el], stroke: 'none' }));
-      // divider
+      gZ.appendChild(svgEl('path', { d: `M${xo0} ${yo0}A${rOuter} ${rOuter} 0 0 0 ${xo1} ${yo1}L${xi1} ${yi1}A${rZodIn} ${rZodIn} 0 0 1 ${xi0} ${yi0}Z`, fill: C.sector || C.elSoft[el], stroke: 'none' }));
       const [dx0, dy0] = pt(a0, rZodIn), [dx1, dy1] = pt(a0, rOuter);
-      svg.appendChild(svgEl('line', { x1: dx0, y1: dy0, x2: dx1, y2: dy1, stroke: C.line, 'stroke-width': swThin }));
-      // sign glyph
+      gZ.appendChild(svgEl('line', { x1: dx0, y1: dy0, x2: dx1, y2: dy1, stroke: C.line, 'stroke-width': swThin }));
       const gs = detail === 'mark' ? size * 0.11 : detail === 'compact' ? size * 0.055 : size * 0.042;
       const [gx, gy] = pt(a0 + 15, (rOuter + rZodIn) / 2);
-      svg.appendChild(glyph(SIGN_PATHS[i], gs, gx, gy, C.sign || C.el[el], detail === 'mark' ? 2.2 : 1.9));
+      const g = glyph(SIGN_PATHS[i], gs, gx, gy, C.sign || C.el[el], detail === 'mark' ? 2.2 : 1.9);
+      g.setAttribute('class', 'wheel-sign'); g.setAttribute('data-sign', i);
+      gZ.appendChild(g);
     }
-    svg.appendChild(svgEl('circle', { cx, cy, r: rZodIn, fill: 'none', stroke: C.line, 'stroke-width': swMid }));
+    gZ.appendChild(svgEl('circle', { cx, cy, r: rZodIn, fill: 'none', stroke: C.line, 'stroke-width': swMid }));
+    svg.appendChild(gZ);
 
+    // degree ticks
     if (detail !== 'mark') {
-      // degree ticks
+      const gT = svgEl('g', { class: 'wheel-ticks' });
       const step = detail === 'full' ? 1 : 5;
       for (let d = 0; d < 360; d += step) {
         const len = d % 10 === 0 ? (rTickOut - rTickIn) : d % 5 === 0 ? (rTickOut - rTickIn) * 0.6 : (rTickOut - rTickIn) * 0.3;
         const [x0, y0] = pt(d, rTickOut), [x1, y1] = pt(d, rTickOut - len);
-        svg.appendChild(svgEl('line', { x1: x0, y1: y0, x2: x1, y2: y1, stroke: d % 10 === 0 ? C.text2 : C.line, 'stroke-width': swThin }));
+        gT.appendChild(svgEl('line', { x1: x0, y1: y0, x2: x1, y2: y1, stroke: d % 10 === 0 ? C.text2 : C.line, 'stroke-width': swThin }));
       }
-      svg.appendChild(svgEl('circle', { cx, cy, r: rTickIn, fill: 'none', stroke: C.line, 'stroke-width': swThin }));
+      gT.appendChild(svgEl('circle', { cx, cy, r: rTickIn, fill: 'none', stroke: C.line, 'stroke-width': swThin }));
+      svg.appendChild(gT);
     }
 
     // houses
+    const gH = svgEl('g', { class: 'wheel-houses' });
     if (detail !== 'mark') {
-      svg.appendChild(svgEl('circle', { cx, cy, r: rHouseOut, fill: C.ring, stroke: C.line, 'stroke-width': swMid }));
-      svg.appendChild(svgEl('circle', { cx, cy, r: rHouseIn, fill: C.face, stroke: C.line, 'stroke-width': swMid }));
+      gH.appendChild(svgEl('circle', { cx, cy, r: rHouseOut, fill: C.ring, stroke: C.line, 'stroke-width': swMid }));
+      gH.appendChild(svgEl('circle', { cx, cy, r: rHouseIn, fill: C.face, stroke: C.line, 'stroke-width': swMid }));
     }
     chart.cusps.forEach((c, i) => {
       const isAngle = i % 3 === 0;
       if (detail === 'mark' && !isAngle) return;
       const [x0, y0] = pt(c, rHouseIn), [x1, y1] = pt(c, isAngle ? rZodIn : rTickIn);
-      svg.appendChild(svgEl('line', { x1: x0, y1: y0, x2: x1, y2: y1, stroke: isAngle ? C.strong : C.line, 'stroke-width': isAngle ? swStrong : swThin }));
+      gH.appendChild(svgEl('line', { x1: x0, y1: y0, x2: x1, y2: y1, stroke: isAngle ? C.strong : C.line, 'stroke-width': isAngle ? swStrong : swThin, class: 'wheel-cusp' }));
       if (detail !== 'mark') {
         const next = chart.cusps[(i + 1) % 12];
-        const mid = c + norm(next - c) / 2;
-        const [tx, ty] = pt(mid, (rHouseOut + rHouseIn) / 2);
-        const t = svgEl('text', { x: tx, y: ty, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: C.text2, 'font-family': "'JetBrains Mono', monospace", 'font-size': detail === 'full' ? size * 0.021 : size * 0.028 });
+        const [tx, ty] = pt(c + norm(next - c) / 2, (rHouseOut + rHouseIn) / 2);
+        const t = svgEl('text', { x: tx, y: ty, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: C.text2, 'font-family': mono, 'font-size': detail === 'full' ? size * 0.021 : size * 0.028, class: 'wheel-num' });
         t.textContent = ROMAN[i];
-        svg.appendChild(t);
+        gH.appendChild(t);
       }
       if (isAngle && detail === 'full') {
-        const label = ['AC', 'IC', 'DC', 'MC'][i / 3];
         const [lx, ly] = pt(c, rZodIn + (rOuter - rZodIn) * 0.5);
-        // angle marker: small arrow head on zodiac ring
-        const t = svgEl('text', { x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: C.strong, 'font-family': "'JetBrains Mono', monospace", 'font-weight': 500, 'font-size': size * 0.02 });
-        t.textContent = label;
-        const bg = svgEl('rect', { x: lx - size * 0.022, y: ly - size * 0.013, width: size * 0.044, height: size * 0.026, rx: size * 0.006, fill: C.labelBg, stroke: C.strong, 'stroke-width': swThin });
-        svg.appendChild(bg); svg.appendChild(t);
+        const gl = svgEl('g', { class: 'wheel-angle' });
+        gl.appendChild(svgEl('rect', { x: lx - size * 0.022, y: ly - size * 0.013, width: size * 0.044, height: size * 0.026, rx: size * 0.006, fill: C.labelBg, stroke: C.strong, 'stroke-width': swThin }));
+        const t = svgEl('text', { x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: C.strong, 'font-family': mono, 'font-weight': 500, 'font-size': size * 0.02 });
+        t.textContent = ['AC', 'IC', 'DC', 'MC'][i / 3];
+        gl.appendChild(t); gH.appendChild(gl);
       }
     });
+    svg.appendChild(gH);
 
-    // aspects (drawn first so planets sit on top)
+    // aspects (under planets)
     const asp = aspects(chart.planets);
     const lonOf = id => chart.planets.find(p => p.id === id).lon;
     const gA = svgEl('g', { class: 'wheel-aspects' });
@@ -224,9 +225,7 @@ const NATALKA = (() => {
       if (a.id === 'conj') return;
       const [x0, y0] = pt(lonOf(a.a), rAspect), [x1, y1] = pt(lonOf(a.b), rAspect);
       const color = a.kind === 'tense' ? C.tense : a.kind === 'harm' ? C.harm : C.neu;
-      const line = svgEl('line', { x1: x0, y1: y0, x2: x1, y2: y1, stroke: color, 'stroke-width': a.orbActual < 2 ? swStrong : swMid, 'stroke-opacity': a.orbActual < 2 ? 0.9 : 0.55 });
-      if (opts.animate) { const len = Math.hypot(x1 - x0, y1 - y0); line.setAttribute('stroke-dasharray', len); line.setAttribute('stroke-dashoffset', len); line.style.animation = `wheel-draw .9s cubic-bezier(.2,.7,.2,1) ${0.25 + Math.random() * .5}s forwards`; }
-      gA.appendChild(line);
+      gA.appendChild(svgEl('line', { x1: x0, y1: y0, x2: x1, y2: y1, stroke: color, 'stroke-width': a.orbActual < 2 ? swStrong : swMid, 'stroke-opacity': a.orbActual < 2 ? 0.9 : 0.55, class: `wheel-aspect ${a.kind}`, 'data-a': a.a, 'data-b': a.b, 'data-aspect': a.id }));
     });
     svg.appendChild(gA);
 
@@ -240,37 +239,60 @@ const NATALKA = (() => {
         if (gap < minSep) { const push = (minSep - gap) / 2; prev.disp = norm(prev.disp - push); cur.disp = norm(cur.disp + push); }
       }
     }
-    // degree labels: alternate two radii inside clusters so they never collide
     sorted.forEach((p, i) => { const prev = sorted[i - 1]; p.lvl = prev && norm(p.disp - prev.disp) < 14 ? (prev.lvl + 1) % 2 : 0; });
     const gP = svgEl('g', { class: 'wheel-planets' });
     sorted.forEach(p => {
       const isSun = p.id === 'sun';
       const isHl = opts.highlight === p.id;
       const color = isSun || isHl ? C.astro : C.glyph;
-      const [ax, ay] = pt(p.lon, rTickIn);      // actual position on the ring
-      if (detail === 'mark') {                   // mark: dots on the ring, Sun in apricot
-        svg.appendChild(svgEl('circle', { cx: ax, cy: ay, r: isSun ? size * 0.028 : size * 0.014, fill: isSun ? C.astro : C.glyph }));
-        return;
+      const [ax, ay] = pt(p.lon, rTickIn);
+      const gp = svgEl('g', { class: `wheel-planet${isSun ? ' is-sun' : ''}${isHl ? ' is-hl' : ''}`, 'data-planet': p.id });
+      if (detail === 'mark') {
+        gp.appendChild(svgEl('circle', { cx: ax, cy: ay, r: isSun ? size * 0.028 : size * 0.014, fill: isSun ? C.astro : C.glyph }));
+        gP.appendChild(gp); return;
       }
-      const [gx, gy] = pt(p.disp, rPlanet);     // glyph position
+      const [gx, gy] = pt(p.disp, rPlanet);
       const [px, py] = pt(p.disp, rPlanet + (detail === 'full' ? size * 0.04 : size * 0.05));
-      svg.appendChild(svgEl('line', { x1: ax, y1: ay, x2: px, y2: py, stroke: isSun || isHl ? C.astro : C.line, 'stroke-width': swThin }));
-      svg.appendChild(svgEl('circle', { cx: ax, cy: ay, r: Math.max(1.5, size * 0.006), fill: isSun || isHl ? C.astro : C.glyph }));
+      gp.appendChild(svgEl('line', { x1: ax, y1: ay, x2: px, y2: py, stroke: isSun || isHl ? C.astro : C.line, 'stroke-width': swThin }));
+      gp.appendChild(svgEl('circle', { cx: ax, cy: ay, r: Math.max(1.5, size * 0.006), fill: isSun || isHl ? C.astro : C.glyph }));
       const gs = detail === 'full' ? size * 0.045 : size * 0.06;
-      if (isHl || isSun) gP.appendChild(svgEl('circle', { cx: gx, cy: gy, r: gs * 0.9, fill: v('--astro-soft') }));
-      gP.appendChild(glyph(PLANET_PATHS[p.id], gs, gx, gy, color, isSun ? 2 : 1.9));
+      if (isHl || isSun) gp.appendChild(svgEl('circle', { cx: gx, cy: gy, r: gs * 0.9, fill: C.astroSoft, class: 'wheel-halo' }));
+      gp.appendChild(glyph(PLANET_PATHS[p.id], gs, gx, gy, color, isSun ? 2 : 1.9));
       if (detail === 'full') {
         const [tx, ty] = pt(p.disp, rPlanet - R * (0.085 + p.lvl * 0.055));
-        const t = svgEl('text', { x: tx, y: ty, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: isSun || isHl ? C.astro : C.text2, 'font-family': "'JetBrains Mono', monospace", 'font-size': size * 0.018 });
+        const t = svgEl('text', { x: tx, y: ty, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: isSun || isHl ? C.astro : C.text2, 'font-family': mono, 'font-size': size * 0.018 });
         t.textContent = fmtDeg(p.lon) + (p.retro ? ' R' : '');
-        gP.appendChild(t);
+        gp.appendChild(t);
       }
+      // invisible hit area for hover
+      gp.appendChild(svgEl('circle', { cx: gx, cy: gy, r: gs * 1.1, fill: 'transparent', class: 'wheel-hit' }));
+      gP.appendChild(gp);
     });
     svg.appendChild(gP);
 
     container.innerHTML = '';
     container.appendChild(svg);
+    if (opts.interactive !== false && detail !== 'mark') makeInteractive(svg);
     return svg;
+  }
+
+  // hover a planet → its aspects stay lit, the rest dims; syncs with any [data-planet] rows on the page
+  function makeInteractive(svg) {
+    const set = id => {
+      svg.classList.toggle('is-focus', !!id);
+      svg.querySelectorAll('.wheel-planet').forEach(g => g.classList.toggle('is-active', g.dataset.planet === id));
+      svg.querySelectorAll('.wheel-aspect').forEach(l => l.classList.toggle('is-active', !!id && (l.dataset.a === id || l.dataset.b === id)));
+      document.querySelectorAll('tr[data-planet]').forEach(tr => tr.classList.toggle('is-active', tr.dataset.planet === id));
+      svg.dispatchEvent(new CustomEvent('wheel:focus', { bubbles: true, detail: { planet: id } }));
+    };
+    svg.querySelectorAll('.wheel-planet').forEach(g => {
+      g.addEventListener('pointerenter', () => set(g.dataset.planet));
+      g.addEventListener('pointerleave', () => set(null));
+    });
+    document.querySelectorAll('tr[data-planet]').forEach(tr => {
+      tr.addEventListener('pointerenter', () => set(tr.dataset.planet));
+      tr.addEventListener('pointerleave', () => set(null));
+    });
   }
 
   // ---------- positions table ----------
@@ -280,7 +302,7 @@ const NATALKA = (() => {
       const s = signOf(p.lon), el = elementOf(p.lon);
       const hl = opts.highlight === p.id ? ' is-hl' : '';
       const g = p.kind === 'planet' ? inlineGlyph(PLANET_PATHS[p.id]) : `<span class="mono" style="font-size:13px;width:18px;display:inline-block;text-align:center">${p.id === 'asc' ? 'AC' : 'MC'}</span>`;
-      return `<tr class="${el}${hl} ${p.id}">
+      return `<tr class="${el}${hl} ${p.id}" data-planet="${p.id}">
         <td><span class="pl">${g}${PLANET_NAMES[p.id]}</span></td>
         <td><span class="sg">${inlineGlyph(SIGN_PATHS[s])}${SIGNS[s]}</span></td>
         <td class="mono">${fmtDeg(p.lon)}</td>
@@ -337,7 +359,7 @@ const NATALKA = (() => {
   }
   function mount(el) {
     const o = el.dataset;
-    wheel(el, { size: +o.wheel || 480, detail: o.detail, animate: o.animate === 'true', highlight: o.highlight, responsive: o.responsive === 'true' });
+    wheel(el, { size: +o.wheel || 480, detail: o.detail, highlight: o.highlight, responsive: o.responsive === 'true' });
   }
   function autoInit() {
     initTheme();
