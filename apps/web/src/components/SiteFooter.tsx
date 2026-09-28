@@ -1,0 +1,62 @@
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import type { Locale } from '@/i18n/routing';
+import { Logo } from './Logo';
+
+export function SiteFooter({ locale }: { locale: Locale }) {
+  const t = useTranslations('footer');
+  const p = useTranslations('products');
+  return (
+    <footer className="footer">
+      <div className="container-page">
+        <div className="footer-cols">
+          <div>
+            <Link className="logo" href={`/${locale}`}>
+              <Logo size={26} />
+              Natalka
+            </Link>
+            <p className="small muted footer-about">{t('about')}</p>
+          </div>
+          <div>
+            <h4>{t('products')}</h4>
+            <ul>
+              <li>{p('natal.title')}</li>
+              <li>{p('forecast.title')}</li>
+              <li>{p('synastry.title')}</li>
+              <li>{p('child.title')}</li>
+            </ul>
+          </div>
+          <div>
+            <h4>{t('documents')}</h4>
+            <ul>
+              <li>
+                <Link href={`/${locale}/legal/terms`}>{t('terms')}</Link>
+              </li>
+              <li>
+                <Link href={`/${locale}/legal/privacy`}>{t('privacy')}</Link>
+              </li>
+              <li>
+                <Link href={`/${locale}/legal/refunds`}>{t('refunds')}</Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4>{t('contacts')}</h4>
+            <ul>
+              <li>
+                <a href="mailto:hi@natalka.app">hi@natalka.app</a>
+              </li>
+              <li>{t('hours')}</li>
+            </ul>
+          </div>
+        </div>
+        <div className="footer-legal">
+          <span>{t('disclaimer')}</span>
+        </div>
+        <div className="footer-mark" aria-hidden="true">
+          Natalka
+        </div>
+      </div>
+    </footer>
+  );
+}

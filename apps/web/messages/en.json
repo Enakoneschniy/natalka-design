@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "products": "Products",
+    "how": "How it works",
+    "sample": "Sample reading",
+    "faq": "Questions",
+    "start": "Build my chart",
+    "language": "Language",
+    "menu": "Menu"
+  },
+  "hero": {
+    "titleLead": "A birth chart",
+    "titleAccent": "you'll want to read",
+    "lead": "Enter your date, time and place of birth — see your chart for free within a minute. The full 25–40 page reading arrives as a PDF by email.",
+    "cta": "Build my chart for free",
+    "secondary": "See an example",
+    "facts": {
+      "accuracy": "to 1′",
+      "accuracyLabel": "planet position accuracy",
+      "speed": "~10 min",
+      "speedLabel": "from payment to PDF",
+      "count": "12 400",
+      "countLabel": "readings delivered"
+    },
+    "demoName": "Oksana",
+    "demoMeta": "15 May 1994 · 15:25 · Yevpatoria"
+  },
+  "products": {
+    "title": "Products",
+    "lead": "Fixed price, paid once. You enter your details only before the first order — every next document is built from the same chart.",
+    "choose": "Choose",
+    "free": "Зараз безкоштовно",
+    "natal": {
+      "title": "Birth chart",
+      "meta": "25–40 pages",
+      "items": [
+        "Sun, Moon, Ascendant",
+        "Planets in signs and houses",
+        "Aspects and how they show",
+        "Relationships, work, money"
+      ]
+    },
+    "forecast": {
+      "title": "12-month forecast",
+      "meta": "20–30 pages",
+      "items": [
+        "Transits to your chart",
+        "Month-by-month calendar",
+        "Favourable and demanding periods",
+        "What to do in each"
+      ]
+    },
+    "synastry": {
+      "title": "Compatibility",
+      "meta": "20–30 pages · two charts",
+      "items": [
+        "Synastry of two charts",
+        "Where you strengthen each other",
+        "Where friction appears and why",
+        "How to reach agreement"
+      ]
+    },
+    "child": {
+      "title": "Child's chart",
+      "meta": "20–30 pages · for parents",
+      "items": [
+        "Your child's temperament and needs",
+        "How they learn and rest",
+        "What hurts them, what inspires them",
+        "The language they hear you in"
+      ]
+    }
+  },
+  "how": {
+    "title": "How it works",
+    "steps": [
+      {
+        "title": "Enter your birth details",
+        "text": "Name, date, time and city. If you don't know the exact time it still works — just without houses and the Ascendant."
+      },
+      {
+        "title": "Look at the free preview",
+        "text": "The chart wheel, position table, aspects and a short text about your Sun, Moon and Ascendant — right away."
+      },
+      {
+        "title": "Отримайте PDF",
+        "text": "The document arrives by email in 5–15 minutes and stays available at your link."
+      }
+    ]
+  },
+  "faq": {
+    "title": "Questions",
+    "contact": "Can't find an answer — write to",
+    "contactAfter": ", we reply within one working day.",
+    "items": [
+      {
+        "q": "What if I don't know my exact time of birth?",
+        "a": "We'll cast the chart for noon. The positions of the Sun, planets and most aspects stay accurate, but we can't calculate houses and the Ascendant — those sections are skipped. The time is often on your birth certificate or hospital records."
+      },
+      {
+        "q": "How is this different from a horoscope?",
+        "a": "A horoscope describes one twelfth of humanity by Sun sign. A birth chart is the position of ten planets, the Ascendant and houses at the moment you were born, and the angles between them. Two people with the same sign get two different texts from us."
+      },
+      {
+        "q": "Who writes the reading?",
+        "a": "The calculation is done by software using the Swiss Ephemeris. The text is composed by a language model following a method written by Natalka's astrologers; every paragraph is tied to a specific position or aspect in your chart."
+      },
+      {
+        "q": "How do you store my data?",
+        "a": "Your date, time and place of birth are stored only to build your documents and are deleted after 30 days. We don't share them with third parties."
+      }
+    ]
+  },
+  "cta": {
+    "title": "See your chart in a minute",
+    "lead": "Free preview — no sign-up, no card.",
+    "button": "Build my chart"
+  },
+  "footer": {
+    "about": "Automated birth charts. Calculated with the Swiss Ephemeris; the text is written for your chart, not your Sun sign.",
+    "products": "Products",
+    "documents": "Documents",
+    "contacts": "Contacts",
+    "terms": "Terms of service",
+    "privacy": "Privacy policy",
+    "refunds": "Refunds",
+    "hours": "Mon–Fri, 10:00–19:00 Kyiv time",
+    "disclaimer": "Readings are for entertainment and self-reflection and are not medical, psychological or financial advice."
+  },
+  "unavailable": {
+    "title": "Not available in your region",
+    "text": "Natalka does not serve users from the Russian Federation. Payments from this region are not accepted and no documents are delivered."
+  }
+}

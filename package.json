@@ -12,5 +12,14 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
     "turbo": "^2.5.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "esbuild",
+      "workerd",
+      "@swc/core",
+      "sharp"
+    ]
   }
 }

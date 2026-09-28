@@ -1,0 +1,11 @@
+import { chromium } from '@playwright/test';
+const [url, out, w = '1440', h = '1400', full = ''] = process.argv.slice(2);
+const b = await chromium.connect(process.env.PW_TEST_CONNECT_WS_ENDPOINT);
+const ctx = await b.newContext({ locale: 'uk-UA', viewport: { width: +w, height: +h }, deviceScaleFactor: 1.4, isMobile: +w < 500, hasTouch: +w < 500 });
+const p = await ctx.newPage();
+const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && errs.push(m.text()));
+await p.goto(url, { waitUntil: 'domcontentloaded' });
+await p.waitForTimeout(1200);
+await p.screenshot({ path: out, fullPage: full === 'full' });
+console.log('errors:', errs.length ? errs.slice(0,3) : 'none');
+await b.close();
