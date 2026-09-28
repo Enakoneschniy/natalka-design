@@ -271,7 +271,7 @@ class Renderer:
 
     # ---------- computed blocks ----------
     def _wheel(self, b: WheelBlock) -> Flowable:
-        size = self.width * (0.82 if b.size == "full" else 0.5)
+        size = self.width * (0.64 if b.size == "full" else 0.44)
         d = wheel_drawing(
             self.doc.facts, size_pt=size, theme=PDF_LIGHT, detail=b.size, highlight=b.highlight
         )

@@ -6,7 +6,7 @@ import pypdfium2 as pdfium
 from natalka_document.build import natal_skeleton
 from natalka_document.render import render_pdf
 from natalka_document.schema import Document, Paragraph, Person, Quote
-from natalka_document.wheel import DARK, wheel_svg
+from natalka_document.wheel import DARK, PDF_DARK, wheel_drawing, wheel_svg
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "natal-uk.json"
 
@@ -36,6 +36,17 @@ def test_unknown_time_document_renders(facts_no_time: dict) -> None:
     buf = io.BytesIO()
     assert render_pdf(doc, buf) >= 3
     assert "час невідомий" in _text(buf.getvalue())[0]
+
+
+def test_wheel_drawing_is_exactly_the_requested_size(facts: dict) -> None:
+    """svglib rescales SVG units to points; wheel_drawing must undo that, otherwise every caller
+    that centres the wheel silently draws it off-centre."""
+    for size in (200.0, 476.22):
+        d = wheel_drawing(facts, size_pt=size, theme=PDF_DARK)
+        assert (round(d.width, 3), round(d.height, 3)) == (round(size, 3), round(size, 3))
+        x0, y0, x1, y1 = d.getBounds()
+        assert abs(x0) < 0.01 and abs(y0) < 0.01
+        assert abs(x1 - size) < 0.01 and abs(y1 - size) < 0.01
 
 
 def test_wheel_svg_is_valid_xml(facts: dict, facts_no_time: dict) -> None:

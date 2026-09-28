@@ -11,7 +11,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any
 
-from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.shapes import Drawing, Group
 from svglib.svglib import svg2rlg
 
 from .glyphs import PLANET_PATHS, SIGN_PATHS, WHEEL_BODIES
@@ -389,9 +389,21 @@ def wheel_svg(  # noqa: PLR0912, PLR0915 — a single drawing routine, mirrors w
 def wheel_drawing(
     facts: dict[str, Any], *, size_pt: float, theme: WheelTheme = PDF_LIGHT, **kw: Any
 ) -> Drawing:
-    """The wheel as a ReportLab drawing sized in points (svglib understands our SVG subset)."""
+    """The wheel as a ReportLab drawing that is exactly ``size_pt`` wide and high.
+
+    svglib converts SVG user units to points (1px = 0.75pt) and keeps a small margin, so the raw
+    drawing is neither the requested size nor anchored at the origin. We normalise both here;
+    otherwise every caller has to compensate and centring silently drifts.
+    """
     svg = wheel_svg(facts, size=size_pt, theme=theme, **kw)
-    drawing: Drawing | None = svg2rlg(io.StringIO(svg))
-    if drawing is None:  # pragma: no cover — svglib returns None only on parse failure
+    raw: Drawing | None = svg2rlg(io.StringIO(svg))
+    if raw is None:  # pragma: no cover — svglib returns None only on parse failure
         raise RuntimeError("wheel SVG could not be parsed")
-    return drawing
+    x0, y0, x1, y1 = raw.getBounds()
+    span = max(x1 - x0, y1 - y0)
+    scale = size_pt / span if span else 1.0
+    inner = Group(*raw.contents)
+    inner.transform = (scale, 0.0, 0.0, scale, -x0 * scale, -y0 * scale)
+    out = Drawing(size_pt, size_pt)
+    out.add(inner)
+    return out
