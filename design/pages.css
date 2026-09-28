@@ -310,3 +310,54 @@
 }
 
 .spread .page { transform-style: preserve-3d; backface-visibility: hidden; }
+
+/* ---------- foldables & unusual viewports ---------- */
+/* narrow cover screens (Galaxy Z Fold / Flip closed: ~340–380 css px) */
+@media (max-width: 380px) {
+  :root { --fs-h1: 36px; --fs-h2: 28px; --gutter: 16px; }
+  .btn-lg { height: 56px; padding: 0 20px; font-size: 16px; }
+  .hero-facts li { padding-right: 12px; margin-right: 12px; }
+  .badge { font-size: 14px; padding: 0 10px 0 7px; height: 32px; }
+  .stepper .sep { width: 16px; }
+  .nav .container { gap: 8px; }
+}
+/* inner (unfolded) screens: nearly square, ~700–900 css px wide */
+@media (min-width: 640px) and (max-width: 1000px) {
+  :root { --fs-h1: 44px; --fs-h2: 34px; --section: 88px; }
+  .nav-actions { display: flex; }
+  .hero-grid > .hero-wheel { order: 0; }
+  .hero { min-height: 0; padding: 40px 0 24px; }
+  .hero-grid { grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+  .hero-wheel { max-width: none; }
+  .hero-text h1 { max-width: none; }
+  .hero-cta .btn { width: auto; }
+  .hero-caption .row { display: flex; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .quote blockquote { font-size: 17px; }
+  .steps { grid-template-columns: repeat(3, 1fr); }
+  .preview-grid { grid-template-columns: 1fr; }
+  .checkout { grid-template-columns: 1fr; }
+  .account-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .nav-actions .btn-ghost { display: none; }
+  .nav-burger { display: inline-flex; margin-left: 12px; }
+}
+/* dual-screen / hinge: keep the hero columns on either side of the fold */
+@media (horizontal-viewport-segments: 2) {
+  .hero-grid { grid-template-columns: env(viewport-segment-width 0 0) env(viewport-segment-width 1 0); column-gap: calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0)); width: 100%; margin: 0; }
+  .hero-text { padding-left: var(--gutter); }
+  .hero-wheel { padding-right: var(--gutter); }
+  .preview-grid, .checkout, .account-grid, .inside-grid, .faq-grid { grid-template-columns: env(viewport-segment-width 0 0) env(viewport-segment-width 1 0); column-gap: calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0)); }
+}
+/* flex mode (half-folded, laptop posture): hero fits the upper segment */
+@media (vertical-viewport-segments: 2) {
+  .hero { min-height: env(viewport-segment-height 0 0); max-height: env(viewport-segment-height 0 0); overflow: hidden; }
+  .menu { max-height: env(viewport-segment-height 0 0); }
+}
+/* very short landscape phones */
+@media (max-height: 480px) and (orientation: landscape) {
+  .hero { min-height: 0; padding: 24px 0; }
+  .menu-links a { font-size: 22px; padding: 8px 0; }
+}
+

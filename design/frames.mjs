@@ -2,7 +2,7 @@
 import { chromium } from '@playwright/test';
 const [url, prefix, w = 1440, sel = ''] = process.argv.slice(2);
 const b = await chromium.connect(process.env.PW_TEST_CONNECT_WS_ENDPOINT);
-const ctx = await b.newContext({ viewport: { width: +w, height: 900 }, deviceScaleFactor: 1 });
+const ctx = await b.newContext({ locale: 'uk-UA', viewport: { width: +w, height: 900 }, deviceScaleFactor: 1 });
 const p = await ctx.newPage();
 const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && errs.push(m.text()));
 await p.goto(url, { waitUntil: 'domcontentloaded' });

@@ -11,10 +11,12 @@
         <a href="landing.html#faq">Допомога</a>
       </nav>
       <div class="nav-actions">
+        <span data-lang-slot="lang-nav"></span>
         <span class="small muted">oksana@gmail.com</span>
         <a class="btn btn-ghost btn-sm" href="landing.html">Вийти</a>
       </div>` : variant === 'flow' ? `
       <div class="nav-actions">
+        <span data-lang-slot="lang-nav"></span>
         <span class="small muted">Потрібна допомога? <a href="mailto:hi@natalka.app">hi@natalka.app</a></span>
       </div>` : `
       <nav class="nav-links">
@@ -24,12 +26,29 @@
         <a href="landing.html#faq">Питання</a>
       </nav>
       <div class="nav-actions">
+        <span data-lang-slot="lang-nav"></span>
         <a class="btn btn-ghost btn-sm" href="account.html">Увійти</a>
         <a class="btn btn-primary btn-sm" href="form.html">Побудувати карту</a>
       </div>`}
-      <button class="nav-burger" aria-label="Меню"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h14M3 10h14M3 14h14"/></svg></button>
+      <button class="nav-burger" aria-label="Меню" aria-expanded="false" aria-controls="menu"><span></span><span></span></button>
     </div>
-  </header>`;
+  </header>
+  <div class="menu" id="menu" aria-hidden="true">
+    <div class="menu-inner">
+      <nav class="menu-links">
+        <a href="landing.html#products">Продукти</a>
+        <a href="landing.html#how">Як це працює</a>
+        <a href="preview.html">Приклад розбору</a>
+        <a href="landing.html#faq">Питання</a>
+        <a href="account.html">Мої замовлення</a>
+      </nav>
+      <div class="menu-foot">
+        <span data-lang-slot="lang-menu"></span>
+        <a class="btn btn-primary btn-lg btn-block" href="form.html">Побудувати карту</a>
+        <a class="small muted" href="mailto:hi@natalka.app">hi@natalka.app</a>
+      </div>
+    </div>
+  </div>`;
 
   const FOOTER = `
   <footer class="footer">
@@ -52,12 +71,52 @@
           <ul><li><a href="mailto:hi@natalka.app">hi@natalka.app</a></li><li>Пн–Пт, 10:00–19:00 за Києвом</li><li><a href="#">Instagram</a> · <a href="#">TikTok</a></li></ul>
         </div>
       </div>
+      <div class="row between" style="margin-top:40px">
+        <span data-moon-now></span>
+        <span class="small muted">natalka.app</span>
+      </div>
       <div class="legal">
         <span>ФОП Іваненко Наталія Олегівна · РНОКПП 3141592653 · вул. Володимирська, 12, Київ, 01001</span>
         <span>Розбір має розважально-пізнавальний характер і не є медичною, психологічною чи фінансовою порадою.</span>
       </div>
+      <div class="footer-mark" aria-hidden="true">Natalka</div>
     </div>
   </footer>`;
+
+  // live Moon: low-precision Meeus, good to ~1° — enough for sign and phase
+  function moonNow(lang) {
+    const now = new Date(), JD = now / 86400000 + 2440587.5, T = (JD - 2451545) / 36525;
+    const rad = d => d * Math.PI / 180, norm = a => ((a % 360) + 360) % 360;
+    const Lp = 218.3164477 + 481267.88123421 * T, D = 297.8501921 + 445267.1114034 * T, M = 357.5291092 + 35999.0502909 * T, Mp = 134.9633964 + 477198.8675055 * T, F = 93.272 + 483202.0175233 * T;
+    const moon = norm(Lp + 6.289 * Math.sin(rad(Mp)) + 1.274 * Math.sin(rad(2 * D - Mp)) + 0.658 * Math.sin(rad(2 * D)) + 0.214 * Math.sin(rad(2 * Mp)) - 0.186 * Math.sin(rad(M)) - 0.114 * Math.sin(rad(2 * F)));
+    const sun = norm(280.46646 + 36000.76983 * T + 1.914602 * Math.sin(rad(M)) + 0.019993 * Math.sin(rad(2 * M)));
+    const phase = norm(moon - sun), lit = (1 - Math.cos(rad(phase))) / 2, waxing = phase < 180;
+    const sign = Math.floor(moon / 30);
+    const L = {
+      uk: { pre: 'Сьогодні Місяць у', signs: NATALKA.SIGNS_LOC, wax: 'зростає', wane: 'спадає', lit: 'освітлено' },
+      en: { pre: 'Tonight the Moon is in', signs: ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'], wax: 'waxing', wane: 'waning', lit: 'lit' },
+      pl: { pre: 'Dziś Księżyc', signs: ['w Baranie','w Byku','w Bliźniętach','w Raku','we Lwie','w Pannie','w Wadze','w Skorpionie','w Strzelcu','w Koziorożcu','w Wodniku','w Rybach'], wax: 'przybywa', wane: 'ubywa', lit: 'oświetlony' },
+    }[lang] || {};
+    // disc: lit side on the right while waxing, left while waning (northern hemisphere)
+    const r = 13, cx = 15, cy = 15, rx = Math.abs(r * Math.cos(rad(phase))).toFixed(2);
+    const gib = (waxing ? phase > 90 : phase < 270);
+    const path = waxing
+      ? `M${cx} ${cy - r}A${r} ${r} 0 0 1 ${cx} ${cy + r}A${rx} ${r} 0 0 ${gib ? 1 : 0} ${cx} ${cy - r}Z`
+      : `M${cx} ${cy - r}A${r} ${r} 0 0 0 ${cx} ${cy + r}A${rx} ${r} 0 0 ${gib ? 0 : 1} ${cx} ${cy - r}Z`;
+    const svg = `<svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.25)" stroke-width="1"/><path d="${path}" fill="#EAD7A6"/></svg>`;
+    const pct = Math.round(lit * 100);
+    return `${svg}<span><b>${L.pre} ${L.signs[sign]}</b> · ${waxing ? L.wax : L.wane}, ${L.lit} ${pct}% <span class="mono">${(moon % 30).toFixed(0).padStart(2, '0')}°</span></span>`;
+  }
+  function renderMoon() { const lang = document.documentElement.lang || 'uk'; document.querySelectorAll('[data-moon-now]').forEach(el => { el.className = 'moon-now'; el.setAttribute('data-no-i18n', ''); el.innerHTML = moonNow(lang); }); }
+  document.addEventListener('natalka:lang', renderMoon);
+
+  // zodiac marquee: glyph + sign name, doubled for a seamless loop
+  function marquee() {
+    document.querySelectorAll('[data-marquee]').forEach(el => {
+      const items = NATALKA.SIGNS.map((n, i) => `<span><i>${NATALKA.inlineGlyph(NATALKA.SIGN_PATHS[i])}</i>${n}</span>`).join('');
+      el.innerHTML = items + items;
+    });
+  }
 
   // star field: fixed canvas behind everything, subtle and static (no twinkle noise)
   function sky() {
@@ -86,5 +145,15 @@
     document.querySelectorAll('[data-nav]').forEach(el => { el.outerHTML = NAV(el.dataset.nav, el.dataset.variant); });
     document.querySelectorAll('[data-footer]').forEach(el => { el.outerHTML = FOOTER; });
     document.querySelectorAll('[data-logo]').forEach(el => el.innerHTML = NATALKA.logoMark());
+    marquee();
+    setTimeout(renderMoon, 0);   // after i18n picked the language
+    // mobile menu
+    const burger = document.querySelector('.nav-burger'), menu = document.getElementById('menu');
+    if (burger && menu) {
+      const toggle = open => { document.body.classList.toggle('menu-open', open); burger.setAttribute('aria-expanded', open); menu.setAttribute('aria-hidden', !open); };
+      burger.addEventListener('click', () => toggle(!document.body.classList.contains('menu-open')));
+      menu.addEventListener('click', e => { if (e.target.closest('a')) toggle(false); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false); });
+    }
   });
 })();

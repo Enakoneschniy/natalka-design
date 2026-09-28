@@ -13,7 +13,7 @@ const themes = ['dark'];
 mkdirSync(OUT, { recursive: true });
 const browser = await chromium.connect(process.env.PW_TEST_CONNECT_WS_ENDPOINT);
 for (const vp of viewports) {
-  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 2, isMobile: !!vp.mobile, hasTouch: !!vp.mobile, reducedMotion: 'reduce' });
+  const ctx = await browser.newContext({ locale: 'uk-UA', viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 2, isMobile: !!vp.mobile, hasTouch: !!vp.mobile, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
   for (const name of pages) for (const theme of themes) {
     await page.goto(`${BASE}${name}.html?toggle=0`, { waitUntil: 'networkidle' });

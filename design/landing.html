@@ -15,7 +15,7 @@
 <section class="hero">
   <div class="container hero-grid">
     <div class="hero-text">
-      <h1>Натальна карта, яку хочеться читати</h1>
+      <h1>Натальна карта, <em>яку хочеться читати</em></h1>
       <p class="lead">Введіть дату, час і місце народження — за хвилину побачите свою карту безкоштовно. Повний розбір на 25–40 сторінок приходить PDF на пошту.</p>
       <div class="hero-cta">
         <a class="btn btn-primary btn-lg" href="form.html">Побудувати карту безкоштовно</a>
@@ -43,9 +43,7 @@
   </div>
 </section>
 
-<div class="container"><div class="zodiac-strip" aria-hidden="true">
-  <i data-glyph="0"></i><i data-glyph="1"></i><i data-glyph="2"></i><i data-glyph="3"></i><i data-glyph="4"></i><i data-glyph="5"></i><i data-glyph="6"></i><i data-glyph="7"></i><i data-glyph="8"></i><i data-glyph="9"></i><i data-glyph="10"></i><i data-glyph="11"></i>
-</div></div>
+<div class="marquee" aria-hidden="true"><div class="marquee-track" data-marquee></div></div>
 
 <!-- what's inside -->
 <section class="section" id="inside">
@@ -181,23 +179,27 @@
 <!-- testimonials -->
 <section class="section" id="reviews">
   <div class="container">
-    <div class="section-title">
+    <div class="section-title center">
       <h2>Що кажуть після прочитання</h2>
     </div>
-    <div class="grid grid-3">
-      <figure class="card quote">
+    <div class="quotes" data-quotes>
+      <figure class="quote is-on">
+        <span class="quotes-mark">“</span>
         <blockquote>Я замовляла для себе й для чоловіка. Найцінніше — розділ про аспекти: там пояснили те, за що ми сваримося вже сім років, без жодної містики.</blockquote>
         <figcaption><strong>Марина, 34</strong><span class="muted">Львів</span><span data-badge="moon"></span></figcaption>
       </figure>
-      <figure class="card quote">
+      <figure class="quote">
+        <span class="quotes-mark">“</span>
         <blockquote>Читала у поїзді Варшава — Краків, 38 сторінок за дорогу. Написано як хороша книжка про мене, а не як гороскоп із журналу.</blockquote>
         <figcaption><strong>Олена, 29</strong><span class="muted">Краків</span><span data-badge="venus"></span></figcaption>
       </figure>
-      <figure class="card quote">
+      <figure class="quote">
+        <span class="quotes-mark">“</span>
         <blockquote>Дитячу карту брала для доньки. Порада «давайте їй закінчувати справи самій, навіть повільно» — це просто про неї. Роздрукувала і повісила на холодильник.</blockquote>
         <figcaption><strong>Катерина, 41</strong><span class="muted">Дніпро</span><span data-badge="mars"></span></figcaption>
       </figure>
     </div>
+    <div class="quotes-dots" data-quotes-dots></div>
   </div>
 </section>
 
@@ -254,9 +256,13 @@
 
 <script src="wheel.js"></script>
 <script src="chrome.js"></script>
+<script src="i18n/en.js"></script>
+<script src="i18n/pl.js"></script>
+<script src="i18n.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/DrawSVGPlugin.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.1/dist/lenis.min.js"></script>
 <script src="motion.js"></script>
 </body>
 </html>
