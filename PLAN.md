@@ -9,7 +9,15 @@ Owner decisions from the brief are treated as fixed and are not repeated here un
 |---|---|---|
 | `design/` | Claude Design export: 8 HTML screens, `tokens.css`, `base.css`, `wheel.js` (SVG chart renderer), `i18n/*.js` (12 languages), GSAP motion | **UI source of truth.** Tokens, layout and copy are ported into `apps/web`; the JS wheel becomes the reference for the Python SVG renderer. Kept as a static reference, not shipped. |
 | `index.html`, `package.json` | GitHub Pages redirect + Playwright screenshot tooling | Move under `design/`; root `package.json` becomes the monorepo root. |
-| *(missing)* `astro_build_pdf.py`, `astro_main_template.py`, `content_*.py`, `METHODOLOGY.md`, `STYLE_GUIDE.md` | Old «Астролог» pipeline | **Not in the repo.** Needed for: PDF styling reference (cover, QuoteBox, positions table), prompt methodology, forbidden-phrase list, and the `content_timeline.py` dates for the Kharkiv acceptance test. → Open question 1. |
+| `reference/astrolog/` | Old «Астролог» pipeline: `astro_build_pdf.py`, `astro_main_template.py`, `METHODOLOGY.md`, `STYLE_GUIDE.md`, `examples/` (one full Russian reading for 15.03.1986 22:25 Kharkiv) | Quality reference only. Never imported by product code. See §0.1 for what is carried over. |
+
+### 0.1 What the reference gives us
+
+- **Document structure** (from `examples/main.py`): cover → TOC → "Key positions" table → intro → Section I natal (9 numbered sub-sections, each `eyebrow + title + 2–5 paragraphs + optional quote`) → Section II love (5 H2 sub-sections) → Section III work & money (4 H2) → transit summary → Section IV transits by year (past episodes / now / monthly forecast for 3 years) → "Main takeaways" → P.S. practical tips. This becomes the `natal` document template in `packages/document` and the section list in `packages/texts`.
+- **PDF styling** (`astro_build_pdf.py`): A4, 2.2 cm margins, running header with client line + page number, footer motto, `HRule` with gold diamond, `QuoteBox` (tinted panel, gold left bar), eyebrow-over-title headings, key-positions table (navy header, cream zebra rows). Palette navy/ink/gold/rose/cream. **Decision:** inner pages keep this warm cream + navy + gold system (it prints well); the cover adopts the new dark design (navy sky, gold wheel) so PDF and site match — `design/pdf.html` already shows exactly this split. Fonts: DejaVu → Playfair Display / Golos Text / JetBrains Mono (vendored OFL files).
+- **Methodology** (`METHODOLOGY.md`): steps 2 and 5–6 (main lines of the chart, section contents, final checks) go into the prompts. Steps 1, 3, 4 (read positions from an image; "use your knowledge of orbits"; reconstruct past transits from memory) are replaced by the engine: positions, current transits, past episodes 12–14 years back and 3-year forecast are all computed with dates and fed to the model as JSON.
+- **Style guide**: tone rules, banned AI clichés, gender agreement and the "good / bad" examples are reused as-is. The "insider info" section and the paragraph about wartime / COVID context are dropped, as instructed. The banned-phrase list becomes the first validator rule set.
+- **Transit dates to verify** (from `examples/content_timeline.py`, natal Sun 24°55′ ♓, Venus 08°17′ ♈, Pluto 07°01′ ♏, MC 18°09′ ♌): Saturn ∘ Sun 11–15.02.2026, retro 20.09–10.10.2026; Saturn leaves Pisces 13.02.2027 *and* "enters Aries 25.11.2026" (the text contradicts itself); Uranus → Gemini 26.04.2026; Jupiter → Cancer 09.06.2026, → Leo 25.06.2027, ∘ MC 10–25.12.2027; Saturn ∘ Venus 15–22.12.2026; Pluto □ Pluto 27.01–05.02.2027, 15.08–05.09.2027, 10–20.11.2027; Saturn → Taurus 11.06.2027; Neptune ∘ Jupiter 2013–14; Uranus → Taurus 05.2018; Saturn return 12.2015 / 07.2016 / 09.2016. The engine test prints a table *claimed vs computed* — several of these look shifted by a year (e.g. Jupiter actually entered Cancer in June 2025), which is exactly the failure mode the engine exists to remove.
 
 ## 1. Target layout
 
@@ -74,7 +82,7 @@ Retention job: nightly `DELETE FROM charts/documents WHERE expires_at < now()` +
 
 ### Stage 3 — Document (this session)
 - `schema.py`: `Document{meta, cover, toc(auto), sections[{id, title, blocks[paragraph|subheading|quote|table|wheel|aspect-grid|page-break]}]}` as pydantic models + JSON Schema export. Texts are data, never code.
-- `render/`: ReportLab: cover (dark, gold wheel), running headers/footers, TOC, styles ported from `astro_build_pdf.py` once available (until then: `design/tokens.css` + `design/pdf.html`). Fonts: Playfair Display, Golos Text, JetBrains Mono (OFL, vendored).
+- `render/`: ReportLab: cover (dark, gold wheel), running headers/footers, TOC, `HRule`, `QuoteBox`, eyebrow headings and the key-positions table ported from `reference/astrolog/astro_build_pdf.py`; palette per §0.1. Fonts: Playfair Display, Golos Text, JetBrains Mono (OFL, vendored).
 - `wheel.py`: SVG renderer, port of `design/wheel.js` (same radii, collision avoidance, aspect colours) → `svglib` → ReportLab drawing; the same SVG is served to the web preview so both surfaces are pixel-consistent.
 - Test: render `examples/natal-uk.json` (Yevpatoria chart) → PDF with cover + positions + aspect grid + one text section; snapshot test on page count and text extraction.
 
@@ -115,7 +123,7 @@ forecast / synastry / child / bundle products (schema already supports them); pl
 
 ## 5. Open questions for you
 
-1. **Old pipeline files** — please add `astro_build_pdf.py`, `astro_main_template.py`, `content_*.py`, `METHODOLOGY.md`, `STYLE_GUIDE.md` to the repo (e.g. `reference/astrolog/`). Until then Stage 3 uses `design/pdf.html` as the style source, and the Kharkiv transit test asserts only the three dates you listed.
+1. ~~Old pipeline files~~ — **received**, now in `reference/astrolog/` (pycache stripped).
 2. **Legal entity for Stripe.** Stripe does not onboard Ukrainian entities. Which entity will hold the Stripe account (EU company, Stripe Atlas US LLC, other)? This decides tax registrations for Stripe Tax and the footer legal block (the mockup still shows a Ukrainian ФОП).
 3. **Prices in EUR** per product for the Stripe price objects (mockups use 19 / 14 / 16 / 14 / 29 € as placeholders). Confirm or give real numbers; also whether the bundle is one Stripe price or a Checkout with two line items.
 4. **50 Astro-Seek reference charts** — do you have them as a file? If not, I will generate the input list (varied years 1950–2020, latitudes incl. > 60°, DST edges) and you export Astro-Seek results, or I fetch them via their public pages if you're fine with that.
