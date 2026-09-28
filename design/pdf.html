@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Natalka — PDF: обкладинка і розворот</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="pages.css">
+</head>
+<body>
+<div data-nav="pdf" data-variant="app"></div>
+
+<main class="pdf-view">
+  <div class="container">
+    <h1>PDF-документ</h1>
+    <p class="lead">Обкладинка, сторінка з таблицею позицій і сторінка розбору. A4, ті самі шрифти й колесо, що й на сайті; PDF завжди світлий.</p>
+
+    <div class="sheets">
+      <!-- cover -->
+      <section class="sheet cover" aria-label="Обкладинка">
+        <div class="sheet-head"><span class="logo-sm"><span data-logo></span>Natalka</span><span class="mono">natalka.app</span></div>
+        <div class="cover-title">
+          <h2>Натальна карта</h2>
+          <div class="name">Оксана</div>
+          <dl class="kv">
+            <dt>Дата</dt><dd class="mono">14 травня 1992, 09:40</dd>
+            <dt>Місце</dt><dd>Київ, Україна <span class="mono">50°27′ пн. ш. 30°31′ сх. д.</span></dd>
+            <dt>Система</dt><dd>Плацидус, тропічний зодіак</dd>
+          </dl>
+        </div>
+        <div data-wheel="420" data-detail="full" data-responsive="true"></div>
+        <div class="sheet-foot"><span>Замовлення № 12441 · 28 вересня 2026</span><span class="mono">38 сторінок</span></div>
+      </section>
+
+      <!-- positions page -->
+      <section class="sheet" aria-label="Сторінка 3">
+        <div class="sheet-head"><span>1 · Ваша карта</span><span class="mono">3</span></div>
+        <span class="sec-num">1.2</span>
+        <h2 style="font-size:18px">Позиції планет</h2>
+        <p>Градус — положення всередині знака; дім — сфера життя, у якій планета проявляється. R — ретроградний рух: планета «повертається» до теми, а не проходить її з першого разу.</p>
+        <div data-positions data-highlight="sun"></div>
+        <h3>Сітка аспектів</h3>
+        <div class="cols" style="align-items:start">
+          <div data-aspects></div>
+          <p class="small" style="font-size:9.5px;color:#5E6382">Напружені аспекти позначені червоним, гармонійні — синім, з'єднання — сірим. Орби: 8° для з'єднань і опозицій, 7° для тригонів і квадратів, 5° для секстилів.</p>
+        </div>
+        <div class="sheet-foot"><span>Оксана · Натальна карта</span><span class="mono">3 / 38</span></div>
+      </section>
+
+      <!-- reading page -->
+      <section class="sheet" aria-label="Сторінка 9">
+        <div class="sheet-head"><span>2 · Ядро особистості</span><span class="mono">9</span></div>
+        <span class="sec-num">2.1</span>
+        <h2 style="font-size:18px">Сонце у Тельці, десятий дім</h2>
+        <div class="row" style="gap:6px;margin-bottom:10px"><span data-badge="sun" data-deg="true"></span><span class="badge">10-й дім</span></div>
+        <p>Сонце в Тельці — про потребу в ґрунті під ногами. Ви не поспішаєте, і це не повільність, а спосіб робити добре. Речі, які ви робите, залишаються: стосунки, проєкти, звички. Вам важливо, щоб результат можна було торкнутися.</p>
+        <p>Десятий дім переносить це у видиму частину життя — репутацію, професію, те, за що вас пам'ятають. Ви будуєте кар'єру так само, як усе інше: шар за шаром, і тому вона тримається навіть тоді, коли навколо все рухається.</p>
+        <div class="pull">
+          <span class="mono">Сонце тригон Уран · орб 1°17′</span>
+          Ви консервативна у методах, але не в цілях. Раз на кілька років ви робите крок, якого від вас ніхто не чекав, — і саме він визначає наступний етап.
+        </div>
+        <h3>Що з цим робити</h3>
+        <p>Обирайте справи, де важлива тривалість, — і залишайте собі право на один різкий крок на рік. Не намагайтеся прискорити себе: ваша швидкість — це і є ваша перевага. Але й не називайте страх обережністю: Телець уміє чекати, а Уран — ні.</p>
+        <p>Найгірше для вас — ситуація, де результат не залежить від старання. Найкраще — довгий проєкт із видимим прогресом і власним куточком, у якому ніхто нічого не переставляє.</p>
+        <div class="sheet-foot"><span>Оксана · Натальна карта</span><span class="mono">9 / 38</span></div>
+      </section>
+
+      <!-- section opener -->
+      <section class="sheet" aria-label="Сторінка 13">
+        <div class="sheet-head"><span>3 · Планети в знаках і домах</span><span class="mono">13</span></div>
+        <div style="margin-top:30mm">
+          <span class="sec-num">Розділ 3</span>
+          <h2 style="font-size:26px;max-width:80%">Планети в знаках і домах</h2>
+          <p style="margin-top:12px;max-width:85%">Як ви думаєте, любите, дієте, вчитеся й відпочиваєте — по одній планеті на тему. Кожна сторінка починається з позиції та закінчується тим, що з нею робити.</p>
+        </div>
+        <ul style="margin-top:22px;display:grid;gap:5px;font-size:10px">
+          <li class="row between" style="gap:8px"><span data-badge="mercury" data-deg="true"></span><span class="mono">14</span></li>
+          <li class="row between" style="gap:8px"><span data-badge="venus" data-deg="true"></span><span class="mono">16</span></li>
+          <li class="row between" style="gap:8px"><span data-badge="mars" data-deg="true"></span><span class="mono">18</span></li>
+          <li class="row between" style="gap:8px"><span data-badge="jupiter" data-deg="true"></span><span class="mono">20</span></li>
+          <li class="row between" style="gap:8px"><span data-badge="saturn" data-deg="true"></span><span class="mono">22</span></li>
+        </ul>
+        <div style="margin-top:auto;width:52%;align-self:flex-end"><div data-wheel="220" data-detail="compact" data-responsive="true" data-highlight="venus"></div></div>
+        <div class="sheet-foot"><span>Оксана · Натальна карта</span><span class="mono">13 / 38</span></div>
+      </section>
+    </div>
+    <p class="sheet-note">Сторінки показані в масштабі. У друкованому PDF: A4, поля 14 мм, Golos Text 10,5 pt / 15,5 pt, Unbounded для заголовків, JetBrains Mono для градусів.</p>
+  </div>
+</main>
+
+<script src="wheel.js"></script>
+<script src="chrome.js"></script>
+</body>
+</html>

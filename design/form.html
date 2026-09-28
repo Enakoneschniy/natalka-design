@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Natalka — дані народження</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="pages.css">
+</head>
+<body>
+<div data-nav="form" data-variant="flow"></div>
+
+<main class="flow">
+  <div class="container narrow">
+    <div class="flow-head">
+      <div class="stepper" aria-label="Крок 1 з 3">
+        <span class="st is-active"><span class="n">1</span><span>Дані народження</span></span>
+        <span class="sep"></span>
+        <span class="st"><span class="n">2</span><span>Безкоштовне превʼю</span></span>
+        <span class="sep"></span>
+        <span class="st"><span class="n">3</span><span>Оплата</span></span>
+      </div>
+    </div>
+
+    <h1>Дані народження</h1>
+    <p class="lead" style="margin-top:12px">Чим точніше — тим точніша карта. Усе, крім часу, обов'язкове.</p>
+
+    <form class="form" onsubmit="return false">
+      <div class="card">
+        <div class="field">
+          <label class="label" for="name">Ім'я</label>
+          <input class="input" id="name" value="Оксана" autocomplete="given-name">
+          <span class="hint">Так ми звертатимемось до вас у розборі</span>
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label class="label" for="date">Дата народження</label>
+            <input class="input mono" id="date" value="14.05.1992" inputmode="numeric" placeholder="дд.мм.рррр">
+          </div>
+          <div class="field">
+            <label class="label" for="time">Час народження</label>
+            <input class="input mono" id="time" value="09:40" inputmode="numeric" placeholder="гг:хх">
+            <span class="hint">За місцевим часом місця народження</span>
+          </div>
+        </div>
+
+        <div class="stack">
+          <label class="check"><input type="checkbox" id="notime"><span class="box"><svg viewBox="0 0 14 14" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5l3 3 6-7"/></svg></span><span>Не знаю точного часу народження</span></label>
+          <div class="explain">
+            <strong>Що зміниться без часу.</strong> Ми побудуємо карту на полудень: позиції Сонця, планет і аспекти залишаться точними, але ми не зможемо розрахувати <strong>доми</strong> та <strong>Асцендент</strong>. Відповідні розділи в розборі будуть пропущені, ціна не зміниться. Час часто вказаний у довідці з пологового або в медичній картці.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label class="label" for="city">Місто народження</label>
+          <div class="input-wrap">
+            <input class="input is-focus" id="city" value="Київ" autocomplete="off" aria-expanded="true" aria-controls="city-list">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L17 17"/></svg>
+            <ul class="suggest" id="city-list" role="listbox">
+              <li role="option" aria-selected="true"><span>Київ</span><span class="muted">Україна</span></li>
+              <li role="option"><span>Кийлів</span><span class="muted">Київська обл.</span></li>
+              <li role="option"><span>Kyiv</span><span class="muted">англійською</span></li>
+            </ul>
+          </div>
+          <div class="geo" style="margin-top:160px">
+            <span>50°27′ пн. ш.</span>
+            <span>30°31′ сх. д.</span>
+            <span>Europe/Kyiv · UTC+3 (1992: +4)</span>
+          </div>
+          <span class="hint">Координати й часовий пояс визначаємо автоматично, з урахуванням переходів на літній час у рік народження</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label class="label" for="email">Електронна пошта</label>
+          <div class="input-wrap">
+            <input class="input is-success" id="email" type="email" value="oksana@gmail.com" autocomplete="email">
+            <svg class="input-icon ok" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>
+          </div>
+          <span class="hint">Сюди надішлемо PDF і посилання на кабінет</span>
+        </div>
+
+        <div class="field">
+          <span class="label">Як до вас звертатися в тексті</span>
+          <div class="segmented block" role="group" aria-label="Стать">
+            <button type="button" aria-pressed="true">Жінка</button>
+            <button type="button" aria-pressed="false">Чоловік</button>
+            <button type="button" aria-pressed="false">Нейтрально</button>
+          </div>
+          <span class="hint">Впливає лише на форму слів у розборі: «схильна» чи «схильний». Ні на що інше</span>
+        </div>
+      </div>
+
+      <div class="form-foot">
+        <button class="btn btn-primary btn-lg" type="submit">Побудувати карту</button>
+        <span class="caption">Безкоштовно. Ви побачите карту одразу, оплата — лише за повний розбір.</span>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script src="wheel.js"></script>
+<script src="chrome.js"></script>
+</body>
+</html>

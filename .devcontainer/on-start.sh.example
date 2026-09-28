@@ -1,0 +1,4 @@
+#!/bin/bash
+# Runs as `node` in the project dir before remote-control starts.
+# Rename to on-start.sh and chmod +x to enable.
+[ -f package.json ] && npm ci || true

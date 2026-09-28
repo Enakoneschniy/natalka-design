@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Natalka — дизайн-макети</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="base.css">
+<style>
+  .list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 32px; }
+  .list a { display: flex; flex-direction: column; gap: 6px; padding: 22px 24px; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface); color: var(--text); }
+  .list a:hover { border-color: var(--accent); text-decoration: none; }
+  .list a strong { font-weight: 600; }
+  .list a span { font-size: var(--fs-small); color: var(--text-2); }
+  .list a .n { font-family: var(--font-mono); font-size: 13px; color: var(--text-3); }
+  @media (max-width: 720px) { .list { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="nav"><div class="container"><a class="logo" href="index.html"><span data-logo></span>Natalka</a><nav class="nav-links"><a aria-current="page">Макети</a><a href="components.html">Компоненти</a></nav></div></header>
+<main class="section">
+  <div class="container">
+    <h1 style="font-size:40px">Natalka — макети</h1>
+    <p class="lead" style="margin-top:12px;max-width:640px">Сім екранів, компоненти, світла й темна тема. Додайте <span class="mono">?theme=dark</span> до адреси або натисніть перемикач у куті. Скриншоти 1440 / 390 — у <span class="mono">screenshots/</span>.</p>
+    <div class="list">
+      <a href="landing.html"><span class="n">1</span><strong>Лендинг</strong><span>Hero з колесом, що входить у розбір, продукти, як це працює, відгуки, FAQ, футер</span></a>
+      <a href="form.html"><span class="n">2</span><strong>Форма вводу</strong><span>Ім'я, дата, час і «не знаю часу», місто з координатами, пошта, звертання</span></a>
+      <a href="preview.html"><span class="n">3</span><strong>Безкоштовне превʼю</strong><span>Колесо, таблиця позицій, сітка аспектів, ядро карти, розмиті сторінки й кнопка оплати</span></a>
+      <a href="checkout.html"><span class="n">4</span><strong>Оплата</strong><span>Apple Pay / Google Pay / картка, зведення замовлення, згода з офертою</span></a>
+      <a href="generating.html"><span class="n">5</span><strong>Генерація</strong><span>Три етапи, прогрес, «можна закрити вкладку»</span></a>
+      <a href="account.html"><span class="n">6</span><strong>Кабінет</strong><span>Замовлення, завантаження PDF, допродаж без повторного вводу</span></a>
+      <a href="pdf.html"><span class="n">7</span><strong>PDF</strong><span>Обкладинка, сторінка позицій, сторінка розбору, шмуцтитул розділу</span></a>
+      <a href="components.html"><span class="n">—</span><strong>Компоненти</strong><span>Кольори, типографіка, кнопки, стани поля, картка, бейдж, таблиця, колесо ×3</span></a>
+    </div>
+  </div>
+</main>
+<script src="wheel.js"></script>
+</body>
+</html>

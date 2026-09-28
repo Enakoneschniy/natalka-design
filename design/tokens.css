@@ -1,0 +1,140 @@
+/* Natalka — design tokens
+   Light theme by default, dark via [data-theme="dark"] on <html>. */
+
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* surfaces & text */
+  --bg: #F7F8FC;
+  --surface: #FFFFFF;
+  --surface-2: #F1F3FA;
+  --text: #14172B;
+  --text-2: #5E6382;
+  --text-3: #6F7393;
+  --line: #DCDFEE;
+  --line-strong: #C4C8DE;
+
+  /* the only UI accent */
+  --accent: #2B47E0;
+  --accent-hover: #2138B8;
+  --accent-soft: #E7EBFC;
+  --accent-text-on: #FFFFFF;
+  --focus: 0 0 0 3px rgba(43, 71, 224, 0.28);
+
+  /* astrology-only warm accent */
+  --astro: #E8934A;
+  --astro-soft: #FDF0E3;
+
+  /* elements */
+  --fire: #D9553A;
+  --earth: #4C8A49;
+  --air: #3B8BD6;
+  --water: #6B5BD2;
+  --fire-soft: rgba(217, 85, 58, 0.10);
+  --earth-soft: rgba(76, 138, 73, 0.10);
+  --air-soft: rgba(59, 139, 214, 0.10);
+  --water-soft: rgba(107, 91, 210, 0.10);
+
+  /* aspects */
+  --aspect-tense: #D9553A;
+  --aspect-harmonic: #2B47E0;
+  --aspect-neutral: #9A9EBB;
+
+  /* states */
+  --danger: #BD2E27;
+  --danger-soft: #FBE9E7;
+  --success: #276F45;
+  --success-soft: #E4F3EA;
+
+  /* wheel */
+  --wheel-line: #C4C8DE;
+  --wheel-line-strong: #14172B;
+  --wheel-glyph: #14172B;
+  --wheel-face: #FFFFFF;
+  --wheel-ring: #F7F8FC;
+
+  /* shape */
+  --r-field: 10px;
+  --r-card: 16px;
+  --r-pill: 999px;
+  --shadow-selected: 0 12px 32px rgba(20, 23, 43, 0.12), 0 2px 6px rgba(20, 23, 43, 0.06);
+
+  /* type */
+  --font-display: 'Unbounded', 'Golos Text', system-ui, sans-serif;
+  --font-text: 'Golos Text', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --fs-h1: 56px;
+  --fs-h2: 36px;
+  --fs-h3: 24px;
+  --fs-h4: 18px;
+  --fs-body: 17px;
+  --fs-small: 15px;
+  --fs-caption: 13px;
+
+  --lh-display: 1.12;
+  --lh-body: 1.55;
+
+  /* layout */
+  --container: 1200px;
+  --gutter: 24px;
+  --section: 112px;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0F1120;
+  --surface: #171A2E;
+  --surface-2: #1D2137;
+  --text: #EEF0F8;
+  --text-2: #A3A8C6;
+  --text-3: #6C7194;
+  --line: #2A2E48;
+  --line-strong: #3A3F5E;
+
+  --accent: #6B82F0;
+  --accent-hover: #8397F3;
+  --accent-soft: #1F2648;
+  --accent-text-on: #0F1120;
+  --focus: 0 0 0 3px rgba(107, 130, 240, 0.4);
+
+  --astro: #E8934A;
+  --astro-soft: #3A2A1C;
+
+  --fire-soft: rgba(217, 85, 58, 0.18);
+  --earth-soft: rgba(76, 138, 73, 0.18);
+  --air-soft: rgba(59, 139, 214, 0.18);
+  --water-soft: rgba(107, 91, 210, 0.18);
+
+  --aspect-tense: #E5715A;
+  --aspect-harmonic: #6B82F0;
+  --aspect-neutral: #6C7194;
+
+  --danger: #E5715A;
+  --danger-soft: #3A211E;
+  --success: #5DBB82;
+  --success-soft: #1B3326;
+
+  --wheel-line: #3A3F5E;
+  --wheel-line-strong: #EEF0F8;
+  --wheel-glyph: #EEF0F8;
+  --wheel-face: #171A2E;
+  --wheel-ring: #1D2137;
+
+  --shadow-selected: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(107, 130, 240, 0.35);
+
+  color-scheme: dark;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --fs-h1: 34px;
+    --fs-h2: 26px;
+    --fs-h3: 20px;
+    --fs-h4: 17px;
+    --fs-body: 16px;
+    --gutter: 20px;
+    --section: 64px;
+  }
+}

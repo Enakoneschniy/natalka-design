@@ -1,0 +1,8 @@
+# --- devcontainer (appended to project .gitignore by new-project.sh) ---
+.devcontainer/.env
+.devcontainer/docker-compose.override.yml
+.devcontainer/on-start.sh
+.mcp.json
+.manager/
+node_modules/
+.impeccable/

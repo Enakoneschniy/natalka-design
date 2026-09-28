@@ -1,0 +1,32 @@
+# Lives in <project>/.devcontainer/; the project root is ../
+# Per-project extras (ssh-agent socket, account secrets) are generated into
+# docker-compose.override.yml by new-project.sh / project-secrets.sh.
+name: ${PROJECT_NAME}
+services:
+  agent:
+    build: .
+    image: proj-${PROJECT_NAME}:latest
+    container_name: ${PROJECT_NAME}
+    hostname: ${PROJECT_NAME}            # shown as the machine name in claude.ai/code
+    restart: unless-stopped
+    environment:
+      - PROJECT_NAME=${PROJECT_NAME}
+      - AGENT_WORKDIR=/workspace/${PROJECT_NAME}
+      - WORKLOG_CLIENT=${CLIENT:-}        # non-empty → hooks log every turn to /worklog (see worklog project)
+    working_dir: /workspace/${PROJECT_NAME}
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID, CHOWN, DAC_OVERRIDE]   # root stage of entrypoint only (gosu + reading /run/secrets)
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 1024
+    mem_limit: 3g          # host protection; project may raise it in override
+    cpus: 4
+    networks: [agents]
+    volumes:
+      - ../:/workspace/${PROJECT_NAME}
+      - /home/yevhenii/agent-home/claude:/home/node/.claude
+      - /home/yevhenii/agent-home/ssh/known_hosts:/home/node/.ssh/known_hosts:ro
+      - /home/yevhenii/agent-home/ssh/config:/home/node/.ssh/config:ro
+      - /home/yevhenii/agent-home/ssh/pub:/home/node/.ssh/pub:ro
+      - /home/yevhenii/secrets/projects/${PROJECT_NAME}.env:/run/secrets/project.env:ro
+networks:
+  agents: {external: true}

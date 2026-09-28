@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Natalka — компоненти</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="base.css">
+<style>
+  .spec { padding: 48px 0; }
+  .spec + .spec { border-top: 1px solid var(--line); }
+  .spec h2 { margin-bottom: 8px; }
+  .spec > .container > p { color: var(--text-2); margin-bottom: 32px; max-width: 640px; }
+  .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .sw { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+  .sw .c { height: 72px; }
+  .sw .m { padding: 10px 12px; font-size: 13px; }
+  .sw .m span { display: block; font-family: var(--font-mono); color: var(--text-2); font-size: 12px; }
+  .demo-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .demo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px 32px; }
+  .demo-grid .field { max-width: 360px; }
+  .type-sample > div { padding: 14px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: baseline; }
+  .type-sample .caption { font-family: var(--font-mono); }
+  .wheels { display: flex; gap: 48px; align-items: flex-end; flex-wrap: wrap; }
+  .wheels > div { text-align: center; }
+  .wheels .caption { margin-top: 12px; }
+  @media (max-width: 720px) { .swatches { grid-template-columns: repeat(3, 1fr); } .demo-grid { grid-template-columns: 1fr; } .type-sample > div { grid-template-columns: 1fr; gap: 6px; } }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="container">
+    <a class="logo" href="index.html"><span data-logo></span>Natalka</a>
+    <nav class="nav-links"><a href="index.html">Усі екрани</a><a aria-current="page">Компоненти</a></nav>
+  </div>
+</header>
+
+<section class="spec">
+  <div class="container">
+    <h2>Кольори</h2>
+    <p>Один UI-акцент — кобальт. Абрикос належить лише астрологічним об'єктам: Сонцю, виділеній планеті, маркеру дати.</p>
+    <div class="swatches">
+      <div class="sw"><div class="c" style="background:var(--bg)"></div><div class="m">Фон<span>--bg</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--surface)"></div><div class="m">Поверхня<span>--surface</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--text)"></div><div class="m">Текст<span>--text</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--text-2)"></div><div class="m">Вторинний<span>--text-2</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--line)"></div><div class="m">Лінії<span>--line</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--accent)"></div><div class="m">Кобальт<span>--accent</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--accent-soft)"></div><div class="m">Підложка<span>--accent-soft</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--astro)"></div><div class="m">Абрикос · астро<span>--astro</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--fire)"></div><div class="m">Вогонь<span>--fire</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--earth)"></div><div class="m">Земля<span>--earth</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--air)"></div><div class="m">Повітря<span>--air</span></div></div>
+      <div class="sw"><div class="c" style="background:var(--water)"></div><div class="m">Вода<span>--water</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="container">
+    <h2>Типографіка</h2>
+    <p>Unbounded для заголовків, Golos Text для тексту та інтерфейсу, JetBrains Mono для градусів, координат і часу.</p>
+    <div class="type-sample">
+      <div><span class="caption">Unbounded 500 · 56/1.12</span><h1>Натальна карта, яку хочеться читати</h1></div>
+      <div><span class="caption">Unbounded 500 · 36</span><h2>Що входить у розбір</h2></div>
+      <div><span class="caption">Unbounded 400 · 24</span><h3>Сонце у Тельці — ваша опора</h3></div>
+      <div><span class="caption">Golos Text 600 · 18</span><h4>Планети в знаках і домах</h4></div>
+      <div><span class="caption">Golos Text 400 · 17/1.55</span><p>Ви цінуєте стабільність і вмієте доводити справи до кінця. Їжа, дотик, ґрунт під ногами — для вас це не дрібниці, а спосіб відчути себе вдома. Ґречність і послідовність — ваші тихі сильні сторони.</p></div>
+      <div><span class="caption">JetBrains Mono 400 · 16</span><p class="mono">24°24′ ♉ · 50°27′ пн. ш. 30°31′ сх. д. · UTC+3 · 09:40</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="container">
+    <h2>Кнопки</h2>
+    <p>Висота 52 px, радіус 10 px. Один основний колір; чорна кнопка — лише для Apple Pay / Google Pay.</p>
+    <div class="stack">
+      <div class="demo-row">
+        <button class="btn btn-primary">Побудувати карту</button>
+        <button class="btn btn-secondary">Подивитись приклад PDF</button>
+        <button class="btn btn-soft">Обрати</button>
+        <button class="btn btn-ghost">Увійти</button>
+        <button class="btn btn-pay">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.3.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.5 0 2 .8 3.3.8 1.4 0 2.2-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM15 5.1c.7-.8 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>
+          Pay
+        </button>
+      </div>
+      <div class="demo-row">
+        <button class="btn btn-primary btn-lg">Отримати повний розбір — 790 грн</button>
+        <button class="btn btn-primary btn-sm">Завантажити PDF</button>
+        <button class="btn btn-secondary btn-sm">Скасувати</button>
+      </div>
+      <div class="demo-row">
+        <button class="btn btn-primary" style="box-shadow: var(--focus)">Фокус</button>
+        <button class="btn btn-primary is-loading">Оплатити</button>
+        <button class="btn btn-primary" disabled>Недоступно</button>
+        <button class="btn btn-secondary" disabled>Недоступно</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="container">
+    <h2>Поле вводу — усі стани</h2>
+    <p>Висота 52 px, підпис над полем, підказка під полем. Помилка описує, що саме виправити.</p>
+    <div class="demo-grid">
+      <div class="field"><label class="label">Спокій</label><input class="input" placeholder="Ваше ім'я"><span class="hint">Як до вас звертатися в розборі</span></div>
+      <div class="field"><label class="label">Наведення</label><input class="input" placeholder="Ваше ім'я" style="border-color:var(--text-3)"></div>
+      <div class="field"><label class="label">Фокус</label><input class="input is-focus" value="Окса"></div>
+      <div class="field"><label class="label">Заповнене</label><input class="input" value="Оксана"></div>
+      <div class="field"><label class="label">Помилка</label><input class="input is-error mono" value="31.02.1992"><span class="hint is-error">Такої дати не існує. Перевірте день і місяць</span></div>
+      <div class="field"><label class="label">Перевірено</label><div class="input-wrap"><input class="input is-success" value="oksana@gmail.com"><svg class="input-icon ok" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></div><span class="hint is-success">Сюди надішлемо PDF</span></div>
+      <div class="field"><label class="label">Неактивне</label><input class="input is-disabled" value="09:40" disabled><span class="hint">Час невідомий — поле вимкнено</span></div>
+      <div class="field"><label class="label">Моно · час</label><input class="input mono" value="09:40" placeholder="гг:хх"></div>
+      <div class="field"><label class="label">Необов'язкове <span class="opt">необов'язково</span></label><input class="input" placeholder="Промокод"></div>
+    </div>
+    <div class="stack" style="margin-top:32px;max-width:520px">
+      <label class="check"><input type="checkbox" checked><span class="box"><svg viewBox="0 0 14 14" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5l3 3 6-7"/></svg></span><span>Не знаю точного часу народження</span></label>
+      <label class="check"><input type="checkbox"><span class="box"><svg viewBox="0 0 14 14" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5l3 3 6-7"/></svg></span><span>Погоджуюсь з <a href="#">публічною офертою</a></span></label>
+      <div class="segmented"><button aria-pressed="true">Жінка</button><button>Чоловік</button><button>Не вказувати</button></div>
+    </div>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="container">
+    <h2>Картка продукту</h2>
+    <p>Рамка 1 px, радіус 16 px. Єдина тінь у системі — на обраній картці.</p>
+    <div class="grid grid-3" style="max-width:960px">
+      <div class="card product">
+        <h3>Натальна карта</h3>
+        <p class="meta">25–40 сторінок · PDF на пошту</p>
+        <ul><li>Сонце, Місяць, Асцендент</li><li>Планети в знаках і домах</li><li>Аспекти та їхні прояви</li></ul>
+        <div class="spacer"></div>
+        <div class="price">790<small>грн</small></div>
+        <button class="btn btn-soft btn-block">Обрати</button>
+      </div>
+      <div class="card product is-selected">
+        <span class="tag">Обрано</span>
+        <h3>Натальна карта</h3>
+        <p class="meta">25–40 сторінок · PDF на пошту</p>
+        <ul><li>Сонце, Місяць, Асцендент</li><li>Планети в знаках і домах</li><li>Аспекти та їхні прояви</li></ul>
+        <div class="spacer"></div>
+        <div class="price">790<small>грн</small></div>
+        <button class="btn btn-primary btn-block">Обрано</button>
+      </div>
+      <div class="card product">
+        <h3>Повний розбір</h3>
+        <p class="meta">Карта + прогноз + сумісність</p>
+        <ul><li>Три документи одразу</li><li>Дані вводите один раз</li></ul>
+        <div class="spacer"></div>
+        <div class="price">1190<small>грн</small><s>2070</s></div>
+        <button class="btn btn-soft btn-block">Обрати</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="container">
+    <h2>Бейдж</h2>
+    <p>Планета, знак у кольорі стихії, за потреби — градус. Абрикосова підложка — тільки для Сонця або виділеного об'єкта.</p>
+    <div class="demo-row">
+      <span data-badge="sun"></span>
+      <span data-badge="moon"></span>
+      <span data-badge="asc"></span>
+      <span data-badge="venus" data-deg="true"></span>
+      <span data-badge="sun" data-deg="true" data-astro="true"></span>
+      <span data-badge="mars"></span>
+      <span data-badge="saturn"></span>
+    </div>
+    <div class="demo-row" style="margin-top:16px">
+      <span class="badge badge-status ok">Готово</span>
+      <span class="badge badge-status wait">Генерується</span>
+      <span class="badge badge-status err">Помилка оплати</span>
+    </div>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="container">
+    <h2>Таблиця позицій і сітка аспектів</h2>
+    <p>Виділений рядок — абрикосова підложка. R — ретроградність. Напружені аспекти червоні, гармонійні — кобальт, з'єднання — нейтральні.</p>
+    <div class="grid" style="grid-template-columns: 1fr auto; gap: 48px; align-items: start">
+      <div class="card" style="padding:16px 8px" data-positions data-highlight="sun"></div>
+      <div data-aspects></div>
+    </div>
+  </div>
+</section>
+
+<section class="spec">
+  <div class="container">
+    <h2>Колесо карти у трьох розмірах</h2>
+    <p>Один компонент, побудований з даних. Повна деталізація для hero і PDF, компактна для превʼю та кабінету, знак для карток і аватарів.</p>
+    <div class="wheels">
+      <div><div data-wheel="520" data-detail="full"></div><span class="caption">520 px · повне: градуси, доми, аспекти, підписи</span></div>
+      <div><div data-wheel="260" data-detail="compact"></div><span class="caption">260 px · компактне</span></div>
+      <div><div data-wheel="96" data-detail="mark"></div><span class="caption">96 px · знак</span></div>
+    </div>
+  </div>
+</section>
+
+<script src="wheel.js"></script>
+</body>
+</html>

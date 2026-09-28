@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Natalka — мої замовлення</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="pages.css">
+</head>
+<body>
+<div data-nav="account" data-variant="app"></div>
+
+<main class="account">
+  <div class="container">
+    <div class="account-head">
+      <div>
+        <h1>Мої замовлення</h1>
+        <p class="muted" style="margin-top:8px">Документи зберігаються тут назавжди. Посилання з листа теж працюють.</p>
+      </div>
+    </div>
+
+    <div class="account-grid">
+      <div>
+        <div class="card person" style="margin-bottom:24px">
+          <div data-wheel="96" data-detail="mark"></div>
+          <div>
+            <div class="row">
+              <strong style="font-size:18px">Оксана</strong>
+              <span data-badge="sun" data-astro="true"></span>
+            </div>
+            <dl class="kv">
+              <dt>Народження</dt><dd class="mono">14.05.1992 · 09:40</dd>
+              <dt>Місце</dt><dd>Київ, Україна <span class="mono muted">50°27′ пн. ш. 30°31′ сх. д.</span></dd>
+            </dl>
+          </div>
+          <a class="small" href="form.html" style="margin-left:auto;align-self:flex-start">Змінити</a>
+        </div>
+
+        <div class="orders">
+          <div class="card order">
+            <div>
+              <div class="title">Натальна карта <span class="badge badge-status ok">Готово</span></div>
+              <div class="meta"><span>№ 12441</span><span>28.09.2026</span><span>38 сторінок · PDF 4,2 МБ</span></div>
+            </div>
+            <span class="price num">790 грн</span>
+            <a class="btn btn-primary btn-sm" href="pdf.html">Завантажити PDF</a>
+          </div>
+          <div class="card order">
+            <div>
+              <div class="title">Прогноз на 12 місяців <span class="badge badge-status wait">Генерується</span></div>
+              <div class="meta"><span>№ 12442</span><span>28.09.2026</span><span>Готово приблизно за 8 хв</span></div>
+            </div>
+            <span class="price num">590 грн</span>
+            <a class="btn btn-secondary btn-sm" href="generating.html">Показати прогрес</a>
+          </div>
+        </div>
+
+        <section class="upsell">
+          <h2 style="font-size:28px">Додати до вашої карти</h2>
+          <p class="muted" style="margin-top:8px">Дані вже збережені — вводити нічого не треба. Кожен документ приходить окремим PDF.</p>
+          <div class="grid grid-2">
+            <div class="card product">
+              <h3>Сумісність</h3>
+              <p class="meta">Ваша карта + карта партнера · 20–30 сторінок</p>
+              <p>Де ви підсилюєте одне одного, де виникає тертя і як домовлятися. Потрібні лише дані другої людини.</p>
+              <div class="spacer"></div>
+              <div class="row between">
+                <div class="price">690<small>грн</small></div>
+                <a class="btn btn-soft" href="checkout.html">Замовити</a>
+              </div>
+            </div>
+            <div class="card product">
+              <h3>Дитяча карта</h3>
+              <p class="meta">Для батьків · 20–30 сторінок</p>
+              <p>Темперамент і потреби дитини, як вона вчиться й відпочиває, що її ранить і що надихає.</p>
+              <div class="spacer"></div>
+              <div class="row between">
+                <div class="price">590<small>грн</small></div>
+                <a class="btn btn-soft" href="form.html">Замовити</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side">
+        <div class="card">
+          <h2 class="h4">Обліковий запис</h2>
+          <ul>
+            <li><span class="muted">Пошта</span><span>oksana@gmail.com</span></li>
+            <li><span class="muted">Вхід</span><span>за посиланням з листа</span></li>
+            <li><span class="muted">Замовлень</span><span class="num">2</span></li>
+          </ul>
+          <a class="small" href="#" style="display:inline-block;margin-top:12px">Видалити дані народження</a>
+        </div>
+        <div class="card">
+          <h2 class="h4">Не прийшов лист?</h2>
+          <p class="small muted">Перевірте «Спам» або «Промоакції». Документ завжди можна завантажити звідси.</p>
+          <a class="small" href="mailto:hi@natalka.app">Написати в підтримку</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<div data-footer></div>
+
+<script src="wheel.js"></script>
+<script src="chrome.js"></script>
+</body>
+</html>
