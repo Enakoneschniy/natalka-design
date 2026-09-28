@@ -17,7 +17,6 @@
       </div>` : variant === 'flow' ? `
       <div class="nav-actions">
         <span data-lang-slot="lang-nav"></span>
-        <span class="small muted">Потрібна допомога? <a href="mailto:hi@natalka.app">hi@natalka.app</a></span>
       </div>` : `
       <nav class="nav-links">
         <a href="landing.html#products" ${active === 'products' ? 'aria-current="page"' : ''}>Продукти</a>
@@ -96,6 +95,14 @@
       uk: { pre: 'Сьогодні Місяць у', signs: NATALKA.SIGNS_LOC, wax: 'зростає', wane: 'спадає', lit: 'освітлено' },
       en: { pre: 'Tonight the Moon is in', signs: ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'], wax: 'waxing', wane: 'waning', lit: 'lit' },
       pl: { pre: 'Dziś Księżyc', signs: ['w Baranie','w Byku','w Bliźniętach','w Raku','we Lwie','w Pannie','w Wadze','w Skorpionie','w Strzelcu','w Koziorożcu','w Wodniku','w Rybach'], wax: 'przybywa', wane: 'ubywa', lit: 'oświetlony' },
+      de: { pre: 'Heute steht der Mond', signs: ['im Widder','im Stier','in den Zwillingen','im Krebs','im Löwen','in der Jungfrau','in der Waage','im Skorpion','im Schützen','im Steinbock','im Wassermann','in den Fischen'], wax: 'zunehmend', wane: 'abnehmend', lit: 'beleuchtet' },
+      fr: { pre: 'Ce soir, la Lune est en', signs: ['Bélier','Taureau','Gémeaux','Cancer','Lion','Vierge','Balance','Scorpion','Sagittaire','Capricorne','Verseau','Poissons'], wax: 'croissante', wane: 'décroissante', lit: 'éclairée à' },
+      cs: { pre: 'Dnes je Měsíc', signs: ['v Beranu','v Býku','v Blížencích','v Raku','ve Lvu','v Panně','ve Vahách','ve Štíru','ve Střelci','v Kozorohu','ve Vodnáři','v Rybách'], wax: 'dorůstá', wane: 'couvá', lit: 'osvětlen' },
+      sk: { pre: 'Dnes je Mesiac', signs: ['v Baranovi','v Býkovi','v Blížencoch','v Rakovi','v Levovi','v Panne','vo Váhach','v Škorpiónovi','v Strelcovi','v Kozorožcovi','vo Vodnárovi','v Rybách'], wax: 'dorastá', wane: 'cúva', lit: 'osvetlený' },
+      bg: { pre: 'Днес Луната е в', signs: ['Овен','Телец','Близнаци','Рак','Лъв','Дева','Везни','Скорпион','Стрелец','Козирог','Водолей','Риби'], wax: 'расте', wane: 'намалява', lit: 'осветена' },
+      ro: { pre: 'Azi Luna este în', signs: ['Berbec','Taur','Gemeni','Rac','Leu','Fecioară','Balanță','Scorpion','Săgetător','Capricorn','Vărsător','Pești'], wax: 'crește', wane: 'descrește', lit: 'iluminată' },
+      es: { pre: 'Hoy la Luna está en', signs: ['Aries','Tauro','Géminis','Cáncer','Leo','Virgo','Libra','Escorpio','Sagitario','Capricornio','Acuario','Piscis'], wax: 'creciente', wane: 'menguante', lit: 'iluminada al' },
+      it: { pre: 'Oggi la Luna è in', signs: ['Ariete','Toro','Gemelli','Cancro','Leone','Vergine','Bilancia','Scorpione','Sagittario','Capricorno','Acquario','Pesci'], wax: 'crescente', wane: 'calante', lit: 'illuminata al' },
     }[lang] || {};
     // disc: lit side on the right while waxing, left while waning (northern hemisphere)
     const r = 13, cx = 15, cy = 15, rx = Math.abs(r * Math.cos(rad(phase))).toFixed(2);

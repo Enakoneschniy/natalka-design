@@ -4,9 +4,11 @@
    Supported: uk, en, pl. Russian is deliberately not a language of this product:
    it is never offered, and devices with a ru-* locale are served Ukrainian. */
 const NATALKA_LANG = (() => {
-  const SUPPORTED = ['uk', 'en', 'pl'];
-  const LABELS = { uk: 'UA', en: 'EN', pl: 'PL' };
-  const NAMES = { uk: 'Українська', en: 'English', pl: 'Polski' };
+  const SUPPORTED = ['uk', 'en', 'pl', 'de', 'fr', 'cs', 'sk', 'bg', 'ro', 'es', 'it'];
+  const LABELS = { uk: 'UA', en: 'EN', pl: 'PL', de: 'DE', fr: 'FR', cs: 'CS', sk: 'SK', bg: 'BG', ro: 'RO', es: 'ES', it: 'IT' };
+  const NAMES = { uk: 'Українська', en: 'English', pl: 'Polski', de: 'Deutsch', fr: 'Français', cs: 'Čeština', sk: 'Slovenčina', bg: 'Български', ro: 'Română', es: 'Español', it: 'Italiano' };
+  // geo → language (production: server sets <html data-country> from CF-IPCountry; RU → /unavailable)
+  const COUNTRY = { UA: 'uk', PL: 'pl', DE: 'de', AT: 'de', CH: 'de', LI: 'de', FR: 'fr', BE: 'fr', LU: 'fr', MC: 'fr', CZ: 'cs', SK: 'sk', BG: 'bg', RO: 'ro', MD: 'ro', ES: 'es', AR: 'es', MX: 'es', CL: 'es', CO: 'es', PE: 'es', IT: 'it', SM: 'it' };
   const ATTRS = ['placeholder', 'aria-label', 'title'];
 
   function detect() {
@@ -15,8 +17,7 @@ const NATALKA_LANG = (() => {
     try { const s = localStorage.getItem('natalka.lang'); if (s && SUPPORTED.includes(s)) return s; } catch (e) {}
     // Production: the server sets this from geo (CF-IPCountry): UA → uk, PL → pl, everything else → en; RU → /unavailable.
     const country = document.documentElement.dataset.country;
-    if (country === 'UA') return 'uk';
-    if (country === 'PL') return 'pl';
+    if (country && COUNTRY[country]) return COUNTRY[country];
     for (const l of navigator.languages || [navigator.language || 'en']) {
       const base = l.slice(0, 2).toLowerCase();
       if (base === 'ru') return 'uk';           // never Russian; Ukrainian-speaking users on ru-locale devices get Ukrainian
@@ -60,7 +61,8 @@ const NATALKA_LANG = (() => {
     if (!document.title.includes('|')) { if (!document.documentElement.dataset.i18nTitle) document.documentElement.dataset.i18nTitle = document.title; const tt = t(document.documentElement.dataset.i18nTitle); document.title = tt !== null ? tt : document.documentElement.dataset.i18nTitle; }
     document.documentElement.lang = lang;
     document.documentElement.dataset.lang = lang;
-    document.querySelectorAll('[data-lang-switch] button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
+    document.querySelectorAll('[data-lang-switch] button[data-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
+    document.querySelectorAll('[data-lang-current]').forEach(el => el.textContent = LABELS[lang]);
   }
 
   function set(lang) {
@@ -71,13 +73,25 @@ const NATALKA_LANG = (() => {
     document.dispatchEvent(new CustomEvent('natalka:lang', { detail: { lang } }));
   }
 
-  function switcherHTML(cls = '') {
-    return `<div class="lang ${cls}" data-lang-switch role="group" aria-label="Мова">${SUPPORTED.map(l => `<button type="button" data-lang="${l}" aria-pressed="false" title="${NAMES[l]}">${LABELS[l]}</button>`).join('')}</div>`;
+  function switcherHTML(kind = 'lang-nav') {
+    const items = SUPPORTED.map(l => `<button type="button" data-lang="${l}" aria-pressed="false" lang="${l}"><span class="lang-code">${LABELS[l]}</span><span class="lang-name">${NAMES[l]}</span></button>`).join('');
+    if (kind === 'lang-menu') return `<div class="lang lang-grid" data-lang-switch role="group" aria-label="Мова">${items}</div>`;
+    return `<div class="lang lang-drop" data-lang-switch>
+      <button type="button" class="lang-current" aria-haspopup="listbox" aria-expanded="false" aria-label="Мова"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2.5 2.5 2.5 10.5 0 13M8 1.5c-2.5 2.5-2.5 10.5 0 13"/></svg><span class="lang-code" data-lang-current></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3.5l3 3 3-3"/></svg></button>
+      <div class="lang-list" role="listbox">${items}</div>
+    </div>`;
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-lang-slot]').forEach(el => { el.outerHTML = switcherHTML(el.dataset.langSlot); });
-    document.addEventListener('click', e => { const b = e.target.closest('[data-lang-switch] button'); if (b) set(b.dataset.lang); });
+    document.addEventListener('click', e => {
+      const cur = e.target.closest('.lang-current');
+      if (cur) { const open = cur.getAttribute('aria-expanded') === 'true'; document.querySelectorAll('.lang-current').forEach(c => c.setAttribute('aria-expanded', 'false')); cur.setAttribute('aria-expanded', !open); return; }
+      const b = e.target.closest('[data-lang-switch] button[data-lang]');
+      if (b) set(b.dataset.lang);
+      document.querySelectorAll('.lang-current').forEach(c => c.setAttribute('aria-expanded', 'false'));
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.lang-current').forEach(c => c.setAttribute('aria-expanded', 'false')); });
     apply(detect());
   });
 
