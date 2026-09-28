@@ -1,0 +1,1310 @@
+{
+  "meta": {
+    "product": "natal",
+    "lang": "uk",
+    "order_ref": "№ 12441",
+    "generated_at": "2026-09-28T19:04:33.928914Z",
+    "schema_version": 1,
+    "engine_version": "2.10.03"
+  },
+  "person": {
+    "name": "Оксана",
+    "gender": "f"
+  },
+  "birth": {
+    "date": "1994-05-15",
+    "time": "15:25",
+    "unknown_time": false,
+    "place": "Євпаторія, Україна",
+    "zone": "Europe/Simferopol",
+    "utc_offset": "UTC+4",
+    "latitude": 45.1972,
+    "longitude": 33.3664
+  },
+  "cover": {
+    "title": "Натальна карта",
+    "subtitle": "індивідуальний розбір",
+    "tagline": ""
+  },
+  "facts": {
+    "schema_version": 1,
+    "birth": {
+      "date": "1994-05-15",
+      "time": "15:25",
+      "unknown_time": false,
+      "zone": "Europe/Simferopol",
+      "utc": "1994-05-15T11:25:00+00:00",
+      "utc_offset": "UTC+4",
+      "latitude": 45.1972,
+      "longitude": 33.3664,
+      "julian_day": 2449487.975694
+    },
+    "day_chart": true,
+    "positions": [
+      {
+        "body": "sun",
+        "sign": "taurus",
+        "longitude": 54.406,
+        "degree": "24°24′",
+        "degree_in_sign": 24.406,
+        "house": 9,
+        "retrograde": false,
+        "speed": 0.96455,
+        "latitude": -0.0002
+      },
+      {
+        "body": "moon",
+        "sign": "cancer",
+        "longitude": 107.5448,
+        "degree": "17°32′",
+        "degree_in_sign": 17.5448,
+        "house": 10,
+        "retrograde": false,
+        "speed": 12.55956,
+        "latitude": -4.2766
+      },
+      {
+        "body": "mercury",
+        "sign": "gemini",
+        "longitude": 70.8538,
+        "degree": "10°51′",
+        "degree_in_sign": 10.8538,
+        "house": 9,
+        "retrograde": false,
+        "speed": 1.81494,
+        "latitude": 2.0298
+      },
+      {
+        "body": "venus",
+        "sign": "gemini",
+        "longitude": 83.2835,
+        "degree": "23°17′",
+        "degree_in_sign": 23.2835,
+        "house": 10,
+        "retrograde": false,
+        "speed": 1.20517,
+        "latitude": 1.3143
+      },
+      {
+        "body": "mars",
+        "sign": "aries",
+        "longitude": 23.6119,
+        "degree": "23°36′",
+        "degree_in_sign": 23.6119,
+        "house": 8,
+        "retrograde": false,
+        "speed": 0.75808,
+        "latitude": -0.8822
+      },
+      {
+        "body": "jupiter",
+        "sign": "scorpio",
+        "longitude": 217.9063,
+        "degree": "07°54′",
+        "degree_in_sign": 7.9063,
+        "house": 2,
+        "retrograde": true,
+        "speed": -0.11806,
+        "latitude": 1.3709
+      },
+      {
+        "body": "saturn",
+        "sign": "pisces",
+        "longitude": 341.1954,
+        "degree": "11°11′",
+        "degree_in_sign": 11.1954,
+        "house": 6,
+        "retrograde": false,
+        "speed": 0.06073,
+        "latitude": -1.6202
+      },
+      {
+        "body": "uranus",
+        "sign": "capricorn",
+        "longitude": 296.2563,
+        "degree": "26°15′",
+        "degree_in_sign": 26.2563,
+        "house": 5,
+        "retrograde": true,
+        "speed": -0.01188,
+        "latitude": -0.5056
+      },
+      {
+        "body": "neptune",
+        "sign": "capricorn",
+        "longitude": 293.2431,
+        "degree": "23°14′",
+        "degree_in_sign": 23.2431,
+        "house": 4,
+        "retrograde": true,
+        "speed": -0.01049,
+        "latitude": 0.6202
+      },
+      {
+        "body": "pluto",
+        "sign": "scorpio",
+        "longitude": 236.7593,
+        "degree": "26°45′",
+        "degree_in_sign": 26.7593,
+        "house": 3,
+        "retrograde": true,
+        "speed": -0.02772,
+        "latitude": 14.4164
+      },
+      {
+        "body": "chiron",
+        "sign": "virgo",
+        "longitude": 153.024,
+        "degree": "03°01′",
+        "degree_in_sign": 3.024,
+        "house": 12,
+        "retrograde": false,
+        "speed": 0.02545,
+        "latitude": -5.4258
+      },
+      {
+        "body": "north_node",
+        "sign": "scorpio",
+        "longitude": 233.7898,
+        "degree": "23°47′",
+        "degree_in_sign": 23.7898,
+        "house": 3,
+        "retrograde": null,
+        "speed": -0.00109,
+        "latitude": 0.0
+      },
+      {
+        "body": "lilith",
+        "sign": "taurus",
+        "longitude": 34.2707,
+        "degree": "04°16′",
+        "degree_in_sign": 4.2707,
+        "house": 8,
+        "retrograde": null,
+        "speed": 0.11091,
+        "latitude": 1.739
+      },
+      {
+        "body": "south_node",
+        "sign": "taurus",
+        "longitude": 53.7898,
+        "degree": "23°47′",
+        "degree_in_sign": 23.7898,
+        "house": 9,
+        "retrograde": null,
+        "speed": -0.00109,
+        "latitude": -0.0
+      },
+      {
+        "body": "asc",
+        "sign": "virgo",
+        "longitude": 170.581,
+        "degree": "20°34′",
+        "degree_in_sign": 20.581,
+        "house": 1,
+        "retrograde": null,
+        "speed": 0.0,
+        "latitude": 0.0
+      },
+      {
+        "body": "mc",
+        "sign": "gemini",
+        "longitude": 78.5765,
+        "degree": "18°34′",
+        "degree_in_sign": 18.5765,
+        "house": 10,
+        "retrograde": null,
+        "speed": 0.0,
+        "latitude": 0.0
+      },
+      {
+        "body": "dsc",
+        "sign": "pisces",
+        "longitude": 350.581,
+        "degree": "20°34′",
+        "degree_in_sign": 20.581,
+        "house": 7,
+        "retrograde": null,
+        "speed": 0.0,
+        "latitude": 0.0
+      },
+      {
+        "body": "ic",
+        "sign": "sagittarius",
+        "longitude": 258.5765,
+        "degree": "18°34′",
+        "degree_in_sign": 18.5765,
+        "house": 4,
+        "retrograde": null,
+        "speed": 0.0,
+        "latitude": 0.0
+      },
+      {
+        "body": "vertex",
+        "sign": "pisces",
+        "longitude": 336.7652,
+        "degree": "06°45′",
+        "degree_in_sign": 6.7652,
+        "house": 6,
+        "retrograde": null,
+        "speed": 0.0,
+        "latitude": 0.0
+      },
+      {
+        "body": "pars_fortunae",
+        "sign": "scorpio",
+        "longitude": 223.7198,
+        "degree": "13°43′",
+        "degree_in_sign": 13.7198,
+        "house": 2,
+        "retrograde": null,
+        "speed": 0.0,
+        "latitude": 0.0
+      }
+    ],
+    "houses": {
+      "system": "placidus",
+      "cusps": [
+        {
+          "house": 1,
+          "longitude": 170.581,
+          "sign": "virgo",
+          "degree": "20°34′"
+        },
+        {
+          "house": 2,
+          "longitude": 194.8154,
+          "sign": "libra",
+          "degree": "14°48′"
+        },
+        {
+          "house": 3,
+          "longitude": 224.3881,
+          "sign": "scorpio",
+          "degree": "14°23′"
+        },
+        {
+          "house": 4,
+          "longitude": 258.5765,
+          "sign": "sagittarius",
+          "degree": "18°34′"
+        },
+        {
+          "house": 5,
+          "longitude": 293.4709,
+          "sign": "capricorn",
+          "degree": "23°28′"
+        },
+        {
+          "house": 6,
+          "longitude": 324.5017,
+          "sign": "aquarius",
+          "degree": "24°30′"
+        },
+        {
+          "house": 7,
+          "longitude": 350.581,
+          "sign": "pisces",
+          "degree": "20°34′"
+        },
+        {
+          "house": 8,
+          "longitude": 14.8154,
+          "sign": "aries",
+          "degree": "14°48′"
+        },
+        {
+          "house": 9,
+          "longitude": 44.3881,
+          "sign": "taurus",
+          "degree": "14°23′"
+        },
+        {
+          "house": 10,
+          "longitude": 78.5765,
+          "sign": "gemini",
+          "degree": "18°34′"
+        },
+        {
+          "house": 11,
+          "longitude": 113.4709,
+          "sign": "cancer",
+          "degree": "23°28′"
+        },
+        {
+          "house": 12,
+          "longitude": 144.5017,
+          "sign": "leo",
+          "degree": "24°30′"
+        }
+      ],
+      "asc": 170.581,
+      "mc": 78.5765,
+      "vertex": 336.7652
+    },
+    "aspects": [
+      {
+        "a": "venus",
+        "b": "neptune",
+        "type": "quincunx",
+        "nature": "tense",
+        "orb": 0.04,
+        "applying": false,
+        "strength": 0.984
+      },
+      {
+        "a": "saturn",
+        "b": "uranus",
+        "type": "semisquare",
+        "nature": "tense",
+        "orb": 0.061,
+        "applying": true,
+        "strength": 0.97
+      },
+      {
+        "a": "mars",
+        "b": "north_node",
+        "type": "quincunx",
+        "nature": "tense",
+        "orb": 0.178,
+        "applying": true,
+        "strength": 0.881
+      },
+      {
+        "a": "venus",
+        "b": "mars",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 0.328,
+        "applying": true,
+        "strength": 0.934
+      },
+      {
+        "a": "mercury",
+        "b": "saturn",
+        "type": "square",
+        "nature": "tense",
+        "orb": 0.342,
+        "applying": true,
+        "strength": 0.951
+      },
+      {
+        "a": "mars",
+        "b": "neptune",
+        "type": "square",
+        "nature": "tense",
+        "orb": 0.369,
+        "applying": false,
+        "strength": 0.947
+      },
+      {
+        "a": "venus",
+        "b": "jupiter",
+        "type": "sesquiquadrate",
+        "nature": "tense",
+        "orb": 0.377,
+        "applying": false,
+        "strength": 0.811
+      },
+      {
+        "a": "mercury",
+        "b": "uranus",
+        "type": "sesquiquadrate",
+        "nature": "tense",
+        "orb": 0.402,
+        "applying": true,
+        "strength": 0.799
+      },
+      {
+        "a": "moon",
+        "b": "chiron",
+        "type": "semisquare",
+        "nature": "tense",
+        "orb": 0.479,
+        "applying": true,
+        "strength": 0.68
+      },
+      {
+        "a": "uranus",
+        "b": "pluto",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 0.503,
+        "applying": true,
+        "strength": 0.899
+      },
+      {
+        "a": "venus",
+        "b": "north_node",
+        "type": "quincunx",
+        "nature": "tense",
+        "orb": 0.506,
+        "applying": true,
+        "strength": 0.662
+      },
+      {
+        "a": "neptune",
+        "b": "north_node",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 0.547,
+        "applying": false,
+        "strength": 0.891
+      },
+      {
+        "a": "sun",
+        "b": "north_node",
+        "type": "opposition",
+        "nature": "tense",
+        "orb": 0.616,
+        "applying": false,
+        "strength": 0.877
+      },
+      {
+        "a": "sun",
+        "b": "mars",
+        "type": "semisextile",
+        "nature": "harmonious",
+        "orb": 0.794,
+        "applying": false,
+        "strength": 0.603
+      },
+      {
+        "a": "moon",
+        "b": "mc",
+        "type": "semisextile",
+        "nature": "harmonious",
+        "orb": 1.032,
+        "applying": null,
+        "strength": 0.484
+      },
+      {
+        "a": "sun",
+        "b": "venus",
+        "type": "semisextile",
+        "nature": "harmonious",
+        "orb": 1.123,
+        "applying": true,
+        "strength": 0.439
+      },
+      {
+        "a": "sun",
+        "b": "neptune",
+        "type": "trine",
+        "nature": "harmonious",
+        "orb": 1.163,
+        "applying": false,
+        "strength": 0.871
+      },
+      {
+        "a": "sun",
+        "b": "uranus",
+        "type": "trine",
+        "nature": "harmonious",
+        "orb": 1.85,
+        "applying": true,
+        "strength": 0.794
+      },
+      {
+        "a": "sun",
+        "b": "pluto",
+        "type": "opposition",
+        "nature": "tense",
+        "orb": 2.353,
+        "applying": true,
+        "strength": 0.765
+      },
+      {
+        "a": "uranus",
+        "b": "north_node",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 2.466,
+        "applying": true,
+        "strength": 0.507
+      },
+      {
+        "a": "mars",
+        "b": "uranus",
+        "type": "square",
+        "nature": "tense",
+        "orb": 2.644,
+        "applying": true,
+        "strength": 0.622
+      },
+      {
+        "a": "neptune",
+        "b": "asc",
+        "type": "trine",
+        "nature": "harmonious",
+        "orb": 2.662,
+        "applying": null,
+        "strength": 0.62
+      },
+      {
+        "a": "venus",
+        "b": "asc",
+        "type": "square",
+        "nature": "tense",
+        "orb": 2.703,
+        "applying": null,
+        "strength": 0.614
+      },
+      {
+        "a": "pluto",
+        "b": "north_node",
+        "type": "conjunction",
+        "nature": "neutral",
+        "orb": 2.969,
+        "applying": true,
+        "strength": 0.406
+      },
+      {
+        "a": "uranus",
+        "b": "neptune",
+        "type": "conjunction",
+        "nature": "neutral",
+        "orb": 3.013,
+        "applying": true,
+        "strength": 0.623
+      },
+      {
+        "a": "moon",
+        "b": "asc",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 3.036,
+        "applying": null,
+        "strength": 0.566
+      },
+      {
+        "a": "north_node",
+        "b": "asc",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 3.209,
+        "applying": null,
+        "strength": 0.358
+      },
+      {
+        "a": "jupiter",
+        "b": "saturn",
+        "type": "trine",
+        "nature": "harmonious",
+        "orb": 3.289,
+        "applying": false,
+        "strength": 0.53
+      },
+      {
+        "a": "neptune",
+        "b": "pluto",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 3.516,
+        "applying": true,
+        "strength": 0.297
+      },
+      {
+        "a": "sun",
+        "b": "asc",
+        "type": "trine",
+        "nature": "harmonious",
+        "orb": 3.825,
+        "applying": null,
+        "strength": 0.575
+      },
+      {
+        "a": "venus",
+        "b": "mc",
+        "type": "conjunction",
+        "nature": "neutral",
+        "orb": 4.707,
+        "applying": null,
+        "strength": 0.412
+      },
+      {
+        "a": "jupiter",
+        "b": "chiron",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 4.882,
+        "applying": true,
+        "strength": 0.024
+      },
+      {
+        "a": "uranus",
+        "b": "asc",
+        "type": "trine",
+        "nature": "harmonious",
+        "orb": 5.675,
+        "applying": null,
+        "strength": 0.189
+      },
+      {
+        "a": "moon",
+        "b": "neptune",
+        "type": "opposition",
+        "nature": "tense",
+        "orb": 5.698,
+        "applying": true,
+        "strength": 0.43
+      },
+      {
+        "a": "moon",
+        "b": "mars",
+        "type": "square",
+        "nature": "tense",
+        "orb": 6.067,
+        "applying": true,
+        "strength": 0.326
+      },
+      {
+        "a": "moon",
+        "b": "saturn",
+        "type": "trine",
+        "nature": "harmonious",
+        "orb": 6.349,
+        "applying": false,
+        "strength": 0.295
+      },
+      {
+        "a": "sun",
+        "b": "moon",
+        "type": "sextile",
+        "nature": "harmonious",
+        "orb": 6.861,
+        "applying": true,
+        "strength": 0.02
+      },
+      {
+        "a": "mercury",
+        "b": "mc",
+        "type": "conjunction",
+        "nature": "neutral",
+        "orb": 7.723,
+        "applying": null,
+        "strength": 0.035
+      },
+      {
+        "a": "moon",
+        "b": "uranus",
+        "type": "opposition",
+        "nature": "tense",
+        "orb": 8.711,
+        "applying": true,
+        "strength": 0.129
+      }
+    ],
+    "analysis": {
+      "elements": {
+        "earth": 5,
+        "water": 5,
+        "air": 2,
+        "fire": 1
+      },
+      "modalities": {
+        "fixed": 4,
+        "cardinal": 5,
+        "mutable": 4
+      },
+      "dominant_element": "earth",
+      "weakest_element": "fire",
+      "dominant_modality": "cardinal",
+      "stelliums": [],
+      "angular": [
+        {
+          "body": "mercury",
+          "angle": "mc"
+        },
+        {
+          "body": "venus",
+          "angle": "mc"
+        }
+      ],
+      "configurations": [
+        {
+          "kind": "t_square",
+          "bodies": [
+            "moon",
+            "mars",
+            "uranus"
+          ],
+          "focus": "mars"
+        },
+        {
+          "kind": "t_square",
+          "bodies": [
+            "moon",
+            "mars",
+            "neptune"
+          ],
+          "focus": "mars"
+        }
+      ],
+      "house_rulers": {
+        "1": {
+          "ruler": "mercury",
+          "in_house": 9
+        },
+        "2": {
+          "ruler": "venus",
+          "in_house": 10
+        },
+        "3": {
+          "ruler": "pluto",
+          "in_house": 3
+        },
+        "4": {
+          "ruler": "jupiter",
+          "in_house": 2
+        },
+        "5": {
+          "ruler": "saturn",
+          "in_house": 6
+        },
+        "6": {
+          "ruler": "uranus",
+          "in_house": 5
+        },
+        "7": {
+          "ruler": "neptune",
+          "in_house": 4
+        },
+        "8": {
+          "ruler": "mars",
+          "in_house": 8
+        },
+        "9": {
+          "ruler": "venus",
+          "in_house": 10
+        },
+        "10": {
+          "ruler": "mercury",
+          "in_house": 9
+        },
+        "11": {
+          "ruler": "moon",
+          "in_house": 10
+        },
+        "12": {
+          "ruler": "sun",
+          "in_house": 9
+        }
+      },
+      "chart_ruler": "mercury"
+    },
+    "warnings": []
+  },
+  "transits": [
+    {
+      "kind": "aspect",
+      "body": "saturn",
+      "target": "pluto",
+      "aspect": "trine",
+      "date": "2026-01-10",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 1
+    },
+    {
+      "kind": "ingress",
+      "body": "neptune",
+      "sign": "aries",
+      "from_sign": "pisces",
+      "date": "2026-01-26",
+      "retrograde": false
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "moon",
+      "aspect": "conjunction",
+      "date": "2026-01-30",
+      "retrograde": true,
+      "pass": 1,
+      "passes": 2
+    },
+    {
+      "kind": "ingress",
+      "body": "saturn",
+      "sign": "aries",
+      "from_sign": "pisces",
+      "date": "2026-02-14",
+      "retrograde": false
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "moon",
+      "aspect": "conjunction",
+      "date": "2026-04-20",
+      "retrograde": false,
+      "pass": 2,
+      "passes": 2
+    },
+    {
+      "kind": "ingress",
+      "body": "uranus",
+      "sign": "gemini",
+      "from_sign": "taurus",
+      "date": "2026-04-26",
+      "retrograde": false
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "neptune",
+      "aspect": "opposition",
+      "date": "2026-05-27",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 1
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "mars",
+      "aspect": "square",
+      "date": "2026-05-29",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 1
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "uranus",
+      "aspect": "opposition",
+      "date": "2026-06-12",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 1
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "pluto",
+      "aspect": "trine",
+      "date": "2026-06-14",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 1
+    },
+    {
+      "kind": "ingress",
+      "body": "jupiter",
+      "sign": "leo",
+      "from_sign": "cancer",
+      "date": "2026-06-30",
+      "retrograde": false
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "jupiter",
+      "aspect": "square",
+      "date": "2026-08-05",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 1
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "mars",
+      "aspect": "trine",
+      "date": "2026-10-26",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 1
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "sun",
+      "aspect": "square",
+      "date": "2026-11-01",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 1
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "pluto",
+      "aspect": "square",
+      "date": "2026-11-30",
+      "retrograde": false,
+      "pass": 1,
+      "passes": 2
+    },
+    {
+      "kind": "aspect",
+      "body": "jupiter",
+      "target": "pluto",
+      "aspect": "square",
+      "date": "2026-12-25",
+      "retrograde": true,
+      "pass": 2,
+      "passes": 2
+    }
+  ],
+  "sections": [
+    {
+      "id": "chart",
+      "title": "Ваша карта",
+      "eyebrow": "",
+      "level": 1,
+      "toc": true,
+      "page_break_before": true,
+      "blocks": [
+        {
+          "type": "wheel",
+          "size": "full",
+          "highlight": null
+        },
+        {
+          "type": "positions",
+          "highlight": "sun"
+        },
+        {
+          "type": "aspect_grid"
+        }
+      ]
+    },
+    {
+      "id": "intro",
+      "title": "Кілька слів перед початком",
+      "eyebrow": "",
+      "level": 1,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Перед вами не гороскоп і не набір загальних фраз про Тельців. Це розбір вашої карти — положення десяти планет, Асцендента й домів у момент вашого народження, і кутів між ними. Кожен абзац нижче спирається на конкретну позицію з таблиці на попередній сторінці."
+        },
+        {
+          "type": "paragraph",
+          "text": "Читайте не поспішаючи. Найкорисніше — не «підходить чи ні», а що з цим робити. Тому кожен розділ закінчується практичною частиною."
+        }
+      ]
+    },
+    {
+      "id": "natal.overview",
+      "title": "Що впадає в око одразу",
+      "eyebrow": "01 — загальне враження",
+      "level": 1,
+      "toc": true,
+      "page_break_before": true,
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Найсильніше в карті — земля і вода: Сонце в Тельці, Місяць у Раку, Асцендент у Діві. Це людина, для якої відчуття опори важливіше за швидкість, а «своє коло» — за визнання. Повітря (Меркурій і Венера у Близнюках) додає легкості в розмові, а вогню майже немає — і це видно: ви радше доведете справу до кінця, ніж кинетеся в нову."
+        },
+        {
+          "type": "paragraph",
+          "text": "Друга лінія — тау-квадрат Місяць — Марс — Уран/Нептун з Марсом у фокусі. Це двигун і водночас головне джерело внутрішнього тертя: коли зачіпають щось важливе, тіло відповідає раніше за думку."
+        },
+        {
+          "type": "quote",
+          "text": "Ви будуєте репутацію так само, як усе інше — шар за шаром. І тому вона тримається."
+        }
+      ]
+    },
+    {
+      "id": "natal.ascendant",
+      "title": "Асцендент у Діві: як вас бачать",
+      "eyebrow": "02 — як ви явлені світу",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "natal.sun",
+      "title": "Сонце у Тельці, дев’ятий дім",
+      "eyebrow": "03 — ядро",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": [
+        {
+          "type": "subheading",
+          "text": "Потреба в ґрунті під ногами"
+        },
+        {
+          "type": "paragraph",
+          "text": "Сонце в Тельці — про потребу в ґрунті під ногами. Ви не поспішаєте, і це не повільність, а спосіб робити добре. Дев’ятий дім переносить це у сферу сенсів: навчання, далекі поїздки, власна картина світу. Вам важливо не просто знати, а розуміти, і не просто розуміти, а перевірити на власному досвіді."
+        },
+        {
+          "type": "paragraph",
+          "text": "<b>Що з цим робити.</b> Обирайте справи, де важлива тривалість, — і залишайте собі право на один різкий крок на рік."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Плануйте навчання як довгий проєкт із видимим прогресом.",
+            "Не називайте страх обережністю: Телець уміє чекати, але не завжди має."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "natal.moon",
+      "title": "Місяць у Раку, десятий дім",
+      "eyebrow": "04 — емоційна опора",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "natal.mercury_venus_mars",
+      "title": "Меркурій, Венера і Марс",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "natal.social",
+      "title": "Юпітер і Сатурн",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "natal.outer",
+      "title": "Уран, Нептун, Плутон, Хірон і вузли",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "natal.mc_career",
+      "title": "MC у Близнюках і реалізація",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "natal.key_aspects",
+      "title": "Ключові аспекти",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "love",
+      "title": "Особисте життя",
+      "eyebrow": "",
+      "level": 1,
+      "toc": true,
+      "page_break_before": true,
+      "blocks": []
+    },
+    {
+      "id": "love.seventh_house",
+      "title": "Сьомий дім",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "love.venus_moon",
+      "title": "Венера і Місяць",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "love.partner",
+      "title": "Кого шукати",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "love.advice",
+      "title": "Практичні поради",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "work",
+      "title": "Робота і гроші",
+      "eyebrow": "",
+      "level": 1,
+      "toc": true,
+      "page_break_before": true,
+      "blocks": []
+    },
+    {
+      "id": "work.picture",
+      "title": "Професійна картина",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "work.money",
+      "title": "Гроші",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "work.now",
+      "title": "Що робити зараз",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "transits",
+      "title": "Транзити по роках",
+      "eyebrow": "",
+      "level": 1,
+      "toc": true,
+      "page_break_before": true,
+      "blocks": []
+    },
+    {
+      "id": "transits.past",
+      "title": "Погляд назад",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "transits.now",
+      "title": "Теперішнє",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "transits.year1",
+      "title": "2026",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Нижче — точні дати, розраховані за ефемеридами для вашої карти. Це не «десь навесні», а конкретні дні."
+        },
+        {
+          "type": "timeline",
+          "items": [
+            {
+              "date": "2026-01-10",
+              "text": "saturn trine натальний pluto (прохід 1/1)"
+            },
+            {
+              "date": "2026-01-26",
+              "text": "neptune → aries"
+            },
+            {
+              "date": "2026-01-30",
+              "text": "jupiter conjunction натальний moon (прохід 1/2)"
+            },
+            {
+              "date": "2026-02-14",
+              "text": "saturn → aries"
+            },
+            {
+              "date": "2026-04-20",
+              "text": "jupiter conjunction натальний moon (прохід 2/2)"
+            },
+            {
+              "date": "2026-04-26",
+              "text": "uranus → gemini"
+            },
+            {
+              "date": "2026-05-27",
+              "text": "jupiter opposition натальний neptune (прохід 1/1)"
+            },
+            {
+              "date": "2026-05-29",
+              "text": "jupiter square натальний mars (прохід 1/1)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "transits.year2",
+      "title": "2027",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "transits.year3",
+      "title": "2028",
+      "eyebrow": "",
+      "level": 2,
+      "toc": true,
+      "page_break_before": false,
+      "blocks": []
+    },
+    {
+      "id": "summary",
+      "title": "Головне",
+      "eyebrow": "",
+      "level": 1,
+      "toc": true,
+      "page_break_before": true,
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Головне, що варто забрати з собою: ваша швидкість — це і є ваша перевага."
+        }
+      ]
+    },
+    {
+      "id": "ps",
+      "title": "P.S.",
+      "eyebrow": "",
+      "level": 1,
+      "toc": true,
+      "page_break_before": true,
+      "blocks": []
+    }
+  ],
+  "closing_note": "✦  на цьому розбір завершено  ✦",
+  "disclaimer": "Розбір має розважально-пізнавальний характер і не є медичною, психологічною чи фінансовою порадою."
+}

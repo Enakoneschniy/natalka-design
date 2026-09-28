@@ -27,6 +27,8 @@ dev = [
   "pytest-cov>=6.0",
   "ruff>=0.13",
   "mypy>=1.17",
+  "fonttools>=4.66.0",
+  "pypdfium2>=5.13.0",
 ]
 
 [tool.ruff]
@@ -41,6 +43,7 @@ ignore = ["PLR0913", "PLR2004", "RUF001", "RUF002", "RUF003", "E501"]
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["PLR2004", "T20"]
 "**/scripts/**" = ["T20"]
+"**/cli.py" = ["T20"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -52,6 +55,10 @@ packages = ["natalka_engine", "natalka_document", "natalka_texts", "natalka_shar
 [[tool.mypy.overrides]]
 module = ["swisseph", "reportlab.*", "svglib.*", "timezonefinder.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["natalka_document.styles", "natalka_document.render"]
+disallow_subclassing_any = false  # ReportLab ships no type information
 
 [tool.pytest.ini_options]
 testpaths = ["packages", "apps/worker"]
