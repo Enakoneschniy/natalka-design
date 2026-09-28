@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Staging for the static design mockups. The product app gets its own Worker later.
+  "name": "natalka-design",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": ".",
+    "not_found_handling": "404-page",
+    "html_handling": "none"
+  },
+  "observability": { "enabled": true }
+}
