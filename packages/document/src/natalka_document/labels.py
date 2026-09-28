@@ -215,6 +215,8 @@ UI: Final[dict[str, dict[str, str]]] = {
         "placidus": "Плацидус, тропічний зодіак",
         "no_houses": "без домів (час народження невідомий)",
         "legend": "R — ретроградний рух. Доми — римськими цифрами.",
+        "section": "Розділ",
+        "aspect_legend": "Напружені аспекти — червоним, гармонійні — синім, з'єднання — сірим.",
     },
     "en": {
         "contents": "Contents",
@@ -236,6 +238,8 @@ UI: Final[dict[str, dict[str, str]]] = {
         "placidus": "Placidus, tropical zodiac",
         "no_houses": "no houses (birth time unknown)",
         "legend": "R — retrograde motion. Houses in Roman numerals.",
+        "section": "Section",
+        "aspect_legend": "Tense aspects in red, harmonious in blue, conjunctions in grey.",
     },
     "ru": {
         "contents": "Содержание",
@@ -257,6 +261,8 @@ UI: Final[dict[str, dict[str, str]]] = {
         "placidus": "Плацидус, тропический зодиак",
         "no_houses": "без домов (время рождения неизвестно)",
         "legend": "R — ретроградное движение. Дома — римскими цифрами.",
+        "section": "Раздел",
+        "aspect_legend": "Напряжённые аспекты — красным, гармоничные — синим, соединения — серым.",
     },
     "pl": {
         "contents": "Spis treści",
@@ -278,6 +284,8 @@ UI: Final[dict[str, dict[str, str]]] = {
         "placidus": "Placidus, zodiak tropikalny",
         "no_houses": "bez domów (godzina urodzenia nieznana)",
         "legend": "R — ruch wsteczny. Domy — cyframi rzymskimi.",
+        "section": "Rozdział",
+        "aspect_legend": "Aspekty napięte na czerwono, harmonijne na niebiesko, koniunkcje na szaro.",
     },
     "de": {
         "contents": "Inhalt",
@@ -299,6 +307,8 @@ UI: Final[dict[str, dict[str, str]]] = {
         "placidus": "Placidus, tropischer Tierkreis",
         "no_houses": "ohne Häuser (Geburtszeit unbekannt)",
         "legend": "R — Rückläufigkeit. Häuser in römischen Ziffern.",
+        "section": "Kapitel",
+        "aspect_legend": "Gespannte Aspekte rot, harmonische blau, Konjunktionen grau.",
     },
 }
 

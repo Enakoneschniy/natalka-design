@@ -1,7 +1,9 @@
 """Document → PDF with ReportLab.
 
-Layout: dark cover with the gold wheel → table of contents → sections. Computed blocks (wheel,
-positions, aspect grid) are rendered from ``document.facts``; text blocks are rendered as given.
+Layout: dark cover with the gold wheel → table of contents → sections. Every body page sits on warm
+paper with a faint motif of the current section (see :mod:`motifs`) and a running side label.
+Computed blocks (wheel, positions, aspect grid) are rendered from ``document.facts``; text blocks
+are rendered as given.
 """
 
 from __future__ import annotations
@@ -18,7 +20,6 @@ from reportlab.lib.units import cm
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import (
     BaseDocTemplate,
-    CondPageBreak,
     Flowable,
     Frame,
     KeepTogether,
@@ -33,8 +34,9 @@ from reportlab.platypus import (
 from reportlab.platypus.tableofcontents import TableOfContents
 from svglib.svglib import svg2rlg
 
+from . import motifs
 from . import styles as st
-from .glyphs import ASPECT_PATHS, PLANET_PATHS, SIGN_PATHS
+from .glyphs import ASPECT_PATHS, PLANET_PATHS
 from .labels import ROMAN, body_name, sign_name, ui
 from .schema import (
     AspectGrid,
@@ -57,62 +59,46 @@ from .schema import (
 from .wheel import PDF_DARK, PDF_LIGHT, wheel_drawing
 
 TABLE_BODIES = (
-    "sun",
-    "moon",
-    "mercury",
-    "venus",
-    "mars",
-    "jupiter",
-    "saturn",
-    "uranus",
-    "neptune",
-    "pluto",
-    "chiron",
-    "north_node",
-    "lilith",
-    "asc",
-    "mc",
-)
+    "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto",
+    "chiron", "north_node", "lilith", "asc", "mc",
+)  # fmt: skip
 GRID_BODIES = (
-    "sun",
-    "moon",
-    "mercury",
-    "venus",
-    "mars",
-    "jupiter",
-    "saturn",
-    "uranus",
-    "neptune",
-    "pluto",
-    "chiron",
-    "north_node",
-    "asc",
-    "mc",
-)
-_SIGN_INDEX = (
-    "aries",
-    "taurus",
-    "gemini",
-    "cancer",
-    "leo",
-    "virgo",
-    "libra",
-    "scorpio",
-    "sagittarius",
-    "capricorn",
-    "aquarius",
-    "pisces",
-)
+    "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto",
+    "chiron", "north_node", "asc", "mc",
+)  # fmt: skip
+GRID_COLOURS = {"tense": "#D9553A", "harmonious": "#2B47E0", "neutral": "#9A9EBB"}
+INK_HEX = "#232333"
+UNNUMBERED = ("chart", "intro")
 
 
 class _Doc(BaseDocTemplate):
-    """Registers headings with the TOC as they are laid out."""
+    """Tracks the current page theme and registers headings with the TOC."""
+
+    theme: motifs.PageTheme = motifs.PageTheme("toc")
 
     def afterFlowable(self, flowable: Flowable) -> None:  # noqa: N802 — ReportLab API
+        if isinstance(flowable, _ThemeMarker):
+            self.theme = flowable.theme
+            return
         key = getattr(flowable, "_toc", None)
         if key:
             level, text = key
             self.notify("TOCEntry", (level, text, self.page))
+
+
+class _ThemeMarker(Flowable):
+    """Zero-size flowable: from here on, pages use ``theme``. Placed *before* page breaks."""
+
+    def __init__(self, theme: motifs.PageTheme) -> None:
+        super().__init__()
+        self.theme = theme
+        self.width = self.height = 0
+
+    def wrap(self, avail_width: float, avail_height: float) -> tuple[float, float]:
+        return 0, 0
+
+    def draw(self) -> None:
+        return None
 
 
 class _Heading(Paragraph):
@@ -129,6 +115,19 @@ def _glyph_drawing(path: str, size: float, color: str) -> Drawing:
     d = svg2rlg(io.StringIO(svg))
     assert d is not None
     return d
+
+
+def _tight(*extra: tuple[Any, ...]) -> TableStyle:
+    return TableStyle(
+        [
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            *extra,
+        ]
+    )
 
 
 class Renderer:
@@ -177,10 +176,28 @@ class Renderer:
 
     # ---------- story ----------
     def _story(self) -> list[Flowable]:
-        story: list[Flowable] = [NextPageTemplate("Body"), Spacer(1, 1), PageBreak()]
+        story: list[Flowable] = [
+            _ThemeMarker(motifs.PageTheme("toc", ui(self.lang, "contents"))),
+            NextPageTemplate("Body"),
+            Spacer(1, 1),
+            PageBreak(),
+        ]
         story += self._toc()
+        number = 0
+        label = ""
         for section in self.doc.sections:
-            story += self._section(section)
+            if section.level == 1:
+                numbered = section.id not in UNNUMBERED
+                if numbered:
+                    number += 1
+                label = f"{ROMAN[number - 1]} · {section.title}" if numbered else section.title
+                theme = motifs.theme_for(section.id)
+                story.append(_ThemeMarker(motifs.PageTheme(theme, label, opener=True)))
+                story.append(PageBreak())
+                story += self._section(section, number if numbered else 0)
+                story.append(_ThemeMarker(motifs.PageTheme(theme, label, opener=False)))
+            else:
+                story += self._section(section, 0)
         if self.doc.closing_note:
             story += [
                 Spacer(1, 18),
@@ -204,18 +221,23 @@ class Renderer:
             toc,
         ]
 
-    def _section(self, s: Section) -> list[Flowable]:
+    def _section(self, s: Section, number: int) -> list[Flowable]:
         out: list[Flowable] = []
-        if s.page_break_before:
-            out.append(PageBreak())
-        elif s.level == 1:
-            out.append(CondPageBreak(7 * cm))
         head: list[Flowable] = []
         if s.level == 1:
-            if s.eyebrow:
-                head.append(Paragraph(s.eyebrow.upper(), st.s_eyebrow))
-            head += [_Heading(s.title, st.s_h1, 0, s.toc), st.HRule(), Spacer(1, 6)]
+            eyebrow = s.eyebrow or (
+                f"{ui(self.lang, 'section')} {ROMAN[number - 1]}" if number else ""
+            )
+            if eyebrow:
+                head.append(Paragraph(eyebrow.upper(), st.s_eyebrow))
+            head += [
+                _Heading(s.title, st.s_h1_big if number else st.s_h1, 0, s.toc),
+                st.HRule(),
+                Spacer(1, 8),
+            ]
         else:
+            if s.eyebrow:
+                head.append(Paragraph(s.eyebrow.upper(), st.s_eyebrow_2))
             head.append(_Heading(s.title, st.s_h2, 1, s.toc))
         first = self._blocks(s.blocks[:1])
         out.append(KeepTogether(head + first))
@@ -229,7 +251,7 @@ class Renderer:
                 case ParagraphBlock():
                     out.append(Paragraph(b.text, st.s_body))
                 case Subheading():
-                    out.append(_Heading(b.text, st.s_h2, 1, False))
+                    out.append(_Heading(b.text, st.s_h3, 1, False))
                 case Quote():
                     out += [Spacer(1, 4), st.QuoteBox(b.text), Spacer(1, 8)]
                 case BulletList():
@@ -249,7 +271,7 @@ class Renderer:
 
     # ---------- computed blocks ----------
     def _wheel(self, b: WheelBlock) -> Flowable:
-        size = self.width * (0.86 if b.size == "full" else 0.55)
+        size = self.width * (0.82 if b.size == "full" else 0.5)
         d = wheel_drawing(
             self.doc.facts, size_pt=size, theme=PDF_LIGHT, detail=b.size, highlight=b.highlight
         )
@@ -268,26 +290,16 @@ class Renderer:
             p = self._positions.get(body)
             if not p:
                 continue
-            glyph = (
-                _glyph_drawing(PLANET_PATHS[body], 11, "#232333") if body in PLANET_PATHS else None
-            )
-            name_cell: Any = (
-                Table(
-                    [[glyph, Paragraph(body_name(lang, body), st.s_table)]],
+            name = Paragraph(body_name(lang, body), st.s_table)
+            if body in PLANET_PATHS:
+                glyph = _glyph_drawing(PLANET_PATHS[body], 11, INK_HEX)
+                name_cell: Any = Table(
+                    [[glyph, name]],
                     colWidths=[16, None],
-                    style=TableStyle(
-                        [
-                            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-                            ("TOPPADDING", (0, 0), (-1, -1), 0),
-                            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-                        ]
-                    ),
+                    style=_tight(("RIGHTPADDING", (0, 0), (0, 0), 4)),
                 )
-                if glyph
-                else Paragraph(body_name(lang, body), st.s_table)
-            )
+            else:
+                name_cell = name
             house = ROMAN[p["house"] - 1] if p.get("house") else "—"
             retro = "R" if p.get("retrograde") else ""
             if b.highlight == body:
@@ -301,27 +313,29 @@ class Renderer:
                     Paragraph(retro, st.s_table_mono),
                 ]
             )
-        t = Table(rows, colWidths=[5.0 * cm, 3.6 * cm, 2.6 * cm, 1.8 * cm, 1.2 * cm], repeatRows=1)
+        w = self.width
+        t = Table(rows, colWidths=[w * 0.34, w * 0.26, w * 0.18, w * 0.13, w * 0.09], repeatRows=1)
         style: list[tuple[Any, ...]] = [
             ("BACKGROUND", (0, 0), (-1, 0), st.NAVY),
             ("LINEBELOW", (0, 0), (-1, 0), 0.8, st.GOLD),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [st.CREAM, HexColor("#FBF6EA")]),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [st.CREAM, HexColor("#FDFAF3")]),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("LEFTPADDING", (0, 0), (-1, -1), 8),
             ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 4.5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+            ("LINEBELOW", (0, -1), (-1, -1), 0.6, st.LINE),
         ]
         if hl_row:
             style.append(("BACKGROUND", (0, hl_row), (-1, hl_row), st.ACCENT_BG))
         t.setStyle(TableStyle(style))
-        t.hAlign = "LEFT"
         note = (
             ui(lang, "no_houses")
             if self.doc.unknown_time
             else f"{ui(lang, 'system')}: {ui(lang, 'placidus')}."
         )
         return [
+            Spacer(1, 10),
             t,
             Spacer(1, 6),
             Paragraph(f"{ui(lang, 'legend')} {note}", st.s_caption),
@@ -331,32 +345,27 @@ class Renderer:
     def _aspect_grid(self) -> list[Flowable]:
         bodies = [b for b in GRID_BODIES if b in self._positions]
         aspects = {frozenset((a["a"], a["b"])): a for a in self.doc.facts.get("aspects", [])}
-        colours = {"tense": "#D9553A", "harmonious": "#2B47E0", "neutral": "#9A9EBB"}
-        cell = 0.62 * cm
+        n = len(bodies)
+        cell = min(0.78 * cm, self.width / n)
+
+        def head_cell(body: str) -> Any:
+            if body in PLANET_PATHS:
+                return _glyph_drawing(PLANET_PATHS[body], 12, INK_HEX)
+            return Paragraph(f"<font size=7>{body.upper()}</font>", st.s_table_mono_center)
+
         rows: list[list[Any]] = []
-        for i in range(1, len(bodies)):
-            row: list[Any] = [
-                _glyph_drawing(PLANET_PATHS.get(bodies[i], ""), 11, "#232333")
-                if bodies[i] in PLANET_PATHS
-                else Paragraph(bodies[i].upper(), st.s_table_mono)
-            ]
+        for i in range(1, n):
+            row: list[Any] = [head_cell(bodies[i])]
             for j in range(i):
                 a = aspects.get(frozenset((bodies[i], bodies[j])))
                 if a and a["type"] in ASPECT_PATHS:
-                    row.append(_glyph_drawing(ASPECT_PATHS[a["type"]], 10, colours[a["nature"]]))
+                    row.append(
+                        _glyph_drawing(ASPECT_PATHS[a["type"]], 11, GRID_COLOURS[a["nature"]])
+                    )
                 else:
                     row.append("")
             rows.append(row)
-        rows.append(
-            [""]
-            + [
-                _glyph_drawing(PLANET_PATHS.get(b, ""), 11, "#232333")
-                if b in PLANET_PATHS
-                else Paragraph(b.upper(), st.s_table_mono)
-                for b in bodies[:-1]
-            ]
-        )
-        n = len(bodies)
+        rows.append(["", *[head_cell(b) for b in bodies[:-1]]])
         t = Table(rows, colWidths=[cell] * n, rowHeights=[cell] * n)
         style: list[tuple[Any, ...]] = [
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
@@ -368,12 +377,22 @@ class Renderer:
         ]
         for r in range(n - 1):
             style.append(("GRID", (0, r), (r + 1, r), 0.4, st.LINE))
-            style.append(("BACKGROUND", (0, r), (0, r), HexColor("#FBF6EA")))
-        style.append(("BACKGROUND", (1, n - 1), (n - 1, n - 1), HexColor("#FBF6EA")))
+            style.append(("BACKGROUND", (0, r), (0, r), st.CREAM))
+            style.append(("BACKGROUND", (1, r), (r + 1, r), HexColor("#FDFAF3")))
+        style.append(("BACKGROUND", (1, n - 1), (n - 1, n - 1), st.CREAM))
         style.append(("GRID", (1, n - 1), (n - 1, n - 1), 0.4, st.LINE))
         t.setStyle(TableStyle(style))
         t.hAlign = "LEFT"
-        return [Paragraph(ui(self.lang, "aspects"), st.s_h2), Spacer(1, 4), t, Spacer(1, 8)]
+        legend = Paragraph(ui(self.lang, "aspect_legend"), st.s_caption)
+        return [
+            Spacer(1, 6),
+            _Heading(ui(self.lang, "aspects"), st.s_h2, 1, False),
+            Spacer(1, 6),
+            t,
+            Spacer(1, 6),
+            legend,
+            Spacer(1, 8),
+        ]
 
     def _timeline(self, b: Timeline) -> Flowable:
         rows = [
@@ -398,7 +417,11 @@ class Renderer:
     # ---------- page furniture ----------
     def _body_page(self, canv: Canvas, doc: BaseDocTemplate) -> None:
         w, h = st.PAGE
+        theme = getattr(doc, "theme", motifs.PageTheme("intro"))
         canv.saveState()
+        motifs.paper(canv, w, h)
+        motifs.motif(canv, w, h, theme.key, theme.opener)
+        motifs.side_label(canv, w, h, theme.label)
         canv.setStrokeColor(st.LINE)
         canv.setLineWidth(0.5)
         canv.line(2 * cm, h - 1.6 * cm, w - 2 * cm, h - 1.6 * cm)
@@ -409,71 +432,82 @@ class Renderer:
         canv.drawString(2 * cm, h - 1.3 * cm, head)
         canv.drawRightString(w - 2 * cm, h - 1.3 * cm, f"— {canv.getPageNumber()} —")
         canv.line(2 * cm, 1.6 * cm, w - 2 * cm, 1.6 * cm)
-        canv.setFont(st.SANS, 8)
         canv.drawCentredString(w / 2, 1.1 * cm, f"✦  {ui(self.lang, 'footer')}  ✦")
         canv.restoreState()
 
     def _cover_page(self, canv: Canvas, doc: BaseDocTemplate) -> None:  # noqa: PLR0915 — one drawing routine
         w, h = st.PAGE
         canv.saveState()
-        # night sky: vertical gradient from deep navy to a lighter indigo behind the wheel
-        steps = 120
+        # night sky: deep navy with an indigo glow behind the wheel
+        steps = 140
         top, mid = st.SKY, st.SKY_2
+        wheel_cy = 0.625
         for i in range(steps):
-            f = i / (steps - 1)
-            glow = math.exp(-((f - 0.42) ** 2) / 0.05)  # brightest around the wheel centre
-            r = top.red + (mid.red - top.red) * glow
-            g = top.green + (mid.green - top.green) * glow
-            bl = top.blue + (mid.blue - top.blue) * glow
-            canv.setFillColor(Color(r, g, bl))
+            f = 1 - (i + 0.5) / steps  # 1 at the top, 0 at the bottom
+            glow = math.exp(-((f - wheel_cy) ** 2) / 0.045)
+            canv.setFillColor(
+                Color(*(a + (b - a) * glow for a, b in zip(top.rgb(), mid.rgb(), strict=True)))
+            )
             canv.rect(0, h * (1 - (i + 1) / steps), w, h / steps + 1, stroke=0, fill=1)
         rnd = random.Random(7)
-        for _ in range(220):
+        for _ in range(260):
             x, y = rnd.random() * w, rnd.random() * h
             rr = rnd.choice([0.3, 0.4, 0.5, 0.7, 0.9, 1.2])
             canv.setFillColor(st.STAR_WARM if rnd.random() < 0.15 else st.STAR)
             canv.setFillAlpha(0.25 + rnd.random() * 0.6)
             canv.circle(x, y, rr, stroke=0, fill=1)
         canv.setFillAlpha(1)
-        # wheel
-        size = w * 0.62
+        # wheel — the hero of the cover
+        size = w * 0.8
         d = wheel_drawing(self.doc.facts, size_pt=size, theme=PDF_DARK, detail="full")
-        d.drawOn(canv, (w - size) / 2, h * 0.36)
+        d.drawOn(canv, (w - size) / 2, h * wheel_cy - size / 2)
+        # thin gold rule with a diamond between the sky and the text block
+        y_rule = h * 0.325
+        canv.setStrokeColor(st.GOLD_BRIGHT)
+        canv.setLineWidth(0.6)
+        canv.line(w * 0.3, y_rule, w * 0.46, y_rule)
+        canv.line(w * 0.54, y_rule, w * 0.7, y_rule)
+        canv.setFillColor(st.GOLD_BRIGHT)
+        p = canv.beginPath()
+        p.moveTo(w / 2, y_rule + 3)
+        p.lineTo(w / 2 + 3, y_rule)
+        p.lineTo(w / 2, y_rule - 3)
+        p.lineTo(w / 2 - 3, y_rule)
+        p.close()
+        canv.drawPath(p, stroke=0, fill=1)
         # text block
         cx = w / 2
         canv.setFillColor(st.GOLD_BRIGHT)
-        canv.setFont(st.SANS, 9)
-        canv.drawCentredString(cx, h * 0.30, "N A T A L K A")
+        canv.setFont(st.SANS, 8.5)
+        canv.drawCentredString(cx, h * 0.295, "N A T A L K A")
         canv.setFillColor(HexColor("#F4F1E8"))
-        canv.setFont("PlayfairDisplay-Medium", 30)
-        canv.drawCentredString(cx, h * 0.255, self.doc.cover.title)
+        canv.setFont("PlayfairDisplay-Medium", 32)
+        canv.drawCentredString(cx, h * 0.245, self.doc.cover.title)
         if self.doc.cover.subtitle:
             canv.setFont("PlayfairDisplay-Italic", 14)
             canv.setFillColor(HexColor("#AEB2C8"))
-            canv.drawCentredString(cx, h * 0.225, self.doc.cover.subtitle)
+            canv.drawCentredString(cx, h * 0.215, self.doc.cover.subtitle)
         canv.setFillColor(HexColor("#F4F1E8"))
-        canv.setFont(st.SERIF, 18)
-        canv.drawCentredString(cx, h * 0.185, self.doc.person.name)
-        # birth data in three columns
+        canv.setFont(st.SERIF, 19)
+        canv.drawCentredString(cx, h * 0.170, self.doc.person.name)
+        # birth data in three equal columns: label above value, centred in each column
         b = self.doc.birth
         labels = (ui(self.lang, "date"), ui(self.lang, "time"), ui(self.lang, "place"))
-        values = (
-            _dmy(b.date),
-            (b.time or ui(self.lang, "unknown_time")) + (f"  {b.utc_offset}" if b.time else ""),
-            b.place,
-        )
-        y = h * 0.135
-        for xx, lbl, val in zip((w * 0.22, w * 0.5, w * 0.78), labels, values, strict=True):
+        values = (_dmy(b.date), b.time or ui(self.lang, "unknown_time"), b.place)
+        y = h * 0.118
+        col_w = w / 3
+        for i, (lbl, val) in enumerate(zip(labels, values, strict=True)):
+            xx = col_w * (i + 0.5)
             canv.setFillColor(st.GOLD_BRIGHT)
-            canv.setFont(st.SANS, 8)
+            canv.setFont(st.SANS, 7.5)
             canv.drawCentredString(xx, y, "  ".join(lbl.upper()))
             canv.setFillColor(HexColor("#F4F1E8"))
-            canv.setFont(st.MONO if lbl != labels[2] else st.SANS, 11)
-            canv.drawCentredString(xx, y - 16, val)
+            canv.setFont(st.MONO if i < 2 else st.SANS, 11)
+            canv.drawCentredString(xx, y - 17, val)
         canv.setStrokeColor(HexColor("#3A3F5E"))
         canv.setLineWidth(0.5)
-        for sx in (w * 0.36, w * 0.64):
-            canv.line(sx, y - 20, sx, y + 6)
+        for i in (1, 2):
+            canv.line(col_w * i, y - 21, col_w * i, y + 7)
         canv.setFillColor(HexColor("#767B99"))
         canv.setFont(st.SANS, 7.5)
         ref = f"{self.doc.meta.order_ref}  ·  " if self.doc.meta.order_ref else ""
@@ -490,6 +524,3 @@ def _dmy(iso: str) -> str:
 
 def render_pdf(document: Document, target: str | Path | io.BytesIO) -> int:
     return Renderer(document).render(target)
-
-
-_ = (SIGN_PATHS, _SIGN_INDEX)  # re-exported for callers that build custom blocks

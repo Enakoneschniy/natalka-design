@@ -147,6 +147,9 @@ s_quote = _style(
     rightIndent=6,
 )
 s_caption = _style("Caption", fontName=SANS, fontSize=8.5, textColor=MUTED, leading=11)
+s_caption_center = _style(
+    "CaptionCenter", fontName=SANS, fontSize=8.5, textColor=MUTED, leading=11, alignment=TA_CENTER
+)
 s_small_center = _style(
     "SmallCenter", fontName=SANS, fontSize=8.5, textColor=MUTED, leading=11, alignment=TA_CENTER
 )
@@ -175,8 +178,39 @@ s_timeline_date = _style(
 s_timeline_text = _style("TlText", fontName=SANS, fontSize=10, textColor=INK, leading=14)
 s_table = _style("Table", fontName=SANS, fontSize=9.5, textColor=INK, leading=12)
 s_table_mono = _style("TableMono", fontName=MONO, fontSize=9, textColor=INK, leading=12)
+s_table_mono_center = _style(
+    "TableMonoCenter", fontName=MONO, fontSize=9, textColor=INK, leading=12, alignment=TA_CENTER
+)
 s_table_head = _style(
     "TableHead", fontName="GolosText-Medium", fontSize=8.5, textColor=CREAM, leading=11
+)
+
+s_h1_big = _style(
+    "H1Big",
+    fontName="PlayfairDisplay-Medium",
+    fontSize=26,
+    textColor=NAVY,
+    leading=32,
+    spaceBefore=18,
+    spaceAfter=6,
+)
+s_h3 = _style(
+    "H3",
+    fontName="GolosText-Medium",
+    fontSize=11.5,
+    textColor=NAVY,
+    leading=15,
+    spaceBefore=8,
+    spaceAfter=3,
+)
+s_eyebrow_2 = _style(
+    "Eyebrow2", fontName=SANS, fontSize=8, textColor=GOLD, leading=10, spaceBefore=10
+)
+s_caption_center = _style(
+    "CaptionCenter", fontName=SANS, fontSize=8.5, textColor=MUTED, leading=11, alignment=TA_CENTER
+)
+s_table_mono_center = _style(
+    "TableMonoCenter", fontName=MONO, fontSize=9, textColor=INK, leading=12, alignment=TA_CENTER
 )
 
 

@@ -259,7 +259,7 @@ def wheel_svg(  # noqa: PLR0912, PLR0915 — a single drawing routine, mirrors w
                 _text=ROMAN[i],
             )
             if is_angle and detail == "full":
-                lx, ly = pt(c, r_zod_in + (r_outer - r_zod_in) * 0.5)
+                lx, ly = pt(c, (r_zod_in + r_tick_in) / 2)
                 svg.add(
                     "rect",
                     x=f"{lx - size * 0.022:.2f}",
@@ -322,7 +322,7 @@ def wheel_svg(  # noqa: PLR0912, PLR0915 — a single drawing routine, mirrors w
         for p in shown
     ]
     items.sort(key=lambda p: _norm(p["lon"] - asc))
-    min_sep = 8.0 if detail == "full" else 10.0
+    min_sep = 12.0 if detail == "full" else 13.0
     for _ in range(8):
         for i in range(1, len(items)):
             prev, cur = items[i - 1], items[i]
@@ -331,10 +331,16 @@ def wheel_svg(  # noqa: PLR0912, PLR0915 — a single drawing routine, mirrors w
                 push = (min_sep - gap) / 2
                 prev["disp"] = _norm(prev["disp"] - push)
                 cur["disp"] = _norm(cur["disp"] + push)
+    # cluster consecutive planets and give each member of a cluster its own label ring
+    cluster: list[dict[str, Any]] = []
     for i, p in enumerate(items):
-        before: dict[str, Any] | None = items[i - 1] if i else None
-        close = before is not None and _norm(p["disp"] - before["disp"]) < 14
-        p["lvl"] = (before["lvl"] + 1) % 2 if before is not None and close else 0
+        before = items[i - 1] if i else None
+        if before is not None and _norm(p["disp"] - before["disp"]) < 17:
+            cluster.append(p)
+        else:
+            cluster = [p]
+        p["lvl"] = len(cluster) - 1
+
     for p in items:
         is_sun = p["body"] == "sun"
         is_hl = highlight == p["body"]
@@ -360,9 +366,10 @@ def wheel_svg(  # noqa: PLR0912, PLR0915 — a single drawing routine, mirrors w
                 "circle", cx=f"{gx:.2f}", cy=f"{gy:.2f}", r=f"{gs * 0.9:.2f}", fill=th.astro_soft
             )
         _glyph(svg, PLANET_PATHS[p["body"]], gs, gx, gy, color, 2.0 if is_sun else 1.9)
-        if detail == "full":
-            tx, ty = pt(p["disp"], r_planet - radius * (0.085 + p["lvl"] * 0.055))
-            label = _fmt_deg(p["lon"]) + (" radius" if p["retro"] else "")
+        # in a dense cluster only the first two degrees fit; the rest are in the positions table
+        if detail == "full" and p["lvl"] < 2:
+            tx, ty = pt(p["disp"], r_planet - radius * (0.072 + p["lvl"] * 0.062))
+            label = _fmt_deg(p["lon"]) + (" R" if p["retro"] else "")
             svg.add(
                 "text",
                 x=f"{tx:.2f}",
@@ -371,7 +378,7 @@ def wheel_svg(  # noqa: PLR0912, PLR0915 — a single drawing routine, mirrors w
                 dominant_baseline="central",
                 fill=th.astro if (is_sun or is_hl) else th.text2,
                 font_family=MONO,
-                font_size=f"{size * 0.018:.2f}",
+                font_size=f"{size * 0.0145:.2f}",
                 _text=label,
             )
 
