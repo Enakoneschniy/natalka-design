@@ -492,6 +492,8 @@
   font-weight: 500;
   font-size: 26px;
   color: var(--color-accent);
+  /* "~10 мин" must not break across two lines when the column gets tight. */
+  white-space: nowrap;
 }
 .hero-facts span {
   font-size: 13px;
