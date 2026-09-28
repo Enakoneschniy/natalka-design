@@ -11,13 +11,10 @@
         <a href="landing.html#faq">Допомога</a>
       </nav>
       <div class="nav-actions">
-        <span data-lang-slot="lang-nav"></span>
         <span class="small muted">oksana@gmail.com</span>
         <a class="btn btn-ghost btn-sm" href="landing.html">Вийти</a>
       </div>` : variant === 'flow' ? `
-      <div class="nav-actions">
-        <span data-lang-slot="lang-nav"></span>
-      </div>` : `
+      <div class="nav-actions"></div>` : `
       <nav class="nav-links">
         <a href="landing.html#products" ${active === 'products' ? 'aria-current="page"' : ''}>Продукти</a>
         <a href="landing.html#how">Як це працює</a>
@@ -25,10 +22,10 @@
         <a href="landing.html#faq">Питання</a>
       </nav>
       <div class="nav-actions">
-        <span data-lang-slot="lang-nav"></span>
         <a class="btn btn-ghost btn-sm" href="account.html">Увійти</a>
         <a class="btn btn-primary btn-sm" href="form.html">Побудувати карту</a>
       </div>`}
+      <span data-lang-slot="lang-nav"></span>
       <button class="nav-burger" aria-label="Меню" aria-expanded="false" aria-controls="menu"><span></span><span></span></button>
     </div>
   </header>

@@ -341,7 +341,7 @@
   .account-grid { grid-template-columns: 1fr; }
   .nav-links { display: none; }
   .nav-actions .btn-ghost { display: none; }
-  .nav-burger { display: inline-flex; margin-left: 12px; }
+  .nav-burger { display: inline-flex; }
 }
 /* dual-screen / hinge: keep the hero columns on either side of the fold */
 @media (horizontal-viewport-segments: 2) {
