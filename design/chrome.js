@@ -99,6 +99,7 @@
       bg: { pre: 'Днес Луната е в', signs: ['Овен','Телец','Близнаци','Рак','Лъв','Дева','Везни','Скорпион','Стрелец','Козирог','Водолей','Риби'], wax: 'расте', wane: 'намалява', lit: 'осветена' },
       ro: { pre: 'Azi Luna este în', signs: ['Berbec','Taur','Gemeni','Rac','Leu','Fecioară','Balanță','Scorpion','Săgetător','Capricorn','Vărsător','Pești'], wax: 'crește', wane: 'descrește', lit: 'iluminată' },
       es: { pre: 'Hoy la Luna está en', signs: ['Aries','Tauro','Géminis','Cáncer','Leo','Virgo','Libra','Escorpio','Sagitario','Capricornio','Acuario','Piscis'], wax: 'creciente', wane: 'menguante', lit: 'iluminada al' },
+      ru: { pre: 'Сегодня Луна в', signs: ['Овне','Тельце','Близнецах','Раке','Льве','Деве','Весах','Скорпионе','Стрельце','Козероге','Водолее','Рыбах'], wax: 'растёт', wane: 'убывает', lit: 'освещено' },
       it: { pre: 'Oggi la Luna è in', signs: ['Ariete','Toro','Gemelli','Cancro','Leone','Vergine','Bilancia','Scorpione','Sagittario','Capricorno','Acquario','Pesci'], wax: 'crescente', wane: 'calante', lit: 'illuminata al' },
     }[lang] || {};
     // disc: lit side on the right while waxing, left while waning (northern hemisphere)

@@ -1,27 +1,34 @@
 /* Natalka — i18n
    Ukrainian is the source language in the markup; dictionaries in i18n/<lang>.js map
    Ukrainian strings → translations, applied to text nodes and a few attributes.
-   Supported: uk, en, pl. Russian is deliberately not a language of this product:
-   it is never offered, and devices with a ru-* locale are served Ukrainian. */
+   Russian is available everywhere except Ukraine: for visitors from UA (geo, or a uk-UA / ru-UA locale)
+   it is not listed and ru-* devices are served Ukrainian. Production sets <html data-country>. */
 const NATALKA_LANG = (() => {
-  const SUPPORTED = ['uk', 'en', 'pl', 'de', 'fr', 'cs', 'sk', 'bg', 'ro', 'es', 'it'];
-  const LABELS = { uk: 'UA', en: 'EN', pl: 'PL', de: 'DE', fr: 'FR', cs: 'CS', sk: 'SK', bg: 'BG', ro: 'RO', es: 'ES', it: 'IT' };
-  const NAMES = { uk: 'Українська', en: 'English', pl: 'Polski', de: 'Deutsch', fr: 'Français', cs: 'Čeština', sk: 'Slovenčina', bg: 'Български', ro: 'Română', es: 'Español', it: 'Italiano' };
+  const SUPPORTED = ['uk', 'en', 'pl', 'de', 'fr', 'cs', 'sk', 'bg', 'ro', 'es', 'it', 'ru'];
+  const LABELS = { uk: 'UA', en: 'EN', pl: 'PL', de: 'DE', fr: 'FR', cs: 'CS', sk: 'SK', bg: 'BG', ro: 'RO', es: 'ES', it: 'IT', ru: 'RU' };
+  const NAMES = { uk: 'Українська', en: 'English', pl: 'Polski', de: 'Deutsch', fr: 'Français', cs: 'Čeština', sk: 'Slovenčina', bg: 'Български', ro: 'Română', es: 'Español', it: 'Italiano', ru: 'Русский' };
   // geo → language (production: server sets <html data-country> from CF-IPCountry; RU → /unavailable)
   const COUNTRY = { UA: 'uk', PL: 'pl', DE: 'de', AT: 'de', CH: 'de', LI: 'de', FR: 'fr', BE: 'fr', LU: 'fr', MC: 'fr', CZ: 'cs', SK: 'sk', BG: 'bg', RO: 'ro', MD: 'ro', ES: 'es', AR: 'es', MX: 'es', CL: 'es', CO: 'es', PE: 'es', IT: 'it', SM: 'it' };
   const ATTRS = ['placeholder', 'aria-label', 'title'];
 
+  // Ukraine: by geo (data-country=UA) or by a *-UA device locale. Russian is hidden there.
+  function inUkraine() {
+    if (document.documentElement.dataset.country) return document.documentElement.dataset.country === 'UA';
+    return (navigator.languages || [navigator.language || '']).some(l => /-ua$/i.test(l));
+  }
+  function available() { return inUkraine() ? SUPPORTED.filter(l => l !== 'ru') : SUPPORTED; }
   function detect() {
+    const ok = available();
     const q = new URLSearchParams(location.search).get('lang');
-    if (q && SUPPORTED.includes(q)) return q;
-    try { const s = localStorage.getItem('natalka.lang'); if (s && SUPPORTED.includes(s)) return s; } catch (e) {}
-    // Production: the server sets this from geo (CF-IPCountry): UA → uk, PL → pl, everything else → en; RU → /unavailable.
+    if (q && ok.includes(q)) return q;
+    try { const s = localStorage.getItem('natalka.lang'); if (s && ok.includes(s)) return s; } catch (e) {}
+    // Production: the server sets <html data-country> from geo (CF-IPCountry); RU → /unavailable.
     const country = document.documentElement.dataset.country;
     if (country && COUNTRY[country]) return COUNTRY[country];
     for (const l of navigator.languages || [navigator.language || 'en']) {
       const base = l.slice(0, 2).toLowerCase();
-      if (base === 'ru') return 'uk';           // never Russian; Ukrainian-speaking users on ru-locale devices get Ukrainian
-      if (SUPPORTED.includes(base)) return base;
+      if (base === 'ru') return inUkraine() ? 'uk' : 'ru';
+      if (ok.includes(base)) return base;
     }
     return 'en';
   }
@@ -66,7 +73,7 @@ const NATALKA_LANG = (() => {
   }
 
   function set(lang) {
-    if (!SUPPORTED.includes(lang)) return;
+    if (!available().includes(lang)) return;
     try { localStorage.setItem('natalka.lang', lang); } catch (e) {}
     const u = new URL(location.href); u.searchParams.delete('lang'); history.replaceState(null, '', u);
     apply(lang);
@@ -74,7 +81,7 @@ const NATALKA_LANG = (() => {
   }
 
   function switcherHTML(kind = 'lang-nav') {
-    const items = SUPPORTED.map(l => `<button type="button" data-lang="${l}" aria-pressed="false" lang="${l}"><span class="lang-code">${LABELS[l]}</span><span class="lang-name">${NAMES[l]}</span></button>`).join('');
+    const items = available().map(l => `<button type="button" data-lang="${l}" aria-pressed="false" lang="${l}"><span class="lang-code">${LABELS[l]}</span><span class="lang-name">${NAMES[l]}</span></button>`).join('');
     if (kind === 'lang-menu') return `<div class="lang lang-grid" data-lang-switch role="group" aria-label="Мова">${items}</div>`;
     return `<div class="lang lang-drop" data-lang-switch>
       <button type="button" class="lang-current" aria-haspopup="listbox" aria-expanded="false" aria-label="Мова"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2.5 2.5 2.5 10.5 0 13M8 1.5c-2.5 2.5-2.5 10.5 0 13"/></svg><span class="lang-code" data-lang-current></span><svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3.5l3 3 3-3"/></svg></button>
@@ -95,5 +102,5 @@ const NATALKA_LANG = (() => {
     apply(detect());
   });
 
-  return { SUPPORTED, LABELS, NAMES, detect, set, apply, get current() { return document.documentElement.lang || 'uk'; } };
+  return { SUPPORTED, LABELS, NAMES, available, inUkraine, detect, set, apply, get current() { return document.documentElement.lang || 'uk'; } };
 })();
