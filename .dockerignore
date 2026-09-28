@@ -1,0 +1,11 @@
+.git/
+.venv/
+node_modules/
+design/screenshots/
+reference/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+.env
+*.pdf

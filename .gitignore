@@ -30,3 +30,4 @@ packages/document/out/
 /docker-compose.yml
 /on-start.sh.example
 .impeccable/
+.pnpm-store/

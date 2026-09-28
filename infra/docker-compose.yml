@@ -1,0 +1,34 @@
+# Local development stack: Postgres plus the internal API.
+# Usage: docker compose -f infra/docker-compose.yml up db     (database only, API runs from uv)
+#        docker compose -f infra/docker-compose.yml up        (everything)
+name: natalka
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: natalka
+      POSTGRES_PASSWORD: natalka
+      POSTGRES_DB: natalka
+    ports: ["5432:5432"]
+    volumes: ["natalka-db:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U natalka"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    command: ["python", "-m", "natalka_worker", "api", "--port", "8000"]
+    environment:
+      NATALKA_DATABASE_URL: postgresql://natalka:natalka@db:5432/natalka
+    env_file: [../.env]
+    ports: ["8000:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+
+volumes:
+  natalka-db:
