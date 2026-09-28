@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "natalka-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": {
+    "ALLOWED_ORIGINS": "https://natalka-web.ceo-63e.workers.dev,http://localhost:3000"
+  },
+  "containers": [
+    {
+      "class_name": "ApiContainer",
+      // Built and pushed by CI (.github/workflows/container.yml); tag is rewritten on deploy.
+      "image": "registry.cloudflare.com/f63eebad9e3bd39565a3129188e84a47/natalka-api:latest",
+      "max_instances": 3,
+      "instance_type": "basic"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "API_CONTAINER", "class_name": "ApiContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApiContainer"] }]
+}

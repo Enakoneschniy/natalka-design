@@ -1,0 +1,74 @@
+name: API container
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - 'apps/worker/**'
+      - 'apps/api-edge/**'
+      - 'infra/Dockerfile'
+      - 'uv.lock'
+      - '.github/workflows/container.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: container-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: registry.cloudflare.com/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/natalka-api
+
+jobs:
+  build-and-deploy:
+    name: build image · deploy worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build image (amd64, the only architecture Containers run)
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --file infra/Dockerfile \
+            --tag "$IMAGE:${GITHUB_SHA::12}" \
+            --tag "$IMAGE:latest" \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --load .
+          docker image inspect "$IMAGE:${GITHUB_SHA::12}" --format 'image size: {{.Size}} bytes'
+
+      - name: Push to the Cloudflare registry
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          pnpm exec wrangler containers push "$IMAGE:${GITHUB_SHA::12}"
+          pnpm exec wrangler containers push "$IMAGE:latest"
+
+      - name: Deploy the edge worker with this image
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: apps/api-edge
+        run: |
+          sed -i "s|natalka-api:latest|natalka-api:${GITHUB_SHA::12}|" wrangler.jsonc
+          pnpm exec wrangler deploy
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /tmp/out -w '%{http_code}' https://natalka-api.ceo-63e.workers.dev/health || true)
+            [ "$code" = "200" ] && cat /tmp/out && exit 0
+            sleep 6
+          done
+          echo "health check failed"; cat /tmp/out || true; exit 1

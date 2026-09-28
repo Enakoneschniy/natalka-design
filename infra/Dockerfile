@@ -1,17 +1,19 @@
-# Single image for both roles: `natalka_worker api` and `natalka_worker worker`.
-FROM python:3.12-slim AS base
+# Image for the Python calculation API. Runs on Cloudflare Containers (linux/amd64) and locally
+# through infra/docker-compose.yml. Two roles: `natalka_worker api` and `natalka_worker worker`.
+FROM python:3.12-slim-bookworm
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
+    UV_NO_DEV=1 \
     PATH="/app/.venv/bin:$PATH"
 
 COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
-# Dependency layer: only manifests, so edits to source do not invalidate the cache.
+# Dependency layer: manifests only, so source edits keep the cached install.
 COPY pyproject.toml uv.lock ./
 COPY packages/engine/pyproject.toml packages/engine/
 COPY packages/document/pyproject.toml packages/document/
@@ -23,10 +25,15 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY packages/ packages/
 COPY apps/worker/ apps/worker/
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev \
+    && find /app/.venv -name '__pycache__' -type d -prune -exec rm -rf {} + \
+    && find /app/.venv -name '*.pyc' -delete
 
 RUN useradd --uid 10001 --create-home natalka && chown -R natalka:natalka /app
 USER natalka
+
+# Warm the ephemeris and the time-zone index at build time so the first request is not the slowest.
+RUN python -c "from natalka_engine import ephemeris; ephemeris.configure(); from natalka_engine.geo import zone_for; zone_for(50.45, 30.52)"
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
