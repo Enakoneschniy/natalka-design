@@ -26,6 +26,10 @@ from natalka_engine import (
 )
 from natalka_engine.geo import zone_for
 from natalka_engine.timeutil import UnknownTimeZoneError
+from natalka_texts import AnthropicProvider, ModelUnavailableError, fact_sheet, specs, title
+from natalka_texts.generate import MAX_TOKENS
+from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
+from natalka_texts.validate import check
 from pydantic import BaseModel, Field, field_validator
 
 from .cities import CityDatabaseMissingError, search_cities
@@ -104,6 +108,106 @@ def wheel(  # noqa: PLR0917 — query parameters
     return Response(
         svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"}
     )
+
+
+class SectionRequest(BaseModel):
+    """One section of a reading.
+
+    The jobs worker drives the document section by section rather than asking for it in one
+    request: a full reading takes minutes, and a per-section call keeps every step inside normal
+    HTTP timeouts, lets a single failed section be retried on its own and gives the waiting page
+    something honest to show ("12 of 27 written").
+    """
+
+    facts: dict[str, Any]
+    transits: list[dict[str, Any]] = Field(default_factory=list)
+    section_id: str
+    product: Literal["natal", "forecast", "synastry", "child", "bundle"] = "natal"
+    lang: str = Field(default="uk", pattern=r"^[a-z]{2}$")
+    name: str = Field(min_length=1, max_length=80)
+    gender: Literal["f", "m", "n"] = "n"
+    #: Titles and openings of the sections already written, so the document does not repeat itself.
+    written_so_far: list[str] = Field(default_factory=list)
+
+
+@app.get("/v1/sections")
+def sections(
+    product: Literal["natal", "forecast", "synastry", "child", "bundle"] = "natal",
+    lang: str = "uk",
+    unknown_time: bool = False,
+) -> dict[str, Any]:
+    """The plan for a document: which sections to write, in order."""
+    chosen = specs(product, unknown_time=unknown_time)
+    return {
+        "product": product,
+        "sections": [{"id": s.id, "title": title(s, lang), "quote": s.quote} for s in chosen],
+    }
+
+
+@app.post("/v1/section")
+def section(req: SectionRequest) -> dict[str, Any]:
+    spec = next((s for s in specs(req.product, unknown_time=False) if s.id == req.section_id), None)
+    if spec is None:
+        raise HTTPException(404, f"unknown section: {req.section_id}")
+
+    provider = AnthropicProvider()
+    system = system_prompt(req.lang, req.gender)
+    user = section_prompt(
+        spec,
+        name=req.name,
+        sheet=fact_sheet(req.facts, req.transits),
+        written_so_far=req.written_so_far,
+    )
+    try:
+        completion = provider.complete(system, user, max_tokens=MAX_TOKENS)
+        report = check(
+            completion.text,
+            lang=req.lang,
+            min_paragraphs=spec.paragraphs[0],
+            max_paragraphs=spec.paragraphs[1],
+        )
+        attempts = 1
+        if not report.ok:
+            attempts = 2
+            completion2 = provider.complete(
+                system,
+                f"{user}\n\n{repair_prompt(list(report.problems))}",
+                max_tokens=MAX_TOKENS,
+            )
+            report2 = check(
+                completion2.text,
+                lang=req.lang,
+                min_paragraphs=spec.paragraphs[0],
+                max_paragraphs=spec.paragraphs[1],
+            )
+            # Keep the receipt of both attempts: the caller pays for them either way.
+            return {
+                "id": spec.id,
+                "title": title(spec, req.lang),
+                "quote": spec.quote,
+                "text": completion2.text,
+                "problems": list(report2.problems),
+                "attempts": attempts,
+                "tokens_in": completion.tokens_in + completion2.tokens_in,
+                "tokens_out": completion.tokens_out + completion2.tokens_out,
+                "cost_micros": completion.cost_micros + completion2.cost_micros,
+                "model": completion2.model,
+            }
+    except ModelUnavailableError as exc:
+        raise HTTPException(503, f"model unavailable: {exc}") from exc
+
+    return {
+        "id": spec.id,
+        "title": title(spec, req.lang),
+        "quote": spec.quote,
+        "text": completion.text,
+        "problems": [],
+        "attempts": attempts,
+        "tokens_in": completion.tokens_in,
+        "tokens_out": completion.tokens_out,
+        "cost_micros": completion.cost_micros,
+        "model": completion.model,
+    }
 
 
 @app.post("/v1/document")

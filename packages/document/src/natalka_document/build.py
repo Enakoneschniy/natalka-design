@@ -7,17 +7,21 @@ added later by ``natalka_texts``; here they are empty.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
 from .labels import ui
 from .schema import (
     AspectGrid,
     Birth,
+    Block,
     Cover,
     Document,
     Meta,
+    Paragraph,
     Person,
     PositionsTable,
+    Quote,
     Section,
     WheelBlock,
 )
@@ -145,4 +149,38 @@ def natal_skeleton(
     )
 
 
-__all__ = ["NATAL_SECTIONS", "NO_TIME_SKIPPED", "natal_skeleton", "ui"]
+def fill_sections(
+    document: Document,
+    texts: dict[str, tuple[str, str, bool]],
+) -> Document:
+    """Put written text into a skeleton.
+
+    ``texts`` maps a section id to ``(title, body, pull_quote)``. The body is split on blank lines
+    into paragraphs; when ``pull_quote`` is set the last paragraph is lifted out as a quote, which
+    is how the reference documents break up a long stretch of prose. Sections with no text are
+    dropped rather than left empty — an empty heading in a paid PDF looks like a bug.
+    """
+    kept: list[Section] = []
+    for section in document.sections:
+        if section.id == "chart":
+            kept.append(section)
+            continue
+        entry = texts.get(section.id)
+        if entry is None:
+            continue
+        heading, body, pull_quote = entry
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body.strip()) if p.strip()]
+        if not paragraphs:
+            continue
+        blocks: list[Block] = []
+        if pull_quote and len(paragraphs) > 2:
+            *rest, last = paragraphs
+            blocks.extend(Paragraph(text=p) for p in rest)
+            blocks.append(Quote(text=last))
+        else:
+            blocks.extend(Paragraph(text=p) for p in paragraphs)
+        kept.append(section.model_copy(update={"title": heading, "blocks": blocks}))
+    return document.model_copy(update={"sections": kept})
+
+
+__all__ = ["NATAL_SECTIONS", "NO_TIME_SKIPPED", "fill_sections", "natal_skeleton", "ui"]
