@@ -10,10 +10,11 @@ import pytest
 from natalka_document.build import SECTIONS, fill_sections, skeleton
 from natalka_document.render import render_pdf
 from natalka_document.schema import Person
+from natalka_texts import synastry_sheet
 from natalka_texts.prompts import system_prompt
 from natalka_texts.sections import BY_PRODUCT, specs
 
-PRODUCTS = ("natal", "forecast", "child", "synastry")
+PRODUCTS = ("natal", "forecast", "child", "synastry", "bundle")
 
 
 @pytest.mark.parametrize("product", PRODUCTS)
@@ -59,8 +60,6 @@ def test_a_natal_reading_has_no_extra_addressee_rules() -> None:
 
 
 def test_a_synastry_sheet_names_both_people(facts: dict) -> None:
-    from natalka_texts import synastry_sheet
-
     data = {
         "first": facts,
         "second": facts,

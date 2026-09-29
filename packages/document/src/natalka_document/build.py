@@ -102,8 +102,23 @@ SYNASTRY_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
     ("ps", 1),
 )
 
+#: The bundle is the natal reading plus the month-level detail the forecast adds on top of it.
+#: Only the quarters, the slow transits and the advice come across: the forecast's own opening,
+#: its natal ground and its work/love chapters would all repeat what the natal reading just said.
+BUNDLE_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
+    *(s for s in NATAL_SECTIONS if s[0] != "ps"),
+    ("forecast.q1", 2),
+    ("forecast.q2", 2),
+    ("forecast.q3", 2),
+    ("forecast.q4", 2),
+    ("forecast.slow", 1),
+    ("forecast.advice", 1),
+    ("ps", 1),
+)
+
 SECTIONS: dict[str, tuple[tuple[str, Literal[1, 2]], ...]] = {
     "natal": NATAL_SECTIONS,
+    "bundle": BUNDLE_SECTIONS,
     "forecast": FORECAST_SECTIONS,
     "child": CHILD_SECTIONS,
     "synastry": SYNASTRY_SECTIONS,
@@ -146,6 +161,13 @@ COVER_TITLE: dict[str, dict[str, str]] = {
         "pl": "Zgodność",
         "de": "Partnerschaft",
     },
+    "bundle": {
+        "uk": "Натальна карта і прогноз",
+        "en": "Birth chart and forecast",
+        "ru": "Натальная карта и прогноз",
+        "pl": "Horoskop i prognoza",
+        "de": "Geburtshoroskop und Prognose",
+    },
 }
 COVER_SUBTITLE: dict[str, dict[str, str]] = {
     "natal": {
@@ -175,6 +197,13 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "ru": "две карты рядом",
         "pl": "dwie karty obok siebie",
         "de": "zwei Horoskope nebeneinander",
+    },
+    "bundle": {
+        "uk": "розбір і дванадцять місяців наперед",
+        "en": "a reading and the twelve months ahead",
+        "ru": "разбор и двенадцать месяцев вперёд",
+        "pl": "analiza i dwanaście miesięcy naprzód",
+        "de": "Deutung und die nächsten zwölf Monate",
     },
 }
 CHART_SECTION_TITLE = {
@@ -311,6 +340,7 @@ def natal_skeleton(facts: dict[str, Any], **kwargs: Any) -> Document:
 
 
 __all__ = [
+    "BUNDLE_SECTIONS",
     "CHILD_SECTIONS",
     "FORECAST_SECTIONS",
     "NATAL_SECTIONS",

@@ -616,3 +616,21 @@ SYNASTRY: tuple[SectionSpec, ...] = (
 )
 
 BY_PRODUCT["synastry"] = SYNASTRY
+
+
+#: The same composition as the document's bundle: the natal reading, then the quarter-by-quarter
+#: detail. Built from the two lists rather than retyped, so a change to a section brief reaches
+#: the bundle without anyone remembering to copy it.
+_FORECAST_BY_ID = {spec.id: spec for spec in FORECAST}
+BUNDLE: tuple[SectionSpec, ...] = (
+    *(s for s in NATAL if s.id != "ps"),
+    _FORECAST_BY_ID["forecast.q1"],
+    _FORECAST_BY_ID["forecast.q2"],
+    _FORECAST_BY_ID["forecast.q3"],
+    _FORECAST_BY_ID["forecast.q4"],
+    _FORECAST_BY_ID["forecast.slow"],
+    _FORECAST_BY_ID["forecast.advice"],
+    next(s for s in NATAL if s.id == "ps"),
+)
+
+BY_PRODUCT["bundle"] = BUNDLE
