@@ -13,8 +13,9 @@ from typing import Annotated, Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import Response
+from natalka_document.build import fill_sections, natal_skeleton
 from natalka_document.render import render_pdf
-from natalka_document.schema import Document
+from natalka_document.schema import Document, Person
 from natalka_document.wheel import DARK, LIGHT, wheel_svg
 from natalka_engine import (
     NatalInput,
@@ -208,6 +209,44 @@ def section(req: SectionRequest) -> dict[str, Any]:
         "cost_micros": completion.cost_micros,
         "model": completion.model,
     }
+
+
+class WrittenSection(BaseModel):
+    id: str
+    title: str
+    text: str
+    quote: bool = False
+
+
+class SkeletonRequest(BaseModel):
+    """Assemble a document: the fixed structure plus the sections that were written."""
+
+    facts: dict[str, Any]
+    transits: list[dict[str, Any]] = Field(default_factory=list)
+    sections: list[WrittenSection] = Field(default_factory=list)
+    product: Literal["natal", "forecast", "synastry", "child", "bundle"] = "natal"
+    lang: str = Field(default="uk", pattern=r"^[a-z]{2}$")
+    name: str = Field(min_length=1, max_length=80)
+    gender: Literal["f", "m", "n"] = "n"
+    place: str = ""
+    order_ref: str | None = None
+
+
+@app.post("/v1/skeleton")
+def skeleton(req: SkeletonRequest) -> dict[str, Any]:
+    if req.product != "natal":
+        raise HTTPException(400, f"no skeleton for product: {req.product}")
+    document = natal_skeleton(
+        req.facts,
+        person=Person(name=req.name, gender=req.gender),
+        place=req.place,
+        lang=req.lang,
+        order_ref=req.order_ref,
+        transits=req.transits,
+        engine_version=ephemeris.version(),
+    )
+    filled = fill_sections(document, {s.id: (s.title, s.text, s.quote) for s in req.sections})
+    return filled.model_dump(mode="json")
 
 
 @app.post("/v1/document")

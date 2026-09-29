@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "natalka-jobs",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": {
+    // The calculation and text API (Python in a container).
+    "NATALKA_API_URL": "https://natalka-api.ceo-63e.workers.dev",
+    // Days a document and the birth data behind it are kept.
+    "RETENTION_DAYS": "30"
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "natalka", "database_id": "90261635-69b9-461b-9e1f-9a7b98596e97", "migrations_dir": "migrations" }
+  ],
+  "r2_buckets": [{ "binding": "DOCS", "bucket_name": "natalka-documents" }],
+  "queues": {
+    "producers": [{ "binding": "JOBS", "queue": "natalka-jobs" }],
+    "consumers": [
+      {
+        "queue": "natalka-jobs",
+        // One document at a time per consumer: a reading is a long chain of model calls, and
+        // batching them would only make a failure harder to place.
+        "max_batch_size": 1,
+        "max_concurrency": 4,
+        "max_retries": 3,
+        "dead_letter_queue": "natalka-jobs-dlq"
+      }
+    ]
+  },
+  "triggers": {
+    // Nightly retention sweep: birth data and documents past their date are deleted.
+    "crons": ["17 3 * * *"]
+  }
+}
