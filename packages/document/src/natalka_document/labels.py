@@ -204,6 +204,11 @@ UI: Final[dict[str, dict[str, str]]] = {
         "house": "Дім",
         "retro": "R",
         "aspects": "Сітка аспектів",
+        "dates": "Головні дати",
+        "when": "Коли",
+        "what": "Що",
+        "dates_note": "Точні дати за ефемеридами. Транзит діє і за тиждень до, і за тиждень після.",
+        "retrograde": "ретроградно",
         "date": "Дата",
         "time": "Час",
         "place": "Місце",
@@ -227,6 +232,11 @@ UI: Final[dict[str, dict[str, str]]] = {
         "house": "House",
         "retro": "R",
         "aspects": "Aspect grid",
+        "dates": "The main dates",
+        "when": "When",
+        "what": "What",
+        "dates_note": "Exact dates from the ephemeris. A transit is felt for about a week either side.",
+        "retrograde": "retrograde",
         "date": "Date",
         "time": "Time",
         "place": "Place",
@@ -250,6 +260,11 @@ UI: Final[dict[str, dict[str, str]]] = {
         "house": "Дом",
         "retro": "R",
         "aspects": "Сетка аспектов",
+        "dates": "Главные даты",
+        "when": "Когда",
+        "what": "Что",
+        "dates_note": "Точные даты по эфемеридам. Транзит действует и за неделю до, и за неделю после.",
+        "retrograde": "ретроградно",
         "date": "Дата",
         "time": "Время",
         "place": "Место",
@@ -273,6 +288,11 @@ UI: Final[dict[str, dict[str, str]]] = {
         "house": "Dom",
         "retro": "R",
         "aspects": "Siatka aspektów",
+        "dates": "Najważniejsze daty",
+        "when": "Kiedy",
+        "what": "Co",
+        "dates_note": "Dokładne daty z efemeryd. Tranzyt działa około tygodnia przed i po.",
+        "retrograde": "retrogradacja",
         "date": "Data",
         "time": "Godzina",
         "place": "Miejsce",
@@ -296,6 +316,11 @@ UI: Final[dict[str, dict[str, str]]] = {
         "house": "Haus",
         "retro": "R",
         "aspects": "Aspektgitter",
+        "dates": "Die wichtigsten Daten",
+        "when": "Wann",
+        "what": "Was",
+        "dates_note": "Exakte Daten aus der Ephemeride. Ein Transit wirkt etwa eine Woche davor und danach.",
+        "retrograde": "rückläufig",
         "date": "Datum",
         "time": "Uhrzeit",
         "place": "Ort",
@@ -332,22 +357,25 @@ def body_name(lang: str, body: str) -> str:
     return BODIES.get(lang, BODIES["en"]).get(body, BODIES["en"].get(body, body))
 
 
+#: Zodiacal order — the order SIGNS and glyphs.SIGN_PATHS are both in.
+SIGN_KEYS: Final[tuple[str, ...]] = (
+    "aries",
+    "taurus",
+    "gemini",
+    "cancer",
+    "leo",
+    "virgo",
+    "libra",
+    "scorpio",
+    "sagittarius",
+    "capricorn",
+    "aquarius",
+    "pisces",
+)
+
+
 def sign_name(lang: str, sign: str) -> str:
-    keys = (
-        "aries",
-        "taurus",
-        "gemini",
-        "cancer",
-        "leo",
-        "virgo",
-        "libra",
-        "scorpio",
-        "sagittarius",
-        "capricorn",
-        "aquarius",
-        "pisces",
-    )
-    return SIGNS.get(lang, SIGNS["en"])[keys.index(sign)]
+    return SIGNS.get(lang, SIGNS["en"])[SIGN_KEYS.index(sign)]
 
 
 def ui(lang: str, key: str) -> str:

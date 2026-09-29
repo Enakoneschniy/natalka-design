@@ -36,12 +36,13 @@ from svglib.svglib import svg2rlg
 
 from . import motifs
 from . import styles as st
-from .glyphs import ASPECT_PATHS, PLANET_PATHS
-from .labels import ROMAN, body_name, sign_name, ui
+from .glyphs import ASPECT_PATHS, PLANET_PATHS, SIGN_PATHS
+from .labels import ROMAN, SIGN_KEYS, body_name, sign_name, ui
 from .schema import (
     AspectGrid,
     Block,
     BulletList,
+    DatesTable,
     Document,
     PositionsTable,
     Quote,
@@ -68,6 +69,10 @@ GRID_BODIES = (
 )  # fmt: skip
 GRID_COLOURS = {"tense": "#D9553A", "harmonious": "#2B47E0", "neutral": "#9A9EBB"}
 INK_HEX = "#232333"
+GOLD_HEX = "#B08E4F"
+#: The points a reader recognises as themselves. A slow planet meeting another slow planet is a
+#: transit too, but it belongs to the prose, not to the page of dates.
+PERSONAL_TARGETS = frozenset({"sun", "moon", "mercury", "venus", "mars", "asc", "mc"})
 UNNUMBERED = ("chart", "intro")
 
 
@@ -268,6 +273,8 @@ class Renderer:
                     out += self._positions_table(b)
                 case AspectGrid():
                     out += self._aspect_grid()
+                case DatesTable():
+                    out += self._dates_table(b)
                 case PageBreakBlock():
                     out.append(PageBreak())
         return out
@@ -357,6 +364,82 @@ class Renderer:
             Paragraph(f"{ui(lang, 'legend')} {note}", st.s_caption),
             Spacer(1, 8),
         ]
+
+    def _date_row(self, event: dict[str, Any]) -> list[Any]:
+        """One line of the dates table: glyphs, then the name, then the date on the left."""
+        lang = self.lang
+        body = str(event.get("body", ""))
+        parts: list[Any] = []
+        widths: list[float | None] = []
+        if body in PLANET_PATHS:
+            parts.append(_glyph_drawing(PLANET_PATHS[body], 11, INK_HEX))
+            widths.append(16)
+        if event.get("kind") == "ingress":
+            sign = str(event.get("sign", ""))
+            if sign in SIGN_KEYS:
+                parts.append(_glyph_drawing(SIGN_PATHS[SIGN_KEYS.index(sign)], 11, INK_HEX))
+                widths.append(16)
+            # An arrow rather than a verb: "enters" would need a case ending in every language.
+            label = f"{body_name(lang, body)} → {sign_name(lang, sign)}"
+            if event.get("retrograde"):
+                label += f", {ui(lang, 'retrograde')}"
+            parts.append(Paragraph(label, st.s_table))
+            widths.append(None)
+        else:
+            aspect = str(event.get("aspect", ""))
+            target = str(event.get("target", ""))
+            if aspect in ASPECT_PATHS:
+                parts.append(_glyph_drawing(ASPECT_PATHS[aspect], 10, GOLD_HEX))
+                widths.append(14)
+            if target in PLANET_PATHS:
+                parts.append(_glyph_drawing(PLANET_PATHS[target], 11, INK_HEX))
+                widths.append(16)
+            parts.append(Paragraph(body_name(lang, target), st.s_table))
+            widths.append(None)
+        what: Any = Table([parts], colWidths=widths, style=_tight()) if parts else ""
+        return [Paragraph(_dmy(str(event.get("date", ""))), st.s_table_mono), what]
+
+    def _dates_table(self, b: DatesTable) -> list[Flowable]:
+        """The window's exact dates, in order. Glyphs rather than words: the same table then reads
+        the same in every language, and a page of "квадрат" repeated forty times reads as noise."""
+        events = [
+            e
+            for e in self.doc.transits
+            if (b.include_ingresses if e.get("kind") == "ingress" else True)
+            and (
+                e.get("kind") == "ingress"
+                or not b.personal_only
+                or e.get("target") in PERSONAL_TARGETS
+            )
+        ]
+        if not events:
+            return []
+        lang = self.lang
+        rows: list[list[Any]] = [
+            [
+                Paragraph(ui(lang, "when"), st.s_table_head),
+                Paragraph(ui(lang, "what"), st.s_table_head),
+            ]
+        ]
+        rows.extend(self._date_row(event) for event in events)
+
+        w = self.width
+        t = Table(rows, colWidths=[w * 0.24, w * 0.76], repeatRows=1)
+        t.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), st.NAVY),
+                    ("LINEBELOW", (0, 0), (-1, 0), 0.8, st.GOLD),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [st.CREAM, HexColor("#FDFAF3")]),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                    ("TOPPADDING", (0, 0), (-1, -1), 3),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ]
+            )
+        )
+        return [t, Spacer(1, 8), Paragraph(ui(lang, "dates_note"), st.s_caption)]
 
     def _aspect_grid(self) -> list[Flowable]:
         bodies = [b for b in GRID_BODIES if b in self._positions]

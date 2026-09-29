@@ -137,6 +137,18 @@ class AspectGrid(_Strict):
     type: Literal["aspect_grid"] = "aspect_grid"
 
 
+class DatesTable(_Strict):
+    """Every exact transit of the window on one page, in date order — the page a reader comes
+    back to. Drawn from `Document.transits`, so it costs nothing to generate."""
+
+    type: Literal["dates"] = "dates"
+    #: Ingresses are the quieter half of the list; a shorter table reads better.
+    include_ingresses: bool = True
+    #: Keep only what touches a personal point or an angle. A transit of Saturn to natal Neptune
+    #: is real but it is not what a reader came to the page for.
+    personal_only: bool = True
+
+
 class PageBreak(_Strict):
     type: Literal["page_break"] = "page_break"
 
@@ -150,6 +162,7 @@ Block = Annotated[
     | WheelBlock
     | PositionsTable
     | AspectGrid
+    | DatesTable
     | PageBreak,
     Field(discriminator="type"),
 ]

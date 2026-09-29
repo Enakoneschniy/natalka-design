@@ -16,6 +16,7 @@ from .schema import (
     Birth,
     Block,
     Cover,
+    DatesTable,
     Document,
     Meta,
     PageBreak,
@@ -228,6 +229,16 @@ def _t(table: dict[str, str], lang: str) -> str:
     return table.get(lang, table["en"])
 
 
+#: The title of the computed page of dates, in the document's language.
+DATES_TITLE = {
+    "uk": "Головні дати",
+    "en": "The main dates",
+    "ru": "Главные даты",
+    "pl": "Najważniejsze daty",
+    "de": "Die wichtigsten Daten",
+}
+
+
 def skeleton(
     facts: dict[str, Any],
     *,
@@ -279,6 +290,20 @@ def skeleton(
                 id=sid, title=sid, level=level, page_break_before=(level == 1 and sid != "intro")
             )
         )
+    # The page of dates: computed, not written, so it costs nothing and is the page a reader
+    # comes back to. Only the products that carry a window of time have one, and it sits at the
+    # end, where a reference page belongs.
+    if transits and product in ("forecast", "bundle"):
+        sections.append(
+            Section(
+                id="dates",
+                title=_t(DATES_TITLE, lang),
+                level=1,
+                page_break_before=True,
+                blocks=[DatesTable()],
+            )
+        )
+
     return Document(
         meta=Meta(product=product, lang=lang, order_ref=order_ref, engine_version=engine_version),
         person=person,
@@ -308,7 +333,8 @@ def fill_sections(
     """
     kept: list[Section] = []
     for section in document.sections:
-        if section.id == "chart":
+        # Computed sections carry their own blocks and no written text.
+        if section.id in ("chart", "dates"):
             kept.append(section)
             continue
         entry = texts.get(section.id)
