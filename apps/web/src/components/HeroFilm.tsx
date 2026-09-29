@@ -43,8 +43,17 @@ export function HeroFilm({ facts, locale }: { facts: ChartFacts; locale: string 
           />
         ))}
       </div>
+      {/* The sentence arrives a word at a time, each one surfacing from a blur a beat after the
+          last — transforms and opacity only, so nothing reflows while the line settles. */}
       <p className="film-line" aria-hidden="true">
-        {t('film.line')}
+        {t('film.line')
+          .split(' ')
+          .map((word, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: a fixed sentence, never reordered
+            <span key={i} style={{ '--w': i } as React.CSSProperties}>
+              {word}
+            </span>
+          ))}
       </p>
 
       {/* scene 2 → 4: the chart */}
