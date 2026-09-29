@@ -35,20 +35,30 @@ async function sign(value: string, key: string): Promise<string> {
     .slice(0, 22);
 }
 
-const key = (): string => process.env.EXPERIMENT_KEY ?? 'chronika-price-experiment';
+/** No key, no experiment: the cookie is what decides which price is charged, so a signature
+ * anyone could forge is the same as no signature. Without a key the price table decides instead,
+ * which is a working shop rather than a broken one. */
+const key = (): string | null => {
+  const configured = process.env.EXPERIMENT_KEY;
+  return configured && configured.length >= 32 ? configured : null;
+};
+
+export const experimentConfigured = (): boolean => key() !== null;
 
 /** `a.<signature>` — the variant and proof that we assigned it. */
-export async function mintVariant(variant: Variant): Promise<string> {
-  return `${variant}.${await sign(variant, key())}`;
+export async function mintVariant(variant: Variant): Promise<string | null> {
+  const secret = key();
+  return secret ? `${variant}.${await sign(variant, secret)}` : null;
 }
 
-/** The variant a cookie carries, or null if it was edited or never set. */
+/** The variant a cookie carries, or null if it was edited, never set, or unverifiable. */
 export async function readVariant(cookie: string | undefined): Promise<Variant | null> {
-  if (!cookie) return null;
+  const secret = key();
+  if (!secret || !cookie) return null;
   const [variant, signature] = cookie.split('.');
   if (!variant || !signature) return null;
   if (!(VARIANTS as readonly string[]).includes(variant)) return null;
-  const expected = await sign(variant, key());
+  const expected = await sign(variant, secret);
   // Constant-time enough for a value this short, and the secret is not recoverable either way.
   if (expected.length !== signature.length) return null;
   let diff = 0;

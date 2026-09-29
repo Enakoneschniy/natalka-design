@@ -38,13 +38,16 @@ export async function middleware(request: NextRequest) {
   // The price experiment: assigned once, here, before a page can read it, and left alone after.
   const carried = request.cookies.get(EXPERIMENT_COOKIE)?.value;
   if (!(await readVariant(carried))) {
-    response.cookies.set(EXPERIMENT_COOKIE, await mintVariant(randomVariant()), {
-      maxAge: EXPERIMENT_MAX_AGE,
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: true,
-      path: '/',
-    });
+    const minted = await mintVariant(randomVariant());
+    if (minted) {
+      response.cookies.set(EXPERIMENT_COOKIE, minted, {
+        maxAge: EXPERIMENT_MAX_AGE,
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: true,
+        path: '/',
+      });
+    }
   }
   // Closed to search engines for now. The header repeats what the page metadata says, for the
   // crawlers that read one and not the other.
