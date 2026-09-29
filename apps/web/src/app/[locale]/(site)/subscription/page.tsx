@@ -24,7 +24,7 @@ export default async function SubscriptionPage({
       <div className="container-page narrow">
         <h1>{t('manageTitle')}</h1>
         {token ? (
-          <SubscriptionPanel token={token} locale={locale} bot={bot} />
+          <SubscriptionPanel token={token} bot={bot} />
         ) : (
           <p className="explain">{t('gone')}</p>
         )}

@@ -53,15 +53,10 @@ export function SampleGallery({ labels }: { labels: string[] }) {
       </ul>
 
       {open !== null ? (
-        // biome-ignore lint/a11y/noStaticElementInteractions: the backdrop closes on click, and Escape does the same
-        // biome-ignore lint/a11y/useKeyWithClickEvents: the key handler is on the document while this is open
-        <div
-          className="lightbox"
-          role="dialog"
-          aria-modal="true"
-          aria-label={labels[open]}
-          onClick={close}
-        >
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label={labels[open]}>
+          {/* The backdrop is a button so that closing by clicking away is reachable from the
+              keyboard too; Escape does the same while the dialog is open. */}
+          <button type="button" className="lightbox-backdrop" onClick={close} aria-label="Close" />
           <button type="button" className="lightbox-close" onClick={close} aria-label="Close">
             ×
           </button>
@@ -77,11 +72,7 @@ export function SampleGallery({ labels }: { labels: string[] }) {
             ‹
           </button>
           {/* biome-ignore lint/performance/noImgElement: a static asset, not a photo */}
-          <img
-            src={`/sample/page-${open + 1}.png`}
-            alt={labels[open]}
-            onClick={(e) => e.stopPropagation()}
-          />
+          <img src={`/sample/page-${open + 1}.png`} alt={labels[open]} />
           <button
             type="button"
             className="lightbox-arrow is-next"

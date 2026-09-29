@@ -48,13 +48,14 @@ export function SubscribeForm({
       <div className="card person-card">
         <div className="field">
           <span className="label">{t('cadence')}</span>
-          <div className="cadence" role="radiogroup" aria-label={t('cadence')}>
+          {/* The label above names the group; each option is a button that says whether it is
+              pressed. */}
+          <div className="cadence">
             {(['week', 'month'] as const).map((option) => (
               <button
                 key={option}
                 type="button"
-                role="radio"
-                aria-checked={cadence === option}
+                aria-pressed={cadence === option}
                 className={`cadence-option${cadence === option ? ' is-active' : ''}`}
                 onClick={() => setCadence(option)}
               >

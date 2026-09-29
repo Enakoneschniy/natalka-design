@@ -471,7 +471,8 @@
       "under": "A preview in a minute · no account, no card",
       "quote": "Your chart, I will say at once, is unusually tightly wound. Touch work and home answers; touch relationships and money answers. That is not anxiety, that is the construction of it.",
       "quoteFrom": "from a reading",
-      "line": "Everyone was born\nunder a sky of their own."
+      "line": "Everyone was born\nunder a sky of their own.",
+      "facts": ["35 pages", "a PDF by email", "one payment, no subscription"]
     },
     "asks": {
       "title": "What people come to us with",
@@ -483,7 +484,7 @@
         "What do I do for a living when the old way stops working?",
         "What is waiting for me in {next}?"
       ],
-      "note": "A chart does not answer yes or no and does not pass sentence. It shows which period you are in now and when the next window opens. That is an answer you can act on.",
+      "note": "A chart does not answer <em>yes</em> or <em>no</em> and does not pass sentence. It shows which period you are in now and when the next window opens. That is an answer you can act on.",
       "cta": "See your own chart"
     },
     "inside": {
@@ -509,12 +510,7 @@
       ],
       "note": "Plus the chart wheel, the table of positions and houses and a closing “what matters most” — so you can come back to it in six months.",
       "galleryNote": "This is what a reading looks like. Yours will be about you.",
-      "pages": [
-        "Cover",
-        "Contents",
-        "A page of the reading",
-        "The main dates"
-      ]
+      "pages": ["Cover", "Contents", "A page of the reading", "The main dates"]
     },
     "steps": {
       "title": "Look first, decide after",
@@ -554,7 +550,7 @@
       "items": [
         {
           "title": "The calculation is exact",
-          "text": "Planetary positions and transit dates are computed by software from the Swiss Ephemeris — the astronomical tables professional astrology programs run on. Nothing is invented: every position can be checked against any astrological calculator."
+          "text": "Planetary positions and transit dates are computed by software from astronomical ephemerides — the tables of planetary motion professional astrology programs run on. Nothing is invented: every position can be checked against any astrological calculator."
         },
         {
           "title": "The text is written by AI",
@@ -592,7 +588,7 @@
         },
         {
           "q": "Who writes the text?",
-          "a": "The calculation is done by software from the Swiss Ephemeris; the text by a language model following a method written by Chronika's astrologers. Every paragraph rests on a specific position or aspect of your chart."
+          "a": "The calculation is done by software from astronomical ephemerides; the text by a language model following a method written by Chronika's astrologers. Every paragraph rests on a specific position or aspect of your chart."
         },
         {
           "q": "Is this a subscription?",

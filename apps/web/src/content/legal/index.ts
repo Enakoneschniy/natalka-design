@@ -9,7 +9,7 @@ export type LegalDoc = keyof typeof LEGAL;
  * library would be a dependency for a page nobody reads twice. */
 export function renderLegal(source: string, locale: string): string {
   const inline = (text: string) =>
-    escape(text)
+    escapeHtml(text)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/(^|\s)_(.+?)_(?=\s|$)/g, '$1<em>$2</em>')
       .replace(/\[(.+?)\]\((.+?)\)/g, (_, label: string, href: string) => {
@@ -50,5 +50,5 @@ export function legalTitle(source: string): string {
 export const isDraft = (source: string): boolean =>
   /\[[^\]]+\]/.test(source.replace(/\[(.+?)\]\(.+?\)/g, ''));
 
-const escape = (text: string) =>
+const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

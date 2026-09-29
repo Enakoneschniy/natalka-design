@@ -6,15 +6,7 @@ import type { SubscriptionView } from '@/lib/jobs';
 
 const dmy = (iso: string) => iso.slice(0, 10).split('-').reverse().join('.');
 
-export function SubscriptionPanel({
-  token,
-  locale,
-  bot,
-}: {
-  token: string;
-  locale: string;
-  bot: string;
-}) {
+export function SubscriptionPanel({ token, bot }: { token: string; bot: string }) {
   const t = useTranslations('subscription');
   const [view, setView] = useState<SubscriptionView | null>(null);
   const [gone, setGone] = useState(false);
@@ -108,7 +100,7 @@ export function SubscriptionPanel({
 
         <div className="field">
           <span className="label">{t('cadence')}</span>
-          <div className="segmented block" role="group" aria-label={t('cadence')}>
+          <div className="segmented block">
             {(['week', 'month'] as const).map((option) => (
               <button
                 key={option}

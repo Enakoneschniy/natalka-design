@@ -99,7 +99,7 @@ export function HeroScene({ facts }: { facts: ChartFacts }) {
           <span className="scene-ring scene-ring-3">
             <span className="scene-light scene-light-gold" />
           </span>
-          <svg className="scene-sweep" viewBox="0 0 100 100">
+          <svg className="scene-sweep" viewBox="0 0 100 100" aria-hidden="true">
             <circle cx="50" cy="50" r="48" pathLength="100" />
           </svg>
         </div>

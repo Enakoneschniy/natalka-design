@@ -42,6 +42,7 @@
 /* Wheel colours are read from CSS variables by the chart component, so a themed container
    (light PDF-like preview, dark page) changes the drawing without touching the code. */
 :root {
+  --mark-h: 72px;
   --wheel-line: rgba(255, 255, 255, 0.22);
   --wheel-line-strong: #f4f1e8;
   --wheel-glyph: #ead7a6;
@@ -322,6 +323,32 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- the mark ---------- */
+/* Not a header: a line of the page that happens to hold the logo, transparent, with the hero or
+   the first heading starting directly underneath. The hero subtracts this height so that its
+   first screen still ends exactly at the fold. */
+.site-mark {
+  position: relative;
+  z-index: 20;
+  height: var(--mark-h);
+  display: flex;
+  align-items: center;
+  width: min(1240px, 100% - 2 * var(--gutter, 24px));
+  margin-inline: auto;
+}
+.site-mark .logo {
+  font-size: 20px;
+  gap: 10px;
+}
+@media (max-width: 760px) {
+  :root {
+    --mark-h: 56px;
+  }
+  .site-mark .logo {
+    font-size: 18px;
   }
 }
 
@@ -685,421 +712,9 @@
     transform: rotate(360deg);
   }
 }
-/* ---------- the hero as an opening title ---------- */
-/* It plays once, in seven seconds: a star is born, a line surfaces in its light, and the chart
-   assembles ring by ring. Then it settles — the chart stays and only the glow keeps breathing —
-   so the page below can be read. A loop that explodes again every twenty seconds under a
-   headline is a distraction, not a hero. Percentages below are of those seven seconds. */
-.hero-film {
-  --loop: 7s;
-  --in: cubic-bezier(0.16, 0.8, 0.24, 1);
-  --out: cubic-bezier(0.6, 0, 0.8, 0.4);
-  padding: 0;
-  min-height: 0;
-  display: block;
-  position: relative;
-  overflow: hidden;
-}
-.film {
-  position: relative;
-  width: 100%;
-  height: min(calc(100svh - 80px), 860px);
-  min-height: 520px;
-}
-.film-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(ellipse 36% 46% at 50% 50%, rgba(88, 110, 240, 0.3), transparent 70%);
-  opacity: 0.35;
-  animation:
-    film-glow var(--loop) linear 1 both,
-    film-breathe 14s ease-in-out 7s infinite;
-}
-@keyframes film-glow {
-  0% {
-    opacity: 0.2;
-    scale: 1;
-  }
-  12% {
-    opacity: 1;
-    scale: 1.06;
-    animation-timing-function: var(--out);
-  }
-  100% {
-    opacity: 0.55;
-    scale: 1;
-  }
-}
-@keyframes film-breathe {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-/* the star */
-.film-burst {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(60vh, 70vw);
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  border-radius: 50%;
-  pointer-events: none;
-  background: radial-gradient(
-    circle,
-    #fff9ea 0%,
-    rgba(255, 236, 190, 0.9) 8%,
-    rgba(240, 185, 91, 0.55) 22%,
-    rgba(120, 130, 255, 0.25) 45%,
-    transparent 70%
-  );
-  opacity: 0;
-  scale: 0;
-  animation: film-burst var(--loop) linear 1 both;
-}
-@keyframes film-burst {
-  0% {
-    opacity: 0;
-    scale: 0.02;
-  }
-  2% {
-    opacity: 1;
-    scale: 0.05;
-    animation-timing-function: cubic-bezier(0.1, 0.9, 0.2, 1);
-  }
-  8% {
-    opacity: 1;
-    scale: 1.6;
-    animation-timing-function: var(--out);
-  }
-  18%,
-  100% {
-    opacity: 0;
-    scale: 2.6;
-  }
-}
-.film-shock {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(60vh, 70vw);
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 240, 200, 0.9);
-  box-shadow:
-    0 0 24px 4px rgba(240, 185, 91, 0.5),
-    inset 0 0 24px 4px rgba(240, 185, 91, 0.35);
-  pointer-events: none;
-  opacity: 0;
-  scale: 0;
-  animation: film-shock var(--loop) linear 1 both;
-}
-@keyframes film-shock {
-  0%,
-  2% {
-    opacity: 0;
-    scale: 0.05;
-    animation-timing-function: cubic-bezier(0.1, 0.8, 0.2, 1);
-  }
-  5% {
-    opacity: 1;
-  }
-  22%,
-  100% {
-    opacity: 0;
-    scale: 3.2;
-  }
-}
-.film-warp {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.film-warp i {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: calc(14vh * var(--l));
-  height: 1.5px;
-  border-radius: 1px;
-  transform-origin: left center;
-  background: linear-gradient(90deg, rgba(226, 232, 255, 0), rgba(226, 232, 255, 0.95));
-  opacity: 0;
-  animation: film-streak var(--loop) linear 1 both;
-  animation-delay: var(--d);
-}
-.film-warp i:nth-child(4n) {
-  background: linear-gradient(90deg, rgba(240, 185, 91, 0), rgba(240, 185, 91, 0.95));
-}
-@keyframes film-streak {
-  0%,
-  2% {
-    opacity: 0;
-    transform: rotate(var(--a)) translateX(1vh) scaleX(0.05);
-    animation-timing-function: cubic-bezier(0.2, 0.7, 0.1, 1);
-  }
-  6% {
-    opacity: 1;
-    transform: rotate(var(--a)) translateX(12vh) scaleX(1);
-  }
-  17%,
-  100% {
-    opacity: 0;
-    transform: rotate(var(--a)) translateX(75vh) scaleX(0.5);
-  }
-}
-
-/* the line: uncovered by the wave, held long enough to read, then gone */
-.film-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  translate: 0 -50%;
-  margin: 0 auto;
-  max-width: 82vw;
-  text-align: center;
-  font-family: 'Cormorant Garamond', var(--font-display);
-  font-weight: 300;
-  text-transform: uppercase;
-  white-space: pre-line;
-  font-size: clamp(26px, 3.6vw, 60px);
-  line-height: 1.22;
-  letter-spacing: 0.32em;
-  text-indent: 0.32em;
-  color: var(--color-ink);
-  opacity: 0;
-  mask-image: radial-gradient(circle at 50% 50%, #000 0 55%, transparent 100%);
-  mask-size: 0% 0%;
-  mask-position: center;
-  mask-repeat: no-repeat;
-  animation: film-line var(--loop) linear 1 both;
-}
-@keyframes film-line {
-  0%,
-  5% {
-    opacity: 0;
-    mask-size: 0% 0%;
-    letter-spacing: 0.46em;
-    animation-timing-function: cubic-bezier(0.1, 0.8, 0.2, 1);
-  }
-  9% {
-    opacity: 1;
-  }
-  20% {
-    mask-size: 400% 400%;
-    letter-spacing: 0.32em;
-  }
-  52% {
-    opacity: 1;
-    mask-size: 400% 400%;
-    letter-spacing: 0.32em;
-    animation-timing-function: var(--out);
-  }
-  62%,
-  100% {
-    opacity: 0;
-    letter-spacing: 0.36em;
-  }
-}
-
-/* the chart: assembles, then stays */
-.film-wheel {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(66vh, 84vw, 600px);
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  opacity: 0;
-  animation: film-wheel var(--loop) linear 1 both;
-}
-.film-wheel .wheel {
-  width: 100%;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 0 18px rgba(140, 160, 255, 0.25));
-}
-@keyframes film-wheel {
-  0%,
-  55% {
-    opacity: 0;
-    scale: 0.9;
-    animation-timing-function: var(--in);
-  }
-  72%,
-  100% {
-    opacity: 1;
-    scale: 1;
-  }
-}
-.film-wheel .wheel-zodiac,
-.film-wheel .wheel-ticks,
-.film-wheel .wheel-houses,
-.film-wheel .wheel-planet,
-.film-wheel .wheel-aspects {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation-duration: var(--loop);
-  animation-timing-function: linear;
-  animation-iteration-count: 1;
-  animation-fill-mode: both;
-}
-.film-wheel .wheel-zodiac {
-  animation-name: film-part-turn;
-}
-.film-wheel .wheel-ticks {
-  animation-name: film-part-ticks;
-}
-.film-wheel .wheel-houses {
-  animation-name: film-part-houses;
-}
-.film-wheel .wheel-planet {
-  animation-name: film-part-planet;
-}
-.film-wheel .wheel-planet:nth-child(2n) {
-  animation-delay: 0.12s;
-}
-.film-wheel .wheel-planet:nth-child(3n) {
-  animation-delay: 0.24s;
-}
-.film-wheel .wheel-planet:nth-child(5n) {
-  animation-delay: 0.36s;
-}
-.film-wheel .wheel-aspects {
-  animation-name: film-part-aspects;
-}
-@keyframes film-part-turn {
-  0%,
-  55% {
-    opacity: 0;
-    rotate: -14deg;
-    animation-timing-function: var(--in);
-  }
-  72%,
-  100% {
-    opacity: 1;
-    rotate: 0deg;
-  }
-}
-@keyframes film-part-ticks {
-  0%,
-  62% {
-    opacity: 0;
-  }
-  74%,
-  100% {
-    opacity: 1;
-  }
-}
-@keyframes film-part-houses {
-  0%,
-  66% {
-    opacity: 0;
-    scale: 0.96;
-    animation-timing-function: var(--in);
-  }
-  78%,
-  100% {
-    opacity: 1;
-    scale: 1;
-  }
-}
-@keyframes film-part-planet {
-  0%,
-  72% {
-    opacity: 0;
-    scale: 0.4;
-    animation-timing-function: var(--in);
-  }
-  84% {
-    opacity: 1;
-    scale: 1.15;
-  }
-  90%,
-  100% {
-    opacity: 1;
-    scale: 1;
-  }
-}
-@keyframes film-part-aspects {
-  0%,
-  84% {
-    opacity: 0;
-  }
-  96%,
-  100% {
-    opacity: 1;
-  }
-}
-
-/* the one thing that does not move: a way in */
-.film-cta {
-  position: absolute;
-  left: 50%;
-  bottom: 28px;
-  translate: -50% 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  color: var(--color-ink-2);
-  text-decoration: none;
-  padding: 10px 16px;
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  background: rgba(6, 9, 26, 0.5);
-  backdrop-filter: blur(10px);
-  transition:
-    color 0.2s ease,
-    border-color 0.2s ease;
-  animation: fade-up 1s ease-out 6.4s both;
-}
-.film-cta:hover {
-  color: var(--color-ink);
-  border-color: var(--color-line-strong);
-}
-.film-cta span {
-  color: var(--color-accent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* The settled frame, handed over directly. */
-  .film-line,
-  .film-burst,
-  .film-shock,
-  .film-warp {
-    display: none;
-  }
-  .film-wheel {
-    opacity: 1;
-    scale: 1;
-  }
-}
-
-/* A phone gets the same opening, with the chart sized to its screen. */
-@media (max-width: 1000px), (orientation: portrait) {
-  .film {
-    height: min(calc(100svh - 72px), 760px);
-  }
-  .film-line {
-    font-size: clamp(22px, 5.6vw, 34px);
-    letter-spacing: 0.26em;
-    text-indent: 0.26em;
-    max-width: 88vw;
-  }
-  .film-wheel {
-    width: min(52vh, 86vw, 520px);
-  }
-}
+/* The first screen lives in its own file: it is rewritten often and it sits in the middle of
+   this one, where a careless edit takes the rest of the stylesheet with it. */
+@import './hero.css';
 
 /* ---------- the hero as one motion scene ---------- */
 /* Every period here divides 60 s, so the scene is back at its first frame each minute. */
@@ -2775,156 +2390,6 @@
   width: 100%;
 }
 
-/* the mark, the only piece of chrome on the page */
-.film-mark {
-  position: absolute;
-  top: 26px;
-  left: 28px;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: 21px;
-  color: var(--color-ink);
-  text-decoration: none;
-  animation: fade-up 0.8s ease-out 0.2s both;
-}
-.film-mark svg {
-  color: var(--color-accent);
-}
-
-/* the words, arriving where the chart was */
-.film-text {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  width: min(560px, 86vw);
-  text-align: left;
-  opacity: 0;
-  animation: film-text var(--loop) linear 1 both;
-}
-@keyframes film-text {
-  0%,
-  78% {
-    opacity: 0;
-    transform: translateY(18px);
-    animation-timing-function: var(--in);
-  }
-  92%,
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-.film-eyebrow {
-  font-size: 13px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-}
-.film-title {
-  font-size: clamp(32px, 3.4vw, 52px);
-  line-height: 1.06;
-  letter-spacing: -0.015em;
-  margin-top: 18px;
-}
-.film-lead {
-  font-size: clamp(16px, 1.15vw, 19px);
-  line-height: 1.55;
-  color: var(--color-ink-2);
-  margin-top: 20px;
-}
-.film-button {
-  margin-top: 28px;
-  gap: 10px;
-}
-.film-under {
-  margin-top: 12px;
-  color: var(--color-ink-3);
-}
-
-/* From a laptop up the two share the screen: the chart moves right, the words take the left. */
-@media (min-width: 1000px) and (orientation: landscape) {
-  .film-text {
-    left: 8%;
-    translate: 0 -50%;
-    width: min(46%, 620px);
-  }
-  .film-wheel {
-    animation-name: film-wheel-aside;
-  }
-  @keyframes film-wheel-aside {
-    0%,
-    55% {
-      opacity: 0;
-      translate: -50% -50%;
-      scale: 0.9;
-      animation-timing-function: var(--in);
-    }
-    72% {
-      opacity: 1;
-      translate: -50% -50%;
-      scale: 1;
-    }
-    78% {
-      translate: -50% -50%;
-      scale: 1;
-      animation-timing-function: var(--in);
-    }
-    92%,
-    100% {
-      opacity: 1;
-      translate: calc(-50% + 26vw) -50%;
-      scale: 0.82;
-    }
-  }
-}
-
-/* On a phone the chart goes up and the words sit under it. */
-@media (max-width: 1000px), (orientation: portrait) {
-  .film-text {
-    top: auto;
-    bottom: 6%;
-    translate: -50% 0;
-    text-align: center;
-    width: min(560px, 88vw);
-  }
-  .film-wheel {
-    animation-name: film-wheel-up;
-  }
-  @keyframes film-wheel-up {
-    0%,
-    55% {
-      opacity: 0;
-      translate: -50% -50%;
-      scale: 0.9;
-      animation-timing-function: var(--in);
-    }
-    72% {
-      opacity: 1;
-      translate: -50% -50%;
-      scale: 1;
-    }
-    78% {
-      translate: -50% -50%;
-      scale: 1;
-      animation-timing-function: var(--in);
-    }
-    92%,
-    100% {
-      opacity: 1;
-      translate: -50% -118%;
-      scale: 0.66;
-    }
-  }
-  .film-title {
-    font-size: clamp(28px, 7vw, 40px);
-  }
-}
-
 .l-quote-strip {
   padding-block: 72px;
 }
@@ -2932,207 +2397,6 @@
   border-top: 0;
   padding-top: 0;
   text-align: center;
-}
-
-/* ---------- the single-product landing ---------- */
-/* The film fills the first screen; this is the block under it, where the advert's sentence is
-   repeated and the first button lives. */
-.l-intro {
-  padding-top: 88px;
-  text-align: center;
-}
-.l-eyebrow {
-  font-size: 13px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-}
-/* Type that grows with the screen instead of a column that stays narrow: on a wide monitor a
-   centred 18-character measure reads as a phone layout that wandered onto a desktop. */
-.l-title {
-  font-size: clamp(34px, 5.2vw, 76px);
-  line-height: 1.04;
-  letter-spacing: -0.015em;
-  margin: 20px auto 0;
-  max-width: 24ch;
-}
-.l-lead {
-  font-size: clamp(17px, 1.45vw, 23px);
-  margin: 26px auto 0;
-  max-width: 70ch;
-}
-.l-cta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-top: 32px;
-}
-.l-cta .btn {
-  gap: 10px;
-}
-.l-cta .caption {
-  color: var(--color-ink-3);
-}
-/* Sections that are not the intro keep their buttons on the left, with the text. */
-#offer .l-cta,
-#asks .l-cta,
-#how .l-cta {
-  align-items: flex-start;
-}
-.l-final .l-cta,
-.l-final {
-  text-align: center;
-}
-.l-final .l-cta {
-  align-items: center;
-}
-.l-quote {
-  margin: 64px auto 0;
-  max-width: 64ch;
-  padding-top: 28px;
-  border-top: 1px solid var(--color-line);
-}
-.l-quote blockquote {
-  margin: 0;
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: clamp(19px, 1.9vw, 30px);
-  line-height: 1.5;
-  color: var(--color-ink);
-}
-.l-quote figcaption {
-  margin-top: 14px;
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-}
-
-/* The questions people arrive with, in their own words. */
-/* Six of them: three by three rather than a ragged four-and-two. */
-.l-asks {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 16px;
-  list-style: none;
-  padding: 0;
-}
-.l-asks li {
-  padding: 26px 28px;
-  border-radius: var(--radius-card);
-  border: 1px solid var(--color-line);
-  background: var(--color-surface);
-  /* The body face, not the display serif: a thin serif at this size on a dark background is
-     where reading turns into deciphering. */
-  font-size: clamp(17px, 1.2vw, 19px);
-  line-height: 1.55;
-  color: var(--color-ink);
-}
-.l-asks li::before {
-  content: '«';
-  color: var(--color-accent);
-}
-.l-asks li::after {
-  content: '»';
-  color: var(--color-accent);
-}
-.l-note {
-  margin-top: 28px;
-  max-width: 68ch;
-}
-
-.l-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 18px;
-}
-.l-cards h3 {
-  font-size: 20px;
-  margin-bottom: 10px;
-}
-.l-cards p {
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-/* Four real pages of a finished document. */
-.l-gallery {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  list-style: none;
-  padding: 0;
-  margin-top: 36px;
-}
-.l-gallery a {
-  display: grid;
-  gap: 10px;
-  text-decoration: none;
-  color: var(--color-ink-2);
-}
-.l-gallery img {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 10px;
-  border: 1px solid var(--color-line);
-  background: #f7f1e6;
-  transition:
-    transform 0.25s ease,
-    border-color 0.25s ease;
-}
-.l-gallery a:hover img {
-  transform: translateY(-4px);
-  border-color: var(--color-line-strong);
-}
-.l-gallery .caption {
-  text-align: center;
-}
-.l-gallery-note {
-  text-align: center;
-  margin-top: 18px;
-  color: var(--color-ink-3);
-}
-
-.l-offer h3 {
-  font-family: var(--font-display);
-  font-size: 24px;
-}
-.l-offer > .muted {
-  margin-top: 8px;
-}
-.l-offer ul {
-  list-style: none;
-  padding: 0;
-  margin: 24px 0 0;
-  display: grid;
-  gap: 10px;
-  color: var(--color-ink-2);
-}
-.l-offer li::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  margin-right: 12px;
-  vertical-align: middle;
-}
-
-.l-honest {
-  display: grid;
-  gap: 28px;
-}
-.l-honest h3 {
-  font-size: 19px;
-  margin-bottom: 8px;
-}
-.l-honest p {
-  font-size: 16px;
-  line-height: 1.65;
-  max-width: 70ch;
 }
 
 /* ---------- the single-product landing ---------- */
@@ -3381,6 +2645,20 @@
 }
 
 /* A page of the sample, over the landing rather than in a tab of its own. */
+/* The backdrop of the lightbox: a button, so that "click away to close" is also a key press,
+   laid over the whole dialog and under everything in it. */
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: none;
+  border: 0;
+  cursor: zoom-out;
+}
+.lightbox > *:not(.lightbox-backdrop) {
+  position: relative;
+  z-index: 1;
+}
 .lightbox {
   position: fixed;
   inset: 0;
@@ -3464,6 +2742,36 @@
     grid-row: 2;
     grid-column: 1;
   }
+}
+
+
+/* The last screen is a full-width, centred close, not a narrow column adrift under a
+   two-column FAQ. */
+.l-final .container-page {
+  width: min(760px, 100% - 2 * var(--gutter, 24px));
+  text-align: center;
+}
+.l-final h2 {
+  font-size: clamp(30px, 3.4vw, 46px);
+}
+.l-final .lead {
+  margin-inline: auto;
+}
+.l-mark {
+  font-style: normal;
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--color-accent);
+  padding-bottom: 1px;
+}
+/* A section's own lead takes the width of its section, not the 520px of a body paragraph. */
+.section-title .lead {
+  max-width: 64ch;
+}
+/* Long enough that a short heading stays on one line, balanced so a two-line one never ends on
+   a single orphan word. */
+.section-title h2 {
+  max-width: 34ch;
+  text-wrap: balance;
 }
 
 /* ---------- the horoscope subscription ---------- */

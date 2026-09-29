@@ -74,7 +74,12 @@ export function Landing({
               <li key={i}>{t(`asks.items.${i}`, years)}</li>
             ))}
           </ul>
-          <p className="lead l-note">{t('asks.note')}</p>
+          <p className="lead l-note">
+            {t.rich('asks.note', {
+              // The two words the whole section turns on; the rest of the sentence is the aside.
+              em: (chunks) => <em className="l-mark">{chunks}</em>,
+            })}
+          </p>
           {cta(t('asks.cta'))}
         </div>
       </section>

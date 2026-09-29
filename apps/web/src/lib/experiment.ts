@@ -67,5 +67,7 @@ export async function readVariant(cookie: string | undefined): Promise<Variant |
   return diff === 0 ? (variant as Variant) : null;
 }
 
-export const randomVariant = (): Variant =>
-  VARIANTS[crypto.getRandomValues(new Uint8Array(1))[0]! % VARIANTS.length] as Variant;
+export const randomVariant = (): Variant => {
+  const [byte = 0] = crypto.getRandomValues(new Uint8Array(1));
+  return VARIANTS[byte % VARIANTS.length] as Variant;
+};
