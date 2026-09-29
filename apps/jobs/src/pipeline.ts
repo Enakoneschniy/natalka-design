@@ -62,6 +62,16 @@ export async function loadBirth(env: Env, orderId: string): Promise<BirthData> {
   return decryptJson<BirthData>(row.birth_ciphertext, row.birth_nonce, env.DATA_KEY);
 }
 
+/** How far ahead each product looks. Transits are the slowest part of the calculation, and a
+ * natal reading never mentions them, so it does not pay for them. */
+const TRANSIT_YEARS: Record<string, number> = {
+  natal: 0,
+  synastry: 0,
+  forecast: 2,
+  child: 3,
+  bundle: 3,
+};
+
 async function calculate(env: Env, job: JobRow, birth: BirthData): Promise<JobPayload> {
   const facts = await api<Record<string, unknown> & { transits?: unknown[] }>(env, '/v1/calc', {
     method: 'POST',
@@ -72,7 +82,7 @@ async function calculate(env: Env, job: JobRow, birth: BirthData): Promise<JobPa
       latitude: birth.latitude,
       longitude: birth.longitude,
       zone: birth.zone,
-      transit_years: 3,
+      transit_years: TRANSIT_YEARS[job.kind] ?? 3,
     }),
   });
   const transits = facts.transits ?? [];

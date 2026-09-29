@@ -99,8 +99,19 @@ def test_a_missing_key_is_a_retryable_error() -> None:
 def test_only_forecast_sections_carry_the_transit_list(facts: dict) -> None:
     provider = SizedProvider()
     transits = [{"date": "2026-06-09", "kind": "ingress", "body": "jupiter", "target": "cancer"}]
-    write_reading(facts, provider=provider, name="Оксана", lang="uk", transits=transits)
+    write_reading(
+        facts, provider=provider, product="bundle", name="Оксана", lang="uk", transits=transits
+    )
     prompts = {u for _, u in provider.calls}
     with_transits = [p for p in prompts if "TRANSITS (exact dates" in p]
-    # Seven sections forecast something; the other twenty are not charged for the dates.
-    assert len(with_transits) == 7
+    # Thirteen sections forecast something; the other twenty are not charged for the dates.
+    assert len(with_transits) == 13
+
+
+def test_the_natal_reading_never_forecasts(facts: dict) -> None:
+    """A natal chart is what does not move. The three-year forecast is a product of its own."""
+    provider = SizedProvider()
+    transits = [{"date": "2026-06-09", "kind": "ingress", "body": "jupiter", "target": "cancer"}]
+    reading = write_reading(facts, provider=provider, name="Оксана", lang="uk", transits=transits)
+    assert not [s for s in reading.sections if s.id.startswith("transits")]
+    assert not [u for _, u in provider.calls if "TRANSITS (exact dates" in u]

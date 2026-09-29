@@ -214,6 +214,31 @@ NATAL: tuple[SectionSpec, ...] = (
         titles=_t("Гроші", "Деньги", "Money"),
     ),
     SectionSpec(
+        id="summary",
+        brief=(
+            "The reading in one page: the three or four things that matter most in this chart, "
+            "stated plainly, with no new material."
+        ),
+        paragraphs=(3, 4),
+        quote=True,
+        titles=_t("Головне", "Главное", "The essentials"),
+    ),
+    SectionSpec(
+        id="ps",
+        impersonal_ok=True,
+        brief=(
+            "A short closing note in a quieter voice: what a chart can and cannot tell, and that "
+            "none of it is a verdict."
+        ),
+        paragraphs=(1, 2),
+        titles=_t("Наостанок", "Напоследок", "One last thing"),
+    ),
+)
+
+#: The transit chapters. Sold as the forecast and as part of the bundle; a natal reading is
+#: about what the chart does not change, so it stops before the sky starts moving.
+TRANSITS: tuple[SectionSpec, ...] = (
+    SectionSpec(
         id="work.now",
         # forecast section: needs the transit dates
         brief=(
@@ -281,26 +306,6 @@ NATAL: tuple[SectionSpec, ...] = (
         paragraphs=(2, 3),
         needs_transits=True,
         titles=_t("Третій рік", "Третий год", "The third year"),
-    ),
-    SectionSpec(
-        id="summary",
-        brief=(
-            "The reading in one page: the three or four things that matter most in this chart, "
-            "stated plainly, with no new material."
-        ),
-        paragraphs=(3, 4),
-        quote=True,
-        titles=_t("Головне", "Главное", "The essentials"),
-    ),
-    SectionSpec(
-        id="ps",
-        impersonal_ok=True,
-        brief=(
-            "A short closing note in a quieter voice: what a chart can and cannot tell, and that "
-            "none of it is a verdict."
-        ),
-        paragraphs=(1, 2),
-        titles=_t("Наостанок", "Напоследок", "One last thing"),
     ),
 )
 
@@ -636,13 +641,15 @@ BY_PRODUCT["synastry"] = SYNASTRY
 #: the bundle without anyone remembering to copy it.
 _FORECAST_BY_ID = {spec.id: spec for spec in FORECAST}
 BUNDLE: tuple[SectionSpec, ...] = (
-    *(s for s in NATAL if s.id != "ps"),
+    *(s for s in NATAL if s.id not in ("summary", "ps")),
+    *TRANSITS,
     _FORECAST_BY_ID["forecast.q1"],
     _FORECAST_BY_ID["forecast.q2"],
     _FORECAST_BY_ID["forecast.q3"],
     _FORECAST_BY_ID["forecast.q4"],
     _FORECAST_BY_ID["forecast.slow"],
     _FORECAST_BY_ID["forecast.advice"],
+    next(s for s in NATAL if s.id == "summary"),
     next(s for s in NATAL if s.id == "ps"),
 )
 

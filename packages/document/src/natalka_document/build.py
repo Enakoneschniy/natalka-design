@@ -48,6 +48,13 @@ NATAL_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
     ("work", 1),
     ("work.picture", 2),
     ("work.money", 2),
+    ("summary", 1),
+    ("ps", 1),
+)
+#: The transit chapters. They belong to the bundle, not to the natal reading: a natal chart
+#: describes what does not change, and a buyer who paid for that should not also receive the
+#: three-year forecast that is sold on its own.
+TRANSIT_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
     ("work.now", 2),
     ("transits", 1),
     ("transits.past", 2),
@@ -55,8 +62,6 @@ NATAL_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
     ("transits.year1", 2),
     ("transits.year2", 2),
     ("transits.year3", 2),
-    ("summary", 1),
-    ("ps", 1),
 )
 #: A twelve-month forecast: the natal chart is the ground, the transits are the subject.
 FORECAST_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
@@ -106,13 +111,15 @@ SYNASTRY_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
 #: Only the quarters, the slow transits and the advice come across: the forecast's own opening,
 #: its natal ground and its work/love chapters would all repeat what the natal reading just said.
 BUNDLE_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
-    *(s for s in NATAL_SECTIONS if s[0] != "ps"),
+    *(s for s in NATAL_SECTIONS if s[0] not in ("summary", "ps")),
+    *TRANSIT_SECTIONS,
     ("forecast.q1", 2),
     ("forecast.q2", 2),
     ("forecast.q3", 2),
     ("forecast.q4", 2),
     ("forecast.slow", 1),
     ("forecast.advice", 1),
+    ("summary", 1),
     ("ps", 1),
 )
 

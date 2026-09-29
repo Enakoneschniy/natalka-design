@@ -15,9 +15,68 @@ interface Status {
   download: string | null;
 }
 
+/** The three things that happen, in order. The dial shows how far along the whole document is;
+ * this row shows which part of it is moving right now. */
+const STAGES = ['calc', 'texts', 'pdf'] as const;
+
+const RADIUS = 86;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+/** A slow celestial dial: two rings turning against each other, a gold arc for the progress and a
+ * dot travelling along it. Fifteen minutes of waiting need something that looks alive — a bar that
+ * does not move for a minute reads as a page that has frozen. */
+function Dial({ progress, label, done }: { progress: number; label: string; done: boolean }) {
+  const fraction = done ? 1 : Math.max(0.02, progress / 100);
+  return (
+    <div
+      className={`dial${done ? ' is-done' : ''}`}
+      role="progressbar"
+      aria-label={label}
+      aria-valuenow={Math.round(progress)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs>
+          <radialGradient id="dial-halo">
+            <stop offset="0%" stopColor="rgba(124, 92, 230, 0.34)" />
+            <stop offset="65%" stopColor="rgba(74, 95, 224, 0.12)" />
+            <stop offset="100%" stopColor="rgba(74, 95, 224, 0)" />
+          </radialGradient>
+        </defs>
+        <circle className="dial-halo" cx="100" cy="100" r="84" fill="url(#dial-halo)" />
+        <circle className="dial-ticks" cx="100" cy="100" r="96" />
+        <circle className="dial-ticks dial-ticks-inner" cx="100" cy="100" r="70" />
+        <circle className="dial-track" cx="100" cy="100" r={RADIUS} />
+        <circle
+          className="dial-arc"
+          cx="100"
+          cy="100"
+          r={RADIUS}
+          strokeDasharray={CIRCUMFERENCE}
+          style={{ strokeDashoffset: CIRCUMFERENCE * (1 - fraction) }}
+        />
+        <g className="dial-dot" style={{ transform: `rotate(${fraction * 360}deg)` }}>
+          <circle cx="100" cy={100 - RADIUS} r="7" className="dial-dot-glow" />
+          <circle cx="100" cy={100 - RADIUS} r="3.4" />
+        </g>
+      </svg>
+      <div className="dial-face">
+        {done ? (
+          <svg className="dial-check" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M6 17l6.5 6.5L26 10" />
+          </svg>
+        ) : (
+          <span className="dial-value mono">{Math.round(progress)}%</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Polls until the document exists. A reading takes fifteen minutes, so the page says where it is
  * rather than spinning: people close a tab that looks stuck. */
-export function GenerationProgress({ token, locale }: { token: string; locale: string }) {
+export function GenerationProgress({ token }: { token: string }) {
   const t = useTranslations('generating');
   const [status, setStatus] = useState<Status | null>(null);
   const [gone, setGone] = useState(false);
@@ -47,61 +106,76 @@ export function GenerationProgress({ token, locale }: { token: string; locale: s
     };
   }, [token]);
 
-  if (gone) return <p className="explain">{t('noToken')}</p>;
-  if (!status) return <p className="explain">{t('starting')}</p>;
-
-  if (status.status === 'failed') {
+  if (gone) {
     return (
-      <div className="card">
-        <h2 className="block-title">{t('failedTitle')}</h2>
-        <p className="muted">{t('failedBody')}</p>
+      <div className="waiting-text">
+        <h1>{t('goneTitle')}</h1>
+        <p className="lead">{t('noToken')}</p>
       </div>
     );
   }
 
-  if (status.step === 'done') {
+  if (status?.status === 'failed') {
     return (
-      <div className="card checkout-soon">
-        <h2>{t('readyTitle')}</h2>
-        <p className="muted">{t('readyBody', { pages: status.pages ?? 0 })}</p>
-        <p>
-          <Link
-            className="btn btn-primary btn-lg"
-            href={`/api/documents/${encodeURIComponent(token)}`}
-            prefetch={false}
-          >
-            {t('open')}
-          </Link>
-        </p>
+      <div className="waiting-text">
+        <h1>{t('failedTitle')}</h1>
+        <p className="lead">{t('failedBody')}</p>
       </div>
     );
   }
 
-  const label =
-    status.step === 'calc'
-      ? t('stepCalc')
-      : status.step === 'pdf'
-        ? t('stepPdf')
-        : t('stepTexts', { written: status.written, total: status.total });
+  const done = status?.step === 'done';
+  const step = status?.step ?? 'calc';
+  const label = !status
+    ? t('starting')
+    : done
+      ? t('readyTitle')
+      : step === 'calc'
+        ? t('stepCalc')
+        : step === 'pdf'
+          ? t('stepPdf')
+          : t('stepTexts', { written: status.written, total: status.total });
+
+  // Where the row of stages stands: everything before the current one is behind us.
+  const at = STAGES.indexOf(step as (typeof STAGES)[number]);
+  const current = done ? STAGES.length : Math.max(at, 0);
 
   return (
-    <div className="card">
-      <div
-        className="progress"
-        role="progressbar"
-        aria-label={label}
-        aria-valuenow={status.progress}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div
-          className="progress-bar"
-          style={{ transform: `scaleX(${Math.max(0.04, status.progress / 100)})` }}
-        />
+    <div className="waiting">
+      <Dial progress={status?.progress ?? 0} label={label} done={done} />
+
+      <div className="waiting-text">
+        <h1>{done ? t('readyTitle') : t('title')}</h1>
+        {/* The label changes every few minutes; keying it restarts the fade so the change is seen. */}
+        <p className="lead fade-in" key={label}>
+          {done ? t('readyBody', { pages: status?.pages ?? 0 }) : label}
+        </p>
       </div>
-      <p className="muted progress-label">{label}</p>
-      <p className="caption">{t('keepOpen')}</p>
-      <p className="caption mono muted">{locale}</p>
+
+      {done ? (
+        <Link
+          className="btn btn-primary btn-lg"
+          href={`/api/documents/${encodeURIComponent(token)}`}
+          prefetch={false}
+        >
+          {t('open')}
+        </Link>
+      ) : (
+        <>
+          <ol className="stages">
+            {STAGES.map((stage, index) => (
+              <li
+                key={stage}
+                className={index < current ? 'is-done' : index === current ? 'is-active' : ''}
+              >
+                <span className="stage-dot" />
+                {t(`stage.${stage}`)}
+              </li>
+            ))}
+          </ol>
+          <p className="caption waiting-note">{t('lead')}</p>
+        </>
+      )}
     </div>
   );
 }

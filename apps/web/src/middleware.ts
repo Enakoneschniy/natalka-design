@@ -26,7 +26,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(`/${geoLocale}`, request.url));
   }
 
-  return intl(request);
+  const response = intl(request);
+  // The waiting screen drops the site chrome, and a server layout has no other way to tell which
+  // route it is rendering.
+  response.headers.set('x-pathname', request.nextUrl.pathname);
+  return response;
 }
 
 export const config = {

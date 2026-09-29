@@ -11,7 +11,7 @@
   "hero": {
     "titleLead": "A birth chart",
     "titleAccent": "you'll want to read",
-    "lead": "Enter your date, time and place of birth — see your chart for free within a minute. The full 25–40 page reading arrives as a PDF by email.",
+    "lead": "Enter your date, time and place of birth — see your chart for free within a minute. The full 20–30 page reading arrives as a PDF by email.",
     "cta": "Build my chart",
     "secondary": "See an example",
     "facts": {
@@ -29,7 +29,7 @@
     "choose": "Choose",
     "natal": {
       "title": "Birth chart",
-      "meta": "25–40 pages",
+      "meta": "20–30 pages",
       "items": [
         "Sun, Moon, Ascendant",
         "Planets in signs and houses",
@@ -204,7 +204,7 @@
     },
     "noHouses": "Houses and the Ascendant are not calculated: without an exact birth time they would be unreliable.",
     "soonTitle": "The full reading",
-    "soonBody": "A 25–40 page PDF covering planets, houses and aspects in detail. We are finishing it now — the chart above already comes from the same calculations.",
+    "soonBody": "A 20–30 page PDF covering planets, houses and aspects in detail. We are finishing it now — the chart above already comes from the same calculations.",
     "soonCta": "Coming soon",
     "errorTitle": "The chart could not be built",
     "errorBody": "Check the birth details and try again.",
@@ -295,7 +295,7 @@
   },
   "paywall": {
     "title": "The full reading",
-    "lead": "25–40 pages about your chart. The PDF arrives by email 5–15 minutes after payment.",
+    "lead": "20–30 pages about your chart. The PDF arrives by email 5–15 minutes after payment.",
     "items": [
       "All ten planets in signs and houses",
       "The aspects of your chart, with practices",
@@ -359,17 +359,23 @@
   },
   "generating": {
     "title": "Writing your reading",
-    "lead": "This takes about fifteen minutes. You do not have to keep the page open — the link arrives by email.",
+    "lead": "This usually takes ten to fifteen minutes. The progress updates itself — you can leave the tab open.",
     "starting": "Starting…",
     "noToken": "The link is stale or incomplete. Go back to the form and build the chart again.",
     "stepCalc": "Calculating the chart",
     "stepTexts": "Writing: {written} of {total} sections",
     "stepPdf": "Assembling the PDF",
-    "keepOpen": "Progress updates on its own.",
     "readyTitle": "Ready",
-    "readyBody": "A {pages}-page reading is ready.",
+    "readyBody": "{pages, plural, one {# page} other {# pages}} in your reading.",
     "open": "Open the PDF",
     "failedTitle": "Something went wrong",
-    "failedBody": "We can see the error and will run it again. If nothing changes within an hour, write to us."
+    "failedBody": "We can see the error and will run it again. If nothing changes within an hour, write to us.",
+    "back": "Home",
+    "goneTitle": "This link does not work",
+    "stage": {
+      "calc": "Chart",
+      "texts": "Reading",
+      "pdf": "PDF"
+    }
   }
 }

@@ -495,7 +495,7 @@ class Renderer:
         cx = w / 2
         canv.setFillColor(st.GOLD_BRIGHT)
         canv.setFont(st.SANS, 8.5)
-        canv.drawCentredString(cx, h * 0.295, "N A T A L K A")
+        canv.drawCentredString(cx, h * 0.295, "C H R O N I K A")
         canv.setFillColor(HexColor("#F4F1E8"))
         canv.setFont("PlayfairDisplay-Medium", 32)
         canv.drawCentredString(cx, h * 0.245, self.doc.cover.title)

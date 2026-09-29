@@ -38,8 +38,12 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
 
-  const country = (await headers()).get('cf-ipcountry');
+  const requestHeaders = await headers();
+  const country = requestHeaders.get('cf-ipcountry');
   const available = localesFor(country);
+  // One screen in the funnel is a waiting room: no navigation, no footer, nothing to click away
+  // to while a document is being written.
+  const focused = (requestHeaders.get('x-pathname') ?? '').includes('/generating');
 
   return (
     <html lang={locale}>
@@ -54,9 +58,9 @@ export default async function LocaleLayout({
       <body>
         <NextIntlClientProvider>
           <Sky />
-          <SiteHeader locale={locale as Locale} available={available} />
+          {focused ? null : <SiteHeader locale={locale as Locale} available={available} />}
           <main>{children}</main>
-          <SiteFooter locale={locale as Locale} />
+          {focused ? null : <SiteFooter locale={locale as Locale} />}
         </NextIntlClientProvider>
       </body>
     </html>
