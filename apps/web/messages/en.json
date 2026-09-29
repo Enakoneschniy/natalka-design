@@ -550,7 +550,7 @@
       "items": [
         {
           "title": "The calculation is exact",
-          "text": "Planetary positions and transit dates are computed by software from astronomical ephemerides — the tables of planetary motion professional astrology programs run on. Nothing is invented: every position can be checked against any astrological calculator."
+          "text": "Planetary positions and transit dates are computed by software from the Swiss Ephemeris — the astronomical tables professional astrology programs run on. Nothing is invented: every position can be checked against any astrological calculator."
         },
         {
           "title": "The text is written by AI",
@@ -588,7 +588,7 @@
         },
         {
           "q": "Who writes the text?",
-          "a": "The calculation is done by software from astronomical ephemerides; the text by a language model following a method written by Chronika's astrologers. Every paragraph rests on a specific position or aspect of your chart."
+          "a": "The calculation is done by software from the Swiss Ephemeris; the text by a language model following a method written by Chronika's astrologers. Every paragraph rests on a specific position or aspect of your chart."
         },
         {
           "q": "Is this a subscription?",
