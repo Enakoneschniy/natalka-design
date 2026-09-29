@@ -125,13 +125,13 @@ forecast / synastry / child / bundle products (schema already supports them); pl
 
 1. ~~Old pipeline files~~ — **received**, now in `reference/astrolog/` (pycache stripped).
 2. **Legal entity for Stripe.** Stripe does not onboard Ukrainian entities. Which entity will hold the Stripe account (EU company, Stripe Atlas US LLC, other)? This decides tax registrations for Stripe Tax and the footer legal block (the mockup still shows a Ukrainian ФОП).
-3. **Prices in EUR** per product for the Stripe price objects (mockups use 19 / 14 / 16 / 14 / 29 € as placeholders). Confirm or give real numbers; also whether the bundle is one Stripe price or a Checkout with two line items.
+3. ~~Prices~~ — **decided 2026-09-29**: per-country price lists in `apps/web/src/lib/pricing.ts`, anchored at ₴790 / €19 / $21 for the natal chart (forecast €14, synastry €17, child €14, bundle €29; PLN 79, CZK 449, RON 89, BGN 35, GBP 16). Currency follows `cf-ipcountry`, formatted in the currency's home locale. Still open: whether the bundle is one Stripe price or a Checkout with two line items.
 4. **50 Astro-Seek reference charts** — do you have them as a file? If not, I will generate the input list (varied years 1950–2020, latitudes incl. > 60°, DST edges) and you export Astro-Seek results, or I fetch them via their public pages if you're fine with that.
 5. **LLM provider & budget** — Claude via the Anthropic API is my default; do you have an account/key to use, and a per-document cost ceiling?
 6. **Hosting** — Vercel for `apps/web` + a VPS/Fly.io/Hetzner Docker host for Postgres + worker + API? The Cloudflare account is not provisioned for this project (if we host on Workers/R2 it needs to be).
 7. **Email sender domain** — `natalka.app` and DNS access (SPF/DKIM) — confirm the domain.
 8. **Data schema sign-off** — section 2 above (fields, retention, key rotation) before I write migration 0001.
-9. **GeoNames scope** — `cities500` (~200k places, ~40 MB) vs `cities15000` (~25k). I propose `cities500` + Ukrainian/Russian alternate names so villages resolve.
+9. ~~GeoNames scope~~ — **decided**: `cities5000` (69 750 places, 17 MB SQLite with FTS5), built by `infra/build_cities.py` and baked into the API image. The per-row `alternatenames` column already makes Cyrillic search work; the 200 MB `alternateNamesV2` dump is **not** worth it just to display localised city names (owner's call, 2026-09-29). Consequence: results are displayed in the main GeoNames name (Latin), which is accepted.
 
 ## 6. Definition of done for the first coding session
 - `pnpm install && uv sync` works from a clean clone; `docker compose up db` starts Postgres; CI green.

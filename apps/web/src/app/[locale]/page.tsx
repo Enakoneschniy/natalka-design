@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
@@ -5,16 +6,22 @@ import { Wheel } from '@/components/Wheel';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
+import { PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
 const facts = demo as unknown as ChartFacts;
 
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <Landing locale={locale as Locale} />;
+  const country = (await headers()).get('cf-ipcountry');
+  // Prices are resolved on the server so the page ships one currency, not a client-side switch.
+  const prices = Object.fromEntries(
+    PRODUCTS.map((product) => [product, priceFor(product, country).formatted]),
+  ) as Record<ProductKey, string>;
+  return <Landing locale={locale as Locale} prices={prices} />;
 }
 
-function Landing({ locale }: { locale: Locale }) {
+function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey, string> }) {
   const t = useTranslations();
   const products = ['natal', 'forecast', 'synastry', 'child'] as const;
   const steps = [0, 1, 2] as const;
@@ -90,7 +97,9 @@ function Landing({ locale }: { locale: Locale }) {
                   ))}
                 </ul>
                 <div className="spacer" />
-                <p className="price-free">{t('products.free')}</p>
+                <p className="price">
+                  {prices[key]} <small>{t('products.once')}</small>
+                </p>
                 <Link className="btn btn-secondary btn-block" href={`/${locale}/start`}>
                   {t('products.choose')}
                 </Link>

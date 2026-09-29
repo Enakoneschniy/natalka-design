@@ -1,12 +1,15 @@
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AspectGrid, AspectLegend, ChartBadge, PositionsTable } from '@/components/ChartBits';
+import { Paywall } from '@/components/Paywall';
 import { Stepper } from '@/components/Stepper';
 import { Wheel } from '@/components/Wheel';
 import { type BirthInput, calcChart } from '@/lib/api';
 import { type ChartFacts, MAJOR_ASPECTS } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
+import { bundleFullPrice, priceFor } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,9 +63,11 @@ export default async function PreviewPage({
   setRequestLocale(locale);
   const search = await searchParams;
   const t = await getTranslations({ locale, namespace: 'preview' });
+  const tp = await getTranslations({ locale, namespace: 'paywall' });
 
   // `?demo=1` shows the sample chart from the landing page without calling the engine.
   const isDemo = one(search.demo) === '1';
+  const country = (await headers()).get('cf-ipcountry');
   const parsed: { input: BirthInput; city: string; name?: string } | null = isDemo
     ? { ...DEMO }
     : readInput(search);
@@ -93,6 +98,21 @@ export default async function PreviewPage({
   const major = facts.aspects.filter((a) => MAJOR_ASPECTS.has(a.type));
   const harmonious = major.filter((a) => a.nature === 'harmonious').length;
   const tense = major.filter((a) => a.nature === 'tense').length;
+
+  const natal = priceFor('natal', country);
+  const forecast = priceFor('forecast', country);
+  const bundle = priceFor('bundle', country);
+  const bundleFull = bundleFullPrice(country);
+  // The order screen needs the same birth data; carrying the query string keeps it stateless.
+  const checkout = (product: string) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(search)) {
+      const single = one(value);
+      if (single) params.set(key, single);
+    }
+    params.set('p', product);
+    return `/${locale}/checkout?${params.toString()}`;
+  };
 
   // The three points every reading starts from; the Ascendant needs a known birth time.
   const core = [
@@ -125,6 +145,9 @@ export default async function PreviewPage({
                 .join(' · ')}
             </p>
           </div>
+          <Link className="btn btn-primary" href={checkout('natal')}>
+            {tp('cta', { price: natal.formatted })}
+          </Link>
         </div>
 
         <div className="preview-grid">
@@ -179,13 +202,15 @@ export default async function PreviewPage({
           </div>
         </section>
 
-        <div className="card preview-cta">
-          <div>
-            <span className="badge badge-soon">{t('soonCta')}</span>
-            <h2>{t('soonTitle')}</h2>
-            <p className="muted">{t('soonBody')}</p>
-          </div>
-        </div>
+        <Paywall
+          checkoutHref={checkout('natal')}
+          forecastHref={checkout('forecast')}
+          bundleHref={checkout('bundle')}
+          natal={natal.formatted}
+          forecast={forecast.formatted}
+          bundle={bundle.formatted}
+          bundleFull={bundleFull.formatted}
+        />
       </div>
     </div>
   );

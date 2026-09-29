@@ -12,7 +12,7 @@
     "titleLead": "A birth chart",
     "titleAccent": "you'll want to read",
     "lead": "Enter your date, time and place of birth — see your chart for free within a minute. The full 25–40 page reading arrives as a PDF by email.",
-    "cta": "Build my chart for free",
+    "cta": "Build my chart",
     "secondary": "See an example",
     "facts": {
       "accuracy": "to 1′",
@@ -29,7 +29,6 @@
     "title": "Products",
     "lead": "Fixed price, paid once. You enter your details only before the first order — every next document is built from the same chart.",
     "choose": "Choose",
-    "free": "Зараз безкоштовно",
     "natal": {
       "title": "Birth chart",
       "meta": "25–40 pages",
@@ -69,7 +68,8 @@
         "What hurts them, what inspires them",
         "The language they hear you in"
       ]
-    }
+    },
+    "once": "one-off, no subscription"
   },
   "how": {
     "title": "How it works",
@@ -161,7 +161,7 @@
     },
     "submit": "Build my chart",
     "submitPending": "Building…",
-    "free": "Free. You'll see the chart right away.",
+    "free": "The chart and the preview are free. You only pay for the full reading.",
     "north": "N",
     "south": "S",
     "east": "E",
@@ -268,5 +268,63 @@
       "retro": "R"
     },
     "houseShort": "house {n}"
+  },
+  "paywall": {
+    "title": "The full reading",
+    "lead": "25–40 pages about your chart. The PDF arrives by email 5–15 minutes after payment.",
+    "items": [
+      "All ten planets in signs and houses",
+      "The aspects of your chart, with practices",
+      "Relationships, work and money — through your chart",
+      "Yours to keep, printable"
+    ],
+    "cta": "Get the full reading — {price}",
+    "note": "Card, Apple Pay, Google Pay. Full refund if the document never arrives.",
+    "more": "Also from this chart:",
+    "forecast": "12-month forecast — {price}",
+    "bundle": "Reading with the forecast — {price} instead of {full}",
+    "pages": [
+      {
+        "section": "3 · Planets in signs and houses",
+        "page": "14",
+        "title": "Venus in Gemini, 11th house",
+        "body": [
+          "In love you need conversation. Not compliments — a conversation that is actually interesting. A relationship with nothing to talk about ends for you before your partner notices.",
+          "The eleventh house makes friends and partners neighbouring categories: many of your relationships started as friendships, and that is a method, not an accident."
+        ]
+      },
+      {
+        "section": "4 · Aspects",
+        "page": "23",
+        "title": "Moon square Mars",
+        "body": [
+          "The fastest reaction in your chart. When something important is touched, the body answers before the thought does. That gives you courage — and a few words you later regret.",
+          "What to do with it: redirect rather than suppress. Physical action in the first minutes takes the initial impulse and leaves clarity."
+        ]
+      },
+      {
+        "section": "5 · Relationships, work, money",
+        "page": "31",
+        "title": "Money: Taurus and the second house",
+        "body": [
+          "You treat money like food: what matters is not the amount but the feeling that there is a reserve. An empty account worries you more than it should, a full one soothes more than it should.",
+          "Saturn in the eighth house adds caution around shared money and credit."
+        ]
+      }
+    ]
+  },
+  "checkout": {
+    "title": "Your order",
+    "steps": "Payment",
+    "summary": "Your order",
+    "total": "Total",
+    "email": "Where to send the PDF",
+    "emailHint": "The link to the document works for 30 days",
+    "emailPlaceholder": "your@email",
+    "soonTitle": "Payment is not connected yet",
+    "soonBody": "We are switching payments on shortly. The price and the contents of the order are final — as soon as it is live, this screen will take a card, Apple Pay and Google Pay.",
+    "back": "Back to the chart",
+    "chart": "Chart",
+    "unknownTime": "time unknown"
   }
 }
