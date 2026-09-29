@@ -72,3 +72,14 @@ export async function jobStatus(token: string): Promise<JobStatus | null> {
 }
 
 export const documentUrl = (token: string): string => `${base()}/d/${encodeURIComponent(token)}`;
+
+/** The code behind the "get it in Telegram" link, or null when the link has expired. */
+export async function telegramCode(token: string): Promise<string | null> {
+  const response = await fetch(`${base()}/v1/jobs/${encodeURIComponent(token)}/telegram`, {
+    method: 'POST',
+    cache: 'no-store',
+  });
+  if (!response.ok) return null;
+  const data = (await response.json()) as { code?: string };
+  return data.code ?? null;
+}

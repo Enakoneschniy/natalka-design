@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { GenerationProgress } from '@/components/GenerationProgress';
+import { telegramCode } from '@/lib/jobs';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,10 @@ export default async function GeneratingPage({
   const search = await searchParams;
   const token = Array.isArray(search.t) ? search.t[0] : search.t;
   const t = await getTranslations({ locale, namespace: 'generating' });
+  // The bot is optional: without a username configured there is no link to show.
+  const bot = process.env.TELEGRAM_BOT_USERNAME;
+  const code = token && bot ? await telegramCode(token) : null;
+  const telegram = bot && code ? `https://t.me/${bot}?start=${code}` : null;
 
   return (
     <main className="waiting-screen">
@@ -34,7 +39,7 @@ export default async function GeneratingPage({
         {t('back')}
       </Link>
       {token ? (
-        <GenerationProgress token={token} />
+        <GenerationProgress token={token} telegram={telegram} />
       ) : (
         <div className="waiting-text">
           <h1>{t('goneTitle')}</h1>

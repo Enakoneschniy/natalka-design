@@ -9,6 +9,11 @@
 import { encryptJson, LINK_TTL_SECONDS, sha256Hex, signToken, verifyToken } from './crypto';
 import {
   cachePreview,
+  claimTelegramLink,
+  forgetTelegramChat,
+  markTelegramDelivered,
+  telegramCodeFor,
+  telegramLink,
   cachedPreview,
   documentForOrder,
   expired,
@@ -18,6 +23,7 @@ import {
   insertJob,
   insertOrder,
   now,
+  orderContact,
   type Product,
   updateJob,
 } from './db';
@@ -226,9 +232,65 @@ async function download(env: Env, token: string): Promise<Response> {
   });
 }
 
+/** The code the site puts in its "get it in Telegram" link. */
+async function telegramCode(env: Env, token: string): Promise<Response> {
+  const claims = await verifyToken<{ order: string; job: string }>(token, env.LINK_KEY);
+  if (!claims) return json({ error: 'link expired' }, 404);
+  const contact = await orderContact(env.DB, claims.order);
+  if (!contact) return json({ error: 'not found' }, 404);
+  const code = await telegramCodeFor(env.DB, {
+    order_id: claims.order,
+    job_id: claims.job,
+    locale: contact.locale,
+  });
+  return json({ code });
+}
+
+/** The bot, on /start <code>: remembers the chat and says whether the document is ready. */
+async function telegramClaim(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as { code?: string; chat_id?: number };
+  if (!body.code || !body.chat_id) return json({ error: 'code and chat_id are required' }, 400);
+  const link = await telegramLink(env.DB, body.code);
+  if (!link) return json({ error: 'unknown code' }, 404);
+  await claimTelegramLink(env.DB, link.code, body.chat_id);
+  const job = await getJob(env.DB, link.job_id);
+  const ready = job?.step === 'done';
+  const token = ready
+    ? await signToken({ order: link.order_id, job: link.job_id }, env.LINK_KEY, LINK_TTL_SECONDS)
+    : null;
+  return json({ locale: link.locale, ready, failed: job?.status === 'failed', token });
+}
+
+async function telegramDelivered(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as { code?: string };
+  if (!body.code) return json({ error: 'code is required' }, 400);
+  await markTelegramDelivered(env.DB, body.code);
+  return json({ ok: true });
+}
+
+async function telegramForget(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as { chat_id?: number };
+  if (!body.chat_id) return json({ error: 'chat_id is required' }, 400);
+  await forgetTelegramChat(env.DB, body.chat_id);
+  return json({ ok: true });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    // Internal: the bot and the site reach these over service bindings.
+    if (url.pathname === '/v1/telegram/claim' && request.method === 'POST') {
+      return telegramClaim(request, env);
+    }
+    if (url.pathname === '/v1/telegram/delivered' && request.method === 'POST') {
+      return telegramDelivered(request, env);
+    }
+    if (url.pathname === '/v1/telegram/forget' && request.method === 'POST') {
+      return telegramForget(request, env);
+    }
+    const code = url.pathname.match(/^\/v1\/jobs\/(.+)\/telegram$/);
+    if (code?.[1] && request.method === 'POST') return telegramCode(env, code[1]);
 
     if (url.pathname === '/health') return json({ status: 'ok' });
     if (url.pathname === '/v1/orders' && request.method === 'POST') {

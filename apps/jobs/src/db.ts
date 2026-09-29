@@ -226,3 +226,76 @@ export async function insertEmailEvent(
     .bind(crypto.randomUUID(), event.order_id, event.kind, event.provider_id, event.status, now())
     .run();
 }
+
+export interface TelegramLink {
+  code: string;
+  order_id: string;
+  job_id: string;
+  locale: string;
+  chat_id: number | null;
+  delivered_at: string | null;
+}
+
+/** The code for a job's deep link — the same one every time it is asked for. */
+export async function telegramCodeFor(
+  db: D1Database,
+  link: { order_id: string; job_id: string; locale: string },
+): Promise<string> {
+  const existing = await db
+    .prepare('SELECT code FROM telegram_links WHERE job_id = ?')
+    .bind(link.job_id)
+    .first<{ code: string }>();
+  if (existing) return existing.code;
+  // 16 characters of base32-ish alphabet: 80 bits, and legal in a Telegram start parameter.
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 16; i++) code += alphabet[(bytes[i % 10] ?? 0) * (i + 1) % alphabet.length];
+  await db
+    .prepare(
+      `INSERT INTO telegram_links (code, order_id, job_id, locale, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    )
+    .bind(code, link.order_id, link.job_id, link.locale, now())
+    .run();
+  return code;
+}
+
+export async function telegramLink(db: D1Database, code: string): Promise<TelegramLink | null> {
+  return db
+    .prepare(
+      'SELECT code, order_id, job_id, locale, chat_id, delivered_at FROM telegram_links WHERE code = ?',
+    )
+    .bind(code)
+    .first<TelegramLink>();
+}
+
+export async function claimTelegramLink(db: D1Database, code: string, chatId: number) {
+  await db
+    .prepare('UPDATE telegram_links SET chat_id = ? WHERE code = ?')
+    .bind(chatId, code)
+    .run();
+}
+
+export async function markTelegramDelivered(db: D1Database, code: string): Promise<void> {
+  await db
+    .prepare('UPDATE telegram_links SET delivered_at = ? WHERE code = ?')
+    .bind(now(), code)
+    .run();
+}
+
+/** Chats still waiting for an order's document. */
+export async function telegramWaiting(db: D1Database, orderId: string): Promise<TelegramLink[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT code, order_id, job_id, locale, chat_id, delivered_at FROM telegram_links
+       WHERE order_id = ? AND chat_id IS NOT NULL AND delivered_at IS NULL`,
+    )
+    .bind(orderId)
+    .all<TelegramLink>();
+  return results;
+}
+
+export async function forgetTelegramChat(db: D1Database, chatId: number): Promise<void> {
+  await db.prepare('DELETE FROM telegram_links WHERE chat_id = ?').bind(chatId).run();
+}

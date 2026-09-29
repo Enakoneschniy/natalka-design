@@ -11,6 +11,7 @@ import {
   insertEmailEvent,
   type JobRow,
   orderContact,
+  telegramWaiting,
   updateJob,
 } from './db';
 import type { Env } from './env';
@@ -290,4 +291,25 @@ async function notify(env: Env, job: JobRow): Promise<void> {
     provider_id: sent.providerId,
     status: sent.status,
   });
+
+  // Whoever opened the bot while the document was being written gets it there as well. A failure
+  // here is logged, not thrown: the letter has gone and the download works, and the bot can be
+  // asked again.
+  for (const waiting of await telegramWaiting(env.DB, job.order_id)) {
+    try {
+      const response = await env.BOT.fetch('https://bot/deliver', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: waiting.chat_id,
+          code: waiting.code,
+          locale: waiting.locale,
+          token,
+        }),
+      });
+      if (!response.ok) throw new Error(`bot answered ${response.status}`);
+    } catch (error) {
+      console.error('telegram delivery', error instanceof Error ? error.message : String(error));
+    }
+  }
 }

@@ -2,4 +2,5 @@ packages:
   - apps/web
   - apps/api-edge
   - apps/jobs
+  - apps/bot
   - design

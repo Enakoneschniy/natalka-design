@@ -76,7 +76,13 @@ function Dial({ progress, label, done }: { progress: number; label: string; done
 
 /** Polls until the document exists. A reading takes fifteen minutes, so the page says where it is
  * rather than spinning: people close a tab that looks stuck. */
-export function GenerationProgress({ token }: { token: string }) {
+export function GenerationProgress({
+  token,
+  telegram,
+}: {
+  token: string;
+  telegram: string | null;
+}) {
   const t = useTranslations('generating');
   const [status, setStatus] = useState<Status | null>(null);
   const [gone, setGone] = useState(false);
@@ -174,6 +180,19 @@ export function GenerationProgress({ token }: { token: string }) {
             ))}
           </ol>
           <p className="caption waiting-note">{t('lead')}</p>
+          {telegram ? (
+            <a
+              className="btn btn-secondary telegram-link"
+              href={telegram}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M21.4 4.6 3.6 11.5c-1.2.5-1.2 1.2-.2 1.5l4.5 1.4 1.7 5.3c.2.6.4.8.8.8.4 0 .6-.2 1-.5l2.5-2.4 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14c.3-1.2-.5-1.8-1.7-1.6ZM8.8 14l9.6-6.1c.5-.3.9-.1.5.2L11 15.4l-.3 3.3L8.8 14Z" />
+              </svg>
+              {t('telegram')}
+            </a>
+          ) : null}
         </>
       )}
     </div>
