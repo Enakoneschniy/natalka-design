@@ -20,10 +20,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <div>
             <h4>{t('products')}</h4>
             <ul>
-              <li>{p('natal.title')}</li>
-              <li>{p('forecast.title')}</li>
-              <li>{p('synastry.title')}</li>
-              <li>{p('child.title')}</li>
+              <li>
+                <Link href={`/${locale}/start?p=bundle`}>{p('bundle.title')}</Link>
+              </li>
             </ul>
           </div>
           <div>

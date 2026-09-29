@@ -3071,6 +3071,201 @@
 .btn-block {
   width: 100%;
 }
+/* ---------- the single-product landing ---------- */
+/* The film fills the first screen; this is the block under it, where the advert's sentence is
+   repeated and the first button lives. */
+.l-intro {
+  padding-top: 72px;
+  text-align: center;
+}
+.l-eyebrow {
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.l-title {
+  font-size: clamp(32px, 4.4vw, 56px);
+  line-height: 1.08;
+  margin: 18px auto 0;
+  max-width: 18ch;
+}
+.l-lead {
+  margin: 22px auto 0;
+  max-width: 62ch;
+}
+.l-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+.l-cta .btn {
+  gap: 10px;
+}
+.l-cta .caption {
+  color: var(--color-ink-3);
+}
+/* Sections that are not the intro keep their buttons on the left, with the text. */
+#offer .l-cta,
+#asks .l-cta,
+#how .l-cta {
+  align-items: flex-start;
+}
+.l-final .l-cta,
+.l-final {
+  text-align: center;
+}
+.l-final .l-cta {
+  align-items: center;
+}
+.l-quote {
+  margin: 56px auto 0;
+  max-width: 54ch;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-line);
+}
+.l-quote blockquote {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(19px, 1.7vw, 25px);
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+.l-quote figcaption {
+  margin-top: 14px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/* The questions people arrive with, in their own words. */
+.l-asks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+}
+.l-asks li {
+  padding: 22px 24px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--color-ink);
+}
+.l-asks li::before {
+  content: '«';
+  color: var(--color-accent);
+}
+.l-asks li::after {
+  content: '»';
+  color: var(--color-accent);
+}
+.l-note {
+  margin-top: 28px;
+  max-width: 68ch;
+}
+
+.l-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+.l-cards h3 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+.l-cards p {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Four real pages of a finished document. */
+.l-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  list-style: none;
+  padding: 0;
+  margin-top: 36px;
+}
+.l-gallery a {
+  display: grid;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--color-ink-2);
+}
+.l-gallery img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
+  border: 1px solid var(--color-line);
+  background: #f7f1e6;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+.l-gallery a:hover img {
+  transform: translateY(-4px);
+  border-color: var(--color-line-strong);
+}
+.l-gallery .caption {
+  text-align: center;
+}
+.l-gallery-note {
+  text-align: center;
+  margin-top: 18px;
+  color: var(--color-ink-3);
+}
+
+.l-offer h3 {
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+.l-offer > .muted {
+  margin-top: 8px;
+}
+.l-offer ul {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+  display: grid;
+  gap: 10px;
+  color: var(--color-ink-2);
+}
+.l-offer li::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  margin-right: 12px;
+  vertical-align: middle;
+}
+
+.l-honest {
+  display: grid;
+  gap: 28px;
+}
+.l-honest h3 {
+  font-size: 19px;
+  margin-bottom: 8px;
+}
+.l-honest p {
+  font-size: 16px;
+  line-height: 1.65;
+  max-width: 70ch;
+}
+
 /* ---------- the horoscope subscription ---------- */
 .subscription-card {
   display: grid;
@@ -3786,6 +3981,12 @@
   .steps,
   .faq-grid {
     grid-template-columns: 1fr;
+  }
+  .l-gallery {
+    grid-template-columns: 1fr 1fr;
+  }
+  .l-title {
+    max-width: none;
   }
   .subscription-card {
     grid-template-columns: 1fr;

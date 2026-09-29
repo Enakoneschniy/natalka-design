@@ -73,7 +73,10 @@
         "The language they hear you in"
       ]
     },
-    "once": "one-off, no subscription"
+    "once": "one-off, no subscription",
+    "bundle": {
+      "title": "Birth chart reading and forecast"
+    }
   },
   "how": {
     "title": "How it works",
@@ -448,5 +451,175 @@
     "nextLabel": "Next",
     "trialLabel": "Free until",
     "birthGoneShort": "deleted"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "A birth chart reading and a forecast through {year}",
+      "dates": {
+        "title": "When will something in your life change? From your chart — with dates",
+        "lead": "35 pages about you: character, work and money, relationships, home and your own place. And a calendar of periods for {from}–{year}: when to start, when to wait, when to decide."
+      },
+      "home": {
+        "title": "Is this home, or a stop along the way?",
+        "lead": "A chart will not choose a country for you. But it shows where your footing is, which period you are in now and when the time for change arrives — with dates through {year}."
+      },
+      "love": {
+        "title": "When to decide in your personal life, and when to wait?",
+        "lead": "Why you are drawn to one kind of person and stay with another, who actually suits you, and which periods of {from}–{year} open this up. No verdicts and no wedding dates — real months."
+      },
+      "cta": "Build your chart free",
+      "under": "A preview in a minute · no account, no card",
+      "quote": "Your chart, I will say at once, is unusually tightly wound. Touch work and home answers; touch relationships and money answers. That is not anxiety, that is the construction of it.",
+      "quoteFrom": "from a reading"
+    },
+    "asks": {
+      "title": "What people come to us with",
+      "items": [
+        "Is this my place — or am I running from myself?",
+        "I have thought about moving for years and cannot decide",
+        "I seem to have everything, and nothing moves. Why?",
+        "When do I decide about my personal life, and when do I wait?",
+        "What do I do for a living when the old way stops working?",
+        "What is waiting for me in {next}?"
+      ],
+      "note": "A chart does not answer yes or no and does not pass sentence. It shows which period you are in now and when the next window opens. That is an answer you can act on.",
+      "cta": "See your own chart"
+    },
+    "inside": {
+      "title": "35 pages about your chart — not about your sign",
+      "lead": "A horoscope writes the same thing for every twelfth person. This is all the planets, houses and aspects of your chart. Two Taureans get two different documents.",
+      "cards": [
+        {
+          "title": "Who you are by the chart",
+          "text": "Where your strengths are, what gives you energy and what quietly takes it. Ascendant, Moon, the key aspects — in plain language, without jargon for its own sake."
+        },
+        {
+          "title": "Your personal life",
+          "text": "How your relationships are built, who the chart says to look for, and which periods of {from}–{year} open this up."
+        },
+        {
+          "title": "Work and money",
+          "text": "What the chart says you should be doing, why money arrives the way it does, and what to do right now."
+        },
+        {
+          "title": "Your years, month by month",
+          "text": "A look back, the rest of this year and all of {next} month by month, {year} in overview. At the end, every main date on one page."
+        }
+      ],
+      "note": "Plus the chart wheel, the table of positions and houses and a closing “what matters most” — so you can come back to it in six months.",
+      "galleryNote": "This is what a reading looks like. Yours will be about you.",
+      "pages": [
+        "Cover",
+        "Contents",
+        "A page of the reading",
+        "The main dates"
+      ]
+    },
+    "steps": {
+      "title": "Look first, decide after",
+      "items": [
+        {
+          "title": "Enter your birth data",
+          "text": "Date, time and city. No exact time works too — only without houses and the Ascendant."
+        },
+        {
+          "title": "Read the beginning free",
+          "text": "In a minute: your chart, the planetary positions and the first pages of the reading. You will know whether it is about you."
+        },
+        {
+          "title": "Get the full reading",
+          "text": "If you want the rest, a 35-page PDF arrives by email within 20–30 minutes."
+        }
+      ],
+      "note": "You only pay if you want to read on. The preview needs no account and no card.",
+      "cta": "Build your chart free"
+    },
+    "offer": {
+      "title": "One document. One payment.",
+      "product": "A birth chart reading and a forecast through {year}",
+      "meta": "Preview free · the full reading is one payment, no subscription",
+      "items": [
+        "35 pages about your chart",
+        "Character, relationships, work and money",
+        "A calendar of periods: the rest of this year and {next} by month, {year} in overview",
+        "Every main date on one page",
+        "A PDF by email and a link that stays yours"
+      ],
+      "cta": "Start with the free preview",
+      "under": "If there is an error in the calculation we will fix it or refund you."
+    },
+    "honest": {
+      "title": "Honestly, about how this is made",
+      "items": [
+        {
+          "title": "The calculation is exact",
+          "text": "Planetary positions and transit dates are computed by software from the Swiss Ephemeris — the astronomical tables professional astrology programs run on. Nothing is invented: every position can be checked against any astrological calculator."
+        },
+        {
+          "title": "The text is written by AI",
+          "text": "It does not tire on the thirtieth page and does not write filler: it follows a method written by Chronika's astrologers, and every paragraph is tied to a specific position or aspect of your chart — which you can see in the text."
+        },
+        {
+          "title": "We do not predict events",
+          "text": "No wedding dates, no verdicts. A chart shows periods and tendencies; the decisions are yours."
+        }
+      ],
+      "note": "Astrology is not a science. It is a language that makes it convenient to think about yourself and your time."
+    },
+    "faq": {
+      "title": "Questions and answers",
+      "items": [
+        {
+          "q": "How is this different from a horoscope?",
+          "a": "A horoscope writes the same thing for everyone of one sign. A birth chart is the position of every planet, the Ascendant and the houses at the moment you were born. A chart like that repeats once in several thousand years."
+        },
+        {
+          "q": "What does “forecast” mean? Do you predict events?",
+          "a": "No. We show when the moving planets touch your chart and which themes come to the front in those periods: work, relationships, home. How exactly it shows up is up to you."
+        },
+        {
+          "q": "I want to know which country to live in. Will the reading answer that?",
+          "a": "No, choosing a country is a separate technique. But the reading does show what home and footing mean for you and which periods of {from}–{year} suit big changes."
+        },
+        {
+          "q": "I do not live where I was born. Does that matter?",
+          "a": "No. The chart is built from your place of birth, and the forecast periods apply wherever you live."
+        },
+        {
+          "q": "I do not know my exact birth time.",
+          "a": "We build the chart for noon. The planets and most aspects stay exact, but without houses and the Ascendant part of the reading is shorter. The time is often on your birth certificate."
+        },
+        {
+          "q": "Who writes the text?",
+          "a": "The calculation is done by software from the Swiss Ephemeris; the text by a language model following a method written by Chronika's astrologers. Every paragraph rests on a specific position or aspect of your chart."
+        },
+        {
+          "q": "Is this a subscription?",
+          "a": "No. One payment, one document. No recurring charges."
+        },
+        {
+          "q": "How long does it take?",
+          "a": "The preview, about a minute. The full reading arrives by email within 20–30 minutes of payment."
+        },
+        {
+          "q": "What if I do not like it?",
+          "a": "Read the free preview first: the full reading is written in the same voice. If there is an error in the calculation, write to help@chronika.me and we will fix it or refund you."
+        },
+        {
+          "q": "Can I give it as a gift?",
+          "a": "Yes. Enter their birth data and your own email, then forward them the PDF."
+        },
+        {
+          "q": "What do you do with my data?",
+          "a": "We use your date, time and place of birth only for your document and pass them only to the services it cannot be made without: calculation, text generation, payment. We delete them after 30 days, or on request."
+        }
+      ]
+    },
+    "final": {
+      "title": "Your chart, in a minute",
+      "text": "Read the beginning of your reading free. If it is about you, read on. If it is not, you have lost nothing.",
+      "cta": "Build your chart free",
+      "under": "No account, no card"
+    }
   }
 }
