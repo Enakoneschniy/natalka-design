@@ -5,7 +5,7 @@ import { GenerationProgress } from '@/components/GenerationProgress';
 export const dynamic = 'force-dynamic';
 
 /** A waiting room, not a page of the site: one screen tall, no navigation to wander off into,
- * and a way back. The layout drops the header and the footer for this route. */
+ * and a way back. It lives outside the (site) route group, so no header or footer is rendered. */
 export default async function GeneratingPage({
   params,
   searchParams,
@@ -20,7 +20,7 @@ export default async function GeneratingPage({
   const t = await getTranslations({ locale, namespace: 'generating' });
 
   return (
-    <div className="waiting-screen">
+    <main className="waiting-screen">
       <Link className="back-link" href={`/${locale}`}>
         <svg
           viewBox="0 0 16 16"
@@ -41,6 +41,6 @@ export default async function GeneratingPage({
           <p className="lead">{t('noToken')}</p>
         </div>
       )}
-    </div>
+    </main>
   );
 }

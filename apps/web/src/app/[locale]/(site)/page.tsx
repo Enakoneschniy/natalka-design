@@ -2,7 +2,8 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { Wheel } from '@/components/Wheel';
+import { HeroOrrery } from '@/components/HeroOrrery';
+import { HeroWheel } from '@/components/HeroWheel';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
@@ -10,6 +11,11 @@ import { PLANET_PATHS } from '@/lib/glyphs';
 import { PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
 const facts = demo as unknown as ChartFacts;
+
+/** Which hero is live. `wheel` is the demo natal chart with two orbit rings — kept whole in
+ * HeroWheel so the switch back is this one word. */
+type HeroKind = 'orrery' | 'wheel';
+const HERO = 'orrery' as HeroKind;
 
 const PRODUCT_GLYPH: Record<string, string> = {
   natal: PLANET_PATHS.sun ?? '',
@@ -68,18 +74,7 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
             </ul>
           </div>
           <div className="hero-wheel">
-            <div className="wheel-glow">
-              <Wheel facts={facts} size={640} animate />
-              {/* Each ring spins, and a spinning square box is wider than the page; the wrapper
-                  keeps that growth out of the layout. The ring is inscribed in it, so nothing
-                  visible is clipped. */}
-              <span className="orbit-box orbit-box-1" aria-hidden="true">
-                <span className="orbit orbit-1" />
-              </span>
-              <span className="orbit-box orbit-box-2" aria-hidden="true">
-                <span className="orbit orbit-2" />
-              </span>
-            </div>
+            {HERO === 'orrery' ? <HeroOrrery /> : <HeroWheel facts={facts} />}
           </div>
         </div>
       </section>

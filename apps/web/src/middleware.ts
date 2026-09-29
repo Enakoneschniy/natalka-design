@@ -27,9 +27,6 @@ export function middleware(request: NextRequest) {
   }
 
   const response = intl(request);
-  // The waiting screen drops the site chrome, and a server layout has no other way to tell which
-  // route it is rendering.
-  response.headers.set('x-pathname', request.nextUrl.pathname);
   // Closed to search engines for now. The header repeats what the page metadata says, for the
   // crawlers that read one and not the other.
   response.headers.set('x-robots-tag', 'noindex, nofollow');

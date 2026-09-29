@@ -685,6 +685,56 @@
     transform: rotate(360deg);
   }
 }
+/* ---------- the orrery hero ---------- */
+/* Unlike the ring hero, nothing here spins outside its own box, so it can take the whole column. */
+.hero-wheel .orrery {
+  width: 100%;
+}
+.orrery svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 0 18px rgba(140, 160, 255, 0.18));
+}
+.orrery-zodiac circle {
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 1;
+}
+.orrery-tick {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1;
+}
+.orrery-tick-major {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 1;
+}
+.orrery-sign {
+  color: rgba(240, 185, 91, 0.9);
+}
+.orrery-dashed {
+  stroke: rgba(255, 255, 255, 0.26);
+  stroke-width: 1;
+  stroke-dasharray: 2 9;
+  stroke-linecap: round;
+}
+.orrery-orbit {
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 1;
+}
+.orrery-aspect {
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.orrery-trail {
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+.orrery-planet circle:last-of-type {
+  filter: drop-shadow(0 0 6px currentColor);
+}
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -2037,12 +2087,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: clamp(24px, 3vw, 40px);
   text-align: center;
-  max-width: 480px;
+  max-width: 560px;
+}
+.waiting .lead {
+  font-size: clamp(17px, 1.4vw, 22px);
+}
+.waiting-screen .stages {
+  font-size: clamp(14px, 1.1vw, 17px);
 }
 .waiting-text h1 {
-  font-size: clamp(26px, 5vw, 34px);
+  font-size: clamp(26px, 3.2vw, 44px);
 }
 .waiting-text .lead {
   margin-top: 10px;
@@ -2056,7 +2112,8 @@
    the compositor while the tab sits open for a quarter of an hour. */
 .dial {
   position: relative;
-  width: min(272px, 64vw);
+  /* Sized to the screen: a fixed 270px ring on a wide monitor looked like an icon. */
+  width: min(max(250px, 24vw), 400px, 64vw);
   aspect-ratio: 1;
 }
 .dial svg {
@@ -2121,7 +2178,7 @@
   place-items: center;
 }
 .dial-value {
-  font-size: 30px;
+  font-size: clamp(30px, 3vw, 44px);
   letter-spacing: 0.02em;
   color: var(--color-ink);
 }

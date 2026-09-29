@@ -1,12 +1,9 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { SiteFooter } from '@/components/SiteFooter';
-import { SiteHeader } from '@/components/SiteHeader';
 import { Sky } from '@/components/Sky';
-import { type Locale, localesFor, routing } from '@/i18n/routing';
+import { routing } from '@/i18n/routing';
 import '@/styles/globals.css';
 
 export function generateStaticParams() {
@@ -41,13 +38,6 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
 
-  const requestHeaders = await headers();
-  const country = requestHeaders.get('cf-ipcountry');
-  const available = localesFor(country);
-  // One screen in the funnel is a waiting room: no navigation, no footer, nothing to click away
-  // to while a document is being written.
-  const focused = (requestHeaders.get('x-pathname') ?? '').includes('/generating');
-
   return (
     <html lang={locale}>
       <head>
@@ -61,9 +51,7 @@ export default async function LocaleLayout({
       <body>
         <NextIntlClientProvider>
           <Sky />
-          {focused ? null : <SiteHeader locale={locale as Locale} available={available} />}
-          <main>{children}</main>
-          {focused ? null : <SiteFooter locale={locale as Locale} />}
+          {children}
         </NextIntlClientProvider>
       </body>
     </html>
