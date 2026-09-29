@@ -91,6 +91,16 @@ CLICHES: dict[str, tuple[str, ...]] = {
     ),
 }
 
+#: A section written *about* the reader instead of *to* them reads like a horoscope column and
+#: slips into the wrong gender. Any real section of a reading addresses them at least once.
+SECOND_PERSON: dict[str, tuple[str, ...]] = {
+    "ru": ("вы ", "вы,", "вас", "вам", "ваш", "вами", "вы."),
+    "uk": ("ви ", "ви,", "вас", "вам", "ваш", "вами", "ви."),
+    "en": ("you ", "you,", "your", "you."),
+}
+#: Below this a section is an opening or a closing line, where an impersonal sentence is fine.
+ADDRESS_MIN_CHARS = 400
+
 #: Latin letters inside a Cyrillic word, or a stray Latin word: models occasionally slip one in
 #: ("на practике"), and in a paid document it reads as a typo nobody proofread. These are the
 #: Latin strings a Russian or Ukrainian reading may legitimately contain.
@@ -119,6 +129,30 @@ def _found(text: str, needles: tuple[str, ...]) -> list[str]:
     return [n for n in needles if n in low]
 
 
+def _language_problems(text: str, lang: str) -> list[str]:
+    """Checks that only make sense for a given language: banned phrases, stray Latin, address."""
+    problems: list[str] = []
+    for phrase in _found(text, IMPLIES_KNOWLEDGE.get(lang, ())):
+        problems.append(f'"{phrase}" implies we know something the chart cannot tell us')
+    for phrase in _found(text, CLICHES.get(lang, ())):
+        problems.append(f'"{phrase}" is on the banned list in the style guide')
+
+    if lang in CYRILLIC_LANGS:
+        mixed = MIXED_WORD.findall(text)
+        if mixed:
+            problems.append(f"Latin letters inside a word: {', '.join(sorted(set(mixed))[:3])}")
+        latin = [w for w in LATIN_WORD.findall(text) if w.lower() not in LATIN_OK]
+        if latin:
+            problems.append(f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
+
+    if len(text) > ADDRESS_MIN_CHARS:
+        markers = SECOND_PERSON.get(lang, ())
+        low = text.lower()
+        if markers and not any(m in low for m in markers):
+            problems.append("the section talks about the reader instead of addressing them")
+    return problems
+
+
 def check(text: str, *, lang: str, min_paragraphs: int, max_paragraphs: int) -> Report:
     problems: list[str] = []
 
@@ -135,18 +169,7 @@ def check(text: str, *, lang: str, min_paragraphs: int, max_paragraphs: int) -> 
     if len(paragraphs) > max_paragraphs + 1:
         problems.append(f"{len(paragraphs)} paragraphs, at most {max_paragraphs} were asked for")
 
-    for phrase in _found(stripped, IMPLIES_KNOWLEDGE.get(lang, ())):
-        problems.append(f'"{phrase}" implies we know something the chart cannot tell us')
-    for phrase in _found(stripped, CLICHES.get(lang, ())):
-        problems.append(f'"{phrase}" is on the banned list in the style guide')
-
-    if lang in CYRILLIC_LANGS:
-        mixed = MIXED_WORD.findall(stripped)
-        if mixed:
-            problems.append(f"Latin letters inside a word: {', '.join(sorted(set(mixed))[:3])}")
-        latin = [w for w in LATIN_WORD.findall(stripped) if w.lower() not in LATIN_OK]
-        if latin:
-            problems.append(f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
+    problems.extend(_language_problems(stripped, lang))
 
     if "!" in stripped:
         problems.append("exclamation marks are not used in the reading")

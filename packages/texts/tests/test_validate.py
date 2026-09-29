@@ -65,3 +65,17 @@ def test_a_latin_word_inside_a_russian_reading_is_caught() -> None:
 def test_chart_abbreviations_are_allowed() -> None:
     text = "Асцендент в Деве, MC в Близнецах.\n\nPDF придёт на почту."
     assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok
+
+
+def test_a_section_written_about_the_reader_is_rejected() -> None:
+    about = (
+        "Солнце Оксаны стоит в Тельце и говорит о человеке, который не спешит. "
+        "Она предпочитает основательность и проверяет всё на ощупь, прежде чем довериться. " * 3
+    )
+    report = check(f"{about}\n\n{about}", lang="ru", min_paragraphs=2, max_paragraphs=3)
+    assert any("addressing them" in p for p in report.problems)
+
+
+def test_a_short_closing_line_may_be_impersonal() -> None:
+    text = "Карта не приговор.\n\nОна описывает почву, а не урожай."
+    assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok
