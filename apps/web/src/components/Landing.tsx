@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { HeroFilm } from '@/components/HeroFilm';
+import { SampleGallery } from '@/components/SampleGallery';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
 
@@ -99,25 +100,7 @@ export function Landing({
           <p className="caption l-note">{t('inside.note')}</p>
 
           {/* Four real pages of a finished document, generated from test birth data. */}
-          <ul className="l-gallery">
-            {[0, 1, 2, 3].map((i) => (
-              <li key={i}>
-                <a href={`/sample/page-${i + 1}.png`} target="_blank" rel="noreferrer">
-                  {/* Plain <img>: these are static files of a known size and the optimiser has
-                      nothing to add. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/sample/page-${i + 1}.png`}
-                    alt={t(`inside.pages.${i}`)}
-                    width={595}
-                    height={842}
-                    loading="lazy"
-                  />
-                  <span className="caption">{t(`inside.pages.${i}`)}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <SampleGallery labels={[0, 1, 2, 3].map((i) => t(`inside.pages.${i}`))} />
           <p className="caption l-gallery-note">{t('inside.galleryNote')}</p>
         </div>
       </section>

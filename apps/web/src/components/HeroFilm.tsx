@@ -3,13 +3,14 @@ import { useTranslations } from 'next-intl';
 import { Wheel } from '@/components/Wheel';
 import type { ChartFacts } from '@/lib/chart';
 
-/* The hero as a short film.
+/* The hero as an opening title.
  *
- * Four scenes on one loop, all CSS keyframes on the same clock, so nothing drifts and the last
- * frame is the first: a star being born and a sentence under it; the chart drawing itself, ring
- * by ring, planet by planet; the chart stepping aside for a passage of the reading; the headline.
- * No columns, no statistics, no buttons — one line of a link at the foot. Reduced motion shows
- * the final frame. */
+ * It plays once: a star is born, a line surfaces in its light, and the chart assembles itself
+ * ring by ring and planet by planet. Then it settles — the chart stays, its rings turning
+ * slowly — and the page below can be read. A loop that keeps exploding every twenty seconds
+ * under a headline someone is reading is a distraction, not a hero.
+ *
+ * All of it is CSS on one clock; reduced motion is handed the settled frame directly. */
 
 const STREAKS = Array.from({ length: 56 }, (_, i) => ({
   i,
@@ -53,22 +54,6 @@ export function HeroFilm({ facts, locale }: { facts: ChartFacts; locale: string 
       <div className="film-wheel" aria-hidden="true">
         <Wheel facts={facts} size={640} animate />
       </div>
-
-      {/* scene 3: a passage of the reading */}
-      <figure className="film-quote" aria-hidden="true">
-        <blockquote>{t('film.quote')}</blockquote>
-        <figcaption>{t('film.quoteFrom')}</figcaption>
-      </figure>
-
-      {/* scene 4: the headline */}
-      <h1 className="film-title">
-        <span className="film-title-line">
-          <span>{t('titleLead')}</span>
-        </span>
-        <span className="film-title-line">
-          <span className="film-title-accent">{t('titleAccent')}</span>
-        </span>
-      </h1>
 
       <Link className="film-cta" href={`/${locale}/start`}>
         {t('film.cta')}
