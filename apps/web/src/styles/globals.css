@@ -529,8 +529,10 @@
 .wheel-glow .wheel {
   filter: drop-shadow(0 0 18px rgba(140, 160, 255, 0.25));
 }
-/* Room for the orbit rings without letting them reach past the page gutter. */
-.hero-wheel .wheel {
+/* The rings are drawn on square boxes anchored to .wheel-glow, so .wheel-glow itself has to stay
+   square — shrinking the SVG inside it instead makes the box a rectangle and the rings ellipses.
+   Narrowing the whole block leaves the gutter the rings need without reaching past the page. */
+.hero-wheel .wheel-glow {
   width: 80%;
   margin-inline: auto;
 }
@@ -542,16 +544,16 @@
   pointer-events: none;
 }
 .orbit-box-1 {
-  inset: 4%;
+  inset: -5%;
 }
 .orbit-box-2 {
-  inset: 0;
+  inset: -11%;
 }
 /* Each ring sits a little inside its clipping box so the travelling dot and its glow, which
    stick out past the ring, stay inside the box and are not cut off. */
 .orbit {
   position: absolute;
-  inset: 3%;
+  inset: 4%;
   border-radius: 50%;
   pointer-events: none;
 }
