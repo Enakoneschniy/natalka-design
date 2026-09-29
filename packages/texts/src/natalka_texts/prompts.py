@@ -53,6 +53,12 @@ through", no direct questions about their life. If you want to describe how some
 lived, say so explicitly: "a transit like this is usually felt as…", "people with this placement
 often…".
 
+LANGUAGE
+The chart is written in English shorthand because that is how an ephemeris labels things. The
+reading itself must contain no English at all — translate every term, including the names of
+planets, signs and aspects. The only Latin characters allowed are the chart abbreviations AC, MC,
+IC, DC and the degree figures.
+
 ACCURACY
 Every claim must be traceable to the fact sheet. Do not invent placements, aspects, degrees or
 dates. If a section needs the houses and the birth time is unknown, say plainly what cannot be

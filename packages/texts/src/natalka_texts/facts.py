@@ -79,12 +79,14 @@ def _position_line(position: dict[str, Any]) -> str:
 
 
 def _aspect_line(aspect: dict[str, Any]) -> str:
-    applying = ""
+    # Arrows rather than "applying"/"separating": the model copied those English words straight
+    # into Russian readings, and a symbol has nothing to copy.
+    direction = ""
     if aspect.get("applying") is True:
-        applying = ", applying"
+        direction = " →"
     elif aspect.get("applying") is False:
-        applying = ", separating"
-    return f"{aspect['a']} {aspect['type']} {aspect['b']} (orb {aspect['orb']:.1f}°{applying})"
+        direction = " ←"
+    return f"{aspect['a']} {aspect['type']} {aspect['b']} (orb {aspect['orb']:.1f}°{direction})"
 
 
 def fact_sheet(facts: dict[str, Any], transits: list[dict[str, Any]] | None = None) -> str:
@@ -128,7 +130,7 @@ def fact_sheet(facts: dict[str, Any], transits: list[dict[str, Any]] | None = No
     aspects = facts.get("aspects", [])
     if aspects:
         lines.append("")
-        lines.append("ASPECTS (tightest first)")
+        lines.append("ASPECTS (tightest first; → still closing, ← already past exact)")
         ordered = sorted(aspects, key=lambda a: a["orb"])
         lines.extend(_aspect_line(a) for a in ordered[:40])
 
