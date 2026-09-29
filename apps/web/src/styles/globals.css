@@ -2538,6 +2538,12 @@
   background: var(--color-accent);
   animation: dial-breathe 1.6s ease-in-out infinite;
 }
+.waiting-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
 .telegram-link {
   gap: 10px;
 }

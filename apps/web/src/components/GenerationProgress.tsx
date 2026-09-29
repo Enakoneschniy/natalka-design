@@ -146,6 +146,15 @@ export function GenerationProgress({
   const at = STAGES.indexOf(step as (typeof STAGES)[number]);
   const current = done ? STAGES.length : Math.max(at, 0);
 
+  const telegramLink = telegram ? (
+    <a className="btn btn-secondary telegram-link" href={telegram} target="_blank" rel="noreferrer">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M21.4 4.6 3.6 11.5c-1.2.5-1.2 1.2-.2 1.5l4.5 1.4 1.7 5.3c.2.6.4.8.8.8.4 0 .6-.2 1-.5l2.5-2.4 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14c.3-1.2-.5-1.8-1.7-1.6ZM8.8 14l9.6-6.1c.5-.3.9-.1.5.2L11 15.4l-.3 3.3L8.8 14Z" />
+      </svg>
+      {t('telegram')}
+    </a>
+  ) : null;
+
   return (
     <div className="waiting">
       <Dial progress={status?.progress ?? 0} label={label} done={done} />
@@ -159,13 +168,16 @@ export function GenerationProgress({
       </div>
 
       {done ? (
-        <Link
-          className="btn btn-primary btn-lg"
-          href={`/api/documents/${encodeURIComponent(token)}`}
-          prefetch={false}
-        >
-          {t('open')}
-        </Link>
+        <div className="waiting-actions">
+          <Link
+            className="btn btn-primary btn-lg"
+            href={`/api/documents/${encodeURIComponent(token)}`}
+            prefetch={false}
+          >
+            {t('open')}
+          </Link>
+          {telegramLink}
+        </div>
       ) : (
         <>
           <ol className="stages">
@@ -180,19 +192,7 @@ export function GenerationProgress({
             ))}
           </ol>
           <p className="caption waiting-note">{t('lead')}</p>
-          {telegram ? (
-            <a
-              className="btn btn-secondary telegram-link"
-              href={telegram}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M21.4 4.6 3.6 11.5c-1.2.5-1.2 1.2-.2 1.5l4.5 1.4 1.7 5.3c.2.6.4.8.8.8.4 0 .6-.2 1-.5l2.5-2.4 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14c.3-1.2-.5-1.8-1.7-1.6ZM8.8 14l9.6-6.1c.5-.3.9-.1.5.2L11 15.4l-.3 3.3L8.8 14Z" />
-              </svg>
-              {t('telegram')}
-            </a>
-          ) : null}
+          {telegramLink}
         </>
       )}
     </div>
