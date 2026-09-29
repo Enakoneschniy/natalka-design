@@ -40,16 +40,20 @@ interface CreateOrder {
   currency: string;
   /** Marks a run that was not paid for — the staging site creates these. */
   test?: boolean;
-  birth: {
-    date: string;
-    time: string | null;
-    latitude: number;
-    longitude: number;
-    zone: string;
-    place: string;
-    name: string;
-    gender: 'f' | 'm' | 'n';
-  };
+  birth: BirthInput;
+  /** The partner. Only a synastry has one; anything else ignores it. */
+  birth_second?: BirthInput;
+}
+
+interface BirthInput {
+  date: string;
+  time: string | null;
+  latitude: number;
+  longitude: number;
+  zone: string;
+  place: string;
+  name: string;
+  gender: 'f' | 'm' | 'n';
 }
 
 interface PreviewRequest {
@@ -132,6 +136,9 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   if (!body?.email || !body?.birth?.date || !body?.birth?.zone) {
     return json({ error: 'email and birth data are required' }, 400);
   }
+  if (body.product === 'synastry' && !(body.birth_second?.date && body.birth_second?.zone)) {
+    return json({ error: 'a synastry needs two people' }, 400);
+  }
 
   const orderId = crypto.randomUUID();
   const jobId = crypto.randomUUID();
@@ -149,21 +156,23 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     created_at: now(),
   });
 
-  const { ciphertext, nonce } = await encryptJson(
-    { ...body.birth, lang: body.locale },
-    env.DATA_KEY,
-  );
-  await insertChart(env.DB, {
-    id: crypto.randomUUID(),
-    order_id: orderId,
-    ciphertext,
-    nonce,
-    unknown_time: body.birth.time === null,
-    gender: body.birth.gender,
-    display_name: body.birth.name,
-    place_label: body.birth.place,
-    expires_at: expiryFrom(retention),
-  });
+  // One encrypted row per person; the second exists only for a synastry.
+  const people = body.product === 'synastry' && body.birth_second ? [body.birth, body.birth_second] : [body.birth];
+  for (const [index, person] of people.entries()) {
+    const { ciphertext, nonce } = await encryptJson({ ...person, lang: body.locale }, env.DATA_KEY);
+    await insertChart(env.DB, {
+      id: crypto.randomUUID(),
+      order_id: orderId,
+      person_no: index === 0 ? 1 : 2,
+      ciphertext,
+      nonce,
+      unknown_time: person.time === null,
+      gender: person.gender,
+      display_name: person.name,
+      place_label: person.place,
+      expires_at: expiryFrom(retention),
+    });
+  }
 
   await insertJob(env.DB, { id: jobId, order_id: orderId, kind: body.product });
   await env.JOBS.send({ jobId });

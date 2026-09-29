@@ -61,6 +61,8 @@ export async function insertChart(
   chart: {
     id: string;
     order_id: string;
+    /** 1 for the person the order is for, 2 for the partner in a synastry. */
+    person_no?: 1 | 2;
     ciphertext: ArrayBuffer;
     nonce: ArrayBuffer;
     unknown_time: boolean;
@@ -74,11 +76,12 @@ export async function insertChart(
     .prepare(
       `INSERT INTO charts (id, order_id, person_no, birth_ciphertext, birth_nonce, key_version,
                            unknown_time, gender, display_name, place_label, expires_at, created_at)
-       VALUES (?, ?, 1, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       chart.id,
       chart.order_id,
+      chart.person_no ?? 1,
       chart.ciphertext,
       chart.nonce,
       chart.unknown_time ? 1 : 0,

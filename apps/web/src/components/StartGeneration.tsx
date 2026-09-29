@@ -20,10 +20,12 @@ export function StartGeneration({
   locale,
   product,
   birth,
+  birthSecond,
 }: {
   locale: string;
   product: string;
   birth: Birth;
+  birthSecond?: Birth;
 }) {
   const t = useTranslations('checkout');
   const router = useRouter();
@@ -43,7 +45,7 @@ export function StartGeneration({
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, product, locale, birth }),
+        body: JSON.stringify({ email, product, locale, birth, birth_second: birthSecond }),
       });
       if (!response.ok) throw new Error(String(response.status));
       const { token } = (await response.json()) as { token: string };

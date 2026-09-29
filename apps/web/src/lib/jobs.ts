@@ -12,16 +12,20 @@ export interface OrderRequest {
   amount_minor: number;
   currency: string;
   test?: boolean;
-  birth: {
-    date: string;
-    time: string | null;
-    latitude: number;
-    longitude: number;
-    zone: string;
-    place: string;
-    name: string;
-    gender: 'f' | 'm' | 'n';
-  };
+  birth: BirthInput;
+  /** The partner; only a synastry has one. */
+  birth_second?: BirthInput;
+}
+
+export interface BirthInput {
+  date: string;
+  time: string | null;
+  latitude: number;
+  longitude: number;
+  zone: string;
+  place: string;
+  name: string;
+  gender: 'f' | 'm' | 'n';
 }
 
 export interface OrderCreated {

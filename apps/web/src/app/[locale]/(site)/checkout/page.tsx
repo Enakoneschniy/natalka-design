@@ -39,12 +39,33 @@ export default async function CheckoutPage({
     one(search.c),
   ].filter(Boolean);
 
-  // Enough to start a generation; the same values the preview was drawn from.
-  const date = one(search.d);
-  const zone = one(search.tz);
-  const latitude = Number(one(search.lat));
-  const longitude = Number(one(search.lon));
-  const canStart = Boolean(date && zone) && !Number.isNaN(latitude) && !Number.isNaN(longitude);
+  // Enough to start a generation; the same values the preview was drawn from. The partner's
+  // fields carry a "2", the way the form wrote them.
+  const person = (suffix: '' | '2', fallbackName: string) => {
+    const date = one(search[`d${suffix}`]);
+    const zone = one(search[`tz${suffix}`]);
+    const latitude = Number(one(search[`lat${suffix}`]));
+    const longitude = Number(one(search[`lon${suffix}`]));
+    if (!date || !zone || Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
+    const gender = one(search[`g${suffix}`]);
+    return {
+      date,
+      time: one(search[`t${suffix}`]) ?? null,
+      latitude,
+      longitude,
+      zone,
+      place: one(search[`c${suffix}`]) ?? '',
+      name: one(search[`n${suffix}`]) ?? fallbackName,
+      gender: (gender === 'f' || gender === 'female'
+        ? 'f'
+        : gender === 'm' || gender === 'male'
+          ? 'm'
+          : 'n') as 'f' | 'm' | 'n',
+    };
+  };
+  const first = person('', tp(`${product}.title`));
+  const second = product === 'synastry' ? person('2', 'B') : null;
+  const canStart = Boolean(first) && (product !== 'synastry' || Boolean(second));
 
   const back = new URLSearchParams();
   for (const [key, value] of Object.entries(search)) {
@@ -87,23 +108,12 @@ export default async function CheckoutPage({
           </div>
         </div>
 
-        {canStart && date && zone ? (
+        {canStart && first ? (
           <StartGeneration
             locale={locale}
             product={product}
-            birth={{
-              date,
-              time: one(search.t) ?? null,
-              latitude,
-              longitude,
-              zone,
-              place: one(search.c) ?? '',
-              name: one(search.n) ?? tp(`${product}.title`),
-              gender: (one(search.g) === 'female' ? 'f' : one(search.g) === 'male' ? 'm' : 'n') as
-                | 'f'
-                | 'm'
-                | 'n',
-            }}
+            birth={first}
+            birthSecond={second ?? undefined}
           />
         ) : null}
 

@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
   if (!body.email || !body.birth?.date || !body.birth?.zone) {
     return NextResponse.json({ error: 'email and birth data are required' }, { status: 400 });
   }
+  if (product === 'synastry' && !(body.birth_second?.date && body.birth_second?.zone)) {
+    return NextResponse.json({ error: 'a synastry needs two people' }, { status: 400 });
+  }
 
   const country = (await headers()).get('cf-ipcountry');
   const price = priceFor(product, country);
@@ -28,6 +31,7 @@ export async function POST(request: NextRequest) {
       // Nothing is charged yet: every order made from the site is a test order until Stripe is in.
       test: true,
       birth: body.birth as OrderRequest['birth'],
+      birth_second: product === 'synastry' ? body.birth_second : undefined,
     });
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
