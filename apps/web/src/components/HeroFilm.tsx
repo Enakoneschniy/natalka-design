@@ -5,9 +5,9 @@ import type { ChartFacts } from '@/lib/chart';
 
 /* The hero as a short film.
  *
- * Four scenes on one 24-second loop, all CSS keyframes on the same clock, so nothing drifts and
- * the last frame is the first: a sentence under the stars; the chart drawing itself, ring by
- * ring, planet by planet; the chart stepping aside for a passage of the reading; the headline.
+ * Four scenes on one loop, all CSS keyframes on the same clock, so nothing drifts and the last
+ * frame is the first: a star being born and a sentence under it; the chart drawing itself, ring
+ * by ring, planet by planet; the chart stepping aside for a passage of the reading; the headline.
  * No columns, no statistics, no buttons — one line of a link at the foot. Reduced motion shows
  * the final frame. */
 
@@ -46,9 +46,6 @@ export function HeroFilm({ facts, locale }: { facts: ChartFacts; locale: string 
       <p className="film-line" aria-hidden="true">
         {t('film.line')}
       </p>
-      <svg className="film-ring" viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="47" pathLength="1" />
-      </svg>
 
       {/* scene 2 → 4: the chart */}
       <div className="film-wheel" aria-hidden="true">

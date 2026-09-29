@@ -905,7 +905,6 @@
     translate: -50% calc(-50% - 14px);
   }
 }
-.film-ring,
 .film-wheel {
   position: absolute;
   left: 50%;
@@ -914,53 +913,6 @@
   aspect-ratio: 1;
   translate: -50% -50%;
 }
-.film-ring {
-  overflow: visible;
-  opacity: 0;
-  animation: film-ring var(--loop) linear infinite both;
-}
-.film-ring circle {
-  fill: none;
-  stroke: var(--color-accent);
-  stroke-width: 0.5;
-  stroke-linecap: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
-  animation: film-ring-draw var(--loop) linear infinite both;
-}
-@keyframes film-ring {
-  0%,
-  5% {
-    opacity: 0;
-    scale: 0.96;
-  }
-  7% {
-    opacity: 1;
-  }
-  15% {
-    opacity: 1;
-    scale: 1;
-  }
-  19%,
-  100% {
-    opacity: 0;
-    scale: 1.03;
-  }
-}
-@keyframes film-ring-draw {
-  0%,
-  6% {
-    stroke-dashoffset: 1;
-    animation-timing-function: var(--in);
-  }
-  13%,
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
 /* scene 2 → 4: the chart draws itself, steps aside, then sinks into the background */
 .film-wheel {
   opacity: 0;
@@ -974,7 +926,7 @@
 }
 @keyframes film-wheel {
   0%,
-  14% {
+  13% {
     opacity: 0;
     translate: -50% -50%;
     scale: 0.86;
@@ -1056,7 +1008,7 @@
 }
 @keyframes film-part-turn {
   0%,
-  14% {
+  13% {
     opacity: 0;
     rotate: -18deg;
     animation-timing-function: var(--in);
@@ -1300,7 +1252,6 @@
 @media (prefers-reduced-motion: reduce) {
   /* The final frame, held: the headline over the chart. */
   .film-line,
-  .film-ring,
   .film-burst,
   .film-shock,
   .film-warp,
@@ -1330,13 +1281,12 @@
     white-space: normal;
     width: 86vw;
   }
-  .film-ring,
   .film-wheel {
     width: min(44vh, 86vw, 560px);
   }
   @keyframes film-wheel {
     0%,
-    14% {
+    13% {
       opacity: 0;
       translate: -50% -50%;
       scale: 0.86;
