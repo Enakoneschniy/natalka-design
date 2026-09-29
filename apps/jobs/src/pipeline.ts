@@ -162,6 +162,7 @@ async function render(env: Env, job: JobRow, birth: BirthData, payload: JobPaylo
     body: JSON.stringify(document),
   });
   if (!pdf.ok) throw new Error(`/v1/document → ${pdf.status}`);
+  const pages = Number(pdf.headers.get('x-pages') ?? 0);
   const bytes = await pdf.arrayBuffer();
 
   const key = `${job.order_id}/${job.kind}-${birth.lang}.pdf`;
@@ -171,7 +172,7 @@ async function render(env: Env, job: JobRow, birth: BirthData, payload: JobPaylo
     order_id: job.order_id,
     storage_key: key,
     sha256: await sha256Hex(bytes),
-    pages: Number((document.meta as { pages?: number } | undefined)?.pages ?? 0),
+    pages,
     bytes: bytes.byteLength,
     lang: birth.lang,
     expires_at: expiryFrom(Number(env.RETENTION_DAYS ?? '30')),

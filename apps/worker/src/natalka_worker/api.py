@@ -258,11 +258,16 @@ def document(doc: Document) -> Response:
     synchronous: a 30-page document takes a couple of seconds and the queue already retries.
     """
     buffer = io.BytesIO()
-    render_pdf(doc, buffer)
+    pages = render_pdf(doc, buffer)
     return Response(
         buffer.getvalue(),
         media_type="application/pdf",
-        headers={"content-disposition": 'attachment; filename="natalka.pdf"'},
+        headers={
+            "content-disposition": 'attachment; filename="natalka.pdf"',
+            # The caller records the page count with the document; counting it again would mean
+            # parsing the PDF it just received.
+            "x-pages": str(pages),
+        },
     )
 
 
