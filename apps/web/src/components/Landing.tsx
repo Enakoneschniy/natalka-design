@@ -52,15 +52,11 @@ export function Landing({
   return (
     <>
       <section className="hero hero-film">
-        <HeroFilm facts={facts} locale={locale} />
+        <HeroFilm facts={facts} locale={locale} angle={angle} years={years} />
       </section>
 
-      <section className="section l-intro">
+      <section className="section l-quote-strip">
         <div className="container-page">
-          <p className="l-eyebrow">{t('hero.eyebrow', years)}</p>
-          <h1 className="l-title">{t(`hero.${angle}.title`)}</h1>
-          <p className="lead l-lead">{t(`hero.${angle}.lead`, years)}</p>
-          {cta(t('hero.cta'), t('hero.under'))}
           <figure className="l-quote">
             <blockquote>{t('hero.quote')}</blockquote>
             <figcaption>{t('hero.quoteFrom')}</figcaption>

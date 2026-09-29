@@ -5,7 +5,6 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { HeroFilm } from '@/components/HeroFilm';
 import { HeroOrrery } from '@/components/HeroOrrery';
 import { HeroScene } from '@/components/HeroScene';
 import { HeroWheel } from '@/components/HeroWheel';
@@ -60,7 +59,8 @@ export function LandingCatalogue({
     <>
       {HERO === 'film' ? (
         <section className="hero hero-film">
-          <HeroFilm facts={facts} locale={locale} />
+          {/* The film has moved on; this archived page kept its other heroes. */}
+          <HeroWheel facts={facts} />
         </section>
       ) : HERO === 'scene' ? (
         <section className="hero hero-scene">

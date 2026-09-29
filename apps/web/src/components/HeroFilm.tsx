@@ -1,16 +1,19 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Logo } from '@/components/Logo';
 import { Wheel } from '@/components/Wheel';
 import type { ChartFacts } from '@/lib/chart';
 
-/* The hero as an opening title.
+/* The first screen, as one piece.
  *
- * It plays once: a star is born, a line surfaces in its light, and the chart assembles itself
- * ring by ring and planet by planet. Then it settles — the chart stays, its rings turning
- * slowly — and the page below can be read. A loop that keeps exploding every twenty seconds
- * under a headline someone is reading is a distraction, not a hero.
+ * It plays once: a star is born, a line surfaces in its light, the chart assembles itself ring by
+ * ring — and then the chart steps aside and the page's own words arrive in its place. After that
+ * it is still: a hero that keeps re-exploding under a headline someone is reading is a
+ * distraction, not a hero.
  *
- * All of it is CSS on one clock; reduced motion is handed the settled frame directly. */
+ * There is no site header above it. One product, one language a visitor ever sees, and a call to
+ * action in every section below — a navigation bar would be three links to nowhere.
+ */
 
 const STREAKS = Array.from({ length: 56 }, (_, i) => ({
   i,
@@ -19,15 +22,30 @@ const STREAKS = Array.from({ length: 56 }, (_, i) => ({
   delay: ((i * 5) % 9) * 0.035,
 }));
 
-export function HeroFilm({ facts, locale }: { facts: ChartFacts; locale: string }) {
-  const t = useTranslations('hero');
+export function HeroFilm({
+  facts,
+  locale,
+  angle,
+  years,
+}: {
+  facts: ChartFacts;
+  locale: string;
+  /** Which of the three headlines this visitor's advert promised. */
+  angle: 'dates' | 'home' | 'love';
+  years: { from: number; next: number; year: number };
+}) {
+  const t = useTranslations('landing');
+
   return (
-    <div className="film" aria-label={`${t('titleLead')} ${t('titleAccent')}`}>
+    <div className="film">
+      <Link className="film-mark" href={`/${locale}`} aria-label="Chronika">
+        <Logo size={28} />
+        <span>Chronika</span>
+      </Link>
+
       <div className="film-glow" aria-hidden="true" />
 
-      {/* scene 1: a star is born — a point, a flash, a shockwave, the sky rushing past — and the
-          sentence surfaces as the light settles. The streaks are laid out by the golden angle so
-          that no two neighbours are alike, without a random number the server could not repeat. */}
+      {/* a star is born: a point, a flash, a shockwave, and the sky rushing past the camera */}
       <div className="film-burst" aria-hidden="true" />
       <div className="film-shock" aria-hidden="true" />
       <div className="film-warp" aria-hidden="true">
@@ -44,21 +62,27 @@ export function HeroFilm({ facts, locale }: { facts: ChartFacts; locale: string 
           />
         ))}
       </div>
-      {/* The sentence is already there; the shockwave uncovers it from the centre outward as it
-          passes, and it holds for a breath before the chart. One element, no per-word tricks. */}
+
+      {/* the line the wave uncovers, held long enough to read */}
       <p className="film-line" aria-hidden="true">
-        {t('film.line')}
+        {t('hero.line')}
       </p>
 
-      {/* scene 2 → 4: the chart */}
       <div className="film-wheel" aria-hidden="true">
         <Wheel facts={facts} size={640} animate />
       </div>
 
-      <Link className="film-cta" href={`/${locale}/start`}>
-        {t('film.cta')}
-        <span aria-hidden="true">→</span>
-      </Link>
+      {/* and then the page says what it is */}
+      <div className="film-text">
+        <p className="film-eyebrow">{t('hero.eyebrow', years)}</p>
+        <h1 className="film-title">{t(`hero.${angle}.title`)}</h1>
+        <p className="film-lead">{t(`hero.${angle}.lead`, years)}</p>
+        <Link className="btn btn-primary btn-lg film-button" href={`/${locale}/start?p=bundle`}>
+          {t('hero.cta')}
+          <span aria-hidden="true">→</span>
+        </Link>
+        <p className="caption film-under">{t('hero.under')}</p>
+      </div>
     </div>
   );
 }
