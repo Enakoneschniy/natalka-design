@@ -236,6 +236,22 @@ export interface TelegramLink {
   delivered_at: string | null;
 }
 
+/** Letters and digits that survive a Telegram start parameter and a phone keyboard: no 0/O, 1/l/I. */
+const CODE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+
+/** One byte of entropy per character, drawn until it falls under the largest multiple of the
+ * alphabet size — no modulo bias, and sixteen characters are ninety bits. */
+function randomCode(length: number): string {
+  const limit = 256 - (256 % CODE_ALPHABET.length);
+  let out = '';
+  while (out.length < length) {
+    for (const byte of crypto.getRandomValues(new Uint8Array(length))) {
+      if (byte < limit && out.length < length) out += CODE_ALPHABET[byte % CODE_ALPHABET.length];
+    }
+  }
+  return out;
+}
+
 /** The code for a job's deep link — the same one every time it is asked for. */
 export async function telegramCodeFor(
   db: D1Database,
@@ -246,11 +262,7 @@ export async function telegramCodeFor(
     .bind(link.job_id)
     .first<{ code: string }>();
   if (existing) return existing.code;
-  // 16 characters of base32-ish alphabet: 80 bits, and legal in a Telegram start parameter.
-  const bytes = crypto.getRandomValues(new Uint8Array(10));
-  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789ABCDEFGHJKMNPQRSTUVWXYZ';
-  let code = '';
-  for (let i = 0; i < 16; i++) code += alphabet[(bytes[i % 10] ?? 0) * (i + 1) % alphabet.length];
+  const code = randomCode(16);
   await db
     .prepare(
       `INSERT INTO telegram_links (code, order_id, job_id, locale, created_at)

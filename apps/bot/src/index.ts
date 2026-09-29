@@ -5,8 +5,19 @@
  * ready, the PDF itself — is asked of the jobs worker over a service binding, so a leak here
  * exposes a chat bot and nothing behind it. */
 
+import { WorkerEntrypoint } from 'cloudflare:workers';
+
+/** What the jobs worker exposes over its binding (see apps/jobs, JobsInternal). Typed by hand:
+ * the two workers do not share a build. */
+interface JobsInternalStub {
+  claimTelegram(code: string, chatId: number): Promise<Claim | null>;
+  telegramDelivered(code: string): Promise<void>;
+  forgetTelegram(chatId: number): Promise<void>;
+  document(token: string): Promise<ArrayBuffer | null>;
+}
+
 interface Env {
-  JOBS: Fetcher;
+  JOBS: JobsInternalStub;
   SITE_URL: string;
   TELEGRAM_BOT_TOKEN?: string;
 }
@@ -98,9 +109,9 @@ async function sendDocument(
 
 /** Fetches the finished PDF from the jobs worker and hands it to the chat. */
 async function deliver(env: Env, token: string, chatId: number, docToken: string, l: Lang) {
-  const pdf = await env.JOBS.fetch(`https://jobs/d/${docToken}`);
-  if (!pdf.ok) throw new Error(`document ${pdf.status}`);
-  const file = new Blob([await pdf.arrayBuffer()], { type: 'application/pdf' });
+  const bytes = await env.JOBS.document(docToken);
+  if (!bytes) throw new Error('document is not available');
+  const file = new Blob([bytes], { type: 'application/pdf' });
   await sendText(token, chatId, COPY[l].here);
   await sendDocument(token, chatId, file, COPY[l].caption);
 }
@@ -110,16 +121,11 @@ async function onStart(env: Env, token: string, chatId: number, code: string, fa
     await sendText(token, chatId, COPY[fallback].hello);
     return;
   }
-  const response = await env.JOBS.fetch('https://jobs/v1/telegram/claim', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ code, chat_id: chatId }),
-  });
-  if (!response.ok) {
+  const claim = await env.JOBS.claimTelegram(code, chatId);
+  if (!claim) {
     await sendText(token, chatId, COPY[fallback].unknown);
     return;
   }
-  const claim = (await response.json()) as Claim;
   const l = lang(claim.locale);
   if (claim.failed) {
     await sendText(token, chatId, COPY[l].failed);
@@ -130,11 +136,7 @@ async function onStart(env: Env, token: string, chatId: number, code: string, fa
     return;
   }
   await deliver(env, token, chatId, claim.token, l);
-  await env.JOBS.fetch('https://jobs/v1/telegram/delivered', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ code }),
-  });
+  await env.JOBS.telegramDelivered(code);
 }
 
 async function onUpdate(env: Env, token: string, update: Update): Promise<void> {
@@ -146,11 +148,7 @@ async function onUpdate(env: Env, token: string, update: Update): Promise<void> 
 
   if (command === '/start') return onStart(env, token, chatId, argument, fallback);
   if (command === '/stop') {
-    await env.JOBS.fetch('https://jobs/v1/telegram/forget', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId }),
-    });
+    await env.JOBS.forgetTelegram(chatId);
     return sendText(token, chatId, COPY[fallback].stopped);
   }
   return sendText(token, chatId, COPY[fallback].hello);
@@ -206,23 +204,19 @@ export default {
       return new Response('ok');
     }
 
-    // The jobs worker, over its binding, when a document a chat is waiting for is finished.
-    if (url.pathname === '/deliver' && request.method === 'POST') {
-      const body = (await request.json()) as {
-        chat_id: number;
-        code: string;
-        locale: string;
-        token: string;
-      };
-      await deliver(env, token, body.chat_id, body.token, lang(body.locale));
-      await env.JOBS.fetch('https://jobs/v1/telegram/delivered', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ code: body.code }),
-      });
-      return Response.json({ ok: true });
-    }
-
     return new Response('not found', { status: 404 });
   },
 };
+
+/** What the jobs worker may ask, over its service binding and nothing else. An RPC entrypoint
+ * has no URL: the public fetch handler above never sees these calls, so there is no route for a
+ * stranger to push a document into someone's chat. */
+export class BotInternal extends WorkerEntrypoint<Env> {
+  /** A document a chat has been waiting for is finished: send it. */
+  async deliver(args: { chatId: number; code: string; locale: string; token: string }) {
+    const token = this.env.TELEGRAM_BOT_TOKEN;
+    if (!token) throw new Error('bot token is not configured');
+    await deliver(this.env, token, args.chatId, args.token, lang(args.locale));
+    await this.env.JOBS.telegramDelivered(args.code);
+  }
+}

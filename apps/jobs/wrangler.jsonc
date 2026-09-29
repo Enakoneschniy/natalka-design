@@ -17,7 +17,7 @@
   // between two workers on the same zone (error 1042), and this keeps the call private and fast.
   "services": [
     { "binding": "API", "service": "natalka-api" },
-    { "binding": "BOT", "service": "natalka-bot" }
+    { "binding": "BOT", "service": "natalka-bot", "entrypoint": "BotInternal" }
   ],
   "d1_databases": [
     { "binding": "DB", "database_name": "natalka", "database_id": "90261635-69b9-461b-9e1f-9a7b98596e97", "migrations_dir": "migrations" }

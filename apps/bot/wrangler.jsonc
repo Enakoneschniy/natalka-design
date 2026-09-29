@@ -9,6 +9,6 @@
     "SITE_URL": "https://chronika.me"
   },
   // Documents and link codes live with the jobs worker; this one only holds the bot token.
-  "services": [{ "binding": "JOBS", "service": "natalka-jobs" }]
+  "services": [{ "binding": "JOBS", "service": "natalka-jobs", "entrypoint": "JobsInternal" }]
   // Secrets: TELEGRAM_BOT_TOKEN — set in the dashboard, never here.
 }

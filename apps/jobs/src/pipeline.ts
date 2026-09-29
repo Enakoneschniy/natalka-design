@@ -297,17 +297,13 @@ async function notify(env: Env, job: JobRow): Promise<void> {
   // asked again.
   for (const waiting of await telegramWaiting(env.DB, job.order_id)) {
     try {
-      const response = await env.BOT.fetch('https://bot/deliver', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: waiting.chat_id,
-          code: waiting.code,
-          locale: waiting.locale,
-          token,
-        }),
+      if (waiting.chat_id === null) continue;
+      await env.BOT.deliver({
+        chatId: waiting.chat_id,
+        code: waiting.code,
+        locale: waiting.locale,
+        token,
       });
-      if (!response.ok) throw new Error(`bot answered ${response.status}`);
     } catch (error) {
       console.error('telegram delivery', error instanceof Error ? error.message : String(error));
     }

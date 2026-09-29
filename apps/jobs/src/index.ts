@@ -28,6 +28,7 @@ import {
   updateJob,
 } from './db';
 import type { Env } from './env';
+import { WorkerEntrypoint } from 'cloudflare:workers';
 import { advance, type JobPayload } from './pipeline';
 
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
@@ -246,49 +247,46 @@ async function telegramCode(env: Env, token: string): Promise<Response> {
   return json({ code });
 }
 
-/** The bot, on /start <code>: remembers the chat and says whether the document is ready. */
-async function telegramClaim(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as { code?: string; chat_id?: number };
-  if (!body.code || !body.chat_id) return json({ error: 'code and chat_id are required' }, 400);
-  const link = await telegramLink(env.DB, body.code);
-  if (!link) return json({ error: 'unknown code' }, 404);
-  await claimTelegramLink(env.DB, link.code, body.chat_id);
-  const job = await getJob(env.DB, link.job_id);
-  const ready = job?.step === 'done';
-  const token = ready
-    ? await signToken({ order: link.order_id, job: link.job_id }, env.LINK_KEY, LINK_TTL_SECONDS)
-    : null;
-  return json({ locale: link.locale, ready, failed: job?.status === 'failed', token });
-}
+/** What the bot may ask, over its service binding and nothing else: an RPC entrypoint has no
+ * URL, so these never face the internet the way the worker's fetch handler does. */
+export class JobsInternal extends WorkerEntrypoint<Env> {
+  /** On /start <code>: remembers the chat and says whether the document is ready. */
+  async claimTelegram(code: string, chatId: number) {
+    const link = await telegramLink(this.env.DB, code);
+    if (!link) return null;
+    await claimTelegramLink(this.env.DB, link.code, chatId);
+    const job = await getJob(this.env.DB, link.job_id);
+    const ready = job?.step === 'done';
+    const token = ready
+      ? await signToken(
+          { order: link.order_id, job: link.job_id },
+          this.env.LINK_KEY,
+          LINK_TTL_SECONDS,
+        )
+      : null;
+    return { locale: link.locale, ready, failed: job?.status === 'failed', token };
+  }
 
-async function telegramDelivered(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as { code?: string };
-  if (!body.code) return json({ error: 'code is required' }, 400);
-  await markTelegramDelivered(env.DB, body.code);
-  return json({ ok: true });
-}
+  async telegramDelivered(code: string) {
+    await markTelegramDelivered(this.env.DB, code);
+  }
 
-async function telegramForget(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as { chat_id?: number };
-  if (!body.chat_id) return json({ error: 'chat_id is required' }, 400);
-  await forgetTelegramChat(env.DB, body.chat_id);
-  return json({ ok: true });
+  async forgetTelegram(chatId: number) {
+    await forgetTelegramChat(this.env.DB, chatId);
+  }
+
+  /** The finished PDF for a signed token, or null. */
+  async document(token: string): Promise<ArrayBuffer | null> {
+    const response = await download(this.env, token);
+    return response.ok ? response.arrayBuffer() : null;
+  }
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    // Internal: the bot and the site reach these over service bindings.
-    if (url.pathname === '/v1/telegram/claim' && request.method === 'POST') {
-      return telegramClaim(request, env);
-    }
-    if (url.pathname === '/v1/telegram/delivered' && request.method === 'POST') {
-      return telegramDelivered(request, env);
-    }
-    if (url.pathname === '/v1/telegram/forget' && request.method === 'POST') {
-      return telegramForget(request, env);
-    }
+    // The site asks for the code behind its Telegram link; the token is the authentication.
     const code = url.pathname.match(/^\/v1\/jobs\/(.+)\/telegram$/);
     if (code?.[1] && request.method === 'POST') return telegramCode(env, code[1]);
 
