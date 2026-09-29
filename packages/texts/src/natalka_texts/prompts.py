@@ -40,6 +40,21 @@ GENDER = {
     },
 }
 
+#: A child's chart is read by the parent, so the whole address changes: "you" is the parent and the
+#: chart belongs to someone else. Getting this wrong produces a document that talks to a four-year-old.
+ADDRESSEE = {
+    "child": (
+        "This is a child's chart, and you are writing to the child's parent. "
+        '"You" is the parent; the child is "your daughter" or "your son" by the gender given. '
+        "Never address the child, never predict who they will become, and never write anything a "
+        "parent could read as a diagnosis or a limit on the child."
+    ),
+    "forecast": (
+        "This is a twelve-month forecast. The natal chart is background; the subject is what the "
+        "sky does to it and when. Every claim about timing must quote a date from the fact sheet."
+    ),
+}
+
 SYSTEM = """\
 You are an experienced astrologer writing a paid, personal birth-chart reading. You write like a
 person who has read thousands of charts, not like a language model.
@@ -86,10 +101,14 @@ are asked for — no title, no preamble, no commentary about what you are doing.
 """
 
 
-def system_prompt(lang: str, gender: str) -> str:
+def system_prompt(lang: str, gender: str, product: str = "natal") -> str:
     language = LANGUAGE.get(lang, f"in {lang}")
     who = GENDER.get(gender, GENDER["n"]).get(lang) or GENDER[gender]["en"]
-    return f"{SYSTEM}\n\nWrite {language}. The person is {who}."
+    parts = [SYSTEM]
+    if product in ADDRESSEE:
+        parts.append(ADDRESSEE[product])
+    parts.append(f"Write {language}. The person the chart belongs to is {who}.")
+    return "\n\n".join(parts)
 
 
 def section_prompt(

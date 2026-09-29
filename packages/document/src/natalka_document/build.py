@@ -21,6 +21,7 @@ from .schema import (
     Paragraph,
     Person,
     PositionsTable,
+    Product,
     Quote,
     Section,
     WheelBlock,
@@ -56,21 +57,95 @@ NATAL_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
     ("summary", 1),
     ("ps", 1),
 )
-NO_TIME_SKIPPED = {"natal.ascendant", "natal.mc_career", "love.seventh_house"}
+#: A twelve-month forecast: the natal chart is the ground, the transits are the subject.
+FORECAST_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
+    ("intro", 1),
+    ("forecast.ground", 1),
+    ("forecast.year", 1),
+    ("forecast.q1", 2),
+    ("forecast.q2", 2),
+    ("forecast.q3", 2),
+    ("forecast.q4", 2),
+    ("forecast.slow", 1),
+    ("forecast.work", 2),
+    ("forecast.love", 2),
+    ("forecast.advice", 1),
+    ("ps", 1),
+)
 
-COVER_TITLE = {
-    "uk": "Натальна карта",
-    "en": "Birth chart",
-    "ru": "Натальная карта",
-    "pl": "Horoskop urodzeniowy",
-    "de": "Geburtshoroskop",
+#: A child's chart, written for the parents rather than for the child.
+CHILD_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
+    ("intro", 1),
+    ("child.overview", 1),
+    ("child.temper", 2),
+    ("child.needs", 2),
+    ("child.learning", 2),
+    ("child.rest", 2),
+    ("child.hurts", 2),
+    ("child.language", 1),
+    ("child.parent", 2),
+    ("child.years", 1),
+    ("ps", 1),
+)
+
+SECTIONS: dict[str, tuple[tuple[str, Literal[1, 2]], ...]] = {
+    "natal": NATAL_SECTIONS,
+    "forecast": FORECAST_SECTIONS,
+    "child": CHILD_SECTIONS,
 }
-COVER_SUBTITLE = {
-    "uk": "індивідуальний розбір",
-    "en": "a personal reading",
-    "ru": "индивидуальный разбор",
-    "pl": "analiza indywidualna",
-    "de": "persönliche Deutung",
+
+NO_TIME_SKIPPED = {
+    "natal.ascendant",
+    "natal.mc_career",
+    "love.seventh_house",
+    "child.language",
+}
+
+COVER_TITLE: dict[str, dict[str, str]] = {
+    "natal": {
+        "uk": "Натальна карта",
+        "en": "Birth chart",
+        "ru": "Натальная карта",
+        "pl": "Horoskop urodzeniowy",
+        "de": "Geburtshoroskop",
+    },
+    "forecast": {
+        "uk": "Прогноз на 12 місяців",
+        "en": "A twelve-month forecast",
+        "ru": "Прогноз на 12 месяцев",
+        "pl": "Prognoza na 12 miesięcy",
+        "de": "Prognose für zwölf Monate",
+    },
+    "child": {
+        "uk": "Дитяча карта",
+        "en": "A child's chart",
+        "ru": "Детская карта",
+        "pl": "Horoskop dziecka",
+        "de": "Kinderhoroskop",
+    },
+}
+COVER_SUBTITLE: dict[str, dict[str, str]] = {
+    "natal": {
+        "uk": "індивідуальний розбір",
+        "en": "a personal reading",
+        "ru": "индивидуальный разбор",
+        "pl": "analiza indywidualna",
+        "de": "persönliche Deutung",
+    },
+    "forecast": {
+        "uk": "за транзитами вашої карти",
+        "en": "from the transits to your chart",
+        "ru": "по транзитам вашей карты",
+        "pl": "według tranzytów twojej karty",
+        "de": "nach den Transiten Ihres Horoskops",
+    },
+    "child": {
+        "uk": "для батьків",
+        "en": "for the parents",
+        "ru": "для родителей",
+        "pl": "dla rodziców",
+        "de": "für die Eltern",
+    },
 }
 CHART_SECTION_TITLE = {
     "uk": "Ваша карта",
@@ -99,9 +174,10 @@ def _t(table: dict[str, str], lang: str) -> str:
     return table.get(lang, table["en"])
 
 
-def natal_skeleton(
+def skeleton(
     facts: dict[str, Any],
     *,
+    product: Product = "natal",
     person: Person,
     place: str,
     lang: str,
@@ -128,7 +204,7 @@ def natal_skeleton(
         blocks=[WheelBlock(size="full"), PositionsTable(highlight="sun"), AspectGrid()],
     )
     sections = [chart_section]
-    for sid, level in NATAL_SECTIONS:
+    for sid, level in SECTIONS[product]:
         if birth.unknown_time and sid in NO_TIME_SKIPPED:
             continue
         sections.append(
@@ -137,10 +213,12 @@ def natal_skeleton(
             )
         )
     return Document(
-        meta=Meta(product="natal", lang=lang, order_ref=order_ref, engine_version=engine_version),
+        meta=Meta(product=product, lang=lang, order_ref=order_ref, engine_version=engine_version),
         person=person,
         birth=birth,
-        cover=Cover(title=_t(COVER_TITLE, lang), subtitle=_t(COVER_SUBTITLE, lang)),
+        cover=Cover(
+            title=_t(COVER_TITLE[product], lang), subtitle=_t(COVER_SUBTITLE[product], lang)
+        ),
         facts=facts,
         transits=transits or [],
         sections=sections,
@@ -183,4 +261,19 @@ def fill_sections(
     return document.model_copy(update={"sections": kept})
 
 
-__all__ = ["NATAL_SECTIONS", "NO_TIME_SKIPPED", "fill_sections", "natal_skeleton", "ui"]
+#: The natal skeleton by its old name — the only product that existed when it was written.
+def natal_skeleton(facts: dict[str, Any], **kwargs: Any) -> Document:
+    return skeleton(facts, product="natal", **kwargs)
+
+
+__all__ = [
+    "CHILD_SECTIONS",
+    "FORECAST_SECTIONS",
+    "NATAL_SECTIONS",
+    "NO_TIME_SKIPPED",
+    "SECTIONS",
+    "fill_sections",
+    "natal_skeleton",
+    "skeleton",
+    "ui",
+]

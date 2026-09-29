@@ -113,7 +113,7 @@ def write_reading(
 ) -> Reading:
     natal_sheet = fact_sheet(facts, None)
     transit_sheet = fact_sheet(facts, transits) if transits else natal_sheet
-    system = system_prompt(lang, gender)
+    system = system_prompt(lang, gender, product)
     unknown_time = bool(facts["birth"]["unknown_time"])
     reading = Reading(lang=lang)
 

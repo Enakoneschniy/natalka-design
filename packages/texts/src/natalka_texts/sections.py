@@ -297,7 +297,7 @@ NATAL: tuple[SectionSpec, ...] = (
     ),
 )
 
-BY_PRODUCT: dict[str, tuple[SectionSpec, ...]] = {"natal": NATAL}
+BY_PRODUCT: dict[str, tuple[SectionSpec, ...]] = {}
 
 
 def specs(product: str, *, unknown_time: bool) -> tuple[SectionSpec, ...]:
@@ -310,3 +310,220 @@ def specs(product: str, *, unknown_time: bool) -> tuple[SectionSpec, ...]:
 
 def title(spec: SectionSpec, lang: str) -> str:
     return spec.titles.get(lang) or spec.titles.get("en") or spec.id
+
+
+FORECAST: tuple[SectionSpec, ...] = (
+    SectionSpec(
+        id="intro",
+        brief=(
+            "An opening: what a forecast from transits is and how to use dates without treating "
+            "them as verdicts. Say plainly that a transit describes a weather front, not an event."
+        ),
+        paragraphs=(2, 3),
+        needs_transits=True,
+        titles=_t("Про цей прогноз", "Об этом прогнозе", "About this forecast"),
+    ),
+    SectionSpec(
+        id="forecast.ground",
+        brief=(
+            "The natal ground the year lands on: the two or three placements that decide how this "
+            "person meets any transit at all. Short — the chart itself is not the subject here."
+        ),
+        paragraphs=(3, 4),
+        titles=_t("Ґрунт вашої карти", "Почва вашей карты", "The ground of your chart"),
+    ),
+    SectionSpec(
+        id="forecast.year",
+        brief=(
+            "The year in one piece: which transits define it, when it is dense and when it is "
+            "quiet. Name the exact dates from the fact sheet."
+        ),
+        paragraphs=(3, 5),
+        needs_transits=True,
+        quote=True,
+        titles=_t("Рік загалом", "Год целиком", "The year as a whole"),
+    ),
+    SectionSpec(
+        id="forecast.q1",
+        brief="The first three months, with the exact dates that fall in them.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Перші три місяці", "Первые три месяца", "The first three months"),
+    ),
+    SectionSpec(
+        id="forecast.q2",
+        brief="Months four to six.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Другий квартал", "Второй квартал", "The second quarter"),
+    ),
+    SectionSpec(
+        id="forecast.q3",
+        brief="Months seven to nine.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Третій квартал", "Третий квартал", "The third quarter"),
+    ),
+    SectionSpec(
+        id="forecast.q4",
+        brief="Months ten to twelve, and what is left open at the end of the year.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Четвертий квартал", "Четвёртый квартал", "The fourth quarter"),
+    ),
+    SectionSpec(
+        id="forecast.slow",
+        brief=(
+            "The slow transits that outlast this year — Pluto, Neptune, Uranus, Saturn — and what "
+            "they are quietly rearranging underneath the months."
+        ),
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Повільні транзити", "Медленные транзиты", "The slow transits"),
+    ),
+    SectionSpec(
+        id="forecast.work",
+        brief="What the year asks of the professional side, with dates.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Робота і гроші цього року", "Работа и деньги в этом году", "Work and money"),
+    ),
+    SectionSpec(
+        id="forecast.love",
+        brief="What the year does to relationships, with dates.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Стосунки цього року", "Отношения в этом году", "Relationships this year"),
+    ),
+    SectionSpec(
+        id="forecast.advice",
+        brief=(
+            "Six pieces of advice for this specific year, each tied to a transit and a date. "
+            "Practical, no platitudes."
+        ),
+        paragraphs=(1, 2),
+        needs_transits=True,
+        titles=_t("Що робити", "Что делать", "What to do"),
+    ),
+    SectionSpec(
+        id="ps",
+        brief=(
+            "A short closing note: a forecast describes pressure and opportunity, not fate, and "
+            "the same transit is lived differently depending on what the person does with it."
+        ),
+        paragraphs=(1, 2),
+        titles=_t("Наостанок", "Напоследок", "One last thing"),
+    ),
+)
+
+CHILD: tuple[SectionSpec, ...] = (
+    SectionSpec(
+        id="intro",
+        brief=(
+            "An opening addressed to the parent: what this document is, and the warning that a "
+            "chart describes a temperament, never a diagnosis or a destiny."
+        ),
+        paragraphs=(2, 3),
+        titles=_t("Про цей розбір", "Об этом разборе", "About this reading"),
+    ),
+    SectionSpec(
+        id="child.overview",
+        brief=(
+            "The shape of the chart: element and modality balance with the counts, the strongest "
+            "concentration, what is missing. Phrased as a temperament, not as a verdict."
+        ),
+        paragraphs=(3, 5),
+        must_cover=("element and modality balance with the actual counts",),
+        titles=_t("Загальний малюнок", "Общий рисунок", "The shape of the chart"),
+    ),
+    SectionSpec(
+        id="child.temper",
+        brief=(
+            "Sun and Moon as temperament: what this child is like from the inside, what comes "
+            "easily, what costs effort."
+        ),
+        paragraphs=(3, 4),
+        quote=True,
+        titles=_t("Характер", "Характер", "Temperament"),
+    ),
+    SectionSpec(
+        id="child.needs",
+        brief=(
+            "The Moon and the fourth house: what this child needs to feel safe, and what a "
+            "parent can do to provide it without smothering."
+        ),
+        paragraphs=(3, 4),
+        titles=_t(
+            "Що дає відчуття безпеки", "Что даёт чувство безопасности", "What makes them feel safe"
+        ),
+    ),
+    SectionSpec(
+        id="child.learning",
+        brief=(
+            "Mercury and the third house: how this child takes in information, which kind of "
+            "teaching works and which one makes them shut down."
+        ),
+        paragraphs=(3, 4),
+        titles=_t("Як вчиться", "Как учится", "How they learn"),
+    ),
+    SectionSpec(
+        id="child.rest",
+        brief=(
+            "Venus, Jupiter and the fifth house: what restores this child, what play looks like "
+            "for them, what to protect in the timetable."
+        ),
+        paragraphs=(2, 4),
+        titles=_t("Як відпочиває", "Как отдыхает", "How they rest"),
+    ),
+    SectionSpec(
+        id="child.hurts",
+        brief=(
+            "Saturn, Chiron and the tense aspects: what wounds this child more than it would "
+            "another, and how an adult usually causes it without meaning to."
+        ),
+        paragraphs=(3, 4),
+        quote=True,
+        titles=_t("Що ранить", "Что ранит", "What hurts"),
+    ),
+    SectionSpec(
+        id="child.language",
+        brief=(
+            "The Ascendant and its ruler: how this child is read by strangers, and the gap "
+            "between that and who they are at home."
+        ),
+        paragraphs=(3, 4),
+        needs_time=True,
+        titles=_t("Якою її бачать", "Какой её видят", "How they come across"),
+    ),
+    SectionSpec(
+        id="child.parent",
+        brief=(
+            "Practical advice for the parent: six things that work with this chart and two that "
+            "reliably backfire. Concrete, tied to placements."
+        ),
+        paragraphs=(1, 2),
+        titles=_t("Мова, якою її чути", "Язык, на котором её слышно", "The language they hear"),
+    ),
+    SectionSpec(
+        id="child.years",
+        brief=(
+            "The years ahead: the transits due while the child is still a child, described as "
+            "phases a parent can prepare for rather than as events."
+        ),
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Найближчі роки", "Ближайшие годы", "The years ahead"),
+    ),
+    SectionSpec(
+        id="ps",
+        brief=(
+            "A short closing note to the parent: a chart is a hypothesis to test against the "
+            "child in front of them, not an instruction."
+        ),
+        paragraphs=(1, 2),
+        titles=_t("Наостанок", "Напоследок", "One last thing"),
+    ),
+)
+
+
+BY_PRODUCT.update({"natal": NATAL, "forecast": FORECAST, "child": CHILD})

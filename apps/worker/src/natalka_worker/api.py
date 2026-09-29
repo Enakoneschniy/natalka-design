@@ -13,7 +13,8 @@ from typing import Annotated, Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import Response
-from natalka_document.build import fill_sections, natal_skeleton
+from natalka_document.build import SECTIONS, fill_sections
+from natalka_document.build import skeleton as build_skeleton
 from natalka_document.render import render_pdf
 from natalka_document.schema import Document, Person
 from natalka_document.wheel import DARK, LIGHT, wheel_svg
@@ -152,7 +153,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
         raise HTTPException(404, f"unknown section: {req.section_id}")
 
     provider = OpenRouterProvider()
-    system = system_prompt(req.lang, req.gender)
+    system = system_prompt(req.lang, req.gender, req.product)
     # The transit list is the longest part of the sheet; only the forecast sections pay for it.
     user = section_prompt(
         spec,
@@ -235,10 +236,11 @@ class SkeletonRequest(BaseModel):
 
 @app.post("/v1/skeleton")
 def skeleton(req: SkeletonRequest) -> dict[str, Any]:
-    if req.product != "natal":
+    if req.product not in SECTIONS:
         raise HTTPException(400, f"no skeleton for product: {req.product}")
-    document = natal_skeleton(
+    document = build_skeleton(
         req.facts,
+        product=req.product,
         person=Person(name=req.name, gender=req.gender),
         place=req.place,
         lang=req.lang,
