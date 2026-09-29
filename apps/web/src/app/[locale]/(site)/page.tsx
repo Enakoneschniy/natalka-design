@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { HeroOrrery } from '@/components/HeroOrrery';
+import { HeroScene } from '@/components/HeroScene';
 import { HeroWheel } from '@/components/HeroWheel';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
@@ -12,10 +13,11 @@ import { PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
 const facts = demo as unknown as ChartFacts;
 
-/** Which hero is live. `wheel` is the demo natal chart with two orbit rings — kept whole in
- * HeroWheel so the switch back is this one word. */
-type HeroKind = 'orrery' | 'wheel';
-const HERO = 'orrery' as HeroKind;
+/** Which hero is live. `wheel` is the first one — the demo chart with two orbit rings, text and
+ * buttons beside it; `orrery` the solar-system sketch; `scene` the whole screen as one motion
+ * piece. Each is kept whole, so the switch back is this one word. */
+type HeroKind = 'scene' | 'orrery' | 'wheel';
+const HERO = 'scene' as HeroKind;
 
 const PRODUCT_GLYPH: Record<string, string> = {
   natal: PLANET_PATHS.sun ?? '',
@@ -43,41 +45,47 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
 
   return (
     <>
-      <section className="hero">
-        <div className="container-page hero-grid">
-          <div className="hero-text">
-            <h1>
-              {t('hero.titleLead')} <em>{t('hero.titleAccent')}</em>
-            </h1>
-            <p className="lead">{t('hero.lead')}</p>
-            <div className="hero-cta">
-              <Link className="btn btn-primary btn-lg" href={`/${locale}/start`}>
-                {t('hero.cta')}
-              </Link>
-              <Link className="btn btn-secondary btn-lg" href={`/${locale}/preview?demo=1`}>
-                {t('hero.secondary')}
-              </Link>
+      {HERO === 'scene' ? (
+        <section className="hero hero-scene">
+          <HeroScene facts={facts} />
+        </section>
+      ) : (
+        <section className="hero">
+          <div className="container-page hero-grid">
+            <div className="hero-text">
+              <h1>
+                {t('hero.titleLead')} <em>{t('hero.titleAccent')}</em>
+              </h1>
+              <p className="lead">{t('hero.lead')}</p>
+              <div className="hero-cta">
+                <Link className="btn btn-primary btn-lg" href={`/${locale}/start`}>
+                  {t('hero.cta')}
+                </Link>
+                <Link className="btn btn-secondary btn-lg" href={`/${locale}/preview?demo=1`}>
+                  {t('hero.secondary')}
+                </Link>
+              </div>
+              <ul className="hero-facts">
+                <li>
+                  <strong>{t('hero.facts.accuracy')}</strong>
+                  <span>{t('hero.facts.accuracyLabel')}</span>
+                </li>
+                <li>
+                  <strong>{t('hero.facts.speed')}</strong>
+                  <span>{t('hero.facts.speedLabel')}</span>
+                </li>
+                <li>
+                  <strong>{t('hero.facts.count')}</strong>
+                  <span>{t('hero.facts.countLabel')}</span>
+                </li>
+              </ul>
             </div>
-            <ul className="hero-facts">
-              <li>
-                <strong>{t('hero.facts.accuracy')}</strong>
-                <span>{t('hero.facts.accuracyLabel')}</span>
-              </li>
-              <li>
-                <strong>{t('hero.facts.speed')}</strong>
-                <span>{t('hero.facts.speedLabel')}</span>
-              </li>
-              <li>
-                <strong>{t('hero.facts.count')}</strong>
-                <span>{t('hero.facts.countLabel')}</span>
-              </li>
-            </ul>
+            <div className="hero-wheel">
+              {HERO === 'orrery' ? <HeroOrrery /> : <HeroWheel facts={facts} />}
+            </div>
           </div>
-          <div className="hero-wheel">
-            {HERO === 'orrery' ? <HeroOrrery /> : <HeroWheel facts={facts} />}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="section" id="products">
         <div className="container-page">
