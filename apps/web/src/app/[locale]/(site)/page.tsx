@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
+import { HeroFilm } from '@/components/HeroFilm';
 import { HeroOrrery } from '@/components/HeroOrrery';
 import { HeroScene } from '@/components/HeroScene';
 import { HeroWheel } from '@/components/HeroWheel';
@@ -16,8 +17,8 @@ const facts = demo as unknown as ChartFacts;
 /** Which hero is live. `wheel` is the first one — the demo chart with two orbit rings, text and
  * buttons beside it; `orrery` the solar-system sketch; `scene` the whole screen as one motion
  * piece. Each is kept whole, so the switch back is this one word. */
-type HeroKind = 'scene' | 'orrery' | 'wheel';
-const HERO = 'scene' as HeroKind;
+type HeroKind = 'film' | 'scene' | 'orrery' | 'wheel';
+const HERO = 'film' as HeroKind;
 
 const PRODUCT_GLYPH: Record<string, string> = {
   natal: PLANET_PATHS.sun ?? '',
@@ -45,7 +46,11 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
 
   return (
     <>
-      {HERO === 'scene' ? (
+      {HERO === 'film' ? (
+        <section className="hero hero-film">
+          <HeroFilm facts={facts} locale={locale} />
+        </section>
+      ) : HERO === 'scene' ? (
         <section className="hero hero-scene">
           <HeroScene facts={facts} />
         </section>
