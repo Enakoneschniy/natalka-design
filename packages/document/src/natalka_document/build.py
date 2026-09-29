@@ -18,6 +18,7 @@ from .schema import (
     Cover,
     Document,
     Meta,
+    PageBreak,
     Paragraph,
     Person,
     PositionsTable,
@@ -88,10 +89,24 @@ CHILD_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
     ("ps", 1),
 )
 
+#: Two charts read against each other.
+SYNASTRY_SECTIONS: tuple[tuple[str, Literal[1, 2]], ...] = (
+    ("intro", 1),
+    ("synastry.each", 1),
+    ("synastry.pull", 1),
+    ("synastry.friction", 1),
+    ("synastry.houses", 2),
+    ("synastry.talk", 2),
+    ("synastry.long", 1),
+    ("synastry.advice", 1),
+    ("ps", 1),
+)
+
 SECTIONS: dict[str, tuple[tuple[str, Literal[1, 2]], ...]] = {
     "natal": NATAL_SECTIONS,
     "forecast": FORECAST_SECTIONS,
     "child": CHILD_SECTIONS,
+    "synastry": SYNASTRY_SECTIONS,
 }
 
 NO_TIME_SKIPPED = {
@@ -99,6 +114,7 @@ NO_TIME_SKIPPED = {
     "natal.mc_career",
     "love.seventh_house",
     "child.language",
+    "synastry.houses",
 }
 
 COVER_TITLE: dict[str, dict[str, str]] = {
@@ -123,6 +139,13 @@ COVER_TITLE: dict[str, dict[str, str]] = {
         "pl": "Horoskop dziecka",
         "de": "Kinderhoroskop",
     },
+    "synastry": {
+        "uk": "Сумісність",
+        "en": "Compatibility",
+        "ru": "Совместимость",
+        "pl": "Zgodność",
+        "de": "Partnerschaft",
+    },
 }
 COVER_SUBTITLE: dict[str, dict[str, str]] = {
     "natal": {
@@ -145,6 +168,13 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "ru": "для родителей",
         "pl": "dla rodziców",
         "de": "für die Eltern",
+    },
+    "synastry": {
+        "uk": "дві карти поряд",
+        "en": "two charts side by side",
+        "ru": "две карты рядом",
+        "pl": "dwie karty obok siebie",
+        "de": "zwei Horoskope nebeneinander",
     },
 }
 CHART_SECTION_TITLE = {
@@ -179,6 +209,7 @@ def skeleton(
     *,
     product: Product = "natal",
     person: Person,
+    facts_second: dict[str, Any] | None = None,
     place: str,
     lang: str,
     order_ref: str | None = None,
@@ -196,12 +227,24 @@ def skeleton(
         latitude=b["latitude"],
         longitude=b["longitude"],
     )
+    if product == "synastry":
+        # Two charts, each with its own wheel and table; the contacts between them live in the
+        # prose rather than in a grid, which would need a second aspect matrix to read.
+        chart_blocks: list[Block] = [
+            WheelBlock(size="full", chart=1),
+            PositionsTable(highlight="sun", chart=1),
+            PageBreak(),
+            WheelBlock(size="full", chart=2),
+            PositionsTable(highlight="sun", chart=2),
+        ]
+    else:
+        chart_blocks = [WheelBlock(size="full"), PositionsTable(highlight="sun"), AspectGrid()]
     chart_section = Section(
         id="chart",
         title=_t(CHART_SECTION_TITLE, lang),
         eyebrow="",
         page_break_before=True,
-        blocks=[WheelBlock(size="full"), PositionsTable(highlight="sun"), AspectGrid()],
+        blocks=chart_blocks,
     )
     sections = [chart_section]
     for sid, level in SECTIONS[product]:
@@ -220,6 +263,7 @@ def skeleton(
             title=_t(COVER_TITLE[product], lang), subtitle=_t(COVER_SUBTITLE[product], lang)
         ),
         facts=facts,
+        facts_second=facts_second,
         transits=transits or [],
         sections=sections,
         closing_note=_t(CLOSING, lang),

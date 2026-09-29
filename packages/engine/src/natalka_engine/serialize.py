@@ -8,6 +8,7 @@ from typing import Any
 from .analysis import Analysis, analyse
 from .bodies import Body, Sign, format_degree
 from .chart import NatalChart
+from .synastry import cross_aspects, house_overlay
 from .timeutil import format_offset
 from .transits import Ingress, TransitEvent, TransitHit
 
@@ -141,3 +142,40 @@ def _date(dt: datetime) -> str:
 
 def _sign_key(lon: float) -> str:
     return Sign.of(lon).key
+
+
+def synastry_to_dict(first: NatalChart, second: NatalChart) -> dict[str, Any]:
+    """Two charts plus what they do to each other, in one payload.
+
+    The two charts keep their own full serialisation: the reading talks about each person before
+    it talks about the pair, and a document that has to re-fetch half its facts is a document that
+    will one day print two different charts on the same page.
+    """
+    contacts = cross_aspects(first, second)
+    return {
+        "schema_version": 1,
+        "first": chart_to_dict(first),
+        "second": chart_to_dict(second),
+        "cross_aspects": [
+            {
+                "a": c.a.value,
+                "b": c.b.value,
+                "type": c.kind.value,
+                "nature": c.kind.nature,
+                "orb": round(c.orb, 2),
+                "strength": round(c.strength, 3),
+                "major": c.kind.is_major,
+            }
+            for c in contacts
+        ],
+        # "Where your planets land in my life" — computed both ways round, because the two
+        # overlays describe different experiences and a reading needs both.
+        "overlay": {
+            "second_in_first_houses": {
+                body.value: house for body, house in house_overlay(second, first).items()
+            },
+            "first_in_second_houses": {
+                body.value: house for body, house in house_overlay(first, second).items()
+            },
+        },
+    }

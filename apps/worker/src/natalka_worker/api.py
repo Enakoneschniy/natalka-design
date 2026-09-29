@@ -24,11 +24,19 @@ from natalka_engine import (
     compute_natal,
     ephemeris,
     events_to_list,
+    synastry_to_dict,
     transit_events,
 )
 from natalka_engine.geo import zone_for
 from natalka_engine.timeutil import UnknownTimeZoneError
-from natalka_texts import ModelUnavailableError, OpenRouterProvider, fact_sheet, specs, title
+from natalka_texts import (
+    ModelUnavailableError,
+    OpenRouterProvider,
+    fact_sheet,
+    specs,
+    synastry_sheet,
+    title,
+)
 from natalka_texts.generate import MAX_TOKENS
 from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
 from natalka_texts.validate import check
@@ -112,6 +120,21 @@ def wheel(  # noqa: PLR0917 — query parameters
     )
 
 
+class SynastryRequest(BaseModel):
+    first: BirthPayload
+    second: BirthPayload
+
+
+@app.post("/v1/synastry")
+def synastry(req: SynastryRequest) -> dict[str, Any]:
+    try:
+        a = compute_natal(req.first.to_input())
+        b = compute_natal(req.second.to_input())
+    except UnknownTimeZoneError as exc:
+        raise HTTPException(422, f"unknown time zone: {exc}") from exc
+    return synastry_to_dict(a, b)
+
+
 class SectionRequest(BaseModel):
     """One section of a reading.
 
@@ -130,6 +153,8 @@ class SectionRequest(BaseModel):
     gender: Literal["f", "m", "n"] = "n"
     #: Titles and openings of the sections already written, so the document does not repeat itself.
     written_so_far: list[str] = Field(default_factory=list)
+    #: The partner's name; only a synastry has one, and the sheet is written around the two names.
+    second_name: str = ""
 
 
 @app.get("/v1/sections")
@@ -154,11 +179,15 @@ def section(req: SectionRequest) -> dict[str, Any]:
 
     provider = OpenRouterProvider()
     system = system_prompt(req.lang, req.gender, req.product)
-    # The transit list is the longest part of the sheet; only the forecast sections pay for it.
+    if req.product == "synastry":
+        sheet = synastry_sheet(req.facts, first_name=req.name, second_name=req.second_name or "—")
+    else:
+        # The transit list is the longest part of the sheet; only forecast sections pay for it.
+        sheet = fact_sheet(req.facts, req.transits if spec.needs_transits else None)
     user = section_prompt(
         spec,
         name=req.name,
-        sheet=fact_sheet(req.facts, req.transits if spec.needs_transits else None),
+        sheet=sheet,
         written_so_far=req.written_so_far,
     )
     try:
@@ -224,6 +253,9 @@ class SkeletonRequest(BaseModel):
     """Assemble a document: the fixed structure plus the sections that were written."""
 
     facts: dict[str, Any]
+    #: The partner's chart. For a synastry, `facts` is the payload from /v1/synastry and this is
+    #: filled in from it by the caller.
+    facts_second: dict[str, Any] | None = None
     transits: list[dict[str, Any]] = Field(default_factory=list)
     sections: list[WrittenSection] = Field(default_factory=list)
     product: Literal["natal", "forecast", "synastry", "child", "bundle"] = "natal"
@@ -241,6 +273,7 @@ def skeleton(req: SkeletonRequest) -> dict[str, Any]:
     document = build_skeleton(
         req.facts,
         product=req.product,
+        facts_second=req.facts_second,
         person=Person(name=req.name, gender=req.gender),
         place=req.place,
         lang=req.lang,

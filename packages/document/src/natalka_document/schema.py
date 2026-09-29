@@ -123,11 +123,14 @@ class WheelBlock(_Strict):
     type: Literal["wheel"] = "wheel"
     size: Literal["full", "compact"] = "full"
     highlight: str | None = None  # body id to emphasise
+    #: Which chart to draw. Only a synastry has a second one.
+    chart: Literal[1, 2] = 1
 
 
 class PositionsTable(_Strict):
     type: Literal["positions"] = "positions"
     highlight: str | None = None
+    chart: Literal[1, 2] = 1
 
 
 class AspectGrid(_Strict):
@@ -168,6 +171,8 @@ class Document(_Strict):
     birth: Birth
     cover: Cover
     facts: dict[str, Any]  # engine JSON (natalka_engine.serialize.chart_to_dict)
+    #: The partner's chart in a synastry; absent everywhere else.
+    facts_second: dict[str, Any] | None = None
     transits: list[dict[str, Any]] = Field(default_factory=list)
     sections: list[Section] = Field(default_factory=list)
     closing_note: str = ""  # e.g. "✦ на цьому розбір завершено ✦"

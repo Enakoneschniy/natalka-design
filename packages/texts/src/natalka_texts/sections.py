@@ -527,3 +527,92 @@ CHILD: tuple[SectionSpec, ...] = (
 
 
 BY_PRODUCT.update({"natal": NATAL, "forecast": FORECAST, "child": CHILD})
+
+
+SYNASTRY: tuple[SectionSpec, ...] = (
+    SectionSpec(
+        id="intro",
+        brief=(
+            "An opening for both of them: what a synastry is and, plainly, what it is not — it "
+            "does not score a couple or say whether to stay together."
+        ),
+        paragraphs=(2, 3),
+        titles=_t("Про цей розбір", "Об этом разборе", "About this reading"),
+    ),
+    SectionSpec(
+        id="synastry.each",
+        brief=(
+            "The two charts side by side in brief: what each person brings before they meet. Two "
+            "or three sentences about each, no more — the pair is the subject."
+        ),
+        paragraphs=(3, 4),
+        titles=_t("Двоє окремо", "Двое по отдельности", "The two of them apart"),
+    ),
+    SectionSpec(
+        id="synastry.pull",
+        brief=(
+            "The contacts that create attraction: Sun, Moon, Venus and Mars across the two charts, "
+            "with the exact orbs. What each one actually feels like day to day."
+        ),
+        paragraphs=(4, 5),
+        quote=True,
+        titles=_t("Що притягує", "Что притягивает", "What pulls them together"),
+    ),
+    SectionSpec(
+        id="synastry.friction",
+        brief=(
+            "The tense contacts: where the two charts grind, and what that looks like in an "
+            "ordinary week. Describe the mechanism, never a verdict on the relationship."
+        ),
+        paragraphs=(4, 5),
+        titles=_t("Де виникає тертя", "Где возникает трение", "Where the friction is"),
+    ),
+    SectionSpec(
+        id="synastry.houses",
+        brief=(
+            "The house overlays: which part of each person's life the other lands in, both ways "
+            "round. This is the half that says where a partner actually shows up."
+        ),
+        paragraphs=(3, 4),
+        needs_time=True,
+        titles=_t("Де ви одне в одного", "Где вы друг у друга", "Where you land in each other"),
+    ),
+    SectionSpec(
+        id="synastry.talk",
+        brief=(
+            "Mercury to Mercury and Moon to Mercury: how these two understand and misunderstand "
+            "each other, and what a repair conversation needs to look like for them."
+        ),
+        paragraphs=(3, 4),
+        titles=_t("Як домовлятися", "Как договариваться", "How to work it out"),
+    ),
+    SectionSpec(
+        id="synastry.long",
+        brief=(
+            "Saturn, Pluto and the nodes across the charts: what makes this bond durable and what "
+            "makes it heavy. The long-term structure rather than the mood."
+        ),
+        paragraphs=(3, 4),
+        titles=_t("Що тримає надовго", "Что держит надолго", "What makes it last"),
+    ),
+    SectionSpec(
+        id="synastry.advice",
+        brief=(
+            "Six pieces of advice for this pair, each tied to a specific contact. Addressed to "
+            "both of them, not to one side."
+        ),
+        paragraphs=(1, 2),
+        titles=_t("Що з цим робити", "Что с этим делать", "What to do with it"),
+    ),
+    SectionSpec(
+        id="ps",
+        brief=(
+            "A closing note: two charts describe the weather between two people, not their worth "
+            "or their future. Say it without hedging."
+        ),
+        paragraphs=(1, 2),
+        titles=_t("Наостанок", "Напоследок", "One last thing"),
+    ),
+)
+
+BY_PRODUCT["synastry"] = SYNASTRY

@@ -149,3 +149,37 @@ def fact_sheet(facts: dict[str, Any], transits: list[dict[str, Any]] | None = No
         lines.append(f"WARNINGS: {'; '.join(facts['warnings'])}")
 
     return "\n".join(lines)
+
+
+def synastry_sheet(data: dict[str, Any], *, first_name: str, second_name: str) -> str:
+    """Both charts and what they do to each other.
+
+    Named rather than numbered: "Sun of Оксана trine Moon of Ігор" is a sentence the model can
+    write from, while "first/second" invites it to mix the two people up halfway down the page.
+    """
+    lines = [f"CHART A — {first_name}", fact_sheet(data["first"]), ""]
+    lines += [f"CHART B — {second_name}", fact_sheet(data["second"]), ""]
+
+    contacts = data.get("cross_aspects", [])
+    if contacts:
+        lines.append("CONTACTS BETWEEN THE TWO CHARTS (tightest first)")
+        lines.append(f"Read as: <body> of {first_name} — aspect — <body> of {second_name}")
+        for c in contacts[:40]:
+            lines.append(
+                f"{c['a']} of {first_name} {c['type']} {c['b']} of {second_name} "
+                f"(orb {c['orb']:.1f}°, {c['nature']})"
+            )
+
+    overlay = data.get("overlay") or {}
+    in_b = overlay.get("first_in_second_houses") or {}
+    in_a = overlay.get("second_in_first_houses") or {}
+    if in_b:
+        lines.append("")
+        lines.append(f"WHERE {first_name} LANDS IN THE LIFE OF {second_name} (house numbers)")
+        lines.append(", ".join(f"{body} → {house}" for body, house in in_b.items()))
+    if in_a:
+        lines.append("")
+        lines.append(f"WHERE {second_name} LANDS IN THE LIFE OF {first_name} (house numbers)")
+        lines.append(", ".join(f"{body} → {house}" for body, house in in_a.items()))
+
+    return "\n".join(lines)

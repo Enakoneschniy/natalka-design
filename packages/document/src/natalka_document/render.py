@@ -136,6 +136,9 @@ class Renderer:
         self.lang = document.meta.lang
         self.width = st.PAGE[0] - 2 * st.MARGIN
         self._positions = {p["body"]: p for p in document.facts["positions"]}
+        self._positions_second = {
+            p["body"]: p for p in (document.facts_second or {}).get("positions", [])
+        }
 
     # ---------- public ----------
     def render(self, target: str | Path | io.BytesIO) -> int:
@@ -270,16 +273,29 @@ class Renderer:
         return out
 
     # ---------- computed blocks ----------
+    def _facts_for(self, chart: int) -> dict[str, Any]:
+        """Chart two only exists in a synastry; anything else falls back to the only chart there is."""
+        if chart == 2 and self.doc.facts_second:
+            return self.doc.facts_second
+        return self.doc.facts
+
     def _wheel(self, b: WheelBlock) -> Flowable:
         size = self.width * (0.64 if b.size == "full" else 0.44)
         d = wheel_drawing(
-            self.doc.facts, size_pt=size, theme=PDF_LIGHT, detail=b.size, highlight=b.highlight
+            self._facts_for(b.chart),
+            size_pt=size,
+            theme=PDF_LIGHT,
+            detail=b.size,
+            highlight=b.highlight,
         )
         d.hAlign = "CENTER"
         return d
 
     def _positions_table(self, b: PositionsTable) -> list[Flowable]:
         lang = self.lang
+        positions = (
+            self._positions_second if b.chart == 2 and self._positions_second else self._positions
+        )
         head = [
             Paragraph(ui(lang, k), st.s_table_head)
             for k in ("planet", "sign", "degree", "house", "retro")
@@ -287,7 +303,7 @@ class Renderer:
         rows: list[list[Any]] = [head]
         hl_row: int | None = None
         for body in TABLE_BODIES:
-            p = self._positions.get(body)
+            p = positions.get(body)
             if not p:
                 continue
             name = Paragraph(body_name(lang, body), st.s_table)
