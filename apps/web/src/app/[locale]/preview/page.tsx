@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AspectGrid, AspectLegend, ChartBadge, PositionsTable } from '@/components/ChartBits';
 import { Paywall } from '@/components/Paywall';
+import { PreviewReading } from '@/components/PreviewReading';
 import { Stepper } from '@/components/Stepper';
 import { Wheel } from '@/components/Wheel';
 import { type BirthInput, calcChart } from '@/lib/api';
@@ -186,6 +187,14 @@ export default async function PreviewPage({
             </div>
             <AspectLegend />
           </div>
+        </section>
+
+        <section className="preview-section">
+          <div className="block-head">
+            <h2 className="block-title">{t('readingTitle')}</h2>
+            <p className="muted">{t('readingLead')}</p>
+          </div>
+          <PreviewReading facts={facts} lang={locale} />
         </section>
 
         <section className="preview-section">

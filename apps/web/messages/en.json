@@ -194,7 +194,10 @@
     "positionsTitle": "Planet positions",
     "coreTitle": "The core of the chart",
     "coreLead": "The three points every reading starts from: what you do, what you feel, and how you come across.",
-    "wheelHint": "Hover or tap a planet to highlight the aspects it makes."
+    "wheelHint": "Hover or tap a planet to highlight the aspects it makes.",
+    "writing": "Writing…",
+    "readingTitle": "A first look",
+    "readingLead": "Three passages from your chart, free and before any payment. The full reading goes a great deal deeper."
   },
   "chart": {
     "planets": {

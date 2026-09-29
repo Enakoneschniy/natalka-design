@@ -1574,6 +1574,48 @@
   margin-bottom: 14px;
 }
 
+.reading-blocks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.reading-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.reading-block p {
+  color: var(--color-ink);
+  font-size: 16px;
+}
+/* Placeholder lines while the passages are being written, so the section keeps its height
+   instead of shoving the page down when the text lands. */
+.skeleton {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-2),
+    rgba(255, 255, 255, 0.12),
+    var(--color-surface-2)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+.skeleton-title {
+  height: 20px;
+  width: 45%;
+  margin-bottom: 6px;
+}
+.skeleton-short {
+  width: 70%;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
 /* ---------- paywall ---------- */
 .paywall {
   margin-top: 72px;
@@ -1948,7 +1990,8 @@
   .preview-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-  .core-grid {
+  .core-grid,
+  .reading-blocks {
     grid-template-columns: 1fr;
   }
   .preview-wheel {

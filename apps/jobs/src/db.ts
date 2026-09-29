@@ -166,3 +166,37 @@ export const expired = (db: D1Database) =>
     .prepare('SELECT id, order_id, storage_key FROM documents WHERE expires_at < ?')
     .bind(now())
     .all<{ id: string; order_id: string; storage_key: string }>();
+
+export interface PreviewRow {
+  key: string;
+  lang: string;
+  blocks: string;
+}
+
+export const cachedPreview = (db: D1Database, key: string) =>
+  db
+    .prepare('SELECT key, lang, blocks FROM previews WHERE key = ? AND expires_at > ?')
+    .bind(key, now())
+    .first<PreviewRow>();
+
+export async function cachePreview(
+  db: D1Database,
+  entry: { key: string; lang: string; blocks: string; cost_micros: number; model: string },
+  days: number,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT OR REPLACE INTO previews (key, lang, blocks, cost_micros, model, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      entry.key,
+      entry.lang,
+      entry.blocks,
+      entry.cost_micros,
+      entry.model,
+      now(),
+      expiryFrom(days),
+    )
+    .run();
+}

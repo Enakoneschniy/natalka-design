@@ -6,8 +6,10 @@
  * the only place with the database, the bucket and the keys.
  */
 
-import { encryptJson, signToken, verifyToken } from './crypto';
+import { encryptJson, sha256Hex, signToken, verifyToken } from './crypto';
 import {
+  cachePreview,
+  cachedPreview,
   documentForOrder,
   expired,
   expiryFrom,
@@ -49,6 +51,62 @@ interface CreateOrder {
     name: string;
     gender: 'f' | 'm' | 'n';
   };
+}
+
+interface PreviewRequest {
+  facts: Record<string, unknown>;
+  lang: string;
+  gender?: 'f' | 'm' | 'n';
+}
+
+/** The free passages shown before payment.
+ *
+ * Cached by the chart they describe: a reload, a second tab or a visitor who comes back tomorrow
+ * costs nothing, and the wait disappears entirely the second time. Nothing identifying goes into
+ * the key — it is a hash of the birth moment, the place and the language. */
+async function previewText(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as PreviewRequest;
+  const birth = (body.facts?.birth ?? {}) as Record<string, unknown>;
+  if (!birth.date) return json({ error: 'facts are required' }, 400);
+
+  const key = await sha256Hex(
+    new TextEncoder().encode(
+      [birth.date, birth.time ?? '', birth.zone, birth.latitude, birth.longitude, body.lang,
+        body.gender ?? 'n'].join('|'),
+    ).buffer as ArrayBuffer,
+  );
+
+  const hit = await cachedPreview(env.DB, key);
+  if (hit) {
+    return json({ blocks: JSON.parse(hit.blocks), cached: true });
+  }
+
+  const upstream = await env.API.fetch(`${env.NATALKA_API_URL}/v1/preview`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!upstream.ok) {
+    console.error('preview failed', upstream.status);
+    return json({ error: 'preview unavailable' }, 503);
+  }
+  const result = (await upstream.json()) as {
+    blocks: { title: string; text: string }[];
+    cost_micros: number;
+    model: string;
+  };
+  await cachePreview(
+    env.DB,
+    {
+      key,
+      lang: body.lang,
+      blocks: JSON.stringify(result.blocks),
+      cost_micros: result.cost_micros,
+      model: result.model,
+    },
+    Number(env.RETENTION_DAYS ?? '30'),
+  );
+  return json({ blocks: result.blocks, cached: false });
 }
 
 async function createOrder(request: Request, env: Env): Promise<Response> {
@@ -149,6 +207,9 @@ export default {
     if (url.pathname === '/v1/orders' && request.method === 'POST') {
       return createOrder(request, env);
     }
+    if (url.pathname === '/v1/preview' && request.method === 'POST') {
+      return previewText(request, env);
+    }
     const status = url.pathname.match(/^\/v1\/jobs\/(.+)$/);
     if (status?.[1]) return jobStatus(env, status[1]);
     const file = url.pathname.match(/^\/d\/(.+)$/);
@@ -194,6 +255,7 @@ export default {
     }
     await env.DB.prepare('DELETE FROM documents WHERE expires_at < ?').bind(now()).run();
     await env.DB.prepare('DELETE FROM charts WHERE expires_at < ?').bind(now()).run();
+    await env.DB.prepare('DELETE FROM previews WHERE expires_at < ?').bind(now()).run();
     console.log(`retention: removed ${stale.results?.length ?? 0} documents`);
   },
 };
