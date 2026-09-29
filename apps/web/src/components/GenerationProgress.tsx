@@ -94,7 +94,10 @@ export function GenerationProgress({ token, locale }: { token: string; locale: s
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <div className="progress-bar" style={{ width: `${Math.max(4, status.progress)}%` }} />
+        <div
+          className="progress-bar"
+          style={{ transform: `scaleX(${Math.max(0.04, status.progress / 100)})` }}
+        />
       </div>
       <p className="muted progress-label">{label}</p>
       <p className="caption">{t('keepOpen')}</p>
