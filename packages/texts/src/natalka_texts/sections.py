@@ -237,77 +237,137 @@ NATAL: tuple[SectionSpec, ...] = (
 
 #: The transit chapters. Sold as the forecast and as part of the bundle; a natal reading is
 #: about what the chart does not change, so it stops before the sky starts moving.
+#: The time half of the reading: the years, in calendar order. The briefs never name a year —
+#: the fact sheet carries the dates and the model reads them there, so the same specs keep
+#: working next January without anyone remembering to edit them.
 TRANSITS: tuple[SectionSpec, ...] = (
     SectionSpec(
-        id="work.now",
-        # forecast section: needs the transit dates
+        id="time.intro",
+        impersonal_ok=True,
         brief=(
-            "What the current transits say about the professional area specifically. Use only the "
-            "transit dates from the fact sheet."
+            "An opening for the forecast half: what a transit is and how to use a date without "
+            "treating it as a verdict. Say plainly that a transit describes a weather front, not "
+            "an event, and that nothing here is a prediction of what will happen."
         ),
         paragraphs=(2, 3),
         needs_transits=True,
-        titles=_t("Що зараз", "Что сейчас", "Where it stands now"),
+        titles=_t("Про цей прогноз", "Об этом прогнозе", "About this forecast"),
     ),
     SectionSpec(
-        id="transits",
-        # forecast section: needs the transit dates
+        id="time.past",
         brief=(
-            "An opening for the forecast part: explain in two paragraphs what a transit is and "
-            "how to use dates without treating them as verdicts."
-        ),
-        paragraphs=(2, 3),
-        needs_transits=True,
-        titles=_t("Транзити", "Транзиты", "Transits"),
-    ),
-    SectionSpec(
-        id="transits.past",
-        # forecast section: needs the transit dates
-        brief=(
-            "Looking back: the major transits of the last ten to fourteen years, each as 'the sky "
-            "was passing through X, and for a chart like this that period usually brings Y — if "
-            "you remember those years as a turning point, this was it'. Never state what happened."
+            "Looking back over the last twelve to fifteen years, in order. Each passage as 'the "
+            "sky was passing through X in those years, and for a chart like this that usually "
+            "brings Y — if you remember that time as a turning point, this was it'. Use the dates "
+            "from the fact sheet and never state what actually happened."
         ),
         paragraphs=(4, 6),
         needs_transits=True,
         titles=_t("Погляд назад", "Взгляд назад", "Looking back"),
     ),
     SectionSpec(
-        id="transits.now",
-        # forecast section: needs the transit dates
+        id="time.now",
         brief=(
             "The transits in force right now, with their exact dates, and how such a combination "
-            "is usually experienced from the inside."
+            "is usually experienced from the inside. This is the part the reader checks against "
+            "their own life first, so be specific and stay away from flattery."
         ),
         paragraphs=(3, 4),
         needs_transits=True,
         titles=_t("Що відбувається зараз", "Что происходит сейчас", "What is happening now"),
     ),
     SectionSpec(
-        id="transits.year1",
-        # forecast section: needs the transit dates
-        brief="The coming twelve months, month by month where there are exact dates.",
-        paragraphs=(4, 6),
+        id="time.rest",
+        brief=(
+            "The months that remain in the current calendar year, one paragraph each, from the "
+            "current month to December. Take the year from the dates in the fact sheet. A month "
+            "with no exact hits is named as a quiet one rather than filled with words."
+        ),
+        paragraphs=(3, 6),
         needs_transits=True,
-        titles=_t("Найближчий рік", "Ближайший год", "The year ahead"),
+        titles=_t("До кінця року", "До конца года", "The rest of this year"),
     ),
     SectionSpec(
-        id="transits.year2",
-        # forecast section: needs the transit dates
-        brief="The year after that: the larger movements, ingresses and slow aspects.",
+        id="time.next.q1",
+        brief=(
+            "The next calendar year, January to March, month by month with the exact dates. "
+            "Open by naming the year, so the reader knows where on the calendar they are."
+        ),
         paragraphs=(3, 4),
         needs_transits=True,
-        titles=_t("Наступний рік", "Следующий год", "The year after"),
+        titles=_t("Січень — березень", "Январь — март", "January to March"),
     ),
     SectionSpec(
-        id="transits.year3",
-        # forecast section: needs the transit dates
-        brief="The third year: only the big, slow transits and what they open up.",
+        id="time.next.q2",
+        brief="The next calendar year, April to June, month by month with the exact dates.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Квітень — червень", "Апрель — июнь", "April to June"),
+    ),
+    SectionSpec(
+        id="time.next.q3",
+        brief="The next calendar year, July to September, month by month with the exact dates.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Липень — вересень", "Июль — сентябрь", "July to September"),
+    ),
+    SectionSpec(
+        id="time.next.q4",
+        brief="The next calendar year, October to December, month by month with the exact dates.",
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Жовтень — грудень", "Октябрь — декабрь", "October to December"),
+    ),
+    SectionSpec(
+        id="time.after",
+        brief=(
+            "The year after that, in overview rather than by month: only the slow transits — "
+            "Pluto, Neptune, Uranus, Saturn, Jupiter — that open or close a long theme, with the "
+            "dates they become exact."
+        ),
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Рік потому", "Год спустя", "The year after"),
+    ),
+    SectionSpec(
+        id="time.work",
+        brief=(
+            "Work and money across the whole window: which of the dates already named touch the "
+            "tenth, sixth and second houses, and what such a passage usually asks for. Do not "
+            "repeat the months — refer back to them."
+        ),
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t(
+            "Робота і гроші в ці роки",
+            "Работа и деньги в эти годы",
+            "Work and money in these years",
+        ),
+    ),
+    SectionSpec(
+        id="time.love",
+        brief=(
+            "Relationships across the window, the same way: the dates that touch the seventh, "
+            "fifth and eighth houses, Venus and the Moon, and what those periods usually open. "
+            "Never name a date for a wedding or a meeting."
+        ),
+        paragraphs=(3, 4),
+        needs_transits=True,
+        titles=_t("Стосунки в ці роки", "Отношения в эти годы", "Relationships in these years"),
+    ),
+    SectionSpec(
+        id="time.advice",
+        brief=(
+            "Six pieces of advice for this window, each tied to one transit and its date: what "
+            "this period is good for and what it is a bad time to force. Concrete enough to act "
+            "on, and never a promise."
+        ),
         paragraphs=(2, 3),
         needs_transits=True,
-        titles=_t("Третій рік", "Третий год", "The third year"),
+        titles=_t("Що з цим робити", "Что с этим делать", "What to do with it"),
     ),
 )
+
 
 BY_PRODUCT: dict[str, tuple[SectionSpec, ...]] = {}
 
@@ -324,106 +384,25 @@ def title(spec: SectionSpec, lang: str) -> str:
     return spec.titles.get(lang) or spec.titles.get("en") or spec.id
 
 
+#: The forecast sold on its own: the same year chapters, with a short look at the chart they
+#: land on, since the buyer has not read a natal reading here.
 FORECAST: tuple[SectionSpec, ...] = (
-    SectionSpec(
-        id="intro",
-        impersonal_ok=True,
-        brief=(
-            "An opening: what a forecast from transits is and how to use dates without treating "
-            "them as verdicts. Say plainly that a transit describes a weather front, not an event."
-        ),
-        paragraphs=(2, 3),
-        needs_transits=True,
-        titles=_t("Про цей прогноз", "Об этом прогнозе", "About this forecast"),
-    ),
     SectionSpec(
         id="forecast.ground",
         brief=(
-            "The natal ground the year lands on: the two or three placements that decide how this "
+            "The natal ground the years land on: the two or three placements that decide how this "
             "person meets any transit at all. Short — the chart itself is not the subject here."
         ),
         paragraphs=(3, 4),
         titles=_t("Ґрунт вашої карти", "Почва вашей карты", "The ground of your chart"),
     ),
-    SectionSpec(
-        id="forecast.year",
-        brief=(
-            "The year in one piece: which transits define it, when it is dense and when it is "
-            "quiet. Name the exact dates from the fact sheet."
-        ),
-        paragraphs=(3, 5),
-        needs_transits=True,
-        quote=True,
-        titles=_t("Рік загалом", "Год целиком", "The year as a whole"),
-    ),
-    SectionSpec(
-        id="forecast.q1",
-        brief="The first three months, with the exact dates that fall in them.",
-        paragraphs=(3, 4),
-        needs_transits=True,
-        titles=_t("Перші три місяці", "Первые три месяца", "The first three months"),
-    ),
-    SectionSpec(
-        id="forecast.q2",
-        brief="Months four to six.",
-        paragraphs=(3, 4),
-        needs_transits=True,
-        titles=_t("Другий квартал", "Второй квартал", "The second quarter"),
-    ),
-    SectionSpec(
-        id="forecast.q3",
-        brief="Months seven to nine.",
-        paragraphs=(3, 4),
-        needs_transits=True,
-        titles=_t("Третій квартал", "Третий квартал", "The third quarter"),
-    ),
-    SectionSpec(
-        id="forecast.q4",
-        brief="Months ten to twelve, and what is left open at the end of the year.",
-        paragraphs=(3, 4),
-        needs_transits=True,
-        titles=_t("Четвертий квартал", "Четвёртый квартал", "The fourth quarter"),
-    ),
-    SectionSpec(
-        id="forecast.slow",
-        brief=(
-            "The slow transits that outlast this year — Pluto, Neptune, Uranus, Saturn — and what "
-            "they are quietly rearranging underneath the months."
-        ),
-        paragraphs=(3, 4),
-        needs_transits=True,
-        titles=_t("Повільні транзити", "Медленные транзиты", "The slow transits"),
-    ),
-    SectionSpec(
-        id="forecast.work",
-        brief="What the year asks of the professional side, with dates.",
-        paragraphs=(3, 4),
-        needs_transits=True,
-        titles=_t("Робота і гроші цього року", "Работа и деньги в этом году", "Work and money"),
-    ),
-    SectionSpec(
-        id="forecast.love",
-        brief="What the year does to relationships, with dates.",
-        paragraphs=(3, 4),
-        needs_transits=True,
-        titles=_t("Стосунки цього року", "Отношения в этом году", "Relationships this year"),
-    ),
-    SectionSpec(
-        id="forecast.advice",
-        brief=(
-            "Six pieces of advice for this specific year, each tied to a transit and a date. "
-            "Practical, no platitudes."
-        ),
-        paragraphs=(1, 2),
-        needs_transits=True,
-        titles=_t("Що робити", "Что делать", "What to do"),
-    ),
+    *TRANSITS,
     SectionSpec(
         id="ps",
         impersonal_ok=True,
         brief=(
-            "A short closing note: a forecast describes pressure and opportunity, not fate, and "
-            "the same transit is lived differently depending on what the person does with it."
+            "A short closing note in a quieter voice: what a forecast can and cannot tell, and "
+            "that none of it is a verdict."
         ),
         paragraphs=(1, 2),
         titles=_t("Наостанок", "Напоследок", "One last thing"),
@@ -643,12 +622,6 @@ _FORECAST_BY_ID = {spec.id: spec for spec in FORECAST}
 BUNDLE: tuple[SectionSpec, ...] = (
     *(s for s in NATAL if s.id not in ("summary", "ps")),
     *TRANSITS,
-    _FORECAST_BY_ID["forecast.q1"],
-    _FORECAST_BY_ID["forecast.q2"],
-    _FORECAST_BY_ID["forecast.q3"],
-    _FORECAST_BY_ID["forecast.q4"],
-    _FORECAST_BY_ID["forecast.slow"],
-    _FORECAST_BY_ID["forecast.advice"],
     next(s for s in NATAL if s.id == "summary"),
     next(s for s in NATAL if s.id == "ps"),
 )

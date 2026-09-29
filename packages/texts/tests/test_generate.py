@@ -104,8 +104,8 @@ def test_only_forecast_sections_carry_the_transit_list(facts: dict) -> None:
     )
     prompts = {u for _, u in provider.calls}
     with_transits = [p for p in prompts if "TRANSITS (exact dates" in p]
-    # Thirteen sections forecast something; the other twenty are not charged for the dates.
-    assert len(with_transits) == 13
+    # Twelve chapters are about the years; the natal half is not charged for the dates.
+    assert len(with_transits) == 12
 
 
 def test_the_natal_reading_never_forecasts(facts: dict) -> None:
