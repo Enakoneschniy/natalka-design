@@ -107,7 +107,7 @@
       },
       {
         "q": "Who writes the reading?",
-        "a": "The calculation is done by software using the Swiss Ephemeris. The text is composed by a language model following a method written by Chronika's astrologers; every paragraph is tied to a specific position or aspect in your chart."
+        "a": "The planetary positions are computed by software from astronomical ephemerides, to within an arcminute. The text is composed by a language model following a method written by Chronika's astrologers; every paragraph is tied to a specific position or aspect in your chart."
       },
       {
         "q": "How do you store my data?",
@@ -121,7 +121,7 @@
     "button": "Build my chart"
   },
   "footer": {
-    "about": "Automated birth charts. Calculated with the Swiss Ephemeris; the text is written for your chart, not your Sun sign.",
+    "about": "Automated birth charts. Calculated from astronomical ephemerides; the text is written for your chart, not your Sun sign.",
     "products": "Products",
     "documents": "Documents",
     "contacts": "Contacts",

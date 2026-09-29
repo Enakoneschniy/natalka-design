@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     telegram_bot_token: SecretStr = Field(default=SecretStr(""))
     telegram_chat_id: str = ""
     ephemeris_path: str = Field(
-        default="", description="Directory with Swiss Ephemeris files; empty = built-in Moshier"
+        default="", description="Directory with ephemeris data files; empty = built-in Moshier"
     )
     retention_days: int = 30
 

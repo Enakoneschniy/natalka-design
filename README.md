@@ -40,6 +40,5 @@ uv run python -m natalka_worker api
 
 ## Licence note
 
-`pyswisseph` and the bundled ephemeris files are Swiss Ephemeris (AGPL-3.0). A **Swiss Ephemeris
-Professional** licence must be purchased before the public launch — see
+`pyswisseph` and the bundled ephemeris files are AGPL-3.0. A **commercial** licence from the publisher must be purchased before the public launch — see
 [packages/engine/README.md](packages/engine/README.md). No other AGPL dependency is allowed.

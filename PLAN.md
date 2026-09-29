@@ -113,7 +113,7 @@ Retention job: nightly `DELETE FROM charts/documents WHERE expires_at < now()` +
 - Model: Claude (default `claude-sonnet-5` for cost; `claude-opus-5` behind a flag for the core sections). Prompt caching for the system prompt.
 
 ### Stage 7 — Launch hygiene
-Legal pages, GDPR data-request endpoint (delete by email), backups (pg_dump nightly to object storage), rate limiting on `/v1/calc` and geocode, Stripe live keys checklist, Swiss Ephemeris Professional licence.
+Legal pages, GDPR data-request endpoint (delete by email), backups (pg_dump nightly to object storage), rate limiting on `/v1/calc` and geocode, Stripe live keys checklist, the commercial ephemeris licence.
 
 ### Later
 forecast / synastry / child / bundle products (schema already supports them); pl, de, ru message files (mockup dictionaries can seed them); Apple/Google Pay come free with Checkout.
