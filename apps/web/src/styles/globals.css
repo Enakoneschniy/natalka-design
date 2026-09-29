@@ -1776,7 +1776,38 @@
 @media (max-width: 720px) {
   .hero {
     min-height: 0;
-    padding: 32px 0 24px;
+    /* Room between the header and the chart — they used to touch. */
+    padding: 44px 0 24px;
+  }
+  /* Samsung phones often run a 110–130% font scale. Nothing may keep a fixed height or refuse
+     to wrap at that size, or the layout gets wider than the screen. */
+  .btn {
+    white-space: normal;
+    height: auto;
+    min-height: 52px;
+    padding-block: 10px;
+    text-align: center;
+  }
+  .btn-lg {
+    height: auto;
+    min-height: 60px;
+  }
+  .badge {
+    white-space: normal;
+    height: auto;
+    min-height: 36px;
+    padding-block: 6px;
+  }
+  .input {
+    height: auto;
+    min-height: 52px;
+    padding-block: 12px;
+  }
+  .segmented button {
+    height: auto;
+    min-height: 44px;
+    white-space: normal;
+    padding: 8px 12px;
   }
   .hero-grid {
     grid-template-columns: 1fr;
