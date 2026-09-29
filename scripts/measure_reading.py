@@ -89,22 +89,19 @@ def main() -> int:
     started = time.monotonic()
     for i, entry in enumerate(plan, 1):
         t0 = time.monotonic()
-        section = (
-            client.post(
-                f"{ns.api}/v1/section",
-                json={
-                    "facts": facts,
-                    "transits": transits,
-                    "section_id": entry["id"],
-                    "product": ns.product,
-                    "lang": ns.lang,
-                    "name": ns.name,
-                    "gender": ns.gender,
-                    "written_so_far": written,
-                },
-            )
-            .raise_for_status()
-            .json()
+        section = post_with_retry(
+            client,
+            f"{ns.api}/v1/section",
+            {
+                "facts": facts,
+                "transits": transits,
+                "section_id": entry["id"],
+                "product": ns.product,
+                "lang": ns.lang,
+                "name": ns.name,
+                "gender": ns.gender,
+                "written_so_far": written,
+            },
         )
         took = time.monotonic() - t0
         results.append(section)
