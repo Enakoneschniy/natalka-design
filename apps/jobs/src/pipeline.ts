@@ -4,8 +4,7 @@
  * from where it stopped instead of paying the model twice for the same section.
  */
 
-import { decryptJson } from './crypto';
-import { sha256Hex } from './crypto';
+import { type Blobish, decryptJson, sha256Hex } from './crypto';
 import { expiryFrom, insertDocument, updateJob, type JobRow } from './db';
 import type { Env } from './env';
 
@@ -46,7 +45,7 @@ export interface JobPayload {
 }
 
 const api = async <T>(env: Env, path: string, init?: RequestInit): Promise<T> => {
-  const response = await fetch(`${env.NATALKA_API_URL}${path}`, init);
+  const response = await env.API.fetch(`${env.NATALKA_API_URL}${path}`, init);
   if (!response.ok) {
     throw new Error(`${path} → ${response.status}: ${(await response.text()).slice(0, 200)}`);
   }
@@ -58,7 +57,7 @@ export async function loadBirth(env: Env, orderId: string): Promise<BirthData> {
     'SELECT birth_ciphertext, birth_nonce FROM charts WHERE order_id = ? AND person_no = 1',
   )
     .bind(orderId)
-    .first<{ birth_ciphertext: ArrayBuffer; birth_nonce: ArrayBuffer }>();
+    .first<{ birth_ciphertext: Blobish; birth_nonce: Blobish }>();
   if (!row) throw new Error(`no chart for order ${orderId}`);
   return decryptJson<BirthData>(row.birth_ciphertext, row.birth_nonce, env.DATA_KEY);
 }
@@ -157,7 +156,7 @@ async function render(env: Env, job: JobRow, birth: BirthData, payload: JobPaylo
     }),
   });
 
-  const pdf = await fetch(`${env.NATALKA_API_URL}/v1/document`, {
+  const pdf = await env.API.fetch(`${env.NATALKA_API_URL}/v1/document`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(document),

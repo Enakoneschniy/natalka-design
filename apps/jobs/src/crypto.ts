@@ -43,16 +43,28 @@ export async function encryptJson(
   return { ciphertext, nonce: nonce.buffer as ArrayBuffer };
 }
 
+/** D1 hands a BLOB back as an array of byte values, not as an ArrayBuffer, so whatever comes out
+ * of the database has to be normalised before WebCrypto will look at it. */
+export type Blobish = ArrayBuffer | ArrayBufferView | number[];
+
+const bytes = (value: Blobish): Uint8Array => {
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (ArrayBuffer.isView(value)) {
+    return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  }
+  return Uint8Array.from(value);
+};
+
 export async function decryptJson<T>(
-  ciphertext: ArrayBuffer,
-  nonce: ArrayBuffer,
+  ciphertext: Blobish,
+  nonce: Blobish,
   secret: string,
 ): Promise<T> {
   const key = await aesKey(secret);
   const plain = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: new Uint8Array(nonce) },
+    { name: 'AES-GCM', iv: bytes(nonce) },
     key,
-    ciphertext,
+    bytes(ciphertext),
   );
   return JSON.parse(decoder.decode(plain)) as T;
 }

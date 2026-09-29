@@ -31,7 +31,11 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    console.error('order failed', error);
-    return NextResponse.json({ error: 'could not start the reading' }, { status: 502 });
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error('order failed', reason);
+    return NextResponse.json(
+      { error: 'could not start the reading', reason: reason.slice(0, 300) },
+      { status: 502 },
+    );
   }
 }
