@@ -5,9 +5,9 @@ The result is loaded into D1 by `scripts/cities_to_d1.py`; the web app queries i
 service in between. This script is the only thing that knows the GeoNames format.
 
 GeoNames data is CC BY 4.0 (https://www.geonames.org) — the attribution lives in the web footer.
-We take `cities5000` (every place above 5 000 inhabitants), which covers birth places well enough
-while keeping the file small; the per-row `alternatenames` column is what makes searching in
-Cyrillic or any other script work without the 200 MB alternateNamesV2 dump.
+We take `cities500` (every populated place above 500 inhabitants); the per-row `alternatenames`
+column is what makes searching in Cyrillic or any other script work without the 200 MB
+alternateNamesV2 dump.
 
 Usage: python infra/build_cities.py [output.sqlite]
 """
@@ -21,8 +21,10 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-DUMP = "https://download.geonames.org/export/dump/cities5000.zip"
-MEMBER = "cities5000.txt"
+# `cities500` rather than `cities5000`: the larger threshold missed villages people were actually
+# born in — 236 000 places instead of 70 000, for about 40 MB in D1.
+DUMP = "https://download.geonames.org/export/dump/cities500.zip"
+MEMBER = "cities500.txt"
 ADMIN1 = "https://download.geonames.org/export/dump/admin1CodesASCII.txt"
 
 # Alternate names are stored for matching only, so we keep the scripts our locales are written in
