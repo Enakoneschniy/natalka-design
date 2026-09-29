@@ -877,41 +877,40 @@
   font-style: italic;
   font-size: clamp(22px, 2.6vw, 36px);
   color: var(--color-ink);
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 0.28em;
-}
-.film-line span {
-  display: inline-block;
   opacity: 0;
-  animation: film-word var(--loop) linear infinite both;
-  animation-delay: calc(var(--w, 0) * 0.09s);
+  /* Uncovered by the wave: a soft-edged disc of visibility that grows from the centre. */
+  mask-image: radial-gradient(circle at 50% 50%, #000 0 55%, transparent 100%);
+  mask-size: 0% 0%;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  animation: film-line var(--loop) linear infinite both;
 }
-@keyframes film-word {
+@keyframes film-line {
   0%,
-  3% {
+  2.5% {
     opacity: 0;
-    translate: 0 0.55em;
-    filter: blur(8px);
-    animation-timing-function: var(--in);
+    mask-size: 0% 0%;
+    scale: 1.04;
+    animation-timing-function: cubic-bezier(0.1, 0.8, 0.2, 1);
   }
-  6.5% {
+  4% {
     opacity: 1;
-    translate: 0 0;
-    filter: blur(0);
   }
-  11.5% {
+  8% {
+    mask-size: 400% 400%;
+    scale: 1;
+  }
+  12% {
     opacity: 1;
-    translate: 0 0;
-    filter: blur(0);
+    mask-size: 400% 400%;
+    scale: 1;
     animation-timing-function: var(--out);
   }
-  14%,
+  14.5%,
   100% {
     opacity: 0;
-    translate: 0 -0.4em;
-    filter: blur(6px);
+    mask-size: 400% 400%;
+    scale: 0.985;
   }
 }
 .film-wheel {
