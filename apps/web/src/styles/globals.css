@@ -1730,6 +1730,35 @@
   }
 }
 @media (max-width: 1000px) {
+  .hero-cta {
+    gap: 12px;
+  }
+  /* Two equal buttons on one row instead of two narrow ones wrapping under each other. */
+  .hero-cta .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 14px;
+  }
+  .hero-facts {
+    flex-direction: column;
+    margin-top: 32px;
+  }
+  .hero-facts li {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 0;
+    margin: 0;
+    border-right: 0;
+    border-top: 1px solid var(--color-line);
+  }
+  .hero-facts li:first-child {
+    border-top: 0;
+  }
+  .hero-facts strong {
+    font-size: 21px;
+    min-width: 92px;
+  }
   .nav-links {
     display: none;
   }
@@ -1757,6 +1786,10 @@
   .hero {
     min-height: 0;
     padding: 40px 0 24px;
+  }
+  /* 128px of section padding is desktop rhythm; on a folding phone it reads as dead space. */
+  .section {
+    padding-block: 88px;
   }
   .hero-grid {
     grid-template-columns: 1fr 1fr;
@@ -1819,28 +1852,17 @@
   .hero-text h1 {
     font-size: 42px;
   }
+  /* On a phone the two buttons stack full width; the flex sizing from the wider breakpoint
+     would otherwise squeeze them side by side and break their labels over two lines. */
+  .hero-cta {
+    flex-direction: column;
+  }
   .hero-cta .btn {
+    flex: 0 0 auto;
     width: 100%;
   }
   .hero-facts {
-    flex-direction: column;
     margin-top: 36px;
-  }
-  .hero-facts li {
-    flex-direction: row;
-    align-items: baseline;
-    gap: 12px;
-    padding: 12px 0;
-    margin: 0;
-    border-right: 0;
-    border-top: 1px solid var(--color-line);
-  }
-  .hero-facts li:first-child {
-    border-top: 0;
-  }
-  .hero-facts strong {
-    font-size: 21px;
-    min-width: 92px;
   }
   .section {
     padding-block: 72px;
