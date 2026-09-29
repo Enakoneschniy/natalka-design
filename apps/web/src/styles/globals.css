@@ -793,55 +793,40 @@
   color: var(--color-ink-3);
 }
 
-/* Three steps on one path. The line runs behind the numbers and stops at the last of them, so
-   the section reads as a route from the form to the document rather than as three loose columns. */
+/* One panel divided into three, rather than three texts floating on the background: the steps are
+   one sequence and they should sit on one surface. The dividers carry the order; a connector line
+   drawn across empty space read as a stray hairline. */
 .steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px 36px;
   list-style: none;
   padding: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
 }
 .steps li {
-  position: relative;
   display: grid;
-  gap: 18px;
+  align-content: start;
+  gap: 12px;
+  padding: 32px;
+  border-left: 1px solid var(--color-line);
 }
-.steps li:not(:last-child)::before {
-  content: '';
-  position: absolute;
-  top: 21px;
-  left: 52px;
-  right: -36px;
-  height: 1px;
-  background: linear-gradient(90deg, var(--color-accent-soft), var(--color-line));
-}
-.step-node {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px solid rgba(231, 183, 92, 0.32);
-  background: radial-gradient(circle at 50% 40%, rgba(231, 183, 92, 0.12), transparent 70%),
-    var(--color-surface-solid);
-  /* The ring sits on the line, so it needs the page colour around it to cut the line cleanly. */
-  box-shadow: 0 0 0 6px var(--color-bg);
-  position: relative;
+.steps li:first-child {
+  border-left: 0;
 }
 .step-n {
-  font-family: var(--font-display);
-  font-size: 19px;
-  line-height: 1;
+  font-size: 13px;
+  letter-spacing: 0.18em;
   color: var(--color-accent);
 }
 .steps h3 {
   font-size: 21px;
-  margin-bottom: 10px;
 }
 .steps p {
   font-size: 15px;
-  max-width: 34ch;
 }
 
 .faq-grid {
@@ -2319,23 +2304,14 @@
   .faq-grid {
     grid-template-columns: 1fr;
   }
-  /* Stacked, the same path turns vertical and runs down the left through the numbers. */
+  /* Stacked, the dividers run across instead of down. */
   .steps li {
-    grid-template-columns: 42px 1fr;
-    column-gap: 18px;
-    align-items: start;
+    padding: 24px;
+    border-left: 0;
+    border-top: 1px solid var(--color-line);
   }
-  .steps li:not(:last-child)::before {
-    top: 50px;
-    bottom: -24px;
-    left: 21px;
-    right: auto;
-    width: 1px;
-    height: auto;
-    background: linear-gradient(180deg, var(--color-accent-soft), var(--color-line));
-  }
-  .steps p {
-    max-width: none;
+  .steps li:first-child {
+    border-top: 0;
   }
   .cta-card {
     flex-direction: column;
