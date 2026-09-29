@@ -12,6 +12,8 @@ interface Env {
   ALLOWED_ORIGINS: string;
   /** Set as a Worker secret; never present in the repository. */
   NATALKA_MODEL_API_KEY?: string;
+  /** The name the key was first stored under; still accepted so it does not have to be re-entered. */
+  NATALKA_ANTHROPIC_API_KEY?: string;
   NATALKA_AI_GATEWAY_URL?: string;
 }
 
@@ -24,7 +26,8 @@ export class ApiContainer extends Container {
   /** The model key reaches the Python process only through here — it is a Worker secret, so it
    * is encrypted at rest in Cloudflare and never written to the image or the repository. */
   override envVars: Record<string, string> = {
-    NATALKA_MODEL_API_KEY: (this.env as Env).NATALKA_MODEL_API_KEY ?? '',
+    NATALKA_MODEL_API_KEY:
+      (this.env as Env).NATALKA_MODEL_API_KEY ?? (this.env as Env).NATALKA_ANTHROPIC_API_KEY ?? '',
     NATALKA_AI_GATEWAY_URL: (this.env as Env).NATALKA_AI_GATEWAY_URL ?? '',
   };
 
