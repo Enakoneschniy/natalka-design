@@ -378,5 +378,8 @@
       "pdf": "PDF"
     },
     "telegram": "Get it in Telegram"
+  },
+  "legal": {
+    "draft": "Draft: this document is not yet signed or filled in with the provider’s details. It has no force until payments open."
   }
 }

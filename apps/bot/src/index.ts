@@ -13,7 +13,7 @@ interface JobsInternalStub {
   claimTelegram(code: string, chatId: number): Promise<Claim | null>;
   telegramDelivered(code: string): Promise<void>;
   forgetTelegram(chatId: number): Promise<void>;
-  document(token: string): Promise<ArrayBuffer | null>;
+  document(token: string): Promise<{ bytes: ArrayBuffer; filename: string } | null>;
 }
 
 interface Env {
@@ -97,23 +97,24 @@ async function sendDocument(
   token: string,
   chatId: number,
   file: Blob,
+  filename: string,
   caption: string,
 ): Promise<void> {
   const form = new FormData();
   form.set('chat_id', String(chatId));
   form.set('caption', caption);
-  form.set('document', file, 'chronika.pdf');
+  form.set('document', file, filename);
   const response = await fetch(api(token, 'sendDocument'), { method: 'POST', body: form });
   if (!response.ok) throw new Error(`sendDocument ${response.status}`);
 }
 
 /** Fetches the finished PDF from the jobs worker and hands it to the chat. */
 async function deliver(env: Env, token: string, chatId: number, docToken: string, l: Lang) {
-  const bytes = await env.JOBS.document(docToken);
-  if (!bytes) throw new Error('document is not available');
-  const file = new Blob([bytes], { type: 'application/pdf' });
+  const found = await env.JOBS.document(docToken);
+  if (!found) throw new Error('document is not available');
+  const file = new Blob([found.bytes], { type: 'application/pdf' });
   await sendText(token, chatId, COPY[l].here);
-  await sendDocument(token, chatId, file, COPY[l].caption);
+  await sendDocument(token, chatId, file, found.filename, COPY[l].caption);
 }
 
 async function onStart(env: Env, token: string, chatId: number, code: string, fallback: Lang) {

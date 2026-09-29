@@ -29,7 +29,8 @@ import {
 } from './db';
 import type { Env } from './env';
 import { WorkerEntrypoint } from 'cloudflare:workers';
-import { advance, type JobPayload } from './pipeline';
+import { contentDisposition, documentFilename } from './filename';
+import { advance, type JobPayload, loadBirth } from './pipeline';
 
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
  * so we stop writing after four minutes and let the message come back for the rest. */
@@ -214,8 +215,12 @@ async function jobStatus(env: Env, token: string): Promise<Response> {
   });
 }
 
-async function download(env: Env, token: string): Promise<Response> {
-  const claims = await verifyToken<{ order: string }>(token, env.LINK_KEY);
+/** The finished PDF and the name it should carry, for a valid token. */
+async function finishedDocument(
+  env: Env,
+  token: string,
+): Promise<{ body: ReadableStream; filename: string } | Response> {
+  const claims = await verifyToken<{ order: string; job: string }>(token, env.LINK_KEY);
   if (!claims) return new Response('link expired', { status: 404 });
 
   const document = await documentForOrder(env.DB, claims.order);
@@ -224,10 +229,23 @@ async function download(env: Env, token: string): Promise<Response> {
   const object = await env.DOCS.get(document.storage_key);
   if (!object) return new Response('gone', { status: 410 });
 
-  return new Response(object.body, {
+  const job = await getJob(env.DB, claims.job);
+  const product = job?.kind ?? 'natal';
+  const first = await loadBirth(env, claims.order);
+  const second = product === 'synastry' ? await loadBirth(env, claims.order, 2) : null;
+  return {
+    body: object.body,
+    filename: documentFilename(product, first.lang, first, second),
+  };
+}
+
+async function download(env: Env, token: string): Promise<Response> {
+  const found = await finishedDocument(env, token);
+  if (found instanceof Response) return found;
+  return new Response(found.body, {
     headers: {
       'content-type': 'application/pdf',
-      'content-disposition': 'inline; filename="chronika.pdf"',
+      'content-disposition': contentDisposition(found.filename),
       'cache-control': 'private, no-store',
     },
   });
@@ -275,10 +293,11 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
     await forgetTelegramChat(this.env.DB, chatId);
   }
 
-  /** The finished PDF for a signed token, or null. */
-  async document(token: string): Promise<ArrayBuffer | null> {
-    const response = await download(this.env, token);
-    return response.ok ? response.arrayBuffer() : null;
+  /** The finished PDF for a signed token, with the name it should carry, or null. */
+  async document(token: string): Promise<{ bytes: ArrayBuffer; filename: string } | null> {
+    const found = await finishedDocument(this.env, token);
+    if (found instanceof Response) return null;
+    return { bytes: await new Response(found.body).arrayBuffer(), filename: found.filename };
   }
 }
 

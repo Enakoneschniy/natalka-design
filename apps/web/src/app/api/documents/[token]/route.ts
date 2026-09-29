@@ -10,7 +10,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
   return new Response(upstream.body, {
     headers: {
       'content-type': 'application/pdf',
-      'content-disposition': 'inline; filename="chronika.pdf"',
+      // The jobs worker names the file after the person and the birth; pass that through.
+      'content-disposition':
+        upstream.headers.get('content-disposition') ?? 'inline; filename="chronika.pdf"',
       'cache-control': 'private, no-store',
       // A signed link is not a secret worth indexing.
       'x-robots-tag': 'noindex, nofollow',

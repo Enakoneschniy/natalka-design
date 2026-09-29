@@ -2358,6 +2358,48 @@
 .btn-block {
   width: 100%;
 }
+/* ---------- legal pages ---------- */
+.legal-draft {
+  margin-bottom: 28px;
+}
+.legal h1 {
+  font-size: clamp(30px, 4vw, 40px);
+  margin-bottom: 8px;
+}
+.legal h1 + p {
+  color: var(--color-ink-3);
+  font-size: 14px;
+  margin-bottom: 36px;
+}
+.legal h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 22px;
+  margin: 36px 0 12px;
+}
+.legal p,
+.legal li {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--color-ink-2);
+  max-width: 68ch;
+}
+.legal p + p {
+  margin-top: 12px;
+}
+.legal ul {
+  margin: 12px 0 12px 20px;
+  display: grid;
+  gap: 6px;
+}
+.legal strong {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+.legal a {
+  color: var(--color-accent);
+}
+
 /* ---------- the waiting room ---------- */
 /* One screen tall, centred, with the footer left below the fold: there is nothing to do here but
    wait, and a page that scrolls invites the visitor to leave in the middle of it. */
