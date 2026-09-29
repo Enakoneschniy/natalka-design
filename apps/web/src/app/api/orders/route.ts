@@ -31,11 +31,9 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    console.error('order failed', reason);
-    return NextResponse.json(
-      { error: 'could not start the reading', reason: reason.slice(0, 300) },
-      { status: 502 },
-    );
+    // The upstream message names internal hosts and can quote the request back; it belongs in the
+    // log, not in a response a visitor can read.
+    console.error('order failed', error instanceof Error ? error.message : String(error));
+    return NextResponse.json({ error: 'could not start the reading' }, { status: 502 });
   }
 }
