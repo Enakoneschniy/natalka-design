@@ -15,6 +15,10 @@ interface Copy {
   open: string;
   keeps: string;
   sign: string;
+  /** The horoscope letter: the window, the management link, the way out. */
+  window: string;
+  manage: string;
+  unsubscribe: string;
 }
 
 const COPY: Record<string, Copy> = {
@@ -24,6 +28,9 @@ const COPY: Record<string, Copy> = {
     open: 'Відкрити розбір',
     keeps: 'Посилання працює тридцять днів; після цього документ і дані народження видаляються.',
     sign: 'Chronika · chronika.me',
+    window: 'Гороскоп на',
+    manage: 'Керувати підпискою',
+    unsubscribe: 'Ви отримали цей лист, бо підписалися на гороскопи Chronika. Відписатися або змінити періодичність можна за посиланням вище.',
   },
   ru: {
     subject: 'Ваш разбор готов',
@@ -31,6 +38,9 @@ const COPY: Record<string, Copy> = {
     open: 'Открыть разбор',
     keeps: 'Ссылка работает тридцать дней; после этого документ и данные рождения удаляются.',
     sign: 'Chronika · chronika.me',
+    window: 'Гороскоп на',
+    manage: 'Управлять подпиской',
+    unsubscribe: 'Вы получили это письмо, потому что подписались на гороскопы Chronika. Отписаться или изменить периодичность можно по ссылке выше.',
   },
   en: {
     subject: 'Your reading is ready',
@@ -38,6 +48,9 @@ const COPY: Record<string, Copy> = {
     open: 'Open the reading',
     keeps: 'The link works for thirty days; after that the document and the birth data are deleted.',
     sign: 'Chronika · chronika.me',
+    window: 'Horoscope for',
+    manage: 'Manage subscription',
+    unsubscribe: 'You are receiving this because you subscribed to Chronika horoscopes. Unsubscribe or change the cadence at the link above.',
   },
 };
 
@@ -92,6 +105,66 @@ export async function sendReady(
   });
   if (!response.ok) {
     // The body names the reason (bad key, unverified domain); the log gets it, the client does not.
+    console.error('resend', response.status, (await response.text()).slice(0, 300));
+    throw new Error(`mail provider answered ${response.status}`);
+  }
+  const data = (await response.json()) as { id?: string };
+  return { status: 'sent', providerId: data.id ?? null };
+}
+
+export interface HoroscopeLetter {
+  title: string;
+  text: string;
+  start: string;
+  end: string;
+  manage: string;
+}
+
+const dmy = (iso: string) => iso.split('-').reverse().join('.');
+
+function horoscopeHtml(copy: Copy, letter: HoroscopeLetter): string {
+  const paragraphs = letter.text
+    .split(/\n\s*\n/)
+    .map((p) => `<p style="margin:0 0 18px 0;font-size:17px;line-height:1.6;color:#f4f1e8;">${escape(p.trim())}</p>`)
+    .join('');
+  return `<!doctype html><html><body style="margin:0;padding:32px 16px;background:#06091a;color:#f4f1e8;font-family:Georgia,'Times New Roman',serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center">
+<table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;">
+<tr><td style="padding:0 0 24px 0;font-size:13px;letter-spacing:0.18em;color:#e7b75c;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">CHRONIKA</td></tr>
+<tr><td style="font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#aeb2c8;font-family:-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:10px;">${escape(copy.window)} ${escape(dmy(letter.start))} — ${escape(dmy(letter.end))}</td></tr>
+<tr><td style="font-size:26px;line-height:1.3;font-weight:500;padding-bottom:22px;">${escape(letter.title)}</td></tr>
+<tr><td>${paragraphs}</td></tr>
+<tr><td style="padding:14px 0 26px 0;"><a href="${escape(letter.manage)}" style="display:inline-block;border:1px solid rgba(255,255,255,0.2);color:#f4f1e8;text-decoration:none;font-size:14px;padding:10px 18px;border-radius:999px;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">${escape(copy.manage)}</a></td></tr>
+<tr><td style="font-size:12px;line-height:1.5;color:#767b99;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">${escape(copy.unsubscribe)}<br>${escape(copy.sign)}</td></tr>
+</table></td></tr></table></body></html>`;
+}
+
+/** The horoscope itself, as a letter. */
+export async function sendHoroscope(
+  env: Env,
+  to: string,
+  locale: string,
+  letter: HoroscopeLetter,
+): Promise<Sent> {
+  if (!env.RESEND_API_KEY) return { status: 'skipped', providerId: null };
+  const copy = COPY[locale] ?? COPY.en;
+  if (!copy) return { status: 'skipped', providerId: null };
+  const response = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: FROM,
+      to: [to],
+      subject: `${letter.title} · ${dmy(letter.start)} — ${dmy(letter.end)}`,
+      html: horoscopeHtml(copy, letter),
+      text: `${letter.title}\n${copy.window} ${dmy(letter.start)} — ${dmy(letter.end)}\n\n${letter.text}\n\n${copy.manage}: ${letter.manage}\n\n${copy.unsubscribe}`,
+      headers: { 'List-Unsubscribe': `<${letter.manage}>` },
+    }),
+  });
+  if (!response.ok) {
     console.error('resend', response.status, (await response.text()).slice(0, 300));
     throw new Error(`mail provider answered ${response.status}`);
   }

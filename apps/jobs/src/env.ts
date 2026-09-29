@@ -2,12 +2,16 @@
  * share a build. */
 export interface BotInternalStub {
   deliver(args: { chatId: number; code: string; locale: string; token: string }): Promise<void>;
+  sendHoroscope(args: { chatId: number; locale: string; title: string; text: string }): Promise<void>;
 }
+
+/** A queue message names either a document job or a subscription whose horoscope is due. */
+export type QueueMessage = { jobId: string } | { subscriptionId: string };
 
 export interface Env {
   DB: D1Database;
   DOCS: R2Bucket;
-  JOBS: Queue<{ jobId: string }>;
+  JOBS: Queue<QueueMessage>;
   /** The calculation and text API, reached over a service binding rather than the public URL. */
   API: Fetcher;
   /** The Telegram bot worker's internal entrypoint; it holds the bot token, this worker never sees it. */

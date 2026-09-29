@@ -187,12 +187,18 @@
       "forecast": "Birth details",
       "bundle": "Birth details",
       "child": "The child's birth details",
-      "synastry": "Birth details for both of you"
+      "synastry": "Birth details for both of you",
+      "horoscope": "Horoscope subscription"
     },
     "leads": {
       "synastry": "Both charts are needed. The more exact the times, the more exact the contacts between them.",
-      "child": "The more precise, the more precise the chart. Everything except the time is required."
-    }
+      "child": "The more precise, the more precise the chart. Everything except the time is required.",
+      "horoscope": "We build your chart from the birth data and write a horoscope from it every week or every month — from the real transits, with dates, not from your Sun sign."
+    },
+    "submitSubscribe": "Subscribe",
+    "freeSubscription": "The chart is free. So is the first month of horoscopes.",
+    "edit": "Edit the data",
+    "timeUnknown": "time unknown"
   },
   "preview": {
     "title": "{name}, here is your chart",
@@ -387,5 +393,53 @@
   },
   "legal": {
     "draft": "Draft: this document is not yet signed or filled in with the provider’s details. It has no force until payments open."
+  },
+  "subscription": {
+    "sectionTitle": "A horoscope from your chart, every week",
+    "sectionLead": "Not from your Sun sign but from the whole chart: which transits reach your planets, and on which days. The first month is free, then {price} a month; unsubscribe any time.",
+    "sectionItems": [
+      "Exact dates for the week or the month",
+      "Transits to your planets and houses",
+      "By email and in Telegram",
+      "The first one right after you subscribe"
+    ],
+    "sectionCta": "Subscribe",
+    "trial": "first month free",
+    "then": "then {price} a month",
+    "title": "Horoscope subscription",
+    "lead": "Choose how often, and where. The first horoscope is written right away.",
+    "cadence": "How often",
+    "week": "Every week",
+    "weekHint": "A short text for seven days, with exact dates.",
+    "month": "Every month",
+    "monthHint": "A longer text for the month, week by week.",
+    "email": "Email",
+    "emailHint": "The horoscope arrives here, with a link to manage the subscription.",
+    "consent": "I understand the first month is free, then {price} a month, and that I can unsubscribe at any time at the link in the email.",
+    "submit": "Subscribe",
+    "submitPending": "Setting up…",
+    "failed": "Could not set up the subscription. Please try again.",
+    "manageTitle": "Your subscription",
+    "statusActive": "Active",
+    "statusPaused": "Paused",
+    "statusCancelled": "Cancelled",
+    "nextSend": "Next horoscope: {date}",
+    "trialUntil": "Free until {date}",
+    "writing": "The first horoscope is being written — usually under a minute.",
+    "latestFor": "Horoscope for {start} — {end}",
+    "telegramTitle": "Also in Telegram",
+    "telegramBody": "Open the bot and tap Start — the horoscopes will arrive there too.",
+    "telegramOpen": "Open the bot",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel subscription",
+    "delete": "Delete subscription and data",
+    "deleteConfirm": "Delete the subscription and all data? This cannot be undone.",
+    "deleted": "The subscription and the data have been deleted.",
+    "birth": "Birth data",
+    "birthKept": "Kept until {date} in case of a correction; after that only the chart remains.",
+    "birthGone": "Birth data deleted; only the chart is kept.",
+    "gone": "This link has expired. Find a fresh one in the latest horoscope email.",
+    "contact": "To correct the birth data: help@chronika.me"
   }
 }

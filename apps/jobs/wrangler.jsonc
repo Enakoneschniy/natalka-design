@@ -39,6 +39,7 @@
   },
   "triggers": {
     // Nightly retention sweep: birth data and documents past their date are deleted.
-    "crons": ["17 3 * * *"]
+    // Hourly: subscriptions whose horoscope is due go to the queue.
+    "crons": ["17 3 * * *", "5 * * * *"]
   }
 }

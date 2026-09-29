@@ -10,7 +10,7 @@ import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
 import { PLANET_PATHS } from '@/lib/glyphs';
-import { PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
+import { PRODUCTS, type ProductKey, priceFor, subscriptionPrice } from '@/lib/pricing';
 
 const facts = demo as unknown as ChartFacts;
 
@@ -35,10 +35,19 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const prices = Object.fromEntries(
     PRODUCTS.map((product) => [product, priceFor(product, country).formatted]),
   ) as Record<ProductKey, string>;
-  return <Landing locale={locale as Locale} prices={prices} />;
+  const subscription = subscriptionPrice(country).formatted;
+  return <Landing locale={locale as Locale} prices={prices} subscription={subscription} />;
 }
 
-function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey, string> }) {
+function Landing({
+  locale,
+  prices,
+  subscription,
+}: {
+  locale: Locale;
+  prices: Record<ProductKey, string>;
+  subscription: string;
+}) {
   const t = useTranslations();
   const products = ['natal', 'forecast', 'synastry', 'child'] as const;
   const steps = [0, 1, 2] as const;
@@ -132,6 +141,37 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
                 </Link>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section" id="horoscope">
+        <div className="container-page">
+          <div className="card subscription-card">
+            <div className="subscription-text">
+              <h2>{t('subscription.sectionTitle')}</h2>
+              <p className="lead">{t('subscription.sectionLead', { price: subscription })}</p>
+              <ul className="subscription-items">
+                {([0, 1, 2, 3] as const).map((i) => (
+                  <li key={i}>{t(`subscription.sectionItems.${i}`)}</li>
+                ))}
+              </ul>
+              <div className="subscription-cta">
+                <Link className="btn btn-primary btn-lg" href={`/${locale}/start?p=horoscope`}>
+                  {t('subscription.sectionCta')}
+                </Link>
+                <span className="caption">
+                  {t('subscription.trial')} · {t('subscription.then', { price: subscription })}
+                </span>
+              </div>
+            </div>
+            <div className="subscription-art" aria-hidden="true">
+              <span className="subscription-ring subscription-ring-1" />
+              <span className="subscription-ring subscription-ring-2">
+                <span className="subscription-dot" />
+              </span>
+              <span className="subscription-ring subscription-ring-3" />
+            </div>
           </div>
         </div>
       </section>

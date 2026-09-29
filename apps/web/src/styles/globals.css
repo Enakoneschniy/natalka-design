@@ -3071,6 +3071,141 @@
 .btn-block {
   width: 100%;
 }
+/* ---------- the horoscope subscription ---------- */
+.subscription-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: center;
+  padding: 40px;
+  overflow: hidden;
+}
+.subscription-text h2 {
+  font-size: clamp(28px, 3.2vw, 40px);
+}
+.subscription-text .lead {
+  margin-top: 16px;
+}
+.subscription-items {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+  display: grid;
+  gap: 10px;
+  color: var(--color-ink-2);
+}
+.subscription-items li::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  margin-right: 12px;
+  vertical-align: middle;
+}
+.subscription-cta {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+}
+/* three rings on their own periods, a dot on the middle one — the wheel's motif without the wheel */
+.subscription-art {
+  position: relative;
+  aspect-ratio: 1;
+  max-width: 340px;
+  width: 100%;
+  margin-inline: auto;
+}
+.subscription-ring {
+  position: absolute;
+  border-radius: 50%;
+}
+.subscription-ring-1 {
+  inset: 0;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  animation: spin 120s linear infinite;
+}
+.subscription-ring-2 {
+  inset: 14%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  animation: spin 60s linear infinite reverse;
+}
+.subscription-ring-3 {
+  inset: 30%;
+  border: 1px solid rgba(231, 183, 92, 0.35);
+  background: radial-gradient(circle, rgba(88, 110, 240, 0.35), transparent 70%);
+  animation: spin 30s linear infinite;
+}
+.subscription-dot {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: var(--color-astro);
+  box-shadow: 0 0 12px 3px rgba(240, 185, 91, 0.7);
+}
+.cadence {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.cadence-option {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+  font: inherit;
+}
+.cadence-option.is-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.cadence-option span {
+  font-size: 13px;
+}
+.subscription .segmented {
+  margin-top: 18px;
+}
+.subscription-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.btn.is-danger {
+  color: var(--color-tense);
+}
+.horoscope h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  margin: 8px 0 16px;
+}
+.horoscope p + p {
+  margin-top: 14px;
+}
+.horoscope p {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--color-ink);
+}
+.horoscope .caption {
+  color: var(--color-accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
 /* ---------- legal pages ---------- */
 .legal-draft {
   margin-bottom: 28px;
@@ -3503,6 +3638,16 @@
   .grid-4,
   .steps,
   .faq-grid {
+    grid-template-columns: 1fr;
+  }
+  .subscription-card {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+  .subscription-art {
+    max-width: 220px;
+  }
+  .cadence {
     grid-template-columns: 1fr;
   }
   .scene {

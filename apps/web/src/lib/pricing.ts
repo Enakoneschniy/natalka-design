@@ -106,3 +106,26 @@ export function bundleFullPrice(country: string | null | undefined): Price {
   const amount = TABLE[currency].natal + TABLE[currency].forecast;
   return { product: 'bundle', currency, amount, formatted: format(amount, currency) };
 }
+
+/** The horoscope subscription, per month, after the free first month. Agreed with the owner on
+ * 2026-09-29: €4, with local figures that look like prices rather than conversions. */
+const SUBSCRIPTION: Record<Currency, number> = {
+  UAH: 14900,
+  EUR: 400,
+  USD: 500,
+  PLN: 1900,
+  CZK: 9900,
+  RON: 1900,
+  BGN: 800,
+  GBP: 400,
+};
+
+export function subscriptionPrice(country: string | null | undefined): {
+  currency: Currency;
+  amount: number;
+  formatted: string;
+} {
+  const currency = currencyFor(country);
+  const amount = SUBSCRIPTION[currency];
+  return { currency, amount, formatted: format(amount, currency) };
+}

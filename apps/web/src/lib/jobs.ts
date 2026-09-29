@@ -83,3 +83,56 @@ export async function telegramCode(token: string): Promise<string | null> {
   const data = (await response.json()) as { code?: string };
   return data.code ?? null;
 }
+
+export interface SubscriptionRequest {
+  email: string;
+  locale: string;
+  cadence: 'week' | 'month';
+  birth: BirthInput;
+}
+
+export interface SubscriptionView {
+  status: 'active' | 'paused' | 'cancelled';
+  cadence: 'week' | 'month';
+  email: string | null;
+  locale: string;
+  name: string | null;
+  next_send_at: string;
+  trial_ends_at: string | null;
+  birth: { date: string; time: string | null; place: string } | null;
+  correction_until: string | null;
+  telegram_code: string;
+  latest: { title: string; text: string; period: string; start: string; end: string } | null;
+}
+
+export async function createSubscription(input: SubscriptionRequest): Promise<{ token: string }> {
+  const response = await fetch(`${base()}/v1/subscriptions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) throw new Error(`subscriptions → ${response.status}: ${await response.text()}`);
+  return response.json() as Promise<{ token: string }>;
+}
+
+export async function subscriptionView(token: string): Promise<SubscriptionView | null> {
+  const response = await fetch(`${base()}/v1/subscriptions/${encodeURIComponent(token)}`, {
+    cache: 'no-store',
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`subscription → ${response.status}`);
+  return response.json() as Promise<SubscriptionView>;
+}
+
+export async function subscriptionChange(
+  token: string,
+  method: 'PATCH' | 'DELETE',
+  body?: { cadence?: string; status?: string },
+): Promise<boolean> {
+  const response = await fetch(`${base()}/v1/subscriptions/${encodeURIComponent(token)}`, {
+    method,
+    headers: { 'content-type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return response.ok;
+}

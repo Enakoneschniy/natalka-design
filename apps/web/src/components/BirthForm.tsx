@@ -79,7 +79,9 @@ export function BirthForm({ locale, product = 'natal' }: { locale: string; produ
     });
 
     setPending(true);
-    router.push(`/${locale}/preview?${params.toString()}`);
+    router.push(
+      `/${locale}/${product === 'horoscope' ? 'subscribe' : 'preview'}?${params.toString()}`,
+    );
   };
 
   const labels = (index: number) => {
@@ -127,9 +129,15 @@ export function BirthForm({ locale, product = 'natal' }: { locale: string; produ
 
       <div className="form-foot">
         <button className="btn btn-primary btn-lg" type="submit" disabled={pending}>
-          {pending ? t('submitPending') : t('submit')}
+          {pending
+            ? t('submitPending')
+            : product === 'horoscope'
+              ? t('submitSubscribe')
+              : t('submit')}
         </button>
-        <span className="caption">{t('free')}</span>
+        <span className="caption">
+          {product === 'horoscope' ? t('freeSubscription') : t('free')}
+        </span>
       </div>
     </form>
   );

@@ -33,10 +33,13 @@ interface Update {
 }
 
 interface Claim {
+  kind: 'document' | 'subscription';
   locale: string;
   ready: boolean;
   failed: boolean;
   token: string | null;
+  /** For a subscription: the latest horoscope, if one has been written already. */
+  horoscope: { title: string; text: string } | null;
 }
 
 const COPY = {
@@ -47,6 +50,7 @@ const COPY = {
     failed: 'З цим замовленням щось пішло не так. Ми бачимо помилку і повторимо генерацію; якщо за годину нічого не зміниться — напишіть на help@chronika.me.',
     here: 'Ваш розбір готовий.',
     caption: 'Chronika · документ зберігається тридцять днів',
+    subscribed: 'Готово: гороскопи будуть приходити сюди. Керувати підпискою можна за посиланням із листа; /stop — відв’язати цей чат.',
     stopped: 'Гаразд, більше нічого сюди не надсилатиму.',
   },
   ru: {
@@ -56,6 +60,7 @@ const COPY = {
     failed: 'С этим заказом что-то пошло не так. Мы видим ошибку и повторим генерацию; если за час ничего не изменится — напишите на help@chronika.me.',
     here: 'Ваш разбор готов.',
     caption: 'Chronika · документ хранится тридцать дней',
+    subscribed: 'Готово: гороскопы будут приходить сюда. Управлять подпиской можно по ссылке из письма; /stop — отвязать этот чат.',
     stopped: 'Хорошо, больше ничего сюда не пришлю.',
   },
   en: {
@@ -65,6 +70,7 @@ const COPY = {
     failed: 'Something went wrong with this order. We can see the error and will retry; if nothing changes within an hour, write to help@chronika.me.',
     here: 'Your reading is ready.',
     caption: 'Chronika · the document is kept for thirty days',
+    subscribed: 'Done: your horoscopes will arrive here. Manage the subscription at the link in your email; /stop unbinds this chat.',
     stopped: 'All right, nothing more will be sent here.',
   },
 } as const;
@@ -108,6 +114,24 @@ async function sendDocument(
   if (!response.ok) throw new Error(`sendDocument ${response.status}`);
 }
 
+/** A horoscope as messages: Telegram takes 4 096 characters per message, a month runs to six
+ * thousand, so the text is split between paragraphs, never inside one. */
+async function sendLong(token: string, chatId: number, title: string, text: string) {
+  const limit = 3800;
+  const chunks: string[] = [];
+  let current = `${title}\n\n`;
+  for (const paragraph of text.split(/\n\s*\n/)) {
+    const piece = `${paragraph.trim()}\n\n`;
+    if (current.length + piece.length > limit && current.trim()) {
+      chunks.push(current.trim());
+      current = '';
+    }
+    current += piece;
+  }
+  if (current.trim()) chunks.push(current.trim());
+  for (const chunk of chunks) await sendText(token, chatId, chunk);
+}
+
 /** Fetches the finished PDF from the jobs worker and hands it to the chat. */
 async function deliver(env: Env, token: string, chatId: number, docToken: string, l: Lang) {
   const found = await env.JOBS.document(docToken);
@@ -128,6 +152,11 @@ async function onStart(env: Env, token: string, chatId: number, code: string, fa
     return;
   }
   const l = lang(claim.locale);
+  if (claim.kind === 'subscription') {
+    await sendText(token, chatId, COPY[l].subscribed);
+    if (claim.horoscope) await sendLong(token, chatId, claim.horoscope.title, claim.horoscope.text);
+    return;
+  }
   if (claim.failed) {
     await sendText(token, chatId, COPY[l].failed);
     return;
@@ -214,6 +243,13 @@ export default {
  * stranger to push a document into someone's chat. */
 export class BotInternal extends WorkerEntrypoint<Env> {
   /** A document a chat has been waiting for is finished: send it. */
+  /** A horoscope for a chat bound to a subscription. */
+  async sendHoroscope(args: { chatId: number; locale: string; title: string; text: string }) {
+    const token = this.env.TELEGRAM_BOT_TOKEN;
+    if (!token) throw new Error('bot token is not configured');
+    await sendLong(token, args.chatId, args.title, args.text);
+  }
+
   async deliver(args: { chatId: number; code: string; locale: string; token: string }) {
     const token = this.env.TELEGRAM_BOT_TOKEN;
     if (!token) throw new Error('bot token is not configured');

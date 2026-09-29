@@ -20,9 +20,11 @@ export default async function StartPage({
   setRequestLocale(locale);
   const search = await searchParams;
   const asked = Array.isArray(search.p) ? search.p[0] : search.p;
-  const product = (PRODUCTS as readonly string[]).includes(asked ?? '')
-    ? (asked as string)
-    : 'natal';
+  // The horoscope subscription takes the same form but leads to a subscription, not a preview.
+  const product =
+    asked === 'horoscope' || (PRODUCTS as readonly string[]).includes(asked ?? '')
+      ? (asked as string)
+      : 'natal';
   const t = await getTranslations({ locale, namespace: 'form' });
 
   return (
@@ -33,7 +35,9 @@ export default async function StartPage({
         </div>
         <h1>{t(`titles.${product}`)}</h1>
         <p className="lead flow-lead">
-          {product === 'synastry' || product === 'child' ? t(`leads.${product}`) : t('lead')}
+          {product === 'synastry' || product === 'child' || product === 'horoscope'
+            ? t(`leads.${product}`)
+            : t('lead')}
         </p>
         <BirthForm locale={locale} product={product} />
       </div>

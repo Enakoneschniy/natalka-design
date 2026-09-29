@@ -27,8 +27,24 @@ import {
   type Product,
   updateJob,
 } from './db';
-import type { Env } from './env';
+import type { Env, QueueMessage } from './env';
 import { WorkerEntrypoint } from 'cloudflare:workers';
+import {
+  type Cadence,
+  claimTelegramSubscription,
+  createSubscription,
+  deleteSubscription,
+  deliverHoroscope,
+  dropExpiredBirths,
+  dueSubscriptions,
+  forgetTelegramSubscriptions,
+  latestHoroscope,
+  manageToken,
+  subscriptionBirth,
+  subscriptionFromToken,
+  telegramCodeForSubscription,
+  updateSubscription,
+} from './subscriptions';
 import { contentDisposition, documentFilename } from './filename';
 import { advance, type JobPayload, loadBirth } from './pipeline';
 
@@ -265,13 +281,103 @@ async function telegramCode(env: Env, token: string): Promise<Response> {
   return json({ code });
 }
 
+// ---- subscriptions ------------------------------------------------------------------------
+
+const CADENCES = new Set<string>(['week', 'month']);
+
+async function subscribe(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as {
+    email?: string;
+    locale?: string;
+    cadence?: string;
+    birth?: Parameters<typeof createSubscription>[1]['birth'];
+  };
+  if (!body.birth?.date || !body.birth?.zone) return json({ error: 'birth data is required' }, 400);
+  if (!body.email) return json({ error: 'email is required' }, 400);
+  if (!body.cadence || !CADENCES.has(body.cadence)) return json({ error: 'cadence' }, 400);
+  const id = await createSubscription(env, {
+    email: body.email,
+    locale: body.locale ?? 'uk',
+    cadence: body.cadence as Cadence,
+    birth: body.birth,
+  });
+  // The first horoscope is written right away — a subscription that says "see you next week"
+  // gives nothing to judge it by.
+  await env.JOBS.send({ subscriptionId: id });
+  const token = await manageToken(env, id);
+  return json({ token }, 201);
+}
+
+async function subscriptionView(env: Env, token: string): Promise<Response> {
+  const sub = await subscriptionFromToken(env, token);
+  if (!sub) return json({ error: 'link expired' }, 404);
+  const latest = await latestHoroscope(env.DB, sub.id);
+  const birth = await subscriptionBirth(env, sub);
+  return json({
+    status: sub.status,
+    cadence: sub.cadence,
+    email: sub.email,
+    locale: sub.locale,
+    name: sub.display_name,
+    next_send_at: sub.next_send_at,
+    trial_ends_at: sub.trial_ends_at,
+    // The birth data is shown only while it is still on file; after that the chart alone remains.
+    birth: birth ? { date: birth.date, time: birth.time, place: birth.place } : null,
+    correction_until: sub.birth_expires_at,
+    telegram_code: await telegramCodeForSubscription(env.DB, sub.id),
+    latest: latest
+      ? {
+          title: latest.title,
+          text: latest.text,
+          period: latest.period,
+          start: latest.start_date,
+          end: latest.end_date,
+        }
+      : null,
+  });
+}
+
+async function subscriptionUpdate(request: Request, env: Env, token: string): Promise<Response> {
+  const sub = await subscriptionFromToken(env, token);
+  if (!sub) return json({ error: 'link expired' }, 404);
+  const body = (await request.json()) as { cadence?: string; status?: string };
+  const patch: { cadence?: Cadence; status?: 'active' | 'paused' | 'cancelled' } = {};
+  if (body.cadence && CADENCES.has(body.cadence)) patch.cadence = body.cadence as Cadence;
+  if (body.status === 'active' || body.status === 'paused' || body.status === 'cancelled') {
+    patch.status = body.status;
+  }
+  await updateSubscription(env.DB, sub.id, patch);
+  return json({ ok: true });
+}
+
+async function subscriptionDelete(env: Env, token: string): Promise<Response> {
+  const sub = await subscriptionFromToken(env, token);
+  if (!sub) return json({ error: 'link expired' }, 404);
+  await deleteSubscription(env.DB, sub.id);
+  return json({ ok: true });
+}
+
 /** What the bot may ask, over its service binding and nothing else: an RPC entrypoint has no
  * URL, so these never face the internet the way the worker's fetch handler does. */
 export class JobsInternal extends WorkerEntrypoint<Env> {
   /** On /start <code>: remembers the chat and says whether the document is ready. */
   async claimTelegram(code: string, chatId: number) {
     const link = await telegramLink(this.env.DB, code);
-    if (!link) return null;
+    if (!link) {
+      // Not a document link: perhaps a subscription's. The latest horoscope, if one has been
+      // written already, goes to the chat at once rather than waiting for the next window.
+      const sub = await claimTelegramSubscription(this.env.DB, code, chatId);
+      if (!sub) return null;
+      const latest = await latestHoroscope(this.env.DB, sub.id);
+      return {
+        kind: 'subscription' as const,
+        locale: sub.locale,
+        ready: false,
+        failed: false,
+        token: null,
+        horoscope: latest ? { title: latest.title, text: latest.text } : null,
+      };
+    }
     await claimTelegramLink(this.env.DB, link.code, chatId);
     const job = await getJob(this.env.DB, link.job_id);
     const ready = job?.step === 'done';
@@ -282,7 +388,14 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
           LINK_TTL_SECONDS,
         )
       : null;
-    return { locale: link.locale, ready, failed: job?.status === 'failed', token };
+    return {
+      kind: 'document' as const,
+      locale: link.locale,
+      ready,
+      failed: job?.status === 'failed',
+      token,
+      horoscope: null,
+    };
   }
 
   async telegramDelivered(code: string) {
@@ -291,6 +404,7 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
 
   async forgetTelegram(chatId: number) {
     await forgetTelegramChat(this.env.DB, chatId);
+    await forgetTelegramSubscriptions(this.env.DB, chatId);
   }
 
   /** The finished PDF for a signed token, with the name it should carry, or null. */
@@ -310,6 +424,15 @@ export default {
     if (code?.[1] && request.method === 'POST') return telegramCode(env, code[1]);
 
     if (url.pathname === '/health') return json({ status: 'ok' });
+    if (url.pathname === '/v1/subscriptions' && request.method === 'POST') {
+      return subscribe(request, env);
+    }
+    const subscription = url.pathname.match(/^\/v1\/subscriptions\/(.+)$/);
+    if (subscription?.[1]) {
+      if (request.method === 'GET') return subscriptionView(env, subscription[1]);
+      if (request.method === 'PATCH') return subscriptionUpdate(request, env, subscription[1]);
+      if (request.method === 'DELETE') return subscriptionDelete(env, subscription[1]);
+    }
     if (url.pathname === '/v1/orders' && request.method === 'POST') {
       return createOrder(request, env);
     }
@@ -324,8 +447,18 @@ export default {
     return new Response('not found', { status: 404 });
   },
 
-  async queue(batch: MessageBatch<{ jobId: string }>, env: Env): Promise<void> {
+  async queue(batch: MessageBatch<QueueMessage>, env: Env): Promise<void> {
     for (const message of batch.messages) {
+      if ('subscriptionId' in message.body) {
+        try {
+          await deliverHoroscope(env, message.body.subscriptionId);
+          message.ack();
+        } catch (error) {
+          console.error('horoscope failed', message.body.subscriptionId, error);
+          message.retry();
+        }
+        continue;
+      }
       const job = await getJob(env.DB, message.body.jobId);
       if (!job || job.status === 'done') {
         message.ack();
@@ -353,8 +486,17 @@ export default {
     }
   },
 
-  /** Retention: birth data and documents are deleted thirty days after the order. Orders stay. */
-  async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+  /** Hourly: horoscopes that are due go to the queue. Nightly: retention — birth data and
+   * documents are deleted thirty days after the order, subscriptions lose their birth data
+   * after the correction window. Orders and charts stay. */
+  async scheduled(event: ScheduledController, env: Env): Promise<void> {
+    if (event.cron === '5 * * * *') {
+      const due = await dueSubscriptions(env.DB);
+      for (const { id } of due) await env.JOBS.send({ subscriptionId: id });
+      console.log(`horoscopes: ${due.length} due`);
+      return;
+    }
+    await dropExpiredBirths(env.DB);
     const stale = await expired(env.DB);
     for (const row of stale.results ?? []) {
       await env.DOCS.delete(row.storage_key);
