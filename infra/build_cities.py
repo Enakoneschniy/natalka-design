@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Build the city-search database from the GeoNames dump.
 
+The result is loaded into D1 by `scripts/cities_to_d1.py`; the web app queries it there, with no
+service in between. This script is the only thing that knows the GeoNames format.
+
 GeoNames data is CC BY 4.0 (https://www.geonames.org) — the attribution lives in the web footer.
 We take `cities5000` (every place above 5 000 inhabitants), which covers birth places well enough
 while keeping the file small; the per-row `alternatenames` column is what makes searching in
@@ -48,6 +51,9 @@ def build(out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.unlink(missing_ok=True)
     db = sqlite3.connect(out)
+    # The searchable names live in a column of `city` and the index points at it
+    # (`content='city'`). A contentless index cannot be read back, which means it cannot be copied
+    # anywhere else or rebuilt without the original dump — a lesson from shipping one.
     db.executescript("""
         CREATE TABLE city (
             id INTEGER PRIMARY KEY,
@@ -57,11 +63,13 @@ def build(out: Path) -> None:
             latitude REAL NOT NULL,
             longitude REAL NOT NULL,
             zone TEXT NOT NULL,
-            population INTEGER NOT NULL
+            population INTEGER NOT NULL,
+            search TEXT NOT NULL  -- every spelling of the name, for matching only
         );
         CREATE VIRTUAL TABLE city_fts USING fts5(
-            names,
-            content='',
+            search,
+            content='city',
+            content_rowid='id',
             prefix='2 3 4',
             tokenize="unicode61 remove_diacritics 2"
         );
@@ -75,7 +83,7 @@ def build(out: Path) -> None:
         names = {f[1], f[2], *(n for n in f[3].split(",") if n)}
         names = {n for n in names if n and _searchable(n)}
         db.execute(
-            "INSERT INTO city VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO city VALUES (?,?,?,?,?,?,?,?,?)",
             (
                 geoname_id,
                 f[1],
@@ -85,10 +93,11 @@ def build(out: Path) -> None:
                 float(f[5]),
                 f[17],
                 int(f[14] or 0),
+                " ".join(sorted(names)),
             ),
         )
-        db.execute("INSERT INTO city_fts(rowid, names) VALUES (?,?)", (geoname_id, " ".join(names)))
 
+    db.execute("INSERT INTO city_fts(city_fts) VALUES('rebuild')")
     db.execute("CREATE INDEX city_population ON city(population DESC)")
     db.commit()
     db.execute("VACUUM")

@@ -6,6 +6,12 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
+  // City search reads straight from here. Going through the calculation container cost a
+  // worker-to-worker hop and, when it had gone to sleep, several seconds of cold start — on the
+  // first field of the first screen.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "natalka", "database_id": "90261635-69b9-461b-9e1f-9a7b98596e97" }
+  ],
   "vars": {
     // Calculation API (Python engine in a Cloudflare Container). Locally: http://127.0.0.1:8000.
     "NATALKA_API_URL": "https://natalka-api.ceo-63e.workers.dev",

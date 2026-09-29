@@ -1580,7 +1580,7 @@
    written from — the same three points that used to be repeated in a section of their own. */
 .reading-block {
   display: grid;
-  grid-template-columns: minmax(0, 680px) minmax(240px, 1fr);
+  grid-template-columns: minmax(0, 680px) minmax(300px, 1fr);
   gap: 40px;
   align-items: start;
   padding: 28px 0;
@@ -1600,10 +1600,18 @@
 .reading-rail .core-card {
   padding: 20px;
 }
+/* "Солнце в Рыбах 01°20′" is longer than the rail is wide; a badge that refuses to wrap gets
+   its tail cut off by the card. */
+.reading-rail .badge {
+  white-space: normal;
+  height: auto;
+  min-height: 36px;
+  padding-block: 6px;
+}
 /* Placeholder lines while the passages are being written, so the section keeps its height
    instead of shoving the page down when the text lands. */
 .skeleton {
-  height: 12px;
+  height: 13px;
   border-radius: 6px;
   background: linear-gradient(
     90deg,
@@ -1614,13 +1622,31 @@
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
 }
+.skeleton + .skeleton {
+  margin-top: 12px;
+}
 .skeleton-title {
-  height: 20px;
-  width: 45%;
-  margin-bottom: 6px;
+  height: 22px;
+  width: 38%;
+  margin-bottom: 18px;
+}
+/* Ragged right edges, like the lines of a paragraph — a stack of identical bars reads as a
+   broken layout rather than as text on its way. */
+.skeleton-2 {
+  width: 97%;
+}
+.skeleton-3 {
+  width: 99%;
+}
+.skeleton-4 {
+  width: 94%;
 }
 .skeleton-short {
-  width: 70%;
+  width: 62%;
+}
+.reading-block .caption {
+  display: block;
+  margin-top: 18px;
 }
 @keyframes shimmer {
   to {

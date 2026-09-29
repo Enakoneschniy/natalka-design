@@ -9,7 +9,6 @@ import datetime as dt
 import io
 import os
 import re
-from dataclasses import asdict
 from datetime import UTC
 from typing import Annotated, Any, Literal
 
@@ -46,8 +45,6 @@ from natalka_texts.generate import MAX_TOKENS
 from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
 from natalka_texts.validate import check
 from pydantic import BaseModel, Field, field_validator
-
-from .cities import CityDatabaseMissingError, search_cities
 
 app = FastAPI(title="Natalka internal API", version="0.1.0", docs_url=None, redoc_url=None)
 
@@ -360,18 +357,6 @@ def document(doc: Document) -> Response:
             "x-pages": str(pages),
         },
     )
-
-
-@app.get("/v1/cities")
-def cities(
-    q: Annotated[str, Query(min_length=2, max_length=80)],
-    limit: Annotated[int, Query(ge=1, le=20)] = 8,
-) -> dict[str, Any]:
-    try:
-        found = search_cities(q, limit)
-    except CityDatabaseMissingError as exc:
-        raise HTTPException(503, f"city database missing: {exc}") from exc
-    return {"cities": [asdict(city) for city in found]}
 
 
 @app.get("/v1/zone")

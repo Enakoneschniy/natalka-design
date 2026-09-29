@@ -29,10 +29,6 @@ COPY apps/worker/pyproject.toml apps/worker/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-workspace --no-dev
 
-# City search data. Its own layer: rebuilt only when the build script changes, not on every edit.
-COPY infra/build_cities.py infra/
-RUN python infra/build_cities.py /app/data/cities.sqlite
-
 COPY packages/ packages/
 COPY apps/worker/ apps/worker/
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev \
@@ -47,7 +43,6 @@ FROM python:3.12-slim-bookworm
 ARG NATALKA_BUILD=dev
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    NATALKA_CITIES_DB=/app/data/cities.sqlite \
     NATALKA_BUILD=${NATALKA_BUILD} \
     PATH="/app/.venv/bin:$PATH"
 
@@ -55,7 +50,6 @@ RUN useradd --uid 10001 --create-home natalka
 WORKDIR /app
 
 COPY --from=builder --chown=natalka:natalka /app/.venv /app/.venv
-COPY --from=builder --chown=natalka:natalka /app/data /app/data
 # The workspace packages are installed editable, so their sources have to be here as well.
 COPY --chown=natalka:natalka packages/ packages/
 COPY --chown=natalka:natalka apps/worker/ apps/worker/

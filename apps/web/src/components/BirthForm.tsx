@@ -9,7 +9,7 @@
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import type { City } from '@/lib/api';
+import type { City } from '@/app/api/cities/route';
 
 type Gender = 'female' | 'male' | 'neutral';
 
@@ -65,6 +65,9 @@ export function BirthForm({ locale }: { locale: string }) {
   const [pending, setPending] = useState(false);
 
   const box = useRef<HTMLDivElement>(null);
+  // Searches already made this session. Backspacing through a name is otherwise a fresh request
+  // per keystroke for results we have already seen.
+  const seen = useRef(new Map<string, City[]>());
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -81,6 +84,14 @@ export function BirthForm({ locale }: { locale: string }) {
       setOptions([]);
       return;
     }
+    const remembered = seen.current.get(query);
+    if (remembered) {
+      setOptions(remembered);
+      setActive(0);
+      setOpen(true);
+      return;
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
@@ -88,13 +99,16 @@ export function BirthForm({ locale }: { locale: string }) {
           signal: controller.signal,
         });
         const data = (await response.json()) as { cities: City[] };
+        seen.current.set(query, data.cities ?? []);
         setOptions(data.cities ?? []);
         setActive(0);
         setOpen(true);
       } catch {
         /* aborted or offline — the field stays usable, submit validates anyway */
       }
-    }, 220);
+      // Short: the search is a D1 query on the same request path, so the wait the visitor feels
+      // is this timer plus a round trip.
+    }, 120);
     return () => {
       controller.abort();
       clearTimeout(timer);

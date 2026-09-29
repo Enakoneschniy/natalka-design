@@ -66,7 +66,9 @@ export function PreviewReading({
               <>
                 <div className="skeleton skeleton-title" />
                 <div className="skeleton" />
-                <div className="skeleton" />
+                <div className="skeleton skeleton-2" />
+                <div className="skeleton skeleton-3" />
+                <div className="skeleton skeleton-4" />
                 <div className="skeleton skeleton-short" />
                 <span className="caption">{t('writing')}</span>
               </>

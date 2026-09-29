@@ -6,17 +6,6 @@
 
 import type { ChartFacts } from './chart';
 
-export interface City {
-  id: number;
-  name: string;
-  country: string;
-  region: string | null;
-  latitude: number;
-  longitude: number;
-  zone: string;
-  population: number;
-}
-
 export interface BirthInput {
   date: string;
   time: string | null;
@@ -48,12 +37,6 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return (await response.json()) as T;
 }
-
-export const searchCities = (query: string, limit = 8): Promise<{ cities: City[] }> =>
-  call(`/v1/cities?q=${encodeURIComponent(query)}&limit=${limit}`, {
-    // Birth places do not change; a day of edge caching keeps the container asleep.
-    cf: { cacheTtl: 86400, cacheEverything: true },
-  } as RequestInit);
 
 export const calcChart = (input: BirthInput): Promise<ChartFacts> =>
   call('/v1/calc', {
