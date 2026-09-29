@@ -1318,7 +1318,9 @@
 
 /* The stacked cut: the chart steps up instead of aside and the passage sits under it. Chosen by
    width or by orientation — a folding phone opened in portrait is 830 px wide and still a phone.
-   The keyframes are redefined here because an animated `translate` wins over a static one. */
+   The keyframes are redefined here because an animated `translate` wins over a static one.
+   Positions are in viewport heights, not in the elements' own sizes, so a long passage cannot
+   push itself down onto the link at the foot. */
 @media (max-width: 1000px), (orientation: portrait) {
   .film {
     height: min(calc(100svh - 72px), 820px);
@@ -1330,7 +1332,7 @@
   }
   .film-ring,
   .film-wheel {
-    width: min(48vh, 86vw, 560px);
+    width: min(44vh, 86vw, 560px);
   }
   @keyframes film-wheel {
     0%,
@@ -1351,12 +1353,12 @@
       animation-timing-function: var(--in);
     }
     36% {
-      translate: -50% -88%;
-      scale: 0.78;
+      translate: -50% calc(-50% - 23vh);
+      scale: 0.74;
     }
     52% {
-      translate: -50% -88%;
-      scale: 0.8;
+      translate: -50% calc(-50% - 23vh);
+      scale: 0.76;
       opacity: 1;
       animation-timing-function: var(--in);
     }
@@ -1376,20 +1378,32 @@
       scale: 1.42;
     }
   }
+  /* From 52 % of the frame down, above the link: the passage's top edge is pinned there, so its
+     length only ever changes where it ends, never where it starts. */
   .film-quote {
     left: 50%;
-    top: 50%;
+    top: 52%;
+    bottom: 92px;
     width: min(86vw, 560px);
+    overflow: hidden;
   }
   .film-quote blockquote {
-    font-size: clamp(16px, 4.2vw, 21px);
+    font-size: clamp(15px, 2.3vh, 20px);
+    line-height: 1.45;
+  }
+  .film-quote blockquote::before {
+    margin-bottom: 14px;
+  }
+  .film-quote figcaption {
+    margin-top: 10px;
+    font-size: 12px;
   }
   @keyframes film-quote {
     0%,
     34% {
       opacity: 0;
       clip-path: inset(0 100% 0 0);
-      translate: -50% calc(12% + 12px);
+      translate: -50% 12px;
       animation-timing-function: var(--in);
     }
     36% {
@@ -1397,19 +1411,19 @@
     }
     41% {
       clip-path: inset(0 0 0 0);
-      translate: -50% 12%;
+      translate: -50% 0;
     }
     50% {
       opacity: 1;
       clip-path: inset(0 0 0 0);
-      translate: -50% 12%;
+      translate: -50% 0;
       animation-timing-function: var(--out);
     }
     53%,
     100% {
       opacity: 0;
       clip-path: inset(0 0 0 0);
-      translate: -50% calc(12% - 12px);
+      translate: -50% -12px;
     }
   }
   .film-title {
