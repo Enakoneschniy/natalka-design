@@ -41,9 +41,16 @@ natalka/
 
 Tooling: pnpm workspaces + Turborepo for JS; **uv** workspace for Python (one lockfile, `packages/*` as editable members). Lint/format: Biome (TS), Ruff + mypy --strict (Python). Tests: Vitest + Playwright (web), pytest (Python). CI: GitHub Actions matrix `web` / `python`, Postgres service container for worker tests.
 
-## 2. Data model (draft — needs your confirmation, see Q3)
+## 2. Data model
 
-Only `sqlalchemy-core` tables + Alembic migrations. `drizzle` is not needed: the web app never writes to the DB directly (it calls the internal API), which keeps one migration tool and one place that knows the schema.
+**Decided 2026-09-29: Cloudflare D1 + Cloudflare Queues**, not Postgres — everything stays inside
+Cloudflare and there is no second bill. Consequence: the Python container stays stateless (it
+calculates and renders, it does not touch the database) and a Worker in `apps/jobs` orchestrates
+the pipeline. The `SKIP LOCKED` queue from the original brief is replaced by Cloudflare Queues,
+which gives retries and a dead-letter queue for free. SQLite has no enums, so enum-like columns
+are TEXT with a CHECK, and timestamps are ISO-8601 UTC strings.
+
+Live schema: `apps/jobs/migrations/0001_initial.sql` (still needs your sign-off).
 
 ```
 orders          id uuid pk · email · product enum · locale · amount_minor int · currency ·

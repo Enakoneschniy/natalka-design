@@ -6,12 +6,15 @@ Not exposed publicly; the web app proxies it. No database access here.
 from __future__ import annotations
 
 import datetime as dt
+import io
 from dataclasses import asdict
 from datetime import UTC
 from typing import Annotated, Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import Response
+from natalka_document.render import render_pdf
+from natalka_document.schema import Document
 from natalka_document.wheel import DARK, LIGHT, wheel_svg
 from natalka_engine import (
     NatalInput,
@@ -100,6 +103,22 @@ def wheel(  # noqa: PLR0917 — query parameters
     )
     return Response(
         svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"}
+    )
+
+
+@app.post("/v1/document")
+def document(doc: Document) -> Response:
+    """Render a finished document to PDF.
+
+    The caller (the jobs worker) owns the text; this endpoint only knows how to draw. Kept
+    synchronous: a 30-page document takes a couple of seconds and the queue already retries.
+    """
+    buffer = io.BytesIO()
+    render_pdf(doc, buffer)
+    return Response(
+        buffer.getvalue(),
+        media_type="application/pdf",
+        headers={"content-disposition": 'attachment; filename="natalka.pdf"'},
     )
 
 
