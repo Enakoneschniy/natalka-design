@@ -643,11 +643,12 @@ PREVIEW = SectionSpec(
     id="preview",
     brief=(
         "Three short passages, in this order and separated by a blank line: the Sun, the Moon, "
-        "then the Ascendant. One paragraph each, four to six sentences, no headings and no "
+        "then the Ascendant. One paragraph each, three to five sentences, no headings and no "
         "labels — the document prints the titles itself. Say something specific enough that the "
-        "reader recognises themselves, and stop before the full reading would begin. When there "
-        "is no birth time, write about the shape of the chart as a whole instead of the "
-        "Ascendant and say plainly why."
+        "reader recognises themselves, and stop before the full reading would begin. Never "
+        "comment on what the chart does or does not contain; just write. If the fact sheet says "
+        "there is no birth time, make the third passage about the shape of the chart as a whole "
+        "and mention in one clause that the Ascendant needs an exact time."
     ),
     paragraphs=(3, 3),
     titles=_t("Перше враження", "Первое впечатление", "A first look"),
