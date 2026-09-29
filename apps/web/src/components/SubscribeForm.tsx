@@ -107,9 +107,7 @@ export function SubscribeForm({
         >
           {pending ? t('submitPending') : t('submit')}
         </button>
-        <span className="caption">
-          {t('trial')} · {t('then', { price })}
-        </span>
+        <span className="caption">{t('foot', { price })}</span>
         {error ? <span className="hint is-error">{error}</span> : null}
       </div>
     </form>

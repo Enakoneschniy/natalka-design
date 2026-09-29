@@ -1,6 +1,6 @@
 """Natal wheel as SVG — a port of ``design/wheel.js`` so the PDF and the web preview draw the same chart.
 
-Input is the engine facts dict (``natalka_engine.serialize.chart_to_dict``). Output is an SVG string;
+Input is the chart facts dict as the ephemeris service returns it. Output is an SVG string;
 :func:`wheel_drawing` converts it to a ReportLab drawing for the PDF.
 """
 

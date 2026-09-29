@@ -9,37 +9,14 @@ import datetime as dt
 import io
 import os
 import re
-from datetime import UTC
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from natalka_document.build import SECTIONS, fill_sections
 from natalka_document.build import skeleton as build_skeleton
 from natalka_document.render import render_pdf
 from natalka_document.schema import Document, Person
-from natalka_document.wheel import DARK, LIGHT, wheel_svg
-from natalka_engine import (
-    NatalInput,
-    chart_to_dict,
-    compute_natal,
-    ephemeris,
-    events_to_list,
-    synastry_to_dict,
-    transit_events,
-)
-from natalka_engine.bodies import (
-    OUTER_PLANETS,
-    PERSONAL_PLANETS,
-    PLANETS,
-    Body,
-    Sign,
-    format_degree,
-)
-from natalka_engine.chart import house_of
-from natalka_engine.geo import zone_for
-from natalka_engine.timeutil import UnknownTimeZoneError
-from natalka_engine.transits import events_for, positions_at
 from natalka_texts import (
     PREVIEW,
     PREVIEW_NO_TIME,
@@ -57,101 +34,14 @@ from natalka_texts import (
 from natalka_texts.generate import MAX_TOKENS, write_horoscope
 from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
 from natalka_texts.validate import check
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 app = FastAPI(title="Natalka internal API", version="0.1.0", docs_url=None, redoc_url=None)
 
 
-class BirthPayload(BaseModel):
-    # field names shadow the datetime classes inside the class body, hence the module alias
-    date: dt.date
-    time: dt.time | None = None
-    latitude: float = Field(ge=-90, le=90)
-    longitude: float = Field(ge=-180, le=180)
-    zone: str | None = Field(
-        default=None, description="IANA zone; derived from coordinates if omitted"
-    )
-
-    @field_validator("date")
-    @classmethod
-    def _range(cls, v: dt.date) -> dt.date:
-        if not (dt.date(1800, 1, 1) <= v <= dt.date(2099, 12, 31)):
-            raise ValueError("date must be between 1800 and 2099")
-        return v
-
-    def to_input(self) -> NatalInput:
-        zone = self.zone or zone_for(self.latitude, self.longitude)
-        return NatalInput(self.date, self.time, zone, self.latitude, self.longitude)
-
-
-class CalcRequest(BirthPayload):
-    transit_years: float = Field(default=0, ge=0, le=5)
-
-
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {
-        "status": "ok",
-        "ephemeris": ephemeris.version(),
-        "build": os.environ.get("NATALKA_BUILD", "dev"),
-    }
-
-
-@app.post("/v1/calc")
-def calc(req: CalcRequest) -> dict[str, Any]:
-    try:
-        chart = compute_natal(req.to_input())
-    except UnknownTimeZoneError as exc:
-        raise HTTPException(422, f"unknown time zone: {exc}") from exc
-    payload = chart_to_dict(chart)
-    if req.transit_years:
-        start = dt.datetime.now(UTC)
-        end = start.replace(year=start.year + int(req.transit_years))
-        payload["transits"] = events_to_list(transit_events(chart, start, end))
-    return payload
-
-
-@app.get("/v1/wheel.svg")
-def wheel(  # noqa: PLR0917 — query parameters
-    date_: Annotated[dt.date, Query(alias="date")],
-    latitude: Annotated[float, Query(ge=-90, le=90)],
-    longitude: Annotated[float, Query(ge=-180, le=180)],
-    time_: Annotated[dt.time | None, Query(alias="time")] = None,
-    zone: str | None = None,
-    theme: Literal["dark", "light"] = "dark",
-    size: Annotated[int, Query(ge=120, le=1200)] = 640,
-    detail: Literal["full", "compact"] = "full",
-    highlight: str | None = None,
-) -> Response:
-    payload = BirthPayload(
-        date=date_, time=time_, latitude=latitude, longitude=longitude, zone=zone
-    )
-    chart = compute_natal(payload.to_input())
-    svg = wheel_svg(
-        chart_to_dict(chart),
-        size=size,
-        detail=detail,
-        theme=DARK if theme == "dark" else LIGHT,
-        highlight=highlight,
-    )
-    return Response(
-        svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"}
-    )
-
-
-class SynastryRequest(BaseModel):
-    first: BirthPayload
-    second: BirthPayload
-
-
-@app.post("/v1/synastry")
-def synastry(req: SynastryRequest) -> dict[str, Any]:
-    try:
-        a = compute_natal(req.first.to_input())
-        b = compute_natal(req.second.to_input())
-    except UnknownTimeZoneError as exc:
-        raise HTTPException(422, f"unknown time zone: {exc}") from exc
-    return synastry_to_dict(a, b)
+    return {"status": "ok", "build": os.environ.get("NATALKA_BUILD", "dev")}
 
 
 class PreviewRequest(BaseModel):
@@ -224,86 +114,35 @@ def preview(req: PreviewRequest) -> dict[str, Any]:
 class HoroscopeRequest(BaseModel):
     """A week or a month for one chart.
 
-    Takes the chart rather than the birth data: a subscription only needs the longitudes, and the
-    fewer copies of a birth certificate travel between services, the better.
+    Takes the chart, the exact events in the window and where the sky stands on its first day —
+    all computed by the ephemeris service — and writes the text. Nothing here needs birth data.
     """
 
     facts: dict[str, Any]
+    transits: list[dict[str, Any]] = Field(default_factory=list)
+    sky: list[dict[str, Any]] = Field(default_factory=list)
     period: Literal["week", "month"] = "week"
-    #: The first day of the window. Absent means "from today".
-    start: dt.date | None = None
+    start: dt.date
+    end: dt.date
     lang: str = Field(default="uk", pattern=r"^[a-z]{2}$")
     gender: Literal["f", "m", "n"] = "n"
     name: str = ""
 
 
-#: How long each cadence runs. A month is 30 days rather than a calendar month so that the window
-#: never depends on which month it starts in.
-PERIOD_DAYS = {"week": 7, "month": 30}
-
-
-def _longitudes(facts: dict[str, Any]) -> dict[Body, float]:
-    out: dict[Body, float] = {}
-    for position in facts.get("positions", []):
-        try:
-            out[Body(position["body"])] = float(position["longitude"])
-        except (ValueError, KeyError, TypeError):
-            continue
-    return out
-
-
-def _sky(when: dt.datetime, facts: dict[str, Any]) -> list[dict[str, Any]]:
-    """Where the planets stand on the first day, and which natal house each one is crossing."""
-    houses = facts.get("houses")
-    cusps = tuple(c["longitude"] for c in houses["cusps"]) if houses else ()
-    out: list[dict[str, Any]] = []
-    for body, longitude in positions_at(when, PLANETS).items():
-        out.append(
-            {
-                "body": body.value,
-                "longitude": round(longitude, 4),
-                "sign": Sign.of(longitude).key,
-                "degree": format_degree(longitude),
-                "house": house_of(longitude, cusps) if cusps else None,
-            }
-        )
-    return out
-
-
 @app.post("/v1/horoscope")
 def horoscope(req: HoroscopeRequest) -> dict[str, Any]:
-    """One window, one model call.
-
-    The transiting bodies include the personal planets: over a week the outer planets barely move,
-    and a horoscope built from them alone would say the same thing for two months.
-    """
-    natal = _longitudes(req.facts)
-    if not natal:
+    """One window, one model call."""
+    if not req.facts.get("positions"):
         raise HTTPException(422, "the chart has no positions")
-
-    start = dt.datetime.combine(req.start or dt.datetime.now(UTC).date(), dt.time(), tzinfo=UTC)
-    end = start + dt.timedelta(days=PERIOD_DAYS[req.period])
-    # Angles are natal targets, never transiting bodies.
-    skip = (Body.DSC, Body.IC, Body.SOUTH_NODE, Body.VERTEX, Body.PARS_FORTUNAE)
-    targets = tuple(b for b in natal if b not in skip)
-    events = events_for(
-        natal,
-        start,
-        end,
-        bodies=(*PERSONAL_PLANETS, *OUTER_PLANETS),
-        targets=targets,
-    )
-    transits = events_to_list(events)
-
     try:
         reading = write_horoscope(
             req.facts,
             provider=OpenRouterProvider(),
-            sky=_sky(start, req.facts),
-            transits=transits,
+            sky=req.sky,
+            transits=req.transits,
             period=req.period,
-            start=start.date().isoformat(),
-            end=end.date().isoformat(),
+            start=req.start.isoformat(),
+            end=req.end.isoformat(),
             lang=req.lang,
             name=req.name,
             gender=req.gender,
@@ -316,9 +155,9 @@ def horoscope(req: HoroscopeRequest) -> dict[str, Any]:
         "title": section.title,
         "text": section.text,
         "period": req.period,
-        "start": start.date().isoformat(),
-        "end": end.date().isoformat(),
-        "events": len(transits),
+        "start": req.start.isoformat(),
+        "end": req.end.isoformat(),
+        "events": len(req.transits),
         "problems": list(section.problems),
         "tokens_in": reading.tokens_in,
         "tokens_out": reading.tokens_out,
@@ -473,7 +312,7 @@ def skeleton(req: SkeletonRequest) -> dict[str, Any]:
         lang=req.lang,
         order_ref=req.order_ref,
         transits=req.transits,
-        engine_version=ephemeris.version(),
+        engine_version="ephemeris-service",
     )
     filled = fill_sections(document, {s.id: (s.title, s.text, s.quote) for s in req.sections})
     return filled.model_dump(mode="json")
@@ -498,14 +337,3 @@ def document(doc: Document) -> Response:
             "x-pages": str(pages),
         },
     )
-
-
-@app.get("/v1/zone")
-def zone(
-    latitude: Annotated[float, Query(ge=-90, le=90)],
-    longitude: Annotated[float, Query(ge=-180, le=180)],
-) -> dict[str, str]:
-    try:
-        return {"zone": zone_for(latitude, longitude)}
-    except LookupError as exc:
-        raise HTTPException(404, str(exc)) from exc

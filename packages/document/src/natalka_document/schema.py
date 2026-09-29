@@ -170,7 +170,7 @@ class Document(_Strict):
     person: Person
     birth: Birth
     cover: Cover
-    facts: dict[str, Any]  # engine JSON (natalka_engine.serialize.chart_to_dict)
+    facts: dict[str, Any]  # chart JSON as the ephemeris service returns it
     #: The partner's chart in a synastry; absent everywhere else.
     facts_second: dict[str, Any] | None = None
     transits: list[dict[str, Any]] = Field(default_factory=list)

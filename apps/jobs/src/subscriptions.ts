@@ -2,6 +2,7 @@ import { type Blobish, decryptJson, encryptJson, signToken, verifyToken } from '
 import { expiryFrom, now } from './db';
 import type { Env } from './env';
 import { sendHoroscope } from './mail';
+import { ephemeris } from './pipeline';
 
 /* The horoscope subscription: a chart kept on file, a cadence, and a channel or two.
  *
@@ -65,7 +66,7 @@ const TRIAL_DAYS = 30;
 /** Management links outlive documents: a year, renewed by every letter that carries one. */
 const MANAGE_TTL_SECONDS = 365 * 24 * 60 * 60;
 
-const api = async <T>(env: Env, path: string, body: unknown): Promise<T> => {
+const texts = async <T>(env: Env, path: string, body: unknown): Promise<T> => {
   const response = await env.API.fetch(`${env.NATALKA_API_URL}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -94,7 +95,7 @@ export async function getSubscription(db: D1Database, id: string): Promise<Subsc
 
 /** Computes the chart once and keeps only what the horoscope needs of it. */
 export async function createSubscription(env: Env, input: CreateSubscription): Promise<string> {
-  const facts = await api<{ positions: unknown[]; houses: unknown }>(env, '/v1/calc', {
+  const facts = await ephemeris<{ positions: unknown[]; houses: unknown }>(env, '/v1/calc', {
     date: input.birth.date,
     time: input.birth.time,
     latitude: input.birth.latitude,
@@ -211,11 +212,34 @@ export async function deliverHoroscope(env: Env, id: string): Promise<void> {
     return;
   }
 
-  const chart = JSON.parse(sub.chart_json) as Record<string, unknown>;
-  const result = await api<HoroscopeResult>(env, '/v1/horoscope', {
+  const chart = JSON.parse(sub.chart_json) as {
+    positions: { body: string; longitude: number }[];
+    houses: { cusps: { longitude: number }[] } | null;
+  };
+  // The window is computed by the ephemeris service; the text worker only writes.
+  const end = new Date(`${today}T00:00:00Z`);
+  if (sub.cadence === 'week') end.setUTCDate(end.getUTCDate() + 7);
+  else end.setUTCDate(end.getUTCDate() + 30);
+  const endDate = end.toISOString().slice(0, 10);
+  const longitudes = Object.fromEntries(chart.positions.map((p) => [p.body, p.longitude]));
+  const [transits, sky] = await Promise.all([
+    ephemeris<{ events: unknown[] }>(env, '/v1/transits', {
+      longitudes,
+      start: today,
+      end: endDate,
+    }),
+    ephemeris<{ positions: unknown[] }>(env, '/v1/sky', {
+      when: `${today}T00:00:00Z`,
+      cusps: chart.houses?.cusps.map((c) => c.longitude),
+    }),
+  ]);
+  const result = await texts<HoroscopeResult>(env, '/v1/horoscope', {
     facts: chart,
+    transits: transits.events,
+    sky: sky.positions,
     period: sub.cadence,
     start: today,
+    end: endDate,
     lang: sub.locale,
     gender: sub.gender,
     name: sub.display_name ?? '',

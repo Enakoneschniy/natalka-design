@@ -3174,17 +3174,164 @@
 .cadence-option span {
   font-size: 13px;
 }
-.subscription .segmented {
-  margin-top: 18px;
+/* the management screen: one column of cards, each answering one question */
+.subscription {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
 }
-.subscription-actions {
+.subscription-head {
+  display: grid;
+  gap: 20px;
+}
+.subscription-who {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.subscription-who strong {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+}
+.subscription-status {
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  color: var(--color-ink-2);
+}
+.subscription-status.is-active {
+  color: var(--color-accent);
+  border-color: rgba(231, 183, 92, 0.4);
+  background: var(--color-accent-soft);
+}
+/* Label above value, so a date never collides with its own caption on a narrow screen. */
+.subscription-facts {
   display: flex;
   flex-wrap: wrap;
+  gap: 10px 32px;
+  margin: 0;
+}
+.subscription-facts div {
+  display: grid;
+  gap: 2px;
+}
+.subscription-facts dt {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+.subscription-facts dd {
+  margin: 0;
+  font-size: 16px;
+  color: var(--color-ink);
+}
+/* Equal columns rather than a wrapping row: "Приостановить" and "Отменить подписку" are of very
+   different lengths, and a row of two full-width blocks is what a phone got instead. */
+.subscription-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 10px;
+}
+.subscription-actions .btn {
+  padding-inline: 12px;
+  font-size: 15px;
+  text-align: center;
+}
+.subscription-writing {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.subscription-spinner {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface-2);
+  border-top-color: var(--color-accent);
+  animation: spin 0.9s linear infinite;
+}
+.subscription-writing p {
+  margin: 0;
+}
+/* The Telegram offer is a link, so the whole card is the tap target. */
+.subscription-telegram {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  color: var(--color-ink);
+  transition: border-color 0.2s ease;
+}
+.subscription-telegram:hover {
+  border-color: var(--color-line-strong);
+}
+.subscription-telegram > svg {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  color: var(--color-accent);
+}
+.subscription-telegram > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.subscription-telegram strong {
+  font-weight: 500;
+}
+.subscription-telegram .muted {
+  font-size: 14px;
+}
+.subscription-chevron {
+  margin-left: auto;
+  color: var(--color-accent);
+  font-size: 20px;
+}
+/* What we hold on file: folded away, because it is the least of what a reader came for. */
+.subscription-data summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 500;
+}
+.subscription-data summary::-webkit-details-marker {
+  display: none;
+}
+.subscription-data summary::after {
+  content: '⌄';
+  color: var(--color-ink-3);
+  transition: transform 0.2s ease;
+}
+.subscription-data[open] summary::after {
+  transform: rotate(180deg);
+}
+.subscription-data-body {
+  display: grid;
   gap: 10px;
   margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-line);
+}
+.subscription-data-body p {
+  margin: 0;
+}
+.subscription-data-body .btn {
+  justify-self: start;
+  margin-top: 6px;
 }
 .btn.is-danger {
   color: var(--color-tense);
+}
+.subscription .horoscope {
+  padding: 24px;
 }
 .horoscope h2 {
   font-family: var(--font-display);

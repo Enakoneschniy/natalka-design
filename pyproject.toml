@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Natalka — automated natal chart readings (monorepo root)"
 requires-python = ">=3.12"
 dependencies = [
-  "natalka-engine",
   "natalka-document",
   "natalka-texts",
   "natalka-shared",
@@ -15,7 +14,6 @@ dependencies = [
 members = ["packages/*", "apps/worker"]
 
 [tool.uv.sources]
-natalka-engine = { workspace = true }
 natalka-document = { workspace = true }
 natalka-texts = { workspace = true }
 natalka-shared = { workspace = true }
@@ -49,11 +47,11 @@ ignore = ["PLR0913", "PLR2004", "RUF001", "RUF002", "RUF003", "E501"]
 python_version = "3.12"
 strict = true
 warn_unreachable = true
-mypy_path = "packages/engine/src:packages/document/src:packages/texts/src:packages/shared/src:apps/worker/src"
-packages = ["natalka_engine", "natalka_document", "natalka_texts", "natalka_shared", "natalka_worker"]
+mypy_path = "packages/document/src:packages/texts/src:packages/shared/src:apps/worker/src"
+packages = ["natalka_document", "natalka_texts", "natalka_shared", "natalka_worker"]
 
 [[tool.mypy.overrides]]
-module = ["swisseph", "reportlab.*", "svglib.*", "timezonefinder.*"]
+module = ["reportlab.*", "svglib.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

@@ -1,9 +1,8 @@
-# Image for the Python calculation API. Runs on Cloudflare Containers (linux/amd64) and locally
-# through infra/docker-compose.yml. Two roles: `natalka_worker api` and `natalka_worker worker`.
+# Image for the Python text-and-document API. Runs on Cloudflare Containers (linux/amd64).
+# The calculations live in the public ephemeris service; this image writes texts and draws PDFs.
 #
-# Two stages because pyswisseph ships no wheels: it needs a C toolchain to build, which we do not
-# want in the image we deploy. The builder compiles /app/.venv, the runtime only copies it — the
-# path is identical in both stages, so the venv's absolute shebangs and editable installs stay valid.
+# Two stages: the builder resolves /app/.venv, the runtime only copies it — the path is identical in
+# both stages, so the venv's absolute shebangs and editable installs stay valid.
 FROM python:3.12-slim-bookworm AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -13,15 +12,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /usr/local/bin/
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 # Dependency layer: manifests only, so source edits keep the cached install.
 COPY pyproject.toml uv.lock ./
-COPY packages/engine/pyproject.toml packages/engine/
 COPY packages/document/pyproject.toml packages/document/
 COPY packages/texts/pyproject.toml packages/texts/
 COPY packages/shared/pyproject.toml packages/shared/
@@ -55,9 +49,6 @@ COPY --chown=natalka:natalka packages/ packages/
 COPY --chown=natalka:natalka apps/worker/ apps/worker/
 
 USER natalka
-
-# Warm the ephemeris and the time-zone index at build time so the first request is not the slowest.
-RUN python -c "from natalka_engine import ephemeris; ephemeris.configure(); from natalka_engine.geo import zone_for; zone_for(50.45, 30.52)"
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \

@@ -23,9 +23,6 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr = Field(default=SecretStr(""))
     telegram_bot_token: SecretStr = Field(default=SecretStr(""))
     telegram_chat_id: str = ""
-    ephemeris_path: str = Field(
-        default="", description="Directory with ephemeris data files; empty = built-in Moshier"
-    )
     retention_days: int = 30
 
 

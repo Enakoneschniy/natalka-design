@@ -83,35 +83,46 @@ export function SubscriptionPanel({
   );
 
   return (
-    <div className="stack subscription">
-      <div className="card">
-        <div className="item">
-          <div>
-            <strong>{view.name || view.email}</strong>
-            <span className="muted">
-              {status}
-              {view.status === 'active'
-                ? ` · ${t('nextSend', { date: dmy(view.next_send_at) })}`
-                : ''}
-            </span>
-          </div>
-          {view.trial_ends_at ? (
-            <span className="mono muted">{t('trialUntil', { date: dmy(view.trial_ends_at) })}</span>
+    <div className="subscription">
+      {/* The state of the subscription, then what it is doing, then the ways to change it —
+          in that order, because that is the order the questions come in. */}
+      <div className="card subscription-head">
+        <div className="subscription-who">
+          <strong>{view.name || view.email}</strong>
+          <span className={`subscription-status is-${view.status}`}>{status}</span>
+        </div>
+        <dl className="subscription-facts">
+          {view.status === 'active' ? (
+            <div>
+              <dt>{t('nextLabel')}</dt>
+              <dd className="mono">{dmy(view.next_send_at)}</dd>
+            </div>
           ) : null}
+          {view.trial_ends_at ? (
+            <div>
+              <dt>{t('trialLabel')}</dt>
+              <dd className="mono">{dmy(view.trial_ends_at)}</dd>
+            </div>
+          ) : null}
+        </dl>
+
+        <div className="field">
+          <span className="label">{t('cadence')}</span>
+          <div className="segmented block" role="group" aria-label={t('cadence')}>
+            {(['week', 'month'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={view.cadence === option}
+                disabled={busy}
+                onClick={() => change({ cadence: option })}
+              >
+                {t(option)}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="segmented block" role="group" aria-label={t('cadence')}>
-          {(['week', 'month'] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={view.cadence === option}
-              disabled={busy}
-              onClick={() => change({ cadence: option })}
-            >
-              {t(option)}
-            </button>
-          ))}
-        </div>
+
         <div className="subscription-actions">
           {view.status === 'active' ? (
             <button
@@ -142,14 +153,6 @@ export function SubscriptionPanel({
               {t('cancel')}
             </button>
           ) : null}
-          <button
-            className="btn btn-secondary is-danger"
-            type="button"
-            disabled={busy}
-            onClick={remove}
-          >
-            {t('delete')}
-          </button>
         </div>
       </div>
 
@@ -164,46 +167,67 @@ export function SubscriptionPanel({
           ))}
         </article>
       ) : view.status === 'active' ? (
-        <div className="card">
+        <div className="card subscription-writing">
+          <span className="subscription-spinner" aria-hidden="true" />
           <p className="muted">{t('writing')}</p>
         </div>
       ) : null}
 
       {bot ? (
-        <div className="card">
-          <h2 className="block-title">{t('telegramTitle')}</h2>
-          <p className="muted">{t('telegramBody')}</p>
-          <p>
-            <a
-              className="btn btn-secondary telegram-link"
-              href={`https://t.me/${bot}?start=${view.telegram_code}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t('telegramOpen')}
-            </a>
-          </p>
-        </div>
+        <a
+          className="card subscription-telegram"
+          href={`https://t.me/${bot}?start=${view.telegram_code}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M21.4 4.6 3.6 11.5c-1.2.5-1.2 1.2-.2 1.5l4.5 1.4 1.7 5.3c.2.6.4.8.8.8.4 0 .6-.2 1-.5l2.5-2.4 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14c.3-1.2-.5-1.8-1.7-1.6ZM8.8 14l9.6-6.1c.5-.3.9-.1.5.2L11 15.4l-.3 3.3L8.8 14Z" />
+          </svg>
+          <span>
+            <strong>{t('telegramTitle')}</strong>
+            <span className="muted">{t('telegramBody')}</span>
+          </span>
+          <span className="subscription-chevron" aria-hidden="true">
+            →
+          </span>
+        </a>
       ) : null}
 
-      <div className="card">
-        <h2 className="block-title">{t('birth')}</h2>
-        {view.birth ? (
-          <>
-            <p className="mono muted">
-              {[dmy(view.birth.date), view.birth.time, view.birth.place]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
-            <p className="caption">
-              {view.correction_until ? t('birthKept', { date: dmy(view.correction_until) }) : null}
-            </p>
-            <p className="caption">{t('contact')}</p>
-          </>
-        ) : (
-          <p className="caption">{t('birthGone')}</p>
-        )}
-      </div>
+      <details className="card subscription-data">
+        <summary>
+          <span>{t('birth')}</span>
+          <span className="mono muted">
+            {view.birth ? dmy(view.birth.date) : t('birthGoneShort')}
+          </span>
+        </summary>
+        <div className="subscription-data-body">
+          {view.birth ? (
+            <>
+              <p className="mono">
+                {[dmy(view.birth.date), view.birth.time, view.birth.place]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+              <p className="caption">
+                {view.correction_until
+                  ? t('birthKept', { date: dmy(view.correction_until) })
+                  : null}
+              </p>
+              <p className="caption">{t('contact')}</p>
+            </>
+          ) : (
+            <p className="caption">{t('birthGone')}</p>
+          )}
+          <button
+            className="btn btn-secondary is-danger"
+            type="button"
+            disabled={busy}
+            onClick={remove}
+          >
+            {t('delete')}
+          </button>
+        </div>
+      </details>
     </div>
   );
 }

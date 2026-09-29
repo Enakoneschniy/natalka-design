@@ -196,7 +196,6 @@
       "horoscope": "We build your chart from the birth data and write a horoscope from it every week or every month — from the real transits, with dates, not from your Sun sign."
     },
     "submitSubscribe": "Subscribe",
-    "freeSubscription": "The chart is free. So is the first month of horoscopes.",
     "edit": "Edit the data",
     "timeUnknown": "time unknown"
   },
@@ -363,7 +362,7 @@
     "unknownTime": "time unknown",
     "start": "Generate the reading",
     "starting": "Starting…",
-    "startNote": "Free for now — payments are not connected yet. The reading is made in full.",
+    "startNote": "Card, Apple Pay or Google Pay. The document arrives by email within 10–20 minutes.",
     "startFailed": "Could not start. Try again.",
     "emailInvalid": "Check the email address",
     "consent": "I agree that the document is created immediately after payment and understand that the right of withdrawal ends with its delivery. Terms and refund policy are in the footer.",
@@ -444,6 +443,10 @@
     "birthKept": "Kept until {date} in case of a correction; after that only the chart remains.",
     "birthGone": "Birth data deleted; only the chart is kept.",
     "gone": "This link has expired. Find a fresh one in the latest horoscope email.",
-    "contact": "To correct the birth data: help@chronika.me"
+    "contact": "To correct the birth data: help@chronika.me",
+    "foot": "The first month is free. {price} a month after that; unsubscribe any time.",
+    "nextLabel": "Next",
+    "trialLabel": "Free until",
+    "birthGoneShort": "deleted"
   }
 }

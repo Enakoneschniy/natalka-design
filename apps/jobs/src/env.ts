@@ -12,8 +12,10 @@ export interface Env {
   DB: D1Database;
   DOCS: R2Bucket;
   JOBS: Queue<QueueMessage>;
-  /** The calculation and text API, reached over a service binding rather than the public URL. */
+  /** The text-and-document API, reached over a service binding rather than the public URL. */
   API: Fetcher;
+  /** The public ephemeris service — same account, so a binding rather than a public fetch. */
+  EPHEMERIS: Fetcher;
   /** The Telegram bot worker's internal entrypoint; it holds the bot token, this worker never sees it. */
   BOT: BotInternalStub;
   /** Base URL of the Python calculation and text API. */

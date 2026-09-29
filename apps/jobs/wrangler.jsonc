@@ -17,6 +17,8 @@
   // between two workers on the same zone (error 1042), and this keeps the call private and fast.
   "services": [
     { "binding": "API", "service": "natalka-api" },
+    // github.com/Enakoneschniy/ephemeris-service — AGPL, public, same Cloudflare account.
+    { "binding": "EPHEMERIS", "service": "ephemeris-api" },
     { "binding": "BOT", "service": "natalka-bot", "entrypoint": "BotInternal" }
   ],
   "d1_databases": [

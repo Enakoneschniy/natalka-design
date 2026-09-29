@@ -10,7 +10,6 @@ See [PLAN.md](PLAN.md) for the roadmap, the data model and the open questions.
 ```
 apps/web/          Next.js front end (not started yet)
 apps/worker/       internal FastAPI API + job worker (Python)
-packages/engine/   astrology: positions, houses, aspects, transits, time zones
 packages/document/ document schema → ReportLab PDF, SVG chart wheel
 packages/texts/    section prompts, LLM client, validators (not started yet)
 packages/shared/   settings, AES-GCM encryption, DB access
@@ -31,7 +30,9 @@ uv run pytest -q                          # 28 tests
 uv run ruff check packages apps && uv run mypy
 
 # a chart as JSON
-uv run natalka-engine 1994-05-15 15:25 --lat 45.1972 --lon 33.3664
+curl -s -X POST https://ephemeris-api.ceo-63e.workers.dev/v1/calc \
+  -H "content-type: application/json" \
+  -d '{"date":"1994-05-15","time":"15:25","latitude":45.1972,"longitude":33.3664}'
 # the example reading as PDF
 uv run natalka-document render packages/document/examples/natal-uk.json out.pdf
 # the internal API on :8000 (docs disabled; see apps/worker/src/natalka_worker/api.py)
@@ -40,5 +41,7 @@ uv run python -m natalka_worker api
 
 ## Licence note
 
-`pyswisseph` and the bundled ephemeris files are AGPL-3.0. A **commercial** licence from the publisher must be purchased before the public launch — see
-[packages/engine/README.md](packages/engine/README.md). No other AGPL dependency is allowed.
+**No AGPL dependency is allowed in this repository.** The calculation engine, which links
+`pyswisseph` (AGPL-3.0), lives in its own public repository and is called over HTTP:
+[ephemeris-service](https://github.com/Enakoneschniy/ephemeris-service). See
+[docs/ephemeris-service-brief.md](docs/ephemeris-service-brief.md).

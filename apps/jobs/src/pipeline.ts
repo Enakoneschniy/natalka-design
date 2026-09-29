@@ -53,6 +53,17 @@ export interface JobPayload {
   sections?: WrittenSection[];
 }
 
+/** The ephemeris service: charts, synastry, transits, the sky. Public and AGPL, ours by binding. */
+export const ephemeris = async <T>(env: Env, path: string, body: unknown): Promise<T> => {
+  const response = await env.EPHEMERIS.fetch(`https://ephemeris${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`ephemeris ${path} → ${response.status}`);
+  return response.json() as Promise<T>;
+};
+
 const api = async <T>(env: Env, path: string, init?: RequestInit): Promise<T> => {
   const response = await env.API.fetch(`${env.NATALKA_API_URL}${path}`, init);
   if (!response.ok) {
@@ -102,10 +113,9 @@ async function calculate(env: Env, job: JobRow, people: People): Promise<JobPayl
   const { first: birth, second } = people;
   if (job.kind === 'synastry' && second) {
     // Two charts and the contacts between them; no transits, a synastry has no calendar.
-    const facts = await api<Record<string, unknown>>(env, '/v1/synastry', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ first: birthBody(birth), second: birthBody(second) }),
+    const facts = await ephemeris<Record<string, unknown>>(env, '/v1/synastry', {
+      first: birthBody(birth),
+      second: birthBody(second),
     });
     const unknownTime = birth.time === null || second.time === null;
     const plan = await api<{ sections: SectionPlan[] }>(
@@ -115,11 +125,11 @@ async function calculate(env: Env, job: JobRow, people: People): Promise<JobPayl
     return { facts, transits: [], plan: plan.sections, sections: [] };
   }
 
-  const facts = await api<Record<string, unknown> & { transits?: unknown[] }>(env, '/v1/calc', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ ...birthBody(birth), transit_years: TRANSIT_YEARS[job.kind] ?? 3 }),
-  });
+  const facts = await ephemeris<Record<string, unknown> & { transits?: unknown[] }>(
+    env,
+    '/v1/calc',
+    { ...birthBody(birth), transit_years: TRANSIT_YEARS[job.kind] ?? 3 },
+  );
   const transits = facts.transits ?? [];
   delete facts.transits;
 

@@ -26,7 +26,7 @@ FOREIGN = {"ru": "іїєґ", "uk": "ыэъё"}
 #: check entirely — "Венера", "Карта" and "Готово" are the same in both, and listing every one of
 #: them would turn the test into a dictionary. A phrase of two words or more that matches exactly
 #: is worth a second look.
-IDENTICAL_BY_NATURE = {"до 1′", "12 400"}
+IDENTICAL_BY_NATURE = {"до 1′", "12 400", "Гороскоп на {start} — {end}"}
 
 
 def flatten(node: Any, path: str = "") -> dict[str, str]:

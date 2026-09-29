@@ -1,7 +1,8 @@
-/** Server-side client for the calculation API (the Python engine in a Cloudflare Container).
+/** Server-side client for the ephemeris service — a public, AGPL program of its own
+ * (github.com/Enakoneschniy/ephemeris-service) that this product calls over HTTP.
  *
- * The API is not public: every call goes through a route handler or a server component, so the
- * browser never learns its address and we can cache on our side.
+ * Calls go through a route handler or a server component, so a chart is computed once per render
+ * and the browser never issues them itself.
  */
 
 import type { ChartFacts } from './chart';
@@ -24,8 +25,8 @@ export class ApiError extends Error {
 }
 
 const base = (): string => {
-  const url = process.env.NATALKA_API_URL;
-  if (!url) throw new Error('NATALKA_API_URL is not configured');
+  const url = process.env.EPHEMERIS_API_URL;
+  if (!url) throw new Error('EPHEMERIS_API_URL is not configured');
   return url.replace(/\/$/, '');
 };
 

@@ -18,8 +18,8 @@
     { "binding": "DB", "database_name": "natalka", "database_id": "90261635-69b9-461b-9e1f-9a7b98596e97" }
   ],
   "vars": {
-    // Calculation API (Python engine in a Cloudflare Container). Locally: http://127.0.0.1:8000.
-    "NATALKA_API_URL": "https://natalka-api.ceo-63e.workers.dev",
+    // The public ephemeris service: github.com/Enakoneschniy/ephemeris-service
+    "EPHEMERIS_API_URL": "https://ephemeris-api.ceo-63e.workers.dev",
     // Orders, generation progress and finished documents.
     "NATALKA_JOBS_URL": "https://natalka-jobs.ceo-63e.workers.dev",
     // The bot's public username; the waiting screen offers a Telegram link when it is set.
