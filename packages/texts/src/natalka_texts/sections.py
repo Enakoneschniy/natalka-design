@@ -639,16 +639,30 @@ BY_PRODUCT["bundle"] = BUNDLE
 #: The free preview: three short passages a visitor reads before paying, and the first words the
 #: product ever says to them. One model call rather than three — the fact sheet is most of the
 #: input, and paying for it three times would triple both the bill and the wait.
+_PREVIEW_COMMON = (
+    "Three short passages, in this order and separated by a blank line. One paragraph each, "
+    "three to five sentences, no headings and no labels — the document prints the titles itself. "
+    "Say something specific enough that the reader recognises themselves, and stop before the "
+    "full reading would begin. Write only the three passages: never comment on the instructions, "
+    "on what the chart contains or on what will be covered later."
+)
+
+#: Two briefs rather than one with a condition in it. A model told "if there is no birth time,
+#: do X" will explain that the birth time is present — which is exactly what it did — so the
+#: branch belongs in the code that knows the answer.
 PREVIEW = SectionSpec(
     id="preview",
+    brief=f"{_PREVIEW_COMMON} The three are: the Sun, the Moon, then the Ascendant.",
+    paragraphs=(3, 3),
+    titles=_t("Перше враження", "Первое впечатление", "A first look"),
+)
+
+PREVIEW_NO_TIME = SectionSpec(
+    id="preview",
     brief=(
-        "Three short passages, in this order and separated by a blank line: the Sun, the Moon, "
-        "then the Ascendant. One paragraph each, three to five sentences, no headings and no "
-        "labels — the document prints the titles itself. Say something specific enough that the "
-        "reader recognises themselves, and stop before the full reading would begin. Never "
-        "comment on what the chart does or does not contain; just write. If the fact sheet says "
-        "there is no birth time, make the third passage about the shape of the chart as a whole "
-        "and mention in one clause that the Ascendant needs an exact time."
+        f"{_PREVIEW_COMMON} The three are: the Sun, the Moon, then the shape of the chart as a "
+        "whole — its element and modality balance and its loudest configuration. There is no "
+        "birth time for this chart, so there is no Ascendant to write about; do not mention that."
     ),
     paragraphs=(3, 3),
     titles=_t("Перше враження", "Первое впечатление", "A first look"),

@@ -9,11 +9,20 @@ from .providers import (
     Provider,
     ScriptedProvider,
 )
-from .sections import PREVIEW, PREVIEW_TITLES, PREVIEW_TITLES_NO_TIME, SectionSpec, specs, title
+from .sections import (
+    PREVIEW,
+    PREVIEW_NO_TIME,
+    PREVIEW_TITLES,
+    PREVIEW_TITLES_NO_TIME,
+    SectionSpec,
+    specs,
+    title,
+)
 from .validate import Report, check
 
 __all__ = [
     "PREVIEW",
+    "PREVIEW_NO_TIME",
     "PREVIEW_TITLES",
     "PREVIEW_TITLES_NO_TIME",
     "Completion",
