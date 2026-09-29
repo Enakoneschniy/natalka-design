@@ -194,19 +194,13 @@ export default async function PreviewPage({
             <h2 className="block-title">{t('readingTitle')}</h2>
             <p className="muted">{t('readingLead')}</p>
           </div>
-          <PreviewReading facts={facts} lang={locale} />
-        </section>
-
-        <section className="preview-section">
-          <div className="block-head">
-            <h2 className="block-title">{t('coreTitle')}</h2>
-            <p className="muted">{t('coreLead')}</p>
-          </div>
-          <div className="core-grid">
-            {core.map((point) => (
-              <CorePoint key={point.body} point={point} facts={facts} />
-            ))}
-          </div>
+          {/* The facts each passage is written from are rendered here, on the server, and handed
+              to the client component as nodes: it owns the loading state, not the chart data. */}
+          <PreviewReading
+            facts={facts}
+            lang={locale}
+            rails={core.map((point) => <CorePoint key={point.body} point={point} facts={facts} />)}
+          />
         </section>
 
         <Paywall

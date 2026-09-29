@@ -1576,11 +1576,13 @@
 
 /* Stacked, not in columns: three passages of unequal length side by side leave two ragged gaps,
    and prose is read down a page rather than across it. The measure is capped where a line stops
-   being comfortable to follow. */
-.reading-blocks {
-  max-width: 680px;
-}
+   being comfortable to follow, and the space that frees up carries the facts the passage was
+   written from — the same three points that used to be repeated in a section of their own. */
 .reading-block {
+  display: grid;
+  grid-template-columns: minmax(0, 680px) minmax(240px, 1fr);
+  gap: 40px;
+  align-items: start;
   padding: 28px 0;
   border-top: 1px solid var(--color-line);
 }
@@ -1594,6 +1596,9 @@
 .reading-block p {
   color: var(--color-ink);
   font-size: 17px;
+}
+.reading-rail .core-card {
+  padding: 20px;
 }
 /* Placeholder lines while the passages are being written, so the section keeps its height
    instead of shoving the page down when the text lands. */
@@ -1999,6 +2004,10 @@
   }
   .core-grid {
     grid-template-columns: 1fr;
+  }
+  .reading-block {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
   .preview-wheel {
     max-width: 520px;
