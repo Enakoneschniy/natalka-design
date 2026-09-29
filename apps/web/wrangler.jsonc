@@ -23,6 +23,6 @@
     // Orders, generation progress and finished documents.
     "NATALKA_JOBS_URL": "https://natalka-jobs.ceo-63e.workers.dev",
     // The bot's public username; the waiting screen offers a Telegram link when it is set.
-    "TELEGRAM_BOT_USERNAME": ""
+    "TELEGRAM_BOT_USERNAME": "astro_chronika_bot"
   }
 }
