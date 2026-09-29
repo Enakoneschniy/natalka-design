@@ -1,17 +1,18 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AspectGrid, AspectLegend, ChartBadge, PositionsTable } from '@/components/ChartBits';
-import { Paywall } from '@/components/Paywall';
+import { Paywall, type TransitHint } from '@/components/Paywall';
 import { PreviewReading } from '@/components/PreviewReading';
 import { Stepper } from '@/components/Stepper';
 import { SynastryPreview } from '@/components/SynastryPreview';
 import { Wheel } from '@/components/Wheel';
-import { type BirthInput, calcChart, calcSynastry } from '@/lib/api';
-import { type ChartFacts, MAJOR_ASPECTS } from '@/lib/chart';
+import { type BirthInput, calcChart, calcSynastry, calcTransits } from '@/lib/api';
+import { type ChartFacts, MAJOR_ASPECTS, monthLabel } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
-import { bundleFullPrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
+import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
+import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +76,34 @@ const DEMO = {
   },
   city: 'Yevpatoriya, Crimea, UA',
 } as const;
+
+/** Two or three months this chart actually meets a slow transit in, for the paywall. Costs one
+ * call to the ephemeris service and nothing else: no model, no document. */
+async function transitHints(facts: ChartFacts, locale: string): Promise<TransitHint[]> {
+  const longitudes = Object.fromEntries(facts.positions.map((p) => [p.body, p.longitude]));
+  const today = new Date();
+  const start = today.toISOString().slice(0, 10);
+  const end = new Date(today.getTime() + 500 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const result = await calcTransits({
+    longitudes,
+    start,
+    end,
+    bodies: ['jupiter', 'saturn', 'uranus', 'neptune', 'pluto'],
+    targets: ['sun', 'moon', 'venus', 'mars', 'asc', 'mc'],
+    ingresses: false,
+  }).catch(() => null);
+  if (!result) return [];
+  const seen = new Set<string>();
+  const hints: TransitHint[] = [];
+  for (const event of result.events) {
+    const when = monthLabel(event.date, locale);
+    if (seen.has(when)) continue;
+    seen.add(when);
+    hints.push({ when, body: event.body });
+    if (hints.length === 3) break;
+  }
+  return hints;
+}
 
 export default async function PreviewPage({
   params,
@@ -174,10 +203,10 @@ export default async function PreviewPage({
   const harmonious = major.filter((a) => a.nature === 'harmonious').length;
   const tense = major.filter((a) => a.nature === 'tense').length;
 
-  const natal = priceFor('natal', country);
-  const forecast = priceFor('forecast', country);
-  const bundle = priceFor('bundle', country);
-  const bundleFull = bundleFullPrice(country);
+  // The price the paywall quotes and the price the order is charged at come from the same
+  // function and the same signed cookie, so they cannot drift apart.
+  const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
+  const bundle = bundlePrice(country, variant);
   // The order screen needs the same birth data; carrying the query string keeps it stateless.
   const checkout = (product: string) => {
     const params = new URLSearchParams();
@@ -188,6 +217,10 @@ export default async function PreviewPage({
     params.set('p', product);
     return `/${locale}/checkout?${params.toString()}`;
   };
+
+  // Two or three months from this person's own transits, named and not explained: the reader
+  // recognises them as theirs, and what they mean is what the reading is for.
+  const hints = await transitHints(facts, locale);
 
   // The three points every reading starts from; the Ascendant needs a known birth time.
   const core = [
@@ -220,8 +253,8 @@ export default async function PreviewPage({
                 .join(' · ')}
             </p>
           </div>
-          <Link className="btn btn-primary" href={checkout('natal')}>
-            {tp('cta', { price: natal.formatted })}
+          <Link className="btn btn-primary" href={checkout('bundle')}>
+            {tp('cta', { price: bundle.formatted })}
           </Link>
         </div>
 
@@ -277,15 +310,7 @@ export default async function PreviewPage({
           />
         </section>
 
-        <Paywall
-          checkoutHref={checkout('natal')}
-          forecastHref={checkout('forecast')}
-          bundleHref={checkout('bundle')}
-          natal={natal.formatted}
-          forecast={forecast.formatted}
-          bundle={bundle.formatted}
-          bundleFull={bundleFull.formatted}
-        />
+        <Paywall checkoutHref={checkout('bundle')} price={bundle.formatted} dates={hints} />
       </div>
     </div>
   );

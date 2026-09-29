@@ -308,19 +308,16 @@
     "houseShort": "house {n}"
   },
   "paywall": {
-    "title": "The full reading",
-    "lead": "20–30 pages about your chart. The PDF arrives by email 5–15 minutes after payment.",
+    "title": "Next: what, and when",
+    "lead": "You have read about three points of your chart. The full reading has all the others, and 35 pages with them:",
     "items": [
-      "All ten planets in signs and houses",
-      "The aspects of your chart, with practices",
-      "Relationships, work and money — through your chart",
-      "Yours to keep, printable"
+      "Who you are by the chart: your strengths, what gives you energy and what takes it",
+      "Your personal life: who to look for and which periods open this up",
+      "Work and money: what to do for a living and what to do right now",
+      "Your years by month: the rest of this year, all of {next}, {year} — and every main date on one page"
     ],
-    "cta": "Get the full reading — {price}",
-    "note": "Card, Apple Pay, Google Pay. Full refund if the document never arrives.",
-    "more": "Also from this chart:",
-    "forecast": "12-month forecast — {price}",
-    "bundle": "Reading with the forecast — {price} instead of {full}",
+    "cta": "Open the full reading — {price}",
+    "note": "35 pages · a PDF by email within 20–30 minutes · one payment",
     "pages": [
       {
         "section": "3 · Planets in signs and houses",
@@ -350,7 +347,10 @@
         ]
       }
     ],
-    "leadSynastry": "20–30 pages about the two of you: what pulls you together, where the friction is and how to live with it. The PDF arrives by email 5–15 minutes after payment."
+    "leadSynastry": "20–30 pages about the two of you: what pulls you together, where the friction is and how to live with it. The PDF arrives by email 5–15 minutes after payment.",
+    "sticky": "Read on — {price}",
+    "datesTitle": "The strong periods ahead, from your chart",
+    "datesNote": "What each date means is in the full reading."
   },
   "checkout": {
     "title": "Your order",

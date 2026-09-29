@@ -72,3 +72,27 @@ export const calcSynastry = (first: BirthInput, second: BirthInput): Promise<Syn
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ first, second }),
   });
+
+export interface TransitEvent {
+  kind: string;
+  body: string;
+  target?: string;
+  aspect?: string;
+  sign?: string;
+  date: string;
+}
+
+/** The exact transits to a chart in a window. The horoscope and the document use the same call. */
+export const calcTransits = (body: {
+  longitudes: Record<string, number>;
+  start: string;
+  end: string;
+  bodies?: string[];
+  targets?: string[];
+  ingresses?: boolean;
+}): Promise<{ events: TransitEvent[] }> =>
+  call('/v1/transits', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });

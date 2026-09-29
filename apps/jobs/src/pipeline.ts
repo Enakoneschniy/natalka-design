@@ -162,21 +162,34 @@ async function writeSections(
     if (written.has(entry.id)) continue;
     if (Date.now() > deadline) return { payload: { ...payload, sections }, done: false };
 
-    const section = await api<WrittenSection>(env, '/v1/section', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        facts: payload.facts,
-        transits: payload.transits ?? [],
-        section_id: entry.id,
-        product: job.kind,
-        lang: birth.lang,
-        name: birth.name,
-        gender: birth.gender,
-        second_name: second?.name ?? '',
-        written_so_far: sections.map((s) => `${s.title}: ${s.text.slice(0, 160)}…`),
-      }),
-    });
+    let section: WrittenSection;
+    try {
+      section = await api<WrittenSection>(env, '/v1/section', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          facts: payload.facts,
+          transits: payload.transits ?? [],
+          section_id: entry.id,
+          product: job.kind,
+          lang: birth.lang,
+          name: birth.name,
+          gender: birth.gender,
+          second_name: second?.name ?? '',
+          written_so_far: sections.map((s) => `${s.title}: ${s.text.slice(0, 160)}…`),
+        }),
+      });
+    } catch (error) {
+      // A deploy can land between the plan and the writing, and the chapter this job was told
+      // to write may no longer exist. Skipping it finishes the document; failing the job would
+      // throw away everything written so far.
+      if (error instanceof Error && error.message.includes('unknown section')) {
+        console.warn('section gone since the plan was made', entry.id);
+        written.add(entry.id);
+        continue;
+      }
+      throw error;
+    }
     sections.push(section);
 
     // Cost is banked after every section: an order that fails halfway still shows what it spent.

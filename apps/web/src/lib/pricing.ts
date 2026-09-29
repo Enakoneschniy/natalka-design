@@ -129,3 +129,36 @@ export function subscriptionPrice(country: string | null | undefined): {
   const amount = SUBSCRIPTION[currency];
   return { currency, amount, formatted: format(amount, currency) };
 }
+
+/* ---------- the price experiment ---------- */
+
+/** The two figures under test, in euro cents. Everything else keeps the table above: the test
+ * runs on euro traffic only, which is where the advertising goes. */
+const EXPERIMENT_EUR: Record<string, number> = { a: 1500, b: 3500 };
+
+/** What the bundle costs this visitor. Outside the eurozone the table decides and there is no
+ * experiment to speak of. */
+export function bundlePrice(
+  country: string | null | undefined,
+  variant: 'a' | 'b' | null,
+): Price & { experiment: boolean } {
+  const currency = currencyFor(country);
+  if (currency === 'EUR' && variant) {
+    const amount = EXPERIMENT_EUR[variant] as number;
+    return {
+      product: 'bundle',
+      currency,
+      amount,
+      formatted: format(amount, currency),
+      experiment: true,
+    };
+  }
+  const amount = TABLE[currency].bundle;
+  return {
+    product: 'bundle',
+    currency,
+    amount,
+    formatted: format(amount, currency),
+    experiment: false,
+  };
+}

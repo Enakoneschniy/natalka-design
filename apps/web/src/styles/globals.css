@@ -3075,7 +3075,7 @@
 /* The film fills the first screen; this is the block under it, where the advert's sentence is
    repeated and the first button lives. */
 .l-intro {
-  padding-top: 72px;
+  padding-top: 88px;
   text-align: center;
 }
 .l-eyebrow {
@@ -3084,15 +3084,19 @@
   text-transform: uppercase;
   color: var(--color-accent);
 }
+/* Type that grows with the screen instead of a column that stays narrow: on a wide monitor a
+   centred 18-character measure reads as a phone layout that wandered onto a desktop. */
 .l-title {
-  font-size: clamp(32px, 4.4vw, 56px);
-  line-height: 1.08;
-  margin: 18px auto 0;
-  max-width: 18ch;
+  font-size: clamp(34px, 5.2vw, 76px);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  margin: 20px auto 0;
+  max-width: 24ch;
 }
 .l-lead {
-  margin: 22px auto 0;
-  max-width: 62ch;
+  font-size: clamp(17px, 1.45vw, 23px);
+  margin: 26px auto 0;
+  max-width: 70ch;
 }
 .l-cta {
   display: flex;
@@ -3121,8 +3125,8 @@
   align-items: center;
 }
 .l-quote {
-  margin: 56px auto 0;
-  max-width: 54ch;
+  margin: 64px auto 0;
+  max-width: 64ch;
   padding-top: 28px;
   border-top: 1px solid var(--color-line);
 }
@@ -3130,7 +3134,7 @@
   margin: 0;
   font-family: var(--font-display);
   font-style: italic;
-  font-size: clamp(19px, 1.7vw, 25px);
+  font-size: clamp(19px, 1.9vw, 30px);
   line-height: 1.5;
   color: var(--color-ink);
 }
@@ -3143,21 +3147,23 @@
 }
 
 /* The questions people arrive with, in their own words. */
+/* Six of them: three by three rather than a ragged four-and-two. */
 .l-asks {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
   list-style: none;
   padding: 0;
 }
 .l-asks li {
-  padding: 22px 24px;
+  padding: 26px 28px;
   border-radius: var(--radius-card);
   border: 1px solid var(--color-line);
   background: var(--color-surface);
-  font-family: var(--font-display);
-  font-size: 18px;
-  line-height: 1.45;
+  /* The body face, not the display serif: a thin serif at this size on a dark background is
+     where reading turns into deciphering. */
+  font-size: clamp(17px, 1.2vw, 19px);
+  line-height: 1.55;
   color: var(--color-ink);
 }
 .l-asks li::before {
@@ -3175,7 +3181,7 @@
 
 .l-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 18px;
 }
 .l-cards h3 {

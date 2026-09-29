@@ -128,3 +128,10 @@ export function spreadPlanets(
   });
   return sorted;
 }
+
+/** "Март 2027" — a month in the reader's language, from an ISO date. */
+export function monthLabel(iso: string, locale: string): string {
+  const date = new Date(`${iso}T00:00:00Z`);
+  const month = new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(date);
+  return `${month.charAt(0).toUpperCase()}${month.slice(1)} ${date.getUTCFullYear()}`;
+}

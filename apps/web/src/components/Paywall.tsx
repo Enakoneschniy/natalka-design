@@ -1,8 +1,16 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { forecastYears } from '@/components/Landing';
 
 const PAGES = [0, 1, 2] as const;
 const ITEMS = [0, 1, 2, 3] as const;
+
+export interface TransitHint {
+  /** "Март 2027" — a month, never a day: the day is what the reading is for. */
+  when: string;
+  /** The body whose passage it is, for the glyph. */
+  body: string;
+}
 
 function Check() {
   return (
@@ -20,25 +28,22 @@ function Check() {
   );
 }
 
-/** What the free preview stops at: blurred sample pages behind the offer for the full reading. */
+/** What the free preview stops at.
+ *
+ * The months come from the same transit calculation the document uses, so they are this
+ * person's real dates — named without saying what they mean, which is what the reading is for.
+ */
 export function Paywall({
   checkoutHref,
-  forecastHref,
-  bundleHref,
-  natal,
-  forecast,
-  bundle,
-  bundleFull,
+  price,
+  dates,
 }: {
   checkoutHref: string;
-  forecastHref: string;
-  bundleHref: string;
-  natal: string;
-  forecast: string;
-  bundle: string;
-  bundleFull: string;
+  price: string;
+  dates: TransitHint[];
 }) {
   const t = useTranslations('paywall');
+  const years = forecastYears();
 
   return (
     <section className="paywall">
@@ -58,6 +63,21 @@ export function Paywall({
       </div>
       <div className="fade" aria-hidden="true" />
 
+      {dates.length > 0 ? (
+        <div className="card paywall-dates">
+          <h3>{t('datesTitle')}</h3>
+          <ul>
+            {dates.map((hint) => (
+              <li key={hint.when}>
+                <span className="mono">{hint.when}</span>
+                <span className="muted">— ?</span>
+              </li>
+            ))}
+          </ul>
+          <p className="caption">{t('datesNote')}</p>
+        </div>
+      ) : null}
+
       <div className="card paywall-card">
         <h2>{t('title')}</h2>
         <p className="muted">{t('lead')}</p>
@@ -65,20 +85,22 @@ export function Paywall({
           {ITEMS.map((i) => (
             <li key={i}>
               <Check />
-              {t(`items.${i}`)}
+              {t(`items.${i}`, years)}
             </li>
           ))}
         </ul>
         <Link className="btn btn-primary btn-lg" href={checkoutHref}>
-          {t('cta', { price: natal })}
+          {t('cta', { price })}
         </Link>
         <p className="caption">{t('note')}</p>
       </div>
 
-      <p className="more-products">
-        {t('more')} <Link href={forecastHref}>{t('forecast', { price: forecast })}</Link> ·{' '}
-        <Link href={bundleHref}>{t('bundle', { price: bundle, full: bundleFull })}</Link>
-      </p>
+      {/* On a phone the offer scrolls away while the reader is still deciding. */}
+      <div className="paywall-sticky">
+        <Link className="btn btn-primary btn-lg btn-block" href={checkoutHref}>
+          {t('sticky', { price })}
+        </Link>
+      </div>
     </section>
   );
 }
