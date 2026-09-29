@@ -1,0 +1,70 @@
+/** Server-side client for the jobs Worker.
+ *
+ * The browser never sees this address: orders carry birth data and the pipeline spends money, so
+ * everything goes through route handlers on our own origin.
+ */
+
+export interface OrderRequest {
+  email: string;
+  product: string;
+  locale: string;
+  country?: string;
+  amount_minor: number;
+  currency: string;
+  test?: boolean;
+  birth: {
+    date: string;
+    time: string | null;
+    latitude: number;
+    longitude: number;
+    zone: string;
+    place: string;
+    name: string;
+    gender: 'f' | 'm' | 'n';
+  };
+}
+
+export interface OrderCreated {
+  order_id: string;
+  job_id: string;
+  token: string;
+}
+
+export interface JobStatus {
+  step: 'calc' | 'texts' | 'pdf' | 'email' | 'done';
+  status: 'queued' | 'running' | 'failed' | 'done';
+  written: number;
+  total: number;
+  progress: number;
+  error: string | null;
+  pages: number | null;
+  download: string | null;
+}
+
+const base = (): string => {
+  const url = process.env.NATALKA_JOBS_URL;
+  if (!url) throw new Error('NATALKA_JOBS_URL is not configured');
+  return url.replace(/\/$/, '');
+};
+
+export async function createOrder(order: OrderRequest): Promise<OrderCreated> {
+  const response = await fetch(`${base()}/v1/orders`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(order),
+  });
+  if (!response.ok) {
+    throw new Error(`orders → ${response.status}: ${(await response.text()).slice(0, 200)}`);
+  }
+  return (await response.json()) as OrderCreated;
+}
+
+export async function jobStatus(token: string): Promise<JobStatus | null> {
+  const response = await fetch(`${base()}/v1/jobs/${encodeURIComponent(token)}`, {
+    cache: 'no-store',
+  });
+  if (!response.ok) return null;
+  return (await response.json()) as JobStatus;
+}
+
+export const documentUrl = (token: string): string => `${base()}/d/${encodeURIComponent(token)}`;

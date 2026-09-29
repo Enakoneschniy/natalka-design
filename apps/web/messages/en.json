@@ -323,6 +323,26 @@
     "soonBody": "We are switching payments on shortly. The price and the contents of the order are final — as soon as it is live, this screen will take a card, Apple Pay and Google Pay.",
     "back": "Back to the chart",
     "chart": "Chart",
-    "unknownTime": "time unknown"
+    "unknownTime": "time unknown",
+    "start": "Generate the reading",
+    "starting": "Starting…",
+    "startNote": "Free for now — payments are not connected yet. The reading is made in full.",
+    "startFailed": "Could not start. Try again.",
+    "emailInvalid": "Check the email address"
+  },
+  "generating": {
+    "title": "Writing your reading",
+    "lead": "This takes about fifteen minutes. You do not have to keep the page open — the link arrives by email.",
+    "starting": "Starting…",
+    "noToken": "The link is stale or incomplete. Go back to the form and build the chart again.",
+    "stepCalc": "Calculating the chart",
+    "stepTexts": "Writing: {written} of {total} sections",
+    "stepPdf": "Assembling the PDF",
+    "keepOpen": "Progress updates on its own.",
+    "readyTitle": "Ready",
+    "readyBody": "A {pages}-page reading is ready.",
+    "open": "Open the PDF",
+    "failedTitle": "Something went wrong",
+    "failedBody": "We can see the error and will run it again. If nothing changes within an hour, write to us."
   }
 }

@@ -8,6 +8,8 @@
   "observability": { "enabled": true },
   "vars": {
     // Calculation API (Python engine in a Cloudflare Container). Locally: http://127.0.0.1:8000.
-    "NATALKA_API_URL": "https://natalka-api.ceo-63e.workers.dev"
+    "NATALKA_API_URL": "https://natalka-api.ceo-63e.workers.dev",
+    // Orders, generation progress and finished documents.
+    "NATALKA_JOBS_URL": "https://natalka-jobs.ceo-63e.workers.dev"
   }
 }

@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { StartGeneration } from '@/components/StartGeneration';
 import { Stepper } from '@/components/Stepper';
 import { PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
@@ -37,6 +38,13 @@ export default async function CheckoutPage({
     one(search.t) ?? t('unknownTime'),
     one(search.c),
   ].filter(Boolean);
+
+  // Enough to start a generation; the same values the preview was drawn from.
+  const date = one(search.d);
+  const zone = one(search.tz);
+  const latitude = Number(one(search.lat));
+  const longitude = Number(one(search.lon));
+  const canStart = Boolean(date && zone) && !Number.isNaN(latitude) && !Number.isNaN(longitude);
 
   const back = new URLSearchParams();
   for (const [key, value] of Object.entries(search)) {
@@ -78,6 +86,26 @@ export default async function CheckoutPage({
             <span className="num">{price.formatted}</span>
           </div>
         </div>
+
+        {canStart && date && zone ? (
+          <StartGeneration
+            locale={locale}
+            product={product}
+            birth={{
+              date,
+              time: one(search.t) ?? null,
+              latitude,
+              longitude,
+              zone,
+              place: one(search.c) ?? '',
+              name: one(search.n) ?? tp(`${product}.title`),
+              gender: (one(search.g) === 'female' ? 'f' : one(search.g) === 'male' ? 'm' : 'n') as
+                | 'f'
+                | 'm'
+                | 'n',
+            }}
+          />
+        ) : null}
 
         <div className="card checkout-soon">
           <h2>{t('soonTitle')}</h2>

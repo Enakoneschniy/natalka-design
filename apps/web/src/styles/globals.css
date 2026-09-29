@@ -1713,6 +1713,30 @@
   font-size: 24px;
   color: var(--color-accent);
 }
+.checkout-start {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.btn-block {
+  width: 100%;
+}
+.progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-accent-2), var(--color-accent));
+  transition: width 0.6s ease;
+}
+.progress-label {
+  margin-top: 14px;
+}
 .checkout-soon {
   margin-top: 24px;
 }
