@@ -32,8 +32,11 @@ from natalka_engine.geo import zone_for
 from natalka_engine.timeutil import UnknownTimeZoneError
 from natalka_texts import (
     PREVIEW,
+    PREVIEW_NO_TIME,
+    PREVIEW_SYNASTRY,
     PREVIEW_TITLES,
     PREVIEW_TITLES_NO_TIME,
+    PREVIEW_TITLES_SYNASTRY,
     ModelUnavailableError,
     OpenRouterProvider,
     fact_sheet,
@@ -164,17 +167,35 @@ def preview(req: PreviewRequest) -> dict[str, Any]:
     triple both the bill and — more to the point — the time the visitor spends looking at a
     spinner. The whole thing has to come back in the time it takes to read the chart wheel.
     """
-    unknown_time = bool(req.facts.get("birth", {}).get("unknown_time"))
-    titles = PREVIEW_TITLES_NO_TIME if unknown_time else PREVIEW_TITLES
+    if req.product == "synastry":
+        # A synastry payload has two charts and no `birth` of its own.
+        spec = PREVIEW_SYNASTRY
+        titles = PREVIEW_TITLES_SYNASTRY
+        sheet = synastry_sheet(
+            req.facts, first_name=req.first_name or "A", second_name=req.second_name or "B"
+        )
+    else:
+        unknown_time = bool(req.facts.get("birth", {}).get("unknown_time"))
+        titles = PREVIEW_TITLES_NO_TIME if unknown_time else PREVIEW_TITLES
+        spec = PREVIEW_NO_TIME if unknown_time else PREVIEW
+        sheet = fact_sheet(req.facts, None)
+
     provider = OpenRouterProvider()
-    system = system_prompt(req.lang, req.gender)
-    user = section_prompt(PREVIEW, name="", sheet=fact_sheet(req.facts, None), written_so_far=[])
+    system = system_prompt(req.lang, req.gender, req.product)
+    user = section_prompt(spec, name="", sheet=sheet, written_so_far=[])
     try:
         completion = provider.complete(system, user, max_tokens=2000)
+        report = check(completion.text, lang=req.lang, min_paragraphs=3, max_paragraphs=3)
+        if not report.ok:
+            # These are the first paragraphs a visitor reads, so they get the same second chance
+            # a paid section does. It costs a cent and only happens when the editor objects.
+            completion = provider.complete(
+                system, f"{user}\n\n{repair_prompt(list(report.problems))}", max_tokens=2000
+            )
+            report = check(completion.text, lang=req.lang, min_paragraphs=3, max_paragraphs=3)
     except ModelUnavailableError as exc:
         raise HTTPException(503, f"model unavailable: {exc}") from exc
 
-    report = check(completion.text, lang=req.lang, min_paragraphs=3, max_paragraphs=3)
     parts = [p.strip() for p in re.split(r"\n\s*\n", completion.text.strip()) if p.strip()]
     blocks = [
         {"title": t.get(req.lang) or t["en"], "text": text}
