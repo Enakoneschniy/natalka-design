@@ -3,6 +3,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createOrder, type OrderRequest } from '@/lib/jobs';
 import { PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
+/** Where the payment provider forbids what we sell (psychic services and fortune tellers are on
+ * Stripe's list for these three), the order is not started at all. */
+const NOT_SOLD_TO = new Set(['JP', 'MX', 'TH']);
+
 /** Starts a generation. The price is taken from our own table, never from the request body. */
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as Partial<OrderRequest> & { product?: string };
@@ -18,6 +22,9 @@ export async function POST(request: NextRequest) {
   }
 
   const country = (await headers()).get('cf-ipcountry');
+  if (country && NOT_SOLD_TO.has(country.toUpperCase())) {
+    return NextResponse.json({ error: 'region' }, { status: 403 });
+  }
   const price = priceFor(product, country);
 
   try {
@@ -32,6 +39,8 @@ export async function POST(request: NextRequest) {
       test: true,
       birth: body.birth as OrderRequest['birth'],
       birth_second: product === 'synastry' ? body.birth_second : undefined,
+      cancel_url: body.cancel_url,
+      product_name: body.product_name,
     });
     return NextResponse.json(created, { status: 201 });
   } catch (error) {

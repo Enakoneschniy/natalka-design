@@ -358,8 +358,6 @@
     "email": "Where to send the PDF",
     "emailHint": "The link to the document works for 30 days",
     "emailPlaceholder": "your@email",
-    "soonTitle": "Payment is not connected yet",
-    "soonBody": "We are switching payments on shortly. The price and the contents of the order are final — as soon as it is live, this screen will take a card, Apple Pay and Google Pay.",
     "back": "Back to the chart",
     "chart": "Chart",
     "unknownTime": "time unknown",
@@ -367,7 +365,12 @@
     "starting": "Starting…",
     "startNote": "Free for now — payments are not connected yet. The reading is made in full.",
     "startFailed": "Could not start. Try again.",
-    "emailInvalid": "Check the email address"
+    "emailInvalid": "Check the email address",
+    "consent": "I agree that the document is created immediately after payment and understand that the right of withdrawal ends with its delivery. Terms and refund policy are in the footer.",
+    "pay": "Pay",
+    "regionBlocked": "Unfortunately we cannot accept payment in your country.",
+    "howTitle": "How payment works",
+    "howBody": "By card or Apple/Google Pay on Stripe\\u2019s secure page. We never see or store card details. Generation starts right after payment; the link to the document arrives by email within 10–20 minutes."
   },
   "generating": {
     "title": "Writing your reading",
@@ -389,7 +392,8 @@
       "texts": "Reading",
       "pdf": "PDF"
     },
-    "telegram": "Get it in Telegram"
+    "telegram": "Get it in Telegram",
+    "awaitingPayment": "Waiting for the payment to be confirmed…"
   },
   "legal": {
     "draft": "Draft: this document is not yet signed or filled in with the provider’s details. It has no force until payments open."

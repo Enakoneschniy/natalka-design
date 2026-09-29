@@ -19,17 +19,23 @@ interface Birth {
 export function StartGeneration({
   locale,
   product,
+  productName,
   birth,
   birthSecond,
+  blocked = false,
 }: {
   locale: string;
   product: string;
+  productName: string;
   birth: Birth;
   birthSecond?: Birth;
+  /** The visitor's country is one the payment provider does not allow us to sell to. */
+  blocked?: boolean;
 }) {
   const t = useTranslations('checkout');
   const router = useRouter();
   const [email, setEmail] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,11 +51,25 @@ export function StartGeneration({
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, product, locale, birth, birth_second: birthSecond }),
+        body: JSON.stringify({
+          email,
+          product,
+          product_name: productName,
+          locale,
+          birth,
+          birth_second: birthSecond,
+          cancel_url: window.location.href,
+        }),
       });
       if (!response.ok) throw new Error(String(response.status));
-      const { token } = (await response.json()) as { token: string };
-      router.push(`/${locale}/generating?t=${encodeURIComponent(token)}`);
+      const { token, checkout_url } = (await response.json()) as {
+        token: string;
+        checkout_url?: string;
+      };
+      // With payments live the order continues on Stripe's page and comes back to the waiting
+      // screen; without them (test orders) it goes there directly.
+      if (checkout_url) window.location.assign(checkout_url);
+      else router.push(`/${locale}/generating?t=${encodeURIComponent(token)}`);
     } catch {
       setError(t('startFailed'));
       setPending(false);
@@ -74,8 +94,29 @@ export function StartGeneration({
         />
         <span className={`hint${error ? ' is-error' : ''}`}>{error || t('emailHint')}</span>
       </div>
-      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={pending}>
-        {pending ? t('starting') : t('start')}
+      <label className="check">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+        <span className="box">
+          <svg
+            viewBox="0 0 14 14"
+            fill="none"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M2.5 7.5l3 3 6-7" />
+          </svg>
+        </span>
+        <span>{t('consent')}</span>
+      </label>
+      {blocked ? <p className="hint is-error">{t('regionBlocked')}</p> : null}
+      <button
+        className="btn btn-primary btn-lg btn-block"
+        type="submit"
+        disabled={pending || !agreed || blocked}
+      >
+        {pending ? t('starting') : t('pay')}
       </button>
       <p className="caption">{t('startNote')}</p>
     </form>

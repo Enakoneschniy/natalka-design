@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Status {
+  paid: boolean;
   step: string;
   status: string;
   written: number;
@@ -136,11 +137,13 @@ export function GenerationProgress({
     ? t('starting')
     : done
       ? t('readyTitle')
-      : step === 'calc'
-        ? t('stepCalc')
-        : step === 'pdf'
-          ? t('stepPdf')
-          : t('stepTexts', { written: status.written, total: status.total });
+      : !status.paid
+        ? t('awaitingPayment')
+        : step === 'calc'
+          ? t('stepCalc')
+          : step === 'pdf'
+            ? t('stepPdf')
+            : t('stepTexts', { written: status.written, total: status.total });
 
   // Where the row of stages stands: everything before the current one is behind us.
   const at = STAGES.indexOf(step as (typeof STAGES)[number]);

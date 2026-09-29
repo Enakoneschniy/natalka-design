@@ -23,6 +23,14 @@ export interface Env {
   SITE_URL: string;
   /** Resend API key. Worker secret; absent means the ready letter is skipped, not failed. */
   RESEND_API_KEY?: string;
+  /** Stripe. Worker secrets. With no secret key, orders are not accepted at all — except test
+   * orders that carry TEST_ORDER_KEY, which skip payment. */
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  /** "1" once Stripe Tax is activated in the dashboard; enables automatic tax on Checkout. */
+  STRIPE_TAX?: string;
+  /** A test order — no payment, straight to the queue — is one whose request carries this key. */
+  TEST_ORDER_KEY?: string;
   /** AES-GCM key (base64url, 32 bytes) for birth data. Worker secret. */
   DATA_KEY: string;
   /** HMAC secret for download links. Worker secret. */

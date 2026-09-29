@@ -12,6 +12,8 @@ export interface OrderRequest {
   amount_minor: number;
   currency: string;
   test?: boolean;
+  cancel_url?: string;
+  product_name?: string;
   birth: BirthInput;
   /** The partner; only a synastry has one. */
   birth_second?: BirthInput;
@@ -32,9 +34,12 @@ export interface OrderCreated {
   order_id: string;
   job_id: string;
   token: string;
+  /** Stripe's payment page; absent while payments are not configured (test orders). */
+  checkout_url?: string;
 }
 
 export interface JobStatus {
+  paid: boolean;
   step: 'calc' | 'texts' | 'pdf' | 'email' | 'done';
   status: 'queued' | 'running' | 'failed' | 'done';
   written: number;

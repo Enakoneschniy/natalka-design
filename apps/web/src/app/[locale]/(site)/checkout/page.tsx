@@ -9,6 +9,9 @@ export const dynamic = 'force-dynamic';
 
 type Search = Record<string, string | string[] | undefined>;
 
+/** Mirrors the list in /api/orders: the payment provider does not allow the sale there. */
+const NOT_SOLD_TO = new Set(['JP', 'MX', 'TH']);
+
 const one = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;
 
@@ -112,14 +115,16 @@ export default async function CheckoutPage({
           <StartGeneration
             locale={locale}
             product={product}
+            productName={tp(`${product}.title`)}
             birth={first}
             birthSecond={second ?? undefined}
+            blocked={Boolean(country && NOT_SOLD_TO.has(country.toUpperCase()))}
           />
         ) : null}
 
         <div className="card checkout-soon">
-          <h2>{t('soonTitle')}</h2>
-          <p className="muted">{t('soonBody')}</p>
+          <h2>{t('howTitle')}</h2>
+          <p className="muted">{t('howBody')}</p>
         </div>
       </div>
     </div>

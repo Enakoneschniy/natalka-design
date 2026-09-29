@@ -11,7 +11,9 @@ import {
   cachePreview,
   claimTelegramLink,
   forgetTelegramChat,
+  markOrderPaid,
   markTelegramDelivered,
+  orderStatus,
   telegramCodeFor,
   telegramLink,
   cachedPreview,
@@ -24,6 +26,7 @@ import {
   insertOrder,
   now,
   orderContact,
+  setOrderSession,
   type Product,
   updateJob,
 } from './db';
@@ -46,6 +49,7 @@ import {
   updateSubscription,
 } from './subscriptions';
 import { contentDisposition, documentFilename } from './filename';
+import { createCheckoutSession, verifyWebhook } from './stripe';
 import { advance, type JobPayload, loadBirth } from './pipeline';
 
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
@@ -64,6 +68,10 @@ interface CreateOrder {
   currency: string;
   /** Marks a run that was not paid for — the staging site creates these. */
   test?: boolean;
+  /** Where Stripe sends the customer back if they abandon the payment page. */
+  cancel_url?: string;
+  /** The product's title in the customer's language, for the payment page. */
+  product_name?: string;
   birth: BirthInput;
   /** The partner. Only a synastry has one; anything else ignores it. */
   birth_second?: BirthInput;
@@ -199,11 +207,61 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   }
 
   await insertJob(env.DB, { id: jobId, order_id: orderId, kind: body.product });
-  await env.JOBS.send({ jobId });
-
   // The token is the only thing the browser needs afterwards: it names the order and expires.
   const token = await signToken({ order: orderId, job: jobId }, env.LINK_KEY, LINK_TTL_SECONDS);
-  return json({ order_id: orderId, job_id: jobId, token }, 201);
+
+  // A test order skips payment. Only with the key, and only while payments are not live at all:
+  // once Stripe is configured, nothing is generated for free by accident.
+  const testKey = request.headers.get('x-test-order');
+  const test = Boolean(env.TEST_ORDER_KEY && testKey && testKey === env.TEST_ORDER_KEY);
+  if (!env.STRIPE_SECRET_KEY || test) {
+    if (env.STRIPE_SECRET_KEY && !test) return json({ error: 'payment required' }, 402);
+    await env.JOBS.send({ jobId });
+    return json({ order_id: orderId, job_id: jobId, token }, 201);
+  }
+
+  const session = await createCheckoutSession(env, {
+    orderId,
+    jobId,
+    email: body.email,
+    locale: body.locale,
+    currency: body.currency,
+    amountMinor: body.amount_minor,
+    productName: body.product_name ?? body.product,
+    successUrl: `${env.SITE_URL}/${body.locale}/generating?t=${token}`,
+    cancelUrl: body.cancel_url ?? `${env.SITE_URL}/${body.locale}`,
+  });
+  await setOrderSession(env.DB, orderId, session.id);
+  // The job waits in the table, not in the queue, until the webhook says the money is in.
+  return json({ order_id: orderId, job_id: jobId, token, checkout_url: session.url }, 201);
+}
+
+/** Stripe calls this when a payment settles. The job is queued here and nowhere else once
+ * payments are live; a session that never completes leaves a pending order and a job that never
+ * runs, which the retention sweep clears with everything else. */
+async function stripeWebhook(request: Request, env: Env): Promise<Response> {
+  const event = await verifyWebhook(env, request);
+  if (!event) return new Response('bad signature', { status: 400 });
+
+  if (
+    event.type === 'checkout.session.completed' ||
+    event.type === 'checkout.session.async_payment_succeeded'
+  ) {
+    const session = event.data.object;
+    if (session.payment_status && session.payment_status !== 'paid') return json({ received: true });
+    const orderId = session.metadata?.order_id ?? session.client_reference_id;
+    const jobId = session.metadata?.job_id;
+    if (!orderId || !jobId) return json({ received: true, ignored: 'no order' });
+    const flipped = await markOrderPaid(env.DB, orderId, session.payment_intent ?? null);
+    if (flipped) await env.JOBS.send({ jobId });
+    return json({ received: true, queued: flipped });
+  }
+  if (event.type === 'checkout.session.async_payment_failed') {
+    const jobId = event.data.object.metadata?.job_id;
+    if (jobId) await updateJob(env.DB, jobId, { status: 'failed', last_error: 'payment failed' });
+    return json({ received: true });
+  }
+  return json({ received: true, ignored: event.type });
 }
 
 async function jobStatus(env: Env, token: string): Promise<Response> {
@@ -217,10 +275,13 @@ async function jobStatus(env: Env, token: string): Promise<Response> {
   const total = payload.plan?.length ?? 0;
   const written = payload.sections?.length ?? 0;
   const document = job.step === 'done' ? await documentForOrder(env.DB, job.order_id) : null;
+  const order = await orderStatus(env.DB, job.order_id);
 
   return json({
     step: job.step,
     status: job.status,
+    // 'pending' means the payment page was opened and nothing has settled yet.
+    paid: order === 'paid' || order === 'test',
     written,
     total,
     // Calculation is quick and rendering is a few seconds; the text is the whole wait.
@@ -435,6 +496,9 @@ export default {
     }
     if (url.pathname === '/v1/orders' && request.method === 'POST') {
       return createOrder(request, env);
+    }
+    if (url.pathname === '/v1/stripe/webhook' && request.method === 'POST') {
+      return stripeWebhook(request, env);
     }
     if (url.pathname === '/v1/preview' && request.method === 'POST') {
       return previewText(request, env);

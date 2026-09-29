@@ -311,3 +311,28 @@ export async function telegramWaiting(db: D1Database, orderId: string): Promise<
 export async function forgetTelegramChat(db: D1Database, chatId: number): Promise<void> {
   await db.prepare('DELETE FROM telegram_links WHERE chat_id = ?').bind(chatId).run();
 }
+
+export async function markOrderPaid(
+  db: D1Database,
+  orderId: string,
+  paymentIntent: string | null,
+): Promise<boolean> {
+  // Returns whether this call was the one that flipped it: the webhook can arrive twice.
+  const result = await db
+    .prepare(
+      `UPDATE orders SET status = 'paid', paid_at = ?, stripe_payment_intent = ?
+       WHERE id = ? AND status = 'pending'`,
+    )
+    .bind(now(), paymentIntent, orderId)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+export async function setOrderSession(db: D1Database, orderId: string, sessionId: string) {
+  await db.prepare('UPDATE orders SET stripe_session_id = ? WHERE id = ?').bind(sessionId, orderId).run();
+}
+
+export async function orderStatus(db: D1Database, orderId: string): Promise<string | null> {
+  const row = await db.prepare('SELECT status FROM orders WHERE id = ?').bind(orderId).first<{ status: string }>();
+  return row?.status ?? null;
+}
