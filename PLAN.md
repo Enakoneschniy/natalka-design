@@ -134,6 +134,12 @@ forecast / synastry / child / bundle products (schema already supports them); pl
 2. **Legal entity for Stripe.** Stripe does not onboard Ukrainian entities. Which entity will hold the Stripe account (EU company, Stripe Atlas US LLC, other)? This decides tax registrations for Stripe Tax and the footer legal block (the mockup still shows a Ukrainian ФОП).
 3. ~~Prices~~ — **decided 2026-09-29**: per-country price lists in `apps/web/src/lib/pricing.ts`, anchored at ₴790 / €19 / $21 for the natal chart (forecast €14, synastry €17, child €14, bundle €29; PLN 79, CZK 449, RON 89, BGN 35, GBP 16). Currency follows `cf-ipcountry`, formatted in the currency's home locale. Still open: whether the bundle is one Stripe price or a Checkout with two line items.
 4. **50 Astro-Seek reference charts** — do you have them as a file? If not, I will generate the input list (varied years 1950–2020, latitudes incl. > 60°, DST edges) and you export Astro-Seek results, or I fetch them via their public pages if you're fine with that.
+5b. **Prompt analytics** — decided 2026-09-29: Cloudflare AI Gateway (`natalka`), every model call
+   is proxied through it. Gives per-request logs, token/cost dashboards, retries and rate limits
+   without a second vendor, and the birth data never leaves our Cloudflare account. Per-order cost
+   is also written to `jobs.cost_micros` so invoices and dashboards can be reconciled.
+   Langfuse/Braintrust stay an option later, for prompt versioning and scored evals.
+
 5. **LLM provider & budget** — Claude via the Anthropic API is my default; do you have an account/key to use, and a per-document cost ceiling?
 6. **Hosting** — Vercel for `apps/web` + a VPS/Fly.io/Hetzner Docker host for Postgres + worker + API? The Cloudflare account is not provisioned for this project (if we host on Workers/R2 it needs to be).
 7. **Email sender domain** — `natalka.app` and DNS access (SPF/DKIM) — confirm the domain.
