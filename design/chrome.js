@@ -1,9 +1,9 @@
-/* Natalka — shared header / footer for mockup pages */
+/* Chronika — shared header / footer for mockup pages */
 (() => {
   const NAV = (active, variant) => `
   <header class="nav">
     <div class="container">
-      <a class="logo" href="landing.html"><span data-logo></span>Natalka</a>
+      <a class="logo" href="landing.html"><span data-logo></span>Chronika</a>
       ${variant === 'app' ? `
       <nav class="nav-links">
         <a href="account.html" ${active === 'account' ? 'aria-current="page"' : ''}>Мої замовлення</a>
@@ -41,7 +41,7 @@
       <div class="menu-foot">
         <span data-lang-slot="lang-menu"></span>
         <a class="btn btn-primary btn-lg btn-block" href="form.html">Побудувати карту</a>
-        <a class="small muted" href="mailto:hi@natalka.app">hi@natalka.app</a>
+        <a class="small muted" href="mailto:hi@chronika.me">hi@chronika.me</a>
       </div>
     </div>
   </div>`;
@@ -51,7 +51,7 @@
     <div class="container">
       <div class="cols">
         <div>
-          <a class="logo" href="landing.html" style="margin-bottom:14px"><span data-logo></span>Natalka</a>
+          <a class="logo" href="landing.html" style="margin-bottom:14px"><span data-logo></span>Chronika</a>
           <p class="small">Автоматичні натальні карти українською. Розрахунок за швейцарськими ефемеридами, текст — з урахуванням вашої карти, а не знака Сонця.</p>
         </div>
         <div>
@@ -64,18 +64,18 @@
         </div>
         <div>
           <h4>Контакти</h4>
-          <ul><li><a href="mailto:hi@natalka.app">hi@natalka.app</a></li><li>Пн–Пт, 10:00–19:00 за Києвом</li><li><a href="#">Instagram</a> · <a href="#">TikTok</a></li></ul>
+          <ul><li><a href="mailto:hi@chronika.me">hi@chronika.me</a></li><li>Пн–Пт, 10:00–19:00 за Києвом</li><li><a href="#">Instagram</a> · <a href="#">TikTok</a></li></ul>
         </div>
       </div>
       <div class="row between" style="margin-top:40px">
         <span data-moon-now></span>
-        <span class="small muted">natalka.app</span>
+        <span class="small muted">chronika.me</span>
       </div>
       <div class="legal">
         <span>ФОП Іваненко Наталія Олегівна · РНОКПП 3141592653 · вул. Володимирська, 12, Київ, 01001</span>
         <span>Розбір має розважально-пізнавальний характер і не є медичною, психологічною чи фінансовою порадою.</span>
       </div>
-      <div class="footer-mark" aria-hidden="true">Natalka</div>
+      <div class="footer-mark" aria-hidden="true">Chronika</div>
     </div>
   </footer>`;
 

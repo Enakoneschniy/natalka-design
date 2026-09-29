@@ -659,10 +659,12 @@
 .section-title p {
   margin-top: 16px;
 }
+/* Two per row rather than four: four columns squeeze every card into a narrow strip where the
+   feature lists wrap onto three lines and the prices end up below a ragged block of white. */
 .grid-4 {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
 }
 .product {
   display: flex;

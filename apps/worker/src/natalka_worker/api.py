@@ -351,7 +351,7 @@ def document(doc: Document) -> Response:
         buffer.getvalue(),
         media_type="application/pdf",
         headers={
-            "content-disposition": 'attachment; filename="natalka.pdf"',
+            "content-disposition": 'attachment; filename="chronika.pdf"',
             # The caller records the page count with the document; counting it again would mean
             # parsing the PDF it just received.
             "x-pages": str(pages),

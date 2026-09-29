@@ -5,7 +5,7 @@ import { Stepper } from '@/components/Stepper';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'form' });
-  return { title: `Natalka — ${t('title')}` };
+  return { title: `Chronika — ${t('title')}` };
 }
 
 export default async function StartPage({ params }: { params: Promise<{ locale: string }> }) {

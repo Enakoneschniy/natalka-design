@@ -22,7 +22,7 @@ export function SiteHeader({ locale, available }: { locale: Locale; available: L
         <div className="container-page nav-inner">
           <Link className="logo" href={`/${locale}`}>
             <Logo />
-            Natalka
+            Chronika
           </Link>
           <nav className="nav-links">
             {links.map((l) => (

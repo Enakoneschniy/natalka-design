@@ -1,4 +1,4 @@
-/* Natalka — i18n
+/* Chronika — i18n
    Ukrainian is the source language in the markup; dictionaries in i18n/<lang>.js map
    Ukrainian strings → translations, applied to text nodes and a few attributes.
    Russian is available everywhere except Ukraine: for visitors from UA (geo, or a uk-UA / ru-UA locale)

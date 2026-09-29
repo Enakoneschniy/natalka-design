@@ -101,7 +101,7 @@
       },
       {
         "q": "Who writes the reading?",
-        "a": "The calculation is done by software using the Swiss Ephemeris. The text is composed by a language model following a method written by Natalka's astrologers; every paragraph is tied to a specific position or aspect in your chart."
+        "a": "The calculation is done by software using the Swiss Ephemeris. The text is composed by a language model following a method written by Chronika's astrologers; every paragraph is tied to a specific position or aspect in your chart."
       },
       {
         "q": "How do you store my data?",
@@ -127,7 +127,7 @@
   },
   "unavailable": {
     "title": "Not available in your region",
-    "text": "Natalka does not serve users from the Russian Federation. Payments from this region are not accepted and no documents are delivered."
+    "text": "Chronika does not serve users from the Russian Federation. Payments from this region are not accepted and no documents are delivered."
   },
   "form": {
     "title": "Birth details",

@@ -1,4 +1,4 @@
-/* Natalka — page-level layouts */
+/* Chronika — page-level layouts */
 
 /* ===== landing ===== */
 .hero { position: relative; padding: 72px 0 40px; min-height: calc(100vh - 80px); display: flex; align-items: center; overflow: hidden; }

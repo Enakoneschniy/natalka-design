@@ -21,7 +21,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'hero' });
   return {
-    title: `Natalka — ${t('titleLead')} ${t('titleAccent')}`,
+    title: `Chronika — ${t('titleLead')} ${t('titleAccent')}`,
     description: t('lead'),
     metadataBase: new URL('https://natalka-web.ceo-63e.workers.dev'),
   };

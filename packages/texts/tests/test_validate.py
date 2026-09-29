@@ -102,3 +102,20 @@ def test_informal_address_is_rejected() -> None:
 def test_formal_address_passes() -> None:
     text = "Ваш Марс в Овне даёт скорость.\n\nЕсли вам кажется, что это давит, — это транзит."
     assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok
+
+
+def test_ukrainian_words_in_a_russian_reading_are_caught() -> None:
+    text = "Ваше Сонце у Тельці стоїть в девятому домі.\n\nВторой абзац по-русски, всё в порядке."
+    report = check(text, lang="ru", min_paragraphs=2, max_paragraphs=2)
+    assert any("other language" in p for p in report.problems)
+
+
+def test_russian_words_in_a_ukrainian_reading_are_caught() -> None:
+    text = "Ваше Сонце у Тельці.\n\nЭто предложение на русском языке попало не туда."
+    report = check(text, lang="uk", min_paragraphs=2, max_paragraphs=2)
+    assert any("other language" in p for p in report.problems)
+
+
+def test_a_clean_russian_section_passes_the_language_check() -> None:
+    text = "Ваше Солнце в Тельце, в девятом доме.\n\nЭто даёт вам устойчивость и упрямство."
+    assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok

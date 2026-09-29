@@ -151,7 +151,7 @@ class Renderer:
             topMargin=st.MARGIN,
             bottomMargin=st.MARGIN,
             title=f"{self.doc.cover.title} — {self.doc.person.name}",
-            author="Natalka",
+            author="Chronika",
             subject=self.doc.meta.product,
         )
         cover_frame = Frame(
@@ -528,7 +528,7 @@ class Renderer:
         canv.setFont(st.SANS, 7.5)
         ref = f"{self.doc.meta.order_ref}  ·  " if self.doc.meta.order_ref else ""
         canv.drawCentredString(
-            cx, 1.3 * cm, f"{ref}{self.doc.meta.generated_at:%Y-%m-%d}  ·  natalka.app"
+            cx, 1.3 * cm, f"{ref}{self.doc.meta.generated_at:%Y-%m-%d}  ·  chronika.me"
         )
         canv.restoreState()
 

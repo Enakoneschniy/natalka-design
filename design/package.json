@@ -2,7 +2,7 @@
   "name": "@natalka/design",
   "private": true,
   "version": "0.1.0",
-  "description": "Natalka — HTML/CSS design mockups",
+  "description": "Chronika — HTML/CSS design mockups",
   "scripts": {
     "serve": "python3 -m http.server 8080 --bind 0.0.0.0 --directory ..",
     "shots": "node shots.mjs",

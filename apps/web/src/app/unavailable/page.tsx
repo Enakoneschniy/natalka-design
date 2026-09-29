@@ -9,16 +9,16 @@ export default function Unavailable() {
           <div className="card">
             <h1 lang="uk">Сервіс недоступний у вашому регіоні</h1>
             <p lang="uk">
-              Natalka не працює з користувачами з Російської Федерації. Оплату з цього регіону ми не
-              приймаємо, документи не надсилаємо.
+              Chronika не працює з користувачами з Російської Федерації. Оплату з цього регіону ми
+              не приймаємо, документи не надсилаємо.
             </p>
             <hr />
             <h2>Not available in your region</h2>
             <p>
-              Natalka does not serve users from the Russian Federation. Payments from this region
+              Chronika does not serve users from the Russian Federation. Payments from this region
               are not accepted and no documents are delivered.
             </p>
-            <p className="muted small">natalka.app</p>
+            <p className="muted small">chronika.me</p>
           </div>
         </main>
       </body>

@@ -111,6 +111,18 @@ SECOND_PERSON = {
 #: Below this a section is an opening or a closing line, where an impersonal sentence is fine.
 ADDRESS_MIN_CHARS = 400
 
+#: Ukrainian and Russian share an alphabet except for a handful of letters, and those letters are
+#: enough to catch the mixing: a model writing a Russian reading slips in «і», «ї», «є» or «ґ»,
+#: and a Ukrainian one slips in «ы», «э», «ъ» or «ё». Two or three of them in a section is not a
+#: typo, it is a sentence in the wrong language.
+FOREIGN_LETTERS = {"ru": "іїєґ", "uk": "ыэъё"}
+
+
+def _foreign_words(text: str, letters: str) -> set[str]:
+    pattern = rf"\b[\w'’-]*[{letters}][\w'’-]*\b"
+    return {m.group(0) for m in re.finditer(pattern, text, re.IGNORECASE)}
+
+
 #: Latin letters inside a Cyrillic word, or a stray Latin word: models occasionally slip one in
 #: ("на practике"), and in a paid document it reads as a typo nobody proofread. These are the
 #: Latin strings a Russian or Ukrainian reading may legitimately contain.
@@ -154,6 +166,12 @@ def _language_problems(text: str, lang: str, *, impersonal_ok: bool = False) -> 
         latin = [w for w in LATIN_WORD.findall(text) if w.lower() not in LATIN_OK]
         if latin:
             problems.append(f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
+
+    letters = FOREIGN_LETTERS.get(lang)
+    if letters:
+        words = _foreign_words(text, letters)
+        if words:
+            problems.append(f"words from the other language: {', '.join(sorted(words)[:3])}")
 
     informal_re = INFORMAL.get(lang)
     informal = informal_re.search(text) if informal_re else None

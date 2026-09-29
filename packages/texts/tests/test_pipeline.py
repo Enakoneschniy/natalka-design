@@ -17,8 +17,10 @@ from natalka_texts.providers import Completion
 class SizedProvider:
     def complete(self, system: str, user: str, *, max_tokens: int = 4096) -> Completion:
         wanted = int(re.search(r"Length: (\d+)", user).group(1))
+        # Filler with no letter unique to either language: the editor rejects a Ukrainian word
+        # in a Russian reading, and this double is used for both.
         body = "\n\n".join(
-            f"Абзац {i + 1}: текст цього розділу, достатньо довгий, щоб потрапити в PDF."
+            f"Абзац номер {i + 1}, достатньо довгий, щоб потрапити в PDF."
             for i in range(wanted)
         )
         return Completion(

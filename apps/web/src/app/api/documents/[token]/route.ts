@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
   return new Response(upstream.body, {
     headers: {
       'content-type': 'application/pdf',
-      'content-disposition': 'inline; filename="natalka.pdf"',
+      'content-disposition': 'inline; filename="chronika.pdf"',
       'cache-control': 'private, no-store',
     },
   });

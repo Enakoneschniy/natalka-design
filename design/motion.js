@@ -1,4 +1,4 @@
-/* Natalka — motion (GSAP 3.13 + ScrollTrigger + DrawSVG)
+/* Chronika — motion (GSAP 3.13 + ScrollTrigger + DrawSVG)
    One orchestrated intro (the wheel builds itself), ambient life (stars, orbits, glow),
    scroll reveals, wheel/table hover sync, and page fades. Respects prefers-reduced-motion. */
 (() => {

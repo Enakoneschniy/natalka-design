@@ -193,7 +193,7 @@ async function download(env: Env, token: string): Promise<Response> {
   return new Response(object.body, {
     headers: {
       'content-type': 'application/pdf',
-      'content-disposition': 'inline; filename="natalka.pdf"',
+      'content-disposition': 'inline; filename="chronika.pdf"',
       'cache-control': 'private, no-store',
     },
   });

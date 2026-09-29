@@ -25,7 +25,9 @@ class SizedProvider:
             text, self.first = self.first, None
             return Completion(text=text, tokens_in=0, tokens_out=0, model="scripted")
         wanted = int(re.search(r"Length: (\d+)", user).group(1))
-        body = "\n\n".join(f"Абзац номер {i + 1} цього розділу." for i in range(wanted))
+        # Filler with no letter unique to either language: the editor now rejects a
+        # Ukrainian word in a Russian reading, and the double is used for both.
+        body = "\n\n".join(f"Абзац номер {i + 1}, звичайна проза." for i in range(wanted))
         return Completion(text=body, tokens_in=0, tokens_out=0, model="scripted")
 
 

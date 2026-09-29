@@ -1,4 +1,4 @@
-/* Natalka — natal wheel component + shared astro helpers.
+/* Chronika — natal wheel component + shared astro helpers.
    Everything is drawn from data (longitudes, cusps) so the same
    component serves hero / preview / badge sizes and the PDF spread. */
 

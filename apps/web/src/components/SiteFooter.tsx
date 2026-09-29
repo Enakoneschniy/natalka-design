@@ -13,7 +13,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <div>
             <Link className="logo" href={`/${locale}`}>
               <Logo size={26} />
-              Natalka
+              Chronika
             </Link>
             <p className="small muted footer-about">{t('about')}</p>
           </div>
@@ -44,7 +44,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
             <h4>{t('contacts')}</h4>
             <ul>
               <li>
-                <a href="mailto:hi@natalka.app">hi@natalka.app</a>
+                <a href="mailto:hi@chronika.me">hi@chronika.me</a>
               </li>
               <li>{t('hours')}</li>
             </ul>
@@ -54,7 +54,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <span>{t('disclaimer')}</span>
         </div>
         <div className="footer-mark" aria-hidden="true">
-          Natalka
+          Chronika
         </div>
       </div>
     </footer>

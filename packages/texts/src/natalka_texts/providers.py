@@ -84,8 +84,8 @@ class OpenRouterProvider:
                     "authorization": f"Bearer {self.api_key}",
                     "content-type": "application/json",
                     # OpenRouter attributes traffic by these; they show up in its dashboard.
-                    "http-referer": "https://natalka.app",
-                    "x-title": "Natalka",
+                    "http-referer": "https://chronika.me",
+                    "x-title": "Chronika",
                 },
                 json={
                     "model": self.model,

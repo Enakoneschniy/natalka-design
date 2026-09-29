@@ -1,4 +1,4 @@
-/* Natalka — shared styles & components (dark, luminous) */
+/* Chronika — shared styles & components (dark, luminous) */
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; background: var(--bg); }
