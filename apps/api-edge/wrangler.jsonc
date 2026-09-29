@@ -6,14 +6,15 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
   "vars": {
-    "ALLOWED_ORIGINS": "https://natalka-web.ceo-63e.workers.dev,http://localhost:3000"
+    "ALLOWED_ORIGINS": "https://natalka-web.ceo-63e.workers.dev,http://localhost:3000",
+    "NATALKA_AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/f63eebad9e3bd39565a3129188e84a47/natalka/openrouter"
   },
   "containers": [
     {
       "class_name": "ApiContainer",
       // Built and pushed by CI (.github/workflows/container.yml); tag is rewritten on deploy.
       "image": "registry.cloudflare.com/f63eebad9e3bd39565a3129188e84a47/natalka-api:latest",
-      "max_instances": 3,
+      "max_instances": 10,
       "instance_type": "basic"
     }
   ],

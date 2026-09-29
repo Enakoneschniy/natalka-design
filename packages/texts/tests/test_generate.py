@@ -2,7 +2,7 @@ import re
 
 import pytest
 from natalka_texts import ScriptedProvider, write_reading
-from natalka_texts.providers import AnthropicProvider, Completion, ModelUnavailableError
+from natalka_texts.providers import Completion, ModelUnavailableError, OpenRouterProvider
 from natalka_texts.sections import specs
 
 GOOD = "Перший абзац розбору.\n\nДругий абзац розбору.\n\nТретій абзац розбору.\n\nЧетвертий."
@@ -70,12 +70,25 @@ def test_the_prompt_never_leaks_more_than_the_chart(facts: dict) -> None:
 
 
 def test_cost_is_derived_from_the_model_price_list() -> None:
-    completion = Completion(text="x", tokens_in=1_000_000, tokens_out=1_000_000, model="claude-sonnet-5")
-    assert completion.cost_micros == 18_000_000  # $3 in + $15 out
+    completion = Completion(
+        text="x", tokens_in=1_000_000, tokens_out=1_000_000, model="anthropic/claude-sonnet-5"
+    )
+    assert completion.cost_micros == 12_000_000  # $2 in + $10 out
     assert Completion("x", 10, 10, "unknown-model").cost_micros == 0
 
 
+def test_a_reported_cost_beats_the_price_list() -> None:
+    completion = Completion(
+        text="x",
+        tokens_in=10,
+        tokens_out=10,
+        model="anthropic/claude-sonnet-5",
+        reported_cost_micros=4242,
+    )
+    assert completion.cost_micros == 4242
+
+
 def test_a_missing_key_is_a_retryable_error() -> None:
-    provider = AnthropicProvider(api_key="")
+    provider = OpenRouterProvider(api_key="")
     with pytest.raises(ModelUnavailableError):
         provider.complete("system", "user", max_tokens=16)

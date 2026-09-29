@@ -1,27 +1,29 @@
 """Model access.
 
-Everything goes through Cloudflare AI Gateway rather than the provider's own host: it gives us
-per-request logs, token and cost figures and retries without a second vendor seeing birth data.
-The gateway speaks the provider's own protocol, so only the base URL changes.
+Calls go to OpenRouter (one account, any model) through Cloudflare AI Gateway rather than to the
+provider directly: the gateway gives per-request logs, token and cost figures and retries without
+letting a second analytics vendor see birth data. Only the base URL changes — the protocol is
+OpenRouter's, which is OpenAI-compatible.
 """
 
 from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 import httpx
 
-DEFAULT_MODEL = "claude-sonnet-5"
-ANTHROPIC_DIRECT = "https://api.anthropic.com"
-ANTHROPIC_VERSION = "2023-06-01"
+DEFAULT_MODEL = "anthropic/claude-sonnet-5"
+OPENROUTER_DIRECT = "https://openrouter.ai/api"
 
-#: USD per million tokens, for the cost we store next to each job.
+#: USD per million tokens, as listed by OpenRouter. Only a fallback: OpenRouter returns the real
+#: cost of each generation in `usage`, and that is what we store — it includes their markup and
+#: any cache discount. This table is what keeps the numbers sane if the field ever goes missing.
 PRICES: dict[str, tuple[float, float]] = {
-    "claude-opus-5": (15.0, 75.0),
-    "claude-sonnet-5": (3.0, 15.0),
-    "claude-haiku-4-5-20251001": (1.0, 5.0),
+    "anthropic/claude-sonnet-5": (2.0, 10.0),
+    "anthropic/claude-opus-5": (5.0, 25.0),
+    "anthropic/claude-haiku-4.5": (1.0, 5.0),
 }
 
 
@@ -35,10 +37,15 @@ class Completion:
     tokens_in: int
     tokens_out: int
     model: str
+    #: What the provider says this generation cost, in millionths of a USD. Zero means it did not
+    #: say, and `cost_micros` falls back to the price list.
+    reported_cost_micros: int = 0
 
     @property
     def cost_micros(self) -> int:
         """Cost in millionths of a USD, so a fraction of a cent is still an integer."""
+        if self.reported_cost_micros:
+            return self.reported_cost_micros
         prices = PRICES.get(self.model)
         if not prices:
             return 0
@@ -51,38 +58,44 @@ class Provider(Protocol):
     def complete(self, system: str, user: str, *, max_tokens: int) -> Completion: ...
 
 
-class AnthropicProvider:
+class OpenRouterProvider:
     def __init__(
         self,
         *,
         api_key: str | None = None,
         base_url: str | None = None,
-        model: str = DEFAULT_MODEL,
-        timeout: float = 180.0,
+        model: str | None = None,
+        timeout: float = 300.0,
     ) -> None:
-        self.api_key = api_key or os.environ.get("NATALKA_ANTHROPIC_API_KEY", "")
+        self.api_key = api_key or os.environ.get("NATALKA_MODEL_API_KEY", "")
         self.base_url = (
-            base_url or os.environ.get("NATALKA_AI_GATEWAY_URL") or ANTHROPIC_DIRECT
+            base_url or os.environ.get("NATALKA_AI_GATEWAY_URL") or OPENROUTER_DIRECT
         ).rstrip("/")
-        self.model = model
+        self.model = model or os.environ.get("NATALKA_MODEL") or DEFAULT_MODEL
         self.timeout = timeout
 
     def complete(self, system: str, user: str, *, max_tokens: int = 4096) -> Completion:
         if not self.api_key:
-            raise ModelUnavailableError("NATALKA_ANTHROPIC_API_KEY is not set")
+            raise ModelUnavailableError("NATALKA_MODEL_API_KEY is not set")
         try:
             response = httpx.post(
-                f"{self.base_url}/v1/messages",
+                f"{self.base_url}/v1/chat/completions",
                 headers={
-                    "x-api-key": self.api_key,
-                    "anthropic-version": ANTHROPIC_VERSION,
+                    "authorization": f"Bearer {self.api_key}",
                     "content-type": "application/json",
+                    # OpenRouter attributes traffic by these; they show up in its dashboard.
+                    "http-referer": "https://natalka.app",
+                    "x-title": "Natalka",
                 },
                 json={
                     "model": self.model,
                     "max_tokens": max_tokens,
-                    "system": system,
-                    "messages": [{"role": "user", "content": user}],
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    # Ask for the real cost of this call rather than deriving it from a price list.
+                    "usage": {"include": True},
                 },
                 timeout=self.timeout,
             )
@@ -92,22 +105,31 @@ class AnthropicProvider:
         if response.status_code >= 400:
             raise ModelUnavailableError(f"{response.status_code}: {response.text[:300]}")
 
-        payload = response.json()
-        text = "".join(part.get("text", "") for part in payload.get("content", []))
-        usage = payload.get("usage", {})
+        payload: dict[str, Any] = response.json()
+        if payload.get("error"):
+            raise ModelUnavailableError(str(payload["error"])[:300])
+
+        choices = payload.get("choices") or []
+        if not choices:
+            raise ModelUnavailableError("the provider returned no choices")
+        text = (choices[0].get("message") or {}).get("content") or ""
+
+        usage = payload.get("usage") or {}
+        cost = usage.get("cost")
         return Completion(
             text=text.strip(),
-            tokens_in=int(usage.get("input_tokens", 0)),
-            tokens_out=int(usage.get("output_tokens", 0)),
-            model=payload.get("model", self.model),
+            tokens_in=int(usage.get("prompt_tokens", 0)),
+            tokens_out=int(usage.get("completion_tokens", 0)),
+            model=payload.get("model") or self.model,
+            reported_cost_micros=round(float(cost) * 1_000_000) if cost else 0,
         )
 
 
 class ScriptedProvider:
     """Returns prepared text instead of calling a model.
 
-    Two uses: tests, and running the whole pipeline end to end before the model key is in place —
-    the document comes out real, only the prose is a placeholder.
+    Two uses: tests, and running the whole pipeline end to end before a key is in place — the
+    document comes out real, only the prose is a placeholder.
     """
 
     def __init__(self, text: str = "", *, per_section: list[str] | None = None) -> None:

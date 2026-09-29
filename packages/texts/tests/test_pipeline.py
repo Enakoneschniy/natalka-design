@@ -21,22 +21,18 @@ class SizedProvider:
             f"Абзац {i + 1}: текст цього розділу, достатньо довгий, щоб потрапити в PDF."
             for i in range(wanted)
         )
-        return Completion(text=body, tokens_in=1200, tokens_out=800, model="claude-sonnet-5")
+        return Completion(text=body, tokens_in=1200, tokens_out=800, model="anthropic/claude-sonnet-5")
 
 
 def test_facts_become_a_pdf(facts: dict) -> None:
-    reading = write_reading(
-        facts, provider=SizedProvider(), name="Оксана", lang="uk", gender="f"
-    )
+    reading = write_reading(facts, provider=SizedProvider(), name="Оксана", lang="uk", gender="f")
     document = natal_skeleton(
         facts, person=Person(name="Оксана", gender="f"), place="Євпаторія", lang="uk"
     )
-    filled = fill_sections(
-        document, {s.id: (s.title, s.text, s.quote) for s in reading.sections}
-    )
+    filled = fill_sections(document, {s.id: (s.title, s.text, s.quote) for s in reading.sections})
 
     # Every section the skeleton kept now carries text, and the chart pages are still there.
-    assert [s.id for s in filled.sections][0] == "chart"
+    assert filled.sections[0].id == "chart"
     assert all(s.blocks for s in filled.sections)
 
     buffer = io.BytesIO()

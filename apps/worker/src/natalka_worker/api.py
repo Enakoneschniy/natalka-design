@@ -26,7 +26,7 @@ from natalka_engine import (
 )
 from natalka_engine.geo import zone_for
 from natalka_engine.timeutil import UnknownTimeZoneError
-from natalka_texts import AnthropicProvider, ModelUnavailableError, fact_sheet, specs, title
+from natalka_texts import ModelUnavailableError, OpenRouterProvider, fact_sheet, specs, title
 from natalka_texts.generate import MAX_TOKENS
 from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
 from natalka_texts.validate import check
@@ -150,7 +150,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
     if spec is None:
         raise HTTPException(404, f"unknown section: {req.section_id}")
 
-    provider = AnthropicProvider()
+    provider = OpenRouterProvider()
     system = system_prompt(req.lang, req.gender)
     user = section_prompt(
         spec,

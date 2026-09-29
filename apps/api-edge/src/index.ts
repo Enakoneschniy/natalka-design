@@ -10,19 +10,22 @@ import { Container, getContainer } from '@cloudflare/containers';
 interface Env {
   API_CONTAINER: DurableObjectNamespace<ApiContainer>;
   ALLOWED_ORIGINS: string;
-  /** Set with `wrangler secret put`; never present in the repository. */
-  NATALKA_ANTHROPIC_API_KEY?: string;
+  /** Set as a Worker secret; never present in the repository. */
+  NATALKA_MODEL_API_KEY?: string;
+  NATALKA_AI_GATEWAY_URL?: string;
 }
 
 export class ApiContainer extends Container {
   defaultPort = 8000;
-  /** Shut the instance down after idling; the next request cold-starts it (~2–4 s). */
-  sleepAfter = '15m';
+  /** Idle instances keep billing until they sleep, and a reading is a burst of calls rather than
+   * steady traffic, so five minutes is the better trade against a ~3 s cold start. */
+  sleepAfter = '5m';
 
   /** The model key reaches the Python process only through here — it is a Worker secret, so it
    * is encrypted at rest in Cloudflare and never written to the image or the repository. */
   override envVars: Record<string, string> = {
-    NATALKA_ANTHROPIC_API_KEY: (this.env as Env).NATALKA_ANTHROPIC_API_KEY ?? '',
+    NATALKA_MODEL_API_KEY: (this.env as Env).NATALKA_MODEL_API_KEY ?? '',
+    NATALKA_AI_GATEWAY_URL: (this.env as Env).NATALKA_AI_GATEWAY_URL ?? '',
   };
 
   override onStart() {
@@ -65,9 +68,9 @@ export default {
       return Response.json({ status: 'ok', edge: true });
     }
 
-    // One instance per colo keeps the ephemeris warm for nearby visitors.
-    const region = request.cf?.colo ?? 'default';
-    const container = getContainer(env.API_CONTAINER, String(region));
+    // One shared instance rather than one per colo: warm instances bill while they idle, and a
+    // handful of milliseconds of extra latency is invisible next to a calculation.
+    const container = getContainer(env.API_CONTAINER, 'main');
 
     try {
       const response = await container.fetch(request);
