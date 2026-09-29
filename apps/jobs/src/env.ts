@@ -7,6 +7,10 @@ export interface Env {
   /** Base URL of the Python calculation and text API. */
   NATALKA_API_URL: string;
   RETENTION_DAYS: string;
+  /** Where the site lives; the ready letter links back to it. */
+  SITE_URL: string;
+  /** Resend API key. Worker secret; absent means the ready letter is skipped, not failed. */
+  RESEND_API_KEY?: string;
   /** AES-GCM key (base64url, 32 bytes) for birth data. Worker secret. */
   DATA_KEY: string;
   /** HMAC secret for download links. Worker secret. */

@@ -4,9 +4,17 @@
  * from where it stopped instead of paying the model twice for the same section.
  */
 
-import { type Blobish, decryptJson, sha256Hex } from './crypto';
-import { expiryFrom, insertDocument, updateJob, type JobRow } from './db';
+import { type Blobish, decryptJson, LINK_TTL_SECONDS, sha256Hex, signToken } from './crypto';
+import {
+  expiryFrom,
+  insertDocument,
+  insertEmailEvent,
+  type JobRow,
+  orderContact,
+  updateJob,
+} from './db';
 import type { Env } from './env';
+import { sendReady } from './mail';
 
 export interface BirthData {
   date: string;
@@ -217,7 +225,29 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
 
   if (job.step === 'pdf') {
     await render(env, job, birth, payload);
+    await updateJob(env.DB, job.id, { step: 'email' });
+    job = { ...job, step: 'email' };
+  }
+
+  if (job.step === 'email') {
+    await notify(env, job);
     await updateJob(env.DB, job.id, { step: 'done', status: 'done' });
   }
   return true;
+}
+
+/** The ready letter. Its own step, after the document exists: a provider outage then costs a
+ * retry of one POST, not of fifteen minutes of writing. */
+async function notify(env: Env, job: JobRow): Promise<void> {
+  const contact = await orderContact(env.DB, job.order_id);
+  if (!contact) throw new Error(`no order for job ${job.id}`);
+  const token = await signToken({ order: job.order_id, job: job.id }, env.LINK_KEY, LINK_TTL_SECONDS);
+  const link = `${env.SITE_URL}/${contact.locale}/generating?t=${token}`;
+  const sent = await sendReady(env, contact.email, contact.locale, link);
+  await insertEmailEvent(env.DB, {
+    order_id: job.order_id,
+    kind: 'ready',
+    provider_id: sent.providerId,
+    status: sent.status,
+  });
 }

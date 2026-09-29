@@ -200,3 +200,26 @@ export async function cachePreview(
     )
     .run();
 }
+
+export async function orderContact(
+  db: D1Database,
+  orderId: string,
+): Promise<{ email: string; locale: string } | null> {
+  return db
+    .prepare('SELECT email, locale FROM orders WHERE id = ?')
+    .bind(orderId)
+    .first<{ email: string; locale: string }>();
+}
+
+export async function insertEmailEvent(
+  db: D1Database,
+  event: { order_id: string; kind: string; provider_id: string | null; status: string },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO email_events (id, order_id, kind, provider_id, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(crypto.randomUUID(), event.order_id, event.kind, event.provider_id, event.status, now())
+    .run();
+}

@@ -115,3 +115,6 @@ export const sha256Hex = async (data: ArrayBuffer): Promise<string> => {
   const digest = await crypto.subtle.digest('SHA-256', data);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 };
+
+/** How long a download link stays valid: as long as the document itself is kept. */
+export const LINK_TTL_SECONDS = 30 * 24 * 60 * 60;

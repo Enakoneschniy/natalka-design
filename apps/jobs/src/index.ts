@@ -6,7 +6,7 @@
  * the only place with the database, the bucket and the keys.
  */
 
-import { encryptJson, sha256Hex, signToken, verifyToken } from './crypto';
+import { encryptJson, LINK_TTL_SECONDS, sha256Hex, signToken, verifyToken } from './crypto';
 import {
   cachePreview,
   cachedPreview,
@@ -27,7 +27,6 @@ import { advance, type JobPayload } from './pipeline';
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
  * so we stop writing after four minutes and let the message come back for the rest. */
 const PASS_BUDGET_MS = 4 * 60 * 1000;
-const LINK_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 const json = (body: unknown, status = 200): Response =>
   Response.json(body, { status, headers: { 'cache-control': 'no-store' } });

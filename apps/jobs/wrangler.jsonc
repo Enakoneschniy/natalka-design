@@ -9,7 +9,9 @@
     // The calculation and text API (Python in a container).
     "NATALKA_API_URL": "https://natalka-api.ceo-63e.workers.dev",
     // Days a document and the birth data behind it are kept.
-    "RETENTION_DAYS": "30"
+    "RETENTION_DAYS": "30",
+    // The ready letter links to the waiting screen here, which turns into the download.
+    "SITE_URL": "https://chronika.me"
   },
   // Worker-to-worker over a service binding, not a public fetch: Cloudflare refuses the latter
   // between two workers on the same zone (error 1042), and this keeps the call private and fast.
