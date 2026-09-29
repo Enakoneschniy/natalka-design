@@ -251,6 +251,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
             lang=req.lang,
             min_paragraphs=spec.paragraphs[0],
             max_paragraphs=spec.paragraphs[1],
+            impersonal_ok=spec.impersonal_ok,
         )
         attempts = 1
         if not report.ok:
@@ -265,6 +266,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
                 lang=req.lang,
                 min_paragraphs=spec.paragraphs[0],
                 max_paragraphs=spec.paragraphs[1],
+                impersonal_ok=spec.impersonal_ok,
             )
             # Keep the receipt of both attempts: the caller pays for them either way.
             return {

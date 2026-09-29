@@ -74,6 +74,7 @@ def _one_section(
         lang=lang,
         min_paragraphs=spec.paragraphs[0],
         max_paragraphs=spec.paragraphs[1],
+        impersonal_ok=spec.impersonal_ok,
     )
     if report.ok:
         return SectionText(spec.id, title(spec, lang), completion.text, quote=spec.quote)
@@ -88,6 +89,7 @@ def _one_section(
         lang=lang,
         min_paragraphs=spec.paragraphs[0],
         max_paragraphs=spec.paragraphs[1],
+        impersonal_ok=spec.impersonal_ok,
     )
     # The second draft is used even when imperfect: it is the better of the two in practice, and a
     # missing section is worse than a clumsy one. `Reading.rejected` keeps the receipt.

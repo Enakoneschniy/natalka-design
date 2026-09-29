@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from natalka_document.build import fill_sections, natal_skeleton
+from natalka_document.build import fill_sections, skeleton
 from natalka_document.render import render_pdf
 from natalka_document.schema import Person
 
@@ -122,8 +122,9 @@ def main() -> int:
     retries = sum(1 for s in results if s["attempts"] > 1)
     elapsed = time.monotonic() - started
 
-    document = natal_skeleton(
+    document = skeleton(
         facts,
+        product=ns.product,
         person=Person(name=ns.name, gender=ns.gender),
         place=ns.place,
         lang=ns.lang,

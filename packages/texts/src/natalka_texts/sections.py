@@ -22,6 +22,9 @@ class SectionSpec:
     needs_transits: bool = False
     #: Rendered as a pull quote after the prose.
     quote: bool = False
+    #: An opening or a closing line may talk about the reading rather than to the reader; the
+    #: chapters about the person may not, and the editor enforces that only where it applies.
+    impersonal_ok: bool = False
     titles: dict[str, str] = field(default_factory=dict)
 
 
@@ -32,6 +35,7 @@ def _t(uk: str, ru: str, en: str) -> dict[str, str]:
 NATAL: tuple[SectionSpec, ...] = (
     SectionSpec(
         id="intro",
+        impersonal_ok=True,
         brief=(
             "An opening that addresses the person by name and says what this document is and how "
             "to read it. State plainly that everything here comes from the chart and nothing else."
@@ -138,6 +142,7 @@ NATAL: tuple[SectionSpec, ...] = (
     ),
     SectionSpec(
         id="love",
+        impersonal_ok=True,
         brief=(
             "A short opening for the relationships part: what the chart says this area is like "
             "for this person in general, before the detail."
@@ -185,6 +190,7 @@ NATAL: tuple[SectionSpec, ...] = (
     ),
     SectionSpec(
         id="work",
+        impersonal_ok=True,
         brief="A short opening for the work and money part: the overall picture from the chart.",
         paragraphs=(2, 3),
         titles=_t("Робота і гроші", "Работа и деньги", "Work and money"),
@@ -288,6 +294,7 @@ NATAL: tuple[SectionSpec, ...] = (
     ),
     SectionSpec(
         id="ps",
+        impersonal_ok=True,
         brief=(
             "A short closing note in a quieter voice: what a chart can and cannot tell, and that "
             "none of it is a verdict."
@@ -315,6 +322,7 @@ def title(spec: SectionSpec, lang: str) -> str:
 FORECAST: tuple[SectionSpec, ...] = (
     SectionSpec(
         id="intro",
+        impersonal_ok=True,
         brief=(
             "An opening: what a forecast from transits is and how to use dates without treating "
             "them as verdicts. Say plainly that a transit describes a weather front, not an event."
@@ -407,6 +415,7 @@ FORECAST: tuple[SectionSpec, ...] = (
     ),
     SectionSpec(
         id="ps",
+        impersonal_ok=True,
         brief=(
             "A short closing note: a forecast describes pressure and opportunity, not fate, and "
             "the same transit is lived differently depending on what the person does with it."
@@ -419,6 +428,7 @@ FORECAST: tuple[SectionSpec, ...] = (
 CHILD: tuple[SectionSpec, ...] = (
     SectionSpec(
         id="intro",
+        impersonal_ok=True,
         brief=(
             "An opening addressed to the parent: what this document is, and the warning that a "
             "chart describes a temperament, never a diagnosis or a destiny."
@@ -516,6 +526,7 @@ CHILD: tuple[SectionSpec, ...] = (
     ),
     SectionSpec(
         id="ps",
+        impersonal_ok=True,
         brief=(
             "A short closing note to the parent: a chart is a hypothesis to test against the "
             "child in front of them, not an instruction."
@@ -532,6 +543,7 @@ BY_PRODUCT.update({"natal": NATAL, "forecast": FORECAST, "child": CHILD})
 SYNASTRY: tuple[SectionSpec, ...] = (
     SectionSpec(
         id="intro",
+        impersonal_ok=True,
         brief=(
             "An opening for both of them: what a synastry is and, plainly, what it is not — it "
             "does not score a couple or say whether to stay together."
@@ -606,6 +618,7 @@ SYNASTRY: tuple[SectionSpec, ...] = (
     ),
     SectionSpec(
         id="ps",
+        impersonal_ok=True,
         brief=(
             "A closing note: two charts describe the weather between two people, not their worth "
             "or their future. Say it without hedging."

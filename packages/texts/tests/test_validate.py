@@ -79,3 +79,13 @@ def test_a_section_written_about_the_reader_is_rejected() -> None:
 def test_a_short_closing_line_may_be_impersonal() -> None:
     text = "Карта не приговор.\n\nОна описывает почву, а не урожай."
     assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok
+
+
+def test_an_opening_may_be_impersonal() -> None:
+    about = "Транзит описывает погоду, а не событие. " * 12
+    strict = check(f"{about}\n\n{about}", lang="ru", min_paragraphs=2, max_paragraphs=3)
+    assert any("addressing them" in p for p in strict.problems)
+    relaxed = check(
+        f"{about}\n\n{about}", lang="ru", min_paragraphs=2, max_paragraphs=3, impersonal_ok=True
+    )
+    assert relaxed.ok
