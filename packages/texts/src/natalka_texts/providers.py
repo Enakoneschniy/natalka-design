@@ -96,6 +96,9 @@ class OpenRouterProvider:
                     ],
                     # Ask for the real cost of this call rather than deriving it from a price list.
                     "usage": {"include": True},
+                    # No extended thinking: a section that spends its whole output budget on
+                    # reasoning comes back with empty content, and we pay for the silence.
+                    "reasoning": {"enabled": False},
                 },
                 timeout=self.timeout,
             )
@@ -112,7 +115,14 @@ class OpenRouterProvider:
         choices = payload.get("choices") or []
         if not choices:
             raise ModelUnavailableError("the provider returned no choices")
-        text = (choices[0].get("message") or {}).get("content") or ""
+        choice = choices[0]
+        text = (choice.get("message") or {}).get("content") or ""
+        # An empty answer or one cut off at the ceiling is a failed call, not a bad draft: sending
+        # it to the editor only buys a second, equally truncated attempt.
+        if not text.strip():
+            raise ModelUnavailableError("the model returned no text")
+        if choice.get("finish_reason") == "length":
+            raise ModelUnavailableError("the answer was cut off at max_tokens")
 
         usage = payload.get("usage") or {}
         cost = usage.get("cost")

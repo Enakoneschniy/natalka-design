@@ -19,6 +19,22 @@ from natalka_document.build import fill_sections, natal_skeleton
 from natalka_document.render import render_pdf
 from natalka_document.schema import Person
 
+RETRYABLE = {429, 500, 502, 503, 504}
+
+
+def post_with_retry(client: httpx.Client, url: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """The container restarts and the provider rate-limits; neither should end a 25-minute run."""
+    last = ""
+    for attempt in range(4):
+        response = client.post(url, json=payload)
+        if response.status_code not in RETRYABLE:
+            response.raise_for_status()
+            return response.json()
+        last = f"{response.status_code}: {response.text[:120]}"
+        time.sleep(5 * (attempt + 1))
+    raise RuntimeError(f"gave up after four attempts — {last}")
+
+
 API = "https://natalka-api.ceo-63e.workers.dev"
 TIMEOUT = httpx.Timeout(600.0)
 

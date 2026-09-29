@@ -153,10 +153,11 @@ def section(req: SectionRequest) -> dict[str, Any]:
 
     provider = OpenRouterProvider()
     system = system_prompt(req.lang, req.gender)
+    # The transit list is the longest part of the sheet; only the forecast sections pay for it.
     user = section_prompt(
         spec,
         name=req.name,
-        sheet=fact_sheet(req.facts, req.transits),
+        sheet=fact_sheet(req.facts, req.transits if spec.needs_transits else None),
         written_so_far=req.written_so_far,
     )
     try:

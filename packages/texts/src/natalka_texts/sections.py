@@ -17,6 +17,9 @@ class SectionSpec:
     must_cover: tuple[str, ...] = ()
     #: Needs an exact birth time (houses, Ascendant, MC).
     needs_time: bool = False
+    #: Needs the transit list. It is the longest part of the fact sheet, so the sections that do
+    #: not forecast anything are not charged for carrying it.
+    needs_transits: bool = False
     #: Rendered as a pull quote after the prose.
     quote: bool = False
     titles: dict[str, str] = field(default_factory=dict)
@@ -206,57 +209,71 @@ NATAL: tuple[SectionSpec, ...] = (
     ),
     SectionSpec(
         id="work.now",
+        # forecast section: needs the transit dates
         brief=(
             "What the current transits say about the professional area specifically. Use only the "
             "transit dates from the fact sheet."
         ),
         paragraphs=(2, 3),
+        needs_transits=True,
         titles=_t("Що зараз", "Что сейчас", "Where it stands now"),
     ),
     SectionSpec(
         id="transits",
+        # forecast section: needs the transit dates
         brief=(
             "An opening for the forecast part: explain in two paragraphs what a transit is and "
             "how to use dates without treating them as verdicts."
         ),
         paragraphs=(2, 3),
+        needs_transits=True,
         titles=_t("Транзити", "Транзиты", "Transits"),
     ),
     SectionSpec(
         id="transits.past",
+        # forecast section: needs the transit dates
         brief=(
             "Looking back: the major transits of the last ten to fourteen years, each as 'the sky "
             "was passing through X, and for a chart like this that period usually brings Y — if "
             "you remember those years as a turning point, this was it'. Never state what happened."
         ),
         paragraphs=(4, 6),
+        needs_transits=True,
         titles=_t("Погляд назад", "Взгляд назад", "Looking back"),
     ),
     SectionSpec(
         id="transits.now",
+        # forecast section: needs the transit dates
         brief=(
             "The transits in force right now, with their exact dates, and how such a combination "
             "is usually experienced from the inside."
         ),
         paragraphs=(3, 4),
+        needs_transits=True,
         titles=_t("Що відбувається зараз", "Что происходит сейчас", "What is happening now"),
     ),
     SectionSpec(
         id="transits.year1",
+        # forecast section: needs the transit dates
         brief="The coming twelve months, month by month where there are exact dates.",
         paragraphs=(4, 6),
+        needs_transits=True,
         titles=_t("Найближчий рік", "Ближайший год", "The year ahead"),
     ),
     SectionSpec(
         id="transits.year2",
+        # forecast section: needs the transit dates
         brief="The year after that: the larger movements, ingresses and slow aspects.",
         paragraphs=(3, 4),
+        needs_transits=True,
         titles=_t("Наступний рік", "Следующий год", "The year after"),
     ),
     SectionSpec(
         id="transits.year3",
+        # forecast section: needs the transit dates
         brief="The third year: only the big, slow transits and what they open up.",
         paragraphs=(2, 3),
+        needs_transits=True,
         titles=_t("Третій рік", "Третий год", "The third year"),
     ),
     SectionSpec(

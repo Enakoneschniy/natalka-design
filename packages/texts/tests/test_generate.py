@@ -92,3 +92,13 @@ def test_a_missing_key_is_a_retryable_error() -> None:
     provider = OpenRouterProvider(api_key="")
     with pytest.raises(ModelUnavailableError):
         provider.complete("system", "user", max_tokens=16)
+
+
+def test_only_forecast_sections_carry_the_transit_list(facts: dict) -> None:
+    provider = SizedProvider()
+    transits = [{"date": "2026-06-09", "kind": "ingress", "body": "jupiter", "target": "cancer"}]
+    write_reading(facts, provider=provider, name="Оксана", lang="uk", transits=transits)
+    prompts = {u for _, u in provider.calls}
+    with_transits = [p for p in prompts if "TRANSITS (exact dates" in p]
+    # Seven sections forecast something; the other twenty are not charged for the dates.
+    assert len(with_transits) == 7

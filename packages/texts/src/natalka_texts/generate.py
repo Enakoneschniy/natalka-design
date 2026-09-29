@@ -19,8 +19,9 @@ from .validate import check
 
 log = logging.getLogger(__name__)
 
-#: Roughly four times the longest section we ask for, so a long answer is never cut mid-sentence.
-MAX_TOKENS = 4096
+#: Six paragraphs of Russian prose run to about 1 500 tokens; the rest is headroom so an answer is
+#: never cut mid-sentence, which used to cost a whole retry.
+MAX_TOKENS = 8000
 
 
 @dataclass(slots=True)
@@ -110,7 +111,8 @@ def write_reading(
     gender: str = "n",
     transits: list[dict[str, Any]] | None = None,
 ) -> Reading:
-    sheet = fact_sheet(facts, transits)
+    natal_sheet = fact_sheet(facts, None)
+    transit_sheet = fact_sheet(facts, transits) if transits else natal_sheet
     system = system_prompt(lang, gender)
     unknown_time = bool(facts["birth"]["unknown_time"])
     reading = Reading(lang=lang)
@@ -118,6 +120,7 @@ def write_reading(
     # Each section is told what came before it, by title, so the document does not repeat itself.
     written: list[str] = []
     for spec in specs(product, unknown_time=unknown_time):
+        sheet = transit_sheet if spec.needs_transits else natal_sheet
         user = section_prompt(spec, name=name, sheet=sheet, written_so_far=written)
         try:
             section = _one_section(
