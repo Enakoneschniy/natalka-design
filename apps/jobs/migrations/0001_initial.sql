@@ -54,6 +54,12 @@ CREATE TABLE jobs (
   last_error       TEXT,
   -- Engine JSON and per-section text state, so a retry resumes instead of starting over.
   payload          TEXT,
+  -- What the document cost to generate: token counts as reported by the model, and the price in
+  -- millionths of a USD so a single document (fractions of a cent) is still an integer.
+  tokens_in        INTEGER NOT NULL DEFAULT 0,
+  tokens_out       INTEGER NOT NULL DEFAULT 0,
+  cost_micros      INTEGER NOT NULL DEFAULT 0,
+  model            TEXT,
   created_at       TEXT NOT NULL,
   updated_at       TEXT NOT NULL
 );

@@ -10,12 +10,20 @@ import { Container, getContainer } from '@cloudflare/containers';
 interface Env {
   API_CONTAINER: DurableObjectNamespace<ApiContainer>;
   ALLOWED_ORIGINS: string;
+  /** Set with `wrangler secret put`; never present in the repository. */
+  NATALKA_ANTHROPIC_API_KEY?: string;
 }
 
 export class ApiContainer extends Container {
   defaultPort = 8000;
   /** Shut the instance down after idling; the next request cold-starts it (~2–4 s). */
   sleepAfter = '15m';
+
+  /** The model key reaches the Python process only through here — it is a Worker secret, so it
+   * is encrypted at rest in Cloudflare and never written to the image or the repository. */
+  override envVars: Record<string, string> = {
+    NATALKA_ANTHROPIC_API_KEY: (this.env as Env).NATALKA_ANTHROPIC_API_KEY ?? '',
+  };
 
   override onStart() {
     console.log('container started');
