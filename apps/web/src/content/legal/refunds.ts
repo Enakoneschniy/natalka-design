@@ -4,7 +4,7 @@ export const refunds: Record<string, string> = {
   ru: `
 # Условия возврата
 
-_Редакция от [дата]. Исполнитель: [название и форма юрлица]. Связь: help@chronika.me._
+_Редакция от [дата]. Исполнитель: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
 
 ## Что мы продаём
 
@@ -39,7 +39,7 @@ help@chronika.me — укажите адрес заказа и, если ест�
   uk: `
 # Умови повернення
 
-_Редакція від [дата]. Виконавець: [назва та форма юрособи]. Зв'язок: help@chronika.me._
+_Редакція від [дата]. Виконавець: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
 
 ## Що ми продаємо
 
@@ -74,7 +74,7 @@ help@chronika.me — вкажіть адресу замовлення і, якщ
   en: `
 # Refund policy
 
-_Version of [date]. Provider: [legal name and form]. Contact: help@chronika.me._
+_Version of [date]. Provider: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
 
 ## What we sell
 

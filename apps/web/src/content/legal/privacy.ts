@@ -5,7 +5,7 @@ export const privacy: Record<string, string> = {
   ru: `
 # Политика обработки данных
 
-_Редакция от [дата]. Оператор: [название и форма юрлица], [адрес], [регистрационный номер]. Связь: help@chronika.me._
+_Редакция от [дата]. Оператор: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
 
 ## Какие данные мы получаем
 
@@ -42,7 +42,7 @@ _Редакция от [дата]. Оператор: [название и фор
   uk: `
 # Політика обробки даних
 
-_Редакція від [дата]. Оператор: [назва та форма юрособи], [адреса], [реєстраційний номер]. Зв'язок: help@chronika.me._
+_Редакція від [дата]. Оператор: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
 
 ## Які дані ми отримуємо
 
@@ -79,7 +79,7 @@ _Редакція від [дата]. Оператор: [назва та форм
   en: `
 # Privacy policy
 
-_Version of [date]. Operator: [legal name and form], [address], [registration number]. Contact: help@chronika.me._
+_Version of [date]. Operator: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
 
 ## What we collect
 

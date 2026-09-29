@@ -4,7 +4,7 @@ export const terms: Record<string, string> = {
   ru: `
 # Условия использования
 
-_Редакция от [дата]. Исполнитель: [название и форма юрлица], [адрес], [регистрационный номер]. Связь: help@chronika.me._
+_Редакция от [дата]. Исполнитель: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
 
 ## Что это
 
@@ -16,7 +16,7 @@ Chronika — сервис, который по дате, времени и ме�
 
 ## Цена и оплата
 
-Цена показана до оплаты в вашей валюте и включает все налоги. Оплата — разовая, без подписки, через платёжного провайдера [Stripe]; мы не видим и не храним данные вашей карты. Чек приходит на почту.
+Цена показана до оплаты в вашей валюте и включает все налоги. Оплата — разовая, без подписки, через платёжного провайдера Stripe; мы не видим и не храним данные вашей карты. Чек приходит на почту.
 
 ## Ваши данные и ваша ответственность
 
@@ -42,7 +42,7 @@ Chronika — сервис, который по дате, времени и ме�
 
 ## Применимое право и споры
 
-К этим условиям применяется право [страна регистрации исполнителя]. Спор сначала решается перепиской по help@chronika.me; если за 30 дней договориться не удалось — в суде по месту регистрации исполнителя, если закон вашей страны не даёт вам права на иной суд.
+К этим условиям применяется право Словацкой Республики. Спор сначала решается перепиской по help@chronika.me; если за 30 дней договориться не удалось — в суде по месту регистрации исполнителя, если закон вашей страны не даёт вам права на иной суд.
 
 ## Изменения
 
@@ -51,7 +51,7 @@ Chronika — сервис, который по дате, времени и ме�
   uk: `
 # Умови використання
 
-_Редакція від [дата]. Виконавець: [назва та форма юрособи], [адреса], [реєстраційний номер]. Зв'язок: help@chronika.me._
+_Редакція від [дата]. Виконавець: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
 
 ## Що це
 
@@ -63,7 +63,7 @@ Chronika — сервіс, який за датою, часом і місцем 
 
 ## Ціна і оплата
 
-Ціна показана до оплати у вашій валюті і включає всі податки. Оплата — разова, без підписки, через платіжного провайдера [Stripe]; ми не бачимо і не зберігаємо дані вашої картки. Чек приходить на пошту.
+Ціна показана до оплати у вашій валюті і включає всі податки. Оплата — разова, без підписки, через платіжного провайдера Stripe; ми не бачимо і не зберігаємо дані вашої картки. Чек приходить на пошту.
 
 ## Ваші дані і ваша відповідальність
 
@@ -89,7 +89,7 @@ Chronika — сервіс, який за датою, часом і місцем 
 
 ## Застосовне право і спори
 
-До цих умов застосовується право [країна реєстрації виконавця]. Спір спочатку вирішується листуванням на help@chronika.me; якщо за 30 днів домовитися не вдалося — в суді за місцем реєстрації виконавця, якщо закон вашої країни не дає вам права на інший суд.
+До цих умов застосовується право Словацької Республіки. Спір спочатку вирішується листуванням на help@chronika.me; якщо за 30 днів домовитися не вдалося — в суді за місцем реєстрації виконавця, якщо закон вашої країни не дає вам права на інший суд.
 
 ## Зміни
 
@@ -98,7 +98,7 @@ Chronika — сервіс, який за датою, часом і місцем 
   en: `
 # Terms of service
 
-_Version of [date]. Provider: [legal name and form], [address], [registration number]. Contact: help@chronika.me._
+_Version of [date]. Provider: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
 
 ## What this is
 
@@ -110,7 +110,7 @@ A PDF in the language you chose, of the length stated in the product description
 
 ## Price and payment
 
-The price is shown before payment in your currency and includes all taxes. Payment is one-off, with no subscription, through the payment provider [Stripe]; we never see or store your card details. A receipt is emailed to you.
+The price is shown before payment in your currency and includes all taxes. Payment is one-off, with no subscription, through the payment provider Stripe; we never see or store your card details. A receipt is emailed to you.
 
 ## Your data, your responsibility
 
@@ -136,7 +136,7 @@ See the [Refund policy](/[locale]/legal/refunds).
 
 ## Governing law and disputes
 
-These terms are governed by the law of [the provider's country of registration]. A dispute is first taken up by email at help@chronika.me; if it is not settled within 30 days, in the courts at the provider's seat, unless the law of your country entitles you to another forum.
+These terms are governed by the law of the Slovak Republic. A dispute is first taken up by email at help@chronika.me; if it is not settled within 30 days, in the courts at the provider's seat, unless the law of your country entitles you to another forum.
 
 ## Changes
 
