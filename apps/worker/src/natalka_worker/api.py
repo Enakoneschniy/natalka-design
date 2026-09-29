@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import datetime as dt
 import io
+import os
 import re
 from dataclasses import asdict
 from datetime import UTC
@@ -79,7 +80,11 @@ class CalcRequest(BirthPayload):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "ephemeris": ephemeris.version()}
+    return {
+        "status": "ok",
+        "ephemeris": ephemeris.version(),
+        "build": os.environ.get("NATALKA_BUILD", "dev"),
+    }
 
 
 @app.post("/v1/calc")

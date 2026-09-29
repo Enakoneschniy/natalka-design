@@ -42,9 +42,13 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev \
 
 FROM python:3.12-slim-bookworm
 
+# Which commit this image was built from. Without it there is no way to tell from the outside
+# whether a deploy has actually reached the running container.
+ARG NATALKA_BUILD=dev
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     NATALKA_CITIES_DB=/app/data/cities.sqlite \
+    NATALKA_BUILD=${NATALKA_BUILD} \
     PATH="/app/.venv/bin:$PATH"
 
 RUN useradd --uid 10001 --create-home natalka
