@@ -46,7 +46,7 @@ export function PreviewReading({ facts, lang }: { facts: ChartFacts; lang: strin
   return (
     <div className="reading-blocks">
       {(blocks ?? [null, null, null]).map((block, i) => (
-        <article className="card reading-block" key={block?.title ?? i}>
+        <article className="reading-block" key={block?.title ?? i}>
           {block ? (
             <>
               <h3 className="block-title">{block.title}</h3>
