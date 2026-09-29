@@ -634,3 +634,33 @@ BUNDLE: tuple[SectionSpec, ...] = (
 )
 
 BY_PRODUCT["bundle"] = BUNDLE
+
+
+#: The free preview: three short passages a visitor reads before paying, and the first words the
+#: product ever says to them. One model call rather than three — the fact sheet is most of the
+#: input, and paying for it three times would triple both the bill and the wait.
+PREVIEW = SectionSpec(
+    id="preview",
+    brief=(
+        "Three short passages, in this order and separated by a blank line: the Sun, the Moon, "
+        "then the Ascendant. One paragraph each, four to six sentences, no headings and no "
+        "labels — the document prints the titles itself. Say something specific enough that the "
+        "reader recognises themselves, and stop before the full reading would begin. When there "
+        "is no birth time, write about the shape of the chart as a whole instead of the "
+        "Ascendant and say plainly why."
+    ),
+    paragraphs=(3, 3),
+    titles=_t("Перше враження", "Первое впечатление", "A first look"),
+)
+
+#: The titles printed above each passage.
+PREVIEW_TITLES: tuple[dict[str, str], ...] = (
+    _t("Сонце", "Солнце", "The Sun"),
+    _t("Місяць", "Луна", "The Moon"),
+    _t("Асцендент", "Асцендент", "The Ascendant"),
+)
+PREVIEW_TITLES_NO_TIME: tuple[dict[str, str], ...] = (
+    _t("Сонце", "Солнце", "The Sun"),
+    _t("Місяць", "Луна", "The Moon"),
+    _t("Малюнок карти", "Рисунок карты", "The shape of the chart"),
+)

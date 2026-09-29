@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import datetime as dt
 import io
+import re
 from dataclasses import asdict
 from datetime import UTC
 from typing import Annotated, Any, Literal
@@ -30,6 +31,9 @@ from natalka_engine import (
 from natalka_engine.geo import zone_for
 from natalka_engine.timeutil import UnknownTimeZoneError
 from natalka_texts import (
+    PREVIEW,
+    PREVIEW_TITLES,
+    PREVIEW_TITLES_NO_TIME,
     ModelUnavailableError,
     OpenRouterProvider,
     fact_sheet,
@@ -133,6 +137,51 @@ def synastry(req: SynastryRequest) -> dict[str, Any]:
     except UnknownTimeZoneError as exc:
         raise HTTPException(422, f"unknown time zone: {exc}") from exc
     return synastry_to_dict(a, b)
+
+
+class PreviewRequest(BaseModel):
+    """The free passages shown before payment."""
+
+    facts: dict[str, Any]
+    lang: str = Field(default="uk", pattern=r"^[a-z]{2}$")
+    gender: Literal["f", "m", "n"] = "n"
+    #: Deliberately absent: the name. The preview is cached by the birth data alone, and leaving
+    #: the name out of the prompt is what makes two people born at the same minute share a cache
+    #: entry instead of paying for the same three paragraphs twice.
+
+
+@app.post("/v1/preview")
+def preview(req: PreviewRequest) -> dict[str, Any]:
+    """Three short passages in a single call.
+
+    One call, not three: the fact sheet is most of the input, so three separate requests would
+    triple both the bill and — more to the point — the time the visitor spends looking at a
+    spinner. The whole thing has to come back in the time it takes to read the chart wheel.
+    """
+    unknown_time = bool(req.facts.get("birth", {}).get("unknown_time"))
+    titles = PREVIEW_TITLES_NO_TIME if unknown_time else PREVIEW_TITLES
+    provider = OpenRouterProvider()
+    system = system_prompt(req.lang, req.gender)
+    user = section_prompt(PREVIEW, name="", sheet=fact_sheet(req.facts, None), written_so_far=[])
+    try:
+        completion = provider.complete(system, user, max_tokens=2000)
+    except ModelUnavailableError as exc:
+        raise HTTPException(503, f"model unavailable: {exc}") from exc
+
+    report = check(completion.text, lang=req.lang, min_paragraphs=3, max_paragraphs=3)
+    parts = [p.strip() for p in re.split(r"\n\s*\n", completion.text.strip()) if p.strip()]
+    blocks = [
+        {"title": t.get(req.lang) or t["en"], "text": text}
+        for t, text in zip(titles, parts[:3], strict=False)
+    ]
+    return {
+        "blocks": blocks,
+        "problems": list(report.problems),
+        "tokens_in": completion.tokens_in,
+        "tokens_out": completion.tokens_out,
+        "cost_micros": completion.cost_micros,
+        "model": completion.model,
+    }
 
 
 class SectionRequest(BaseModel):
