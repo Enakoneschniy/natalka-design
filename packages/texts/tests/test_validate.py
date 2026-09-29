@@ -50,3 +50,18 @@ def test_paragraph_count_is_enforced_with_one_of_slack() -> None:
     three = "Один.\n\nДва.\n\nТри."
     assert check(three, lang="uk", min_paragraphs=2, max_paragraphs=2).ok  # one over is tolerated
     assert not check(three, lang="uk", min_paragraphs=4, max_paragraphs=6).ok
+
+
+def test_a_latin_word_inside_a_russian_reading_is_caught() -> None:
+    report = check(
+        "Проверять смысл на practике, а не в голове.\n\nВторой абзац разбора.",
+        lang="ru",
+        min_paragraphs=2,
+        max_paragraphs=3,
+    )
+    assert any("Latin" in p for p in report.problems)
+
+
+def test_chart_abbreviations_are_allowed() -> None:
+    text = "Асцендент в Деве, MC в Близнецах.\n\nPDF придёт на почту."
+    assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok

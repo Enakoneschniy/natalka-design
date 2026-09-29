@@ -21,7 +21,9 @@ class SizedProvider:
             f"Абзац {i + 1}: текст цього розділу, достатньо довгий, щоб потрапити в PDF."
             for i in range(wanted)
         )
-        return Completion(text=body, tokens_in=1200, tokens_out=800, model="anthropic/claude-sonnet-5")
+        return Completion(
+            text=body, tokens_in=1200, tokens_out=800, model="anthropic/claude-sonnet-5"
+        )
 
 
 def test_facts_become_a_pdf(facts: dict) -> None:

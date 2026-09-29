@@ -92,6 +92,14 @@ CLICHES: dict[str, tuple[str, ...]] = {
     ),
 }
 
+#: Latin letters inside a Cyrillic word, or a stray Latin word: models occasionally slip one in
+#: ("на practике"), and in a paid document it reads as a typo nobody proofread. These are the
+#: Latin strings a Russian or Ukrainian reading may legitimately contain.
+LATIN_OK = frozenset({"mc", "ic", "asc", "dc", "ac", "pdf", "r", "utc", "natalka", "id", "ok"})
+CYRILLIC_LANGS = frozenset({"ru", "uk", "bg"})
+LATIN_WORD = re.compile(r"\b[A-Za-z][A-Za-z'’-]{1,}\b")
+MIXED_WORD = re.compile(r"\b(?=\w*[А-Яа-яЁёІіЇїЄєҐґ])(?=\w*[A-Za-z])\w+\b")
+
 #: Only these survive into the PDF; anything else means the model ignored the format rules.
 ALLOWED_TAGS = re.compile(r"</?(b|i|br\s*/?)>", re.IGNORECASE)
 ANY_TAG = re.compile(r"<[^>]+>")
@@ -132,6 +140,14 @@ def check(text: str, *, lang: str, min_paragraphs: int, max_paragraphs: int) -> 
         problems.append(f'"{phrase}" implies we know something the chart cannot tell us')
     for phrase in _found(stripped, CLICHES.get(lang, ())):
         problems.append(f'"{phrase}" is on the banned list in the style guide')
+
+    if lang in CYRILLIC_LANGS:
+        mixed = MIXED_WORD.findall(stripped)
+        if mixed:
+            problems.append(f"Latin letters inside a word: {', '.join(sorted(set(mixed))[:3])}")
+        latin = [w for w in LATIN_WORD.findall(stripped) if w.lower() not in LATIN_OK]
+        if latin:
+            problems.append(f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
 
     if "!" in stripped:
         problems.append("exclamation marks are not used in the reading")
