@@ -12,6 +12,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
       'content-type': 'application/pdf',
       'content-disposition': 'inline; filename="chronika.pdf"',
       'cache-control': 'private, no-store',
+      // A signed link is not a secret worth indexing.
+      'x-robots-tag': 'noindex, nofollow',
     },
   });
 }

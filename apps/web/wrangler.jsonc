@@ -5,6 +5,11 @@
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // The site answers on the apex and on www; Cloudflare issues the certificates for both.
+  "routes": [
+    { "pattern": "chronika.me", "custom_domain": true },
+    { "pattern": "www.chronika.me", "custom_domain": true }
+  ],
   "observability": { "enabled": true },
   // City search reads straight from here. Going through the calculation container cost a
   // worker-to-worker hop and, when it had gone to sleep, several seconds of cold start — on the

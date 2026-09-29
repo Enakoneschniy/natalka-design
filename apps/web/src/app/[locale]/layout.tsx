@@ -23,7 +23,10 @@ export async function generateMetadata({
   return {
     title: `Chronika — ${t('titleLead')} ${t('titleAccent')}`,
     description: t('lead'),
-    metadataBase: new URL('https://natalka-web.ceo-63e.workers.dev'),
+    metadataBase: new URL('https://chronika.me'),
+    // Closed to search engines until the shop actually sells something. The middleware sends the
+    // same answer as a header, which also covers the PDFs and the API routes.
+    robots: { index: false, follow: false },
   };
 }
 
