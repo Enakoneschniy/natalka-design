@@ -72,10 +72,6 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
                 <span className="orbit orbit-2" />
               </span>
             </div>
-            <p className="hero-caption">
-              <strong>{t('hero.demoName')}</strong>{' '}
-              <span className="mono muted">· {t('hero.demoMeta')}</span>
-            </p>
           </div>
         </div>
       </section>

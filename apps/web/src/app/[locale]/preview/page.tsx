@@ -152,9 +152,7 @@ export default async function PreviewPage({
 
         <div className="preview-grid">
           <div className="preview-wheel">
-            {/* The grid item stretches to the row height and this inner block sticks inside it —
-                a sticky element that is exactly as tall as its container never moves. */}
-            <div className="preview-wheel-sticky">
+            <div>
               <div className="wheel-glow">
                 <Wheel facts={facts} size={520} detail="full" animate />
               </div>

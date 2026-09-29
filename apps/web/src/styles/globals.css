@@ -61,9 +61,14 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* Nothing on the site scrolls sideways: wide tables scroll inside their own card. Clipping
+       both html and body is what actually stops it in Chrome — one alone does not. `clip`
+       rather than `hidden` so no element turns into a scroll container. */
+    overflow-x: clip;
   }
   body {
     background: var(--color-bg);
+    overflow-x: clip;
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 17px;
@@ -581,9 +586,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-.hero-caption {
-  text-align: center;
 }
 .mono {
   font-family: var(--font-mono);
@@ -1251,11 +1253,7 @@
   padding: 20px;
 }
 .preview-wheel {
-  align-self: stretch;
-}
-.preview-wheel-sticky {
-  position: sticky;
-  top: 96px;
+  align-self: start;
 }
 .preview-wheel .wheel {
   width: 100%;
@@ -1740,9 +1738,19 @@
   }
   .nav-burger {
     display: inline-flex;
+    /* Without this the button is a shrinkable flex item and gets squeezed to half its width
+       on a narrow screen, which cuts the box around the icon. */
+    flex: 0 0 44px;
+  }
+  .nav-inner {
+    gap: 12px;
+  }
+  .logo {
+    min-width: 0;
   }
   .lang-drop {
     margin-left: auto;
+    flex: 0 0 auto;
   }
 }
 @media (min-width: 640px) and (max-width: 1000px) {
@@ -1784,15 +1792,24 @@
     width: 100%;
   }
   .hero-facts {
-    flex-wrap: wrap;
-    gap: 14px 0;
+    flex-direction: column;
+    margin-top: 36px;
   }
   .hero-facts li {
-    padding-right: 18px;
-    margin-right: 18px;
-  }
-  .hero-facts li:nth-child(2) {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    padding: 12px 0;
+    margin: 0;
     border-right: 0;
+    border-top: 1px solid var(--color-line);
+  }
+  .hero-facts li:first-child {
+    border-top: 0;
+  }
+  .hero-facts strong {
+    font-size: 21px;
+    min-width: 92px;
   }
   .section {
     padding-block: 72px;
@@ -1854,8 +1871,7 @@
   .core-grid {
     grid-template-columns: 1fr;
   }
-  .preview-wheel-sticky {
-    position: static;
+  .preview-wheel {
     max-width: 520px;
     margin-inline: auto;
   }
