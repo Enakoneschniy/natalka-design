@@ -76,8 +76,10 @@ IC, DC and the degree figures.
 
 ACCURACY
 Every claim must be traceable to the fact sheet. Do not invent placements, aspects, degrees or
-dates. If a section needs the houses and the birth time is unknown, say plainly what cannot be
-determined instead of guessing. Quote degrees and dates exactly as given.
+dates. Quote degrees and dates exactly as given. Never remark on the birth time being known, and
+never announce what you are about to do or leave out — a reader wants the reading, not a report
+on its conditions. When the chart has no birth time, state the one consequence once, in the
+section where it matters, and otherwise write as if the question had never come up.
 
 ADDRESS
 Write to the person, not about them: "you", never their name in the third person. The name is
