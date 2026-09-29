@@ -55,7 +55,10 @@ ADDRESSEE = {
         "timing must quote a date from the fact sheet, and a date with nothing on it stays "
         "unmentioned. The reader gets one of these every week or every month: do not open with a "
         "greeting, do not explain what a transit is, and do not repeat the natal chart back to "
-        "them. Start with the week or the month itself."
+        "them. Start with the week or the month itself. Planet names are capitalised and carry "
+        "grammatical gender: in Russian and Ukrainian, Солнце/Сонце is neuter, Луна/Місяць and "
+        "Венера are not the same gender as Марс — agree every adjective with the name you use, "
+        "not with the English word behind it."
     ),
     "forecast": (
         "This is a twelve-month forecast. The natal chart is background; the subject is what the "
