@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import type { ChartFacts } from '@/lib/chart';
 
 interface Block {
   title: string;
@@ -19,11 +18,17 @@ export function PreviewReading({
   facts,
   lang,
   rails,
+  product = 'natal',
+  firstName,
+  secondName,
 }: {
-  facts: ChartFacts;
+  facts: unknown;
   lang: string;
   /** The chart facts each passage is written from, rendered on the server. */
   rails?: React.ReactNode[];
+  product?: string;
+  firstName?: string;
+  secondName?: string;
 }) {
   const t = useTranslations('preview');
   const [blocks, setBlocks] = useState<Block[] | null>(null);
@@ -36,7 +41,13 @@ export function PreviewReading({
         const response = await fetch('/api/preview', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ facts, lang }),
+          body: JSON.stringify({
+            facts,
+            lang,
+            product,
+            first_name: firstName,
+            second_name: secondName,
+          }),
         });
         if (!response.ok) throw new Error(String(response.status));
         const data = (await response.json()) as { blocks: Block[] };
@@ -48,7 +59,7 @@ export function PreviewReading({
     return () => {
       active = false;
     };
-  }, [facts, lang]);
+  }, [facts, lang, product, firstName, secondName]);
 
   if (failed) return null;
 

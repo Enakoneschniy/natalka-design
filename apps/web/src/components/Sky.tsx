@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const TILE = 512;
 /** Second layer at a different size so the two patterns only repeat together far off-screen. */
@@ -43,8 +43,43 @@ function starTile(size: number, count: number, seed: number, dpr: number): strin
  * A tiled background rather than one canvas: the layer is as tall as the document, so the sky
  * never stops halfway down a long page (which is exactly what a scrolling screenshot shows).
  */
+/** The handful of stars that actually twinkle.
+ *
+ * Animating the whole field would mean redrawing a canvas every frame for a background nobody
+ * looks at directly. A few bright ones, each on its own rhythm, read as a living sky and cost
+ * nothing: the browser animates opacity on the compositor and never touches layout.
+ */
+const TWINKLERS = 18;
+
+interface Twinkler {
+  top: string;
+  left: string;
+  size: number;
+  duration: number;
+  delay: number;
+  gold: boolean;
+}
+
+function twinklers(): Twinkler[] {
+  let seed = 11;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  return Array.from({ length: TWINKLERS }, () => ({
+    top: `${(rnd() * 96 + 2).toFixed(2)}%`,
+    left: `${(rnd() * 96 + 2).toFixed(2)}%`,
+    size: rnd() < 0.3 ? 3 : 2,
+    duration: 2.4 + rnd() * 3.6,
+    // A negative delay starts each one part-way through, so they are never in step.
+    delay: -rnd() * 6,
+    gold: rnd() < 0.25,
+  }));
+}
+
 export function Sky() {
   const ref = useRef<HTMLDivElement>(null);
+  const [stars, setStars] = useState<Twinkler[]>([]);
 
   useEffect(() => {
     const sky = ref.current;
@@ -55,7 +90,30 @@ export function Sky() {
     if (!near || !far) return;
     sky.style.backgroundImage = `url(${near}), url(${far})`;
     sky.style.backgroundSize = `${TILE}px ${TILE}px, ${TILE_ALT}px ${TILE_ALT}px`;
+
+    // Positions are decided after mount: the server has no business guessing them, and a random
+    // value in the markup is a hydration mismatch waiting to happen.
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setStars(twinklers());
+    }
   }, []);
 
-  return <div className="sky" ref={ref} aria-hidden="true" />;
+  return (
+    <div className="sky" ref={ref} aria-hidden="true">
+      {stars.map((star) => (
+        <span
+          key={`${star.top}-${star.left}`}
+          className={`twinkle${star.gold ? ' twinkle-gold' : ''}`}
+          style={{
+            top: star.top,
+            left: star.left,
+            width: star.size,
+            height: star.size,
+            animationDuration: `${star.duration}s`,
+            animationDelay: `${star.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
 }

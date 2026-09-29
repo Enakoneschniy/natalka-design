@@ -692,3 +692,23 @@ PREVIEW_TITLES_NO_TIME: tuple[dict[str, str], ...] = (
     _t("Місяць", "Луна", "The Moon"),
     _t("Малюнок карти", "Рисунок карты", "The shape of the chart"),
 )
+
+
+#: The free passages for a pair. Same idea as PREVIEW, different subject: two charts, and the
+#: three things a couple actually wants to know before paying.
+PREVIEW_SYNASTRY = SectionSpec(
+    id="preview",
+    brief=(
+        f"{_PREVIEW_COMMON} The three are: what pulls these two together, where the friction "
+        "between them sits, and where each of them lands in the other's life by house. Write "
+        "about the pair, not about either chart on its own."
+    ),
+    paragraphs=(3, 3),
+    titles=_t("Перше враження", "Первое впечатление", "A first look"),
+)
+
+PREVIEW_TITLES_SYNASTRY: tuple[dict[str, str], ...] = (
+    _t("Що притягує", "Что притягивает", "What pulls you together"),
+    _t("Де виникає тертя", "Где возникает трение", "Where the friction is"),
+    _t("Де ви одне в одного", "Где вы друг у друга", "Where you land in each other"),
+)

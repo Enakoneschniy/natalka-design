@@ -147,6 +147,10 @@ class PreviewRequest(BaseModel):
     facts: dict[str, Any]
     lang: str = Field(default="uk", pattern=r"^[a-z]{2}$")
     gender: Literal["f", "m", "n"] = "n"
+    product: Literal["natal", "forecast", "synastry", "child", "bundle"] = "natal"
+    #: Only a synastry has two people; the sheet is written around their names.
+    first_name: str = ""
+    second_name: str = ""
     #: Deliberately absent: the name. The preview is cached by the birth data alone, and leaving
     #: the name out of the prompt is what makes two people born at the same minute share a cache
     #: entry instead of paying for the same three paragraphs twice.

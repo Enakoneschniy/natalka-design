@@ -6,11 +6,12 @@ import { AspectGrid, AspectLegend, ChartBadge, PositionsTable } from '@/componen
 import { Paywall } from '@/components/Paywall';
 import { PreviewReading } from '@/components/PreviewReading';
 import { Stepper } from '@/components/Stepper';
+import { SynastryPreview } from '@/components/SynastryPreview';
 import { Wheel } from '@/components/Wheel';
-import { type BirthInput, calcChart } from '@/lib/api';
+import { type BirthInput, calcChart, calcSynastry } from '@/lib/api';
 import { type ChartFacts, MAJOR_ASPECTS } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
-import { bundleFullPrice, priceFor } from '@/lib/pricing';
+import { bundleFullPrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,28 @@ function readInput(search: Search): { input: BirthInput; city: string; name?: st
     },
     city: one(search.c) ?? '',
     ...(one(search.n) ? { name: one(search.n) } : {}),
+  };
+}
+
+/** The partner's fields carry a "2"; the form writes them, this reads them back. */
+function readSecond(search: Search): { input: BirthInput; city: string; name?: string } | null {
+  const date = one(search.d2);
+  const latitude = Number(one(search.lat2));
+  const longitude = Number(one(search.lon2));
+  const zone = one(search.tz2);
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  if (!zone || Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
+  const time = one(search.t2);
+  return {
+    input: {
+      date,
+      time: time && /^\d{2}:\d{2}$/.test(time) ? time : null,
+      latitude,
+      longitude,
+      zone,
+    },
+    city: one(search.c2) ?? '',
+    ...(one(search.n2) ? { name: one(search.n2) } : {}),
   };
 }
 
@@ -69,6 +92,69 @@ export default async function PreviewPage({
   // `?demo=1` shows the sample chart from the landing page without calling the engine.
   const isDemo = one(search.demo) === '1';
   const country = (await headers()).get('cf-ipcountry');
+  const product = (PRODUCTS as readonly string[]).includes(one(search.p) ?? '')
+    ? (one(search.p) as ProductKey)
+    : 'natal';
+
+  // Compatibility is the one product that needs two charts, and it has its own screen.
+  if (product === 'synastry') {
+    const you = readInput(search);
+    const partner = readSecond(search);
+    const pair =
+      you && partner ? await calcSynastry(you.input, partner.input).catch(() => null) : null;
+    if (!you || !partner || !pair) {
+      return <PreviewError locale={locale} t={t} />;
+    }
+    const price = priceFor('synastry', country);
+    const checkoutHref = `/${locale}/checkout?${new URLSearchParams(
+      Object.fromEntries(
+        Object.entries(search).flatMap(([k, v]) => {
+          const single = one(v);
+          return single ? [[k, single] as [string, string]] : [];
+        }),
+      ),
+    ).toString()}`;
+    return (
+      <div className="flow">
+        <div className="container-page">
+          <div className="flow-head">
+            <Stepper current="preview" />
+            <Link className="small" href={`/${locale}/start?p=synastry`}>
+              {t('edit')}
+            </Link>
+          </div>
+          <div className="preview-head">
+            <div>
+              <h1>{t('synastryTitle')}</h1>
+              <p className="mono muted preview-meta">
+                {[you.city, partner.city].filter(Boolean).join('  ·  ')}
+              </p>
+            </div>
+            <Link className="btn btn-primary" href={checkoutHref}>
+              {tp('cta', { price: price.formatted })}
+            </Link>
+          </div>
+          <SynastryPreview
+            facts={pair}
+            names={[you.name ?? t('personOne'), partner.name ?? t('personTwo')]}
+            locale={locale}
+          />
+          <div className="card preview-cta">
+            <div>
+              <h2>{tp('title')}</h2>
+              <p className="muted">{tp('leadSynastry')}</p>
+              <p>
+                <Link className="btn btn-primary btn-lg" href={checkoutHref}>
+                  {tp('cta', { price: price.formatted })}
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const parsed: { input: BirthInput; city: string; name?: string } | null = isDemo
     ? { ...DEMO }
     : readInput(search);
@@ -78,19 +164,7 @@ export default async function PreviewPage({
   }
 
   if (!parsed || !facts) {
-    return (
-      <div className="flow">
-        <div className="container-page narrow">
-          <h1>{t('errorTitle')}</h1>
-          <p className="lead flow-lead">{t('errorBody')}</p>
-          <p>
-            <Link className="btn btn-primary" href={`/${locale}/start`}>
-              {t('back')}
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
+    return <PreviewError locale={locale} t={t} />;
   }
 
   const sun = facts.positions.find((p) => p.body === 'sun');
@@ -212,6 +286,22 @@ export default async function PreviewPage({
           bundle={bundle.formatted}
           bundleFull={bundleFull.formatted}
         />
+      </div>
+    </div>
+  );
+}
+
+function PreviewError({ locale, t }: { locale: string; t: (key: string) => string }) {
+  return (
+    <div className="flow">
+      <div className="container-page narrow">
+        <h1>{t('errorTitle')}</h1>
+        <p className="lead flow-lead">{t('errorBody')}</p>
+        <p>
+          <Link className="btn btn-primary" href={`/${locale}/start`}>
+            {t('back')}
+          </Link>
+        </p>
       </div>
     </div>
   );

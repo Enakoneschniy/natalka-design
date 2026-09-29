@@ -12,8 +12,10 @@ from .providers import (
 from .sections import (
     PREVIEW,
     PREVIEW_NO_TIME,
+    PREVIEW_SYNASTRY,
     PREVIEW_TITLES,
     PREVIEW_TITLES_NO_TIME,
+    PREVIEW_TITLES_SYNASTRY,
     SectionSpec,
     specs,
     title,
@@ -23,8 +25,10 @@ from .validate import Report, check
 __all__ = [
     "PREVIEW",
     "PREVIEW_NO_TIME",
+    "PREVIEW_SYNASTRY",
     "PREVIEW_TITLES",
     "PREVIEW_TITLES_NO_TIME",
+    "PREVIEW_TITLES_SYNASTRY",
     "Completion",
     "ModelUnavailableError",
     "OpenRouterProvider",

@@ -202,6 +202,33 @@
 
 /* Ambient sky behind everything: a tiled star field from <Sky/> plus a nebula wash.
    Both span the whole document, not the viewport, so nothing cuts off on a long page. */
+.twinkle {
+  position: absolute;
+  border-radius: 50%;
+  background: #dce4ff;
+  box-shadow: 0 0 6px 1px rgba(220, 228, 255, 0.5);
+  opacity: 0.25;
+  animation-name: twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  will-change: opacity, transform;
+}
+.twinkle-gold {
+  background: var(--color-astro);
+  box-shadow: 0 0 8px 2px rgba(240, 185, 91, 0.45);
+}
+@keyframes twinkle {
+  from {
+    opacity: 0.18;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
 .sky {
   position: absolute;
   inset: 0;
@@ -441,8 +468,10 @@
 
 /* ---------- hero ---------- */
 .hero {
-  padding: 72px 0 40px;
-  min-height: calc(100vh - 80px);
+  padding: 56px 0 32px;
+  /* Full screen on a laptop, but capped: on a tall monitor `100vh` stretched the hero far past
+     its content and left the headline floating in the middle of two empty bands. */
+  min-height: min(calc(100vh - 80px), 720px);
   display: flex;
   align-items: center;
 }
@@ -670,6 +699,47 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: relative;
+  overflow: hidden;
+  padding: 32px;
+  transition:
+    border-color 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+/* A wash of light from the corner the glyph sits in, so the card has a direction rather than
+   being a flat rectangle. */
+.product::after {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -30%;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(231, 183, 92, 0.1), transparent 68%);
+  pointer-events: none;
+}
+.product:hover {
+  border-color: rgba(231, 183, 92, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+.product-mark {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: 30px;
+  height: 30px;
+  color: var(--color-accent);
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+.product:hover .product-mark {
+  opacity: 0.75;
+}
+.product h3 {
+  padding-right: 44px;
 }
 .product h3 {
   font-size: 24px;
@@ -706,7 +776,7 @@
 }
 .price {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 32px;
   color: var(--color-accent);
   display: flex;
   align-items: baseline;
@@ -726,13 +796,13 @@
 .steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 32px;
   list-style: none;
   padding: 0;
 }
 .steps li {
   border-top: 1px solid var(--color-line-strong);
-  padding-top: 24px;
+  padding-top: 20px;
   position: relative;
 }
 .steps li::before {
@@ -746,9 +816,12 @@
 }
 .steps .step-n {
   display: block;
-  font-size: 13px;
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1;
   color: var(--color-accent);
-  margin-bottom: 20px;
+  opacity: 0.85;
+  margin-bottom: 14px;
 }
 .steps h3 {
   font-size: 22px;
@@ -1656,6 +1729,63 @@
   }
 }
 
+.synastry-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px;
+  align-items: start;
+}
+.synastry-wheel {
+  max-width: 420px;
+  margin: 16px 0;
+}
+.person-card + .person-card {
+  margin-top: 8px;
+}
+.person-legend {
+  margin-bottom: 4px;
+}
+.contacts {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+}
+.contacts li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto 1fr auto;
+  gap: 14px;
+  align-items: baseline;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-line);
+  font-size: 16px;
+}
+.contacts li:first-child {
+  border-top: 0;
+}
+.contacts .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-neutral);
+  align-self: center;
+}
+.contacts .dot.harmonious {
+  background: var(--color-harmonic);
+}
+.contacts .dot.tense {
+  background: var(--color-tense);
+}
+.contacts .contact-aspect {
+  font-size: 14px;
+  color: var(--color-ink-2);
+}
+.contacts .contact-orb {
+  font-size: 14px;
+}
+
 /* ---------- paywall ---------- */
 .paywall {
   margin-top: 72px;
@@ -2030,8 +2160,13 @@
   .preview-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-  .core-grid {
+  .core-grid,
+  .synastry-charts {
     grid-template-columns: 1fr;
+  }
+  .contacts li {
+    grid-template-columns: 10px 1fr auto;
+    row-gap: 4px;
   }
   .reading-block {
     grid-template-columns: 1fr;

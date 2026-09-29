@@ -44,3 +44,30 @@ export const calcChart = (input: BirthInput): Promise<ChartFacts> =>
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(input),
   });
+
+export interface SynastryFacts {
+  schema_version: number;
+  first: ChartFacts;
+  second: ChartFacts;
+  cross_aspects: {
+    a: string;
+    b: string;
+    type: string;
+    nature: 'tense' | 'harmonious' | 'neutral';
+    orb: number;
+    strength: number;
+    major: boolean;
+  }[];
+  overlay: {
+    second_in_first_houses: Record<string, number>;
+    first_in_second_houses: Record<string, number>;
+  };
+}
+
+/** Two charts and what they do to each other. */
+export const calcSynastry = (first: BirthInput, second: BirthInput): Promise<SynastryFacts> =>
+  call('/v1/synastry', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ first, second }),
+  });

@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BirthForm } from '@/components/BirthForm';
 import { Stepper } from '@/components/Stepper';
+import { PRODUCTS } from '@/lib/pricing';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -8,9 +9,20 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return { title: `Chronika — ${t('title')}` };
 }
 
-export default async function StartPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function StartPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const search = await searchParams;
+  const asked = Array.isArray(search.p) ? search.p[0] : search.p;
+  const product = (PRODUCTS as readonly string[]).includes(asked ?? '')
+    ? (asked as string)
+    : 'natal';
   const t = await getTranslations({ locale, namespace: 'form' });
 
   return (
@@ -19,9 +31,11 @@ export default async function StartPage({ params }: { params: Promise<{ locale: 
         <div className="flow-head">
           <Stepper current="data" />
         </div>
-        <h1>{t('title')}</h1>
-        <p className="lead flow-lead">{t('lead')}</p>
-        <BirthForm locale={locale} />
+        <h1>{t(`titles.${product}`)}</h1>
+        <p className="lead flow-lead">
+          {product === 'synastry' || product === 'child' ? t(`leads.${product}`) : t('lead')}
+        </p>
+        <BirthForm locale={locale} product={product} />
       </div>
     </div>
   );

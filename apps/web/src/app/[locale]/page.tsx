@@ -6,9 +6,17 @@ import { Wheel } from '@/components/Wheel';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
+import { PLANET_PATHS } from '@/lib/glyphs';
 import { PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
 const facts = demo as unknown as ChartFacts;
+
+const PRODUCT_GLYPH: Record<string, string> = {
+  natal: PLANET_PATHS.sun ?? '',
+  forecast: PLANET_PATHS.saturn ?? '',
+  synastry: PLANET_PATHS.venus ?? '',
+  child: PLANET_PATHS.moon ?? '',
+};
 
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -85,6 +93,21 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
           <div className="grid-4">
             {products.map((key) => (
               <article className="card product" key={key}>
+                {/* The glyph is the product's own: the Sun for a natal chart, Saturn for a
+                    forecast (it is the planet that keeps time), Venus for compatibility, the Moon
+                    for a child. Decoration that says which card you are looking at. */}
+                <svg
+                  className="product-mark"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d={PRODUCT_GLYPH[key]} />
+                </svg>
                 <h3>{t(`products.${key}.title`)}</h3>
                 <p className="meta">{t(`products.${key}.meta`)}</p>
                 <ul>
@@ -96,7 +119,7 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
                 <p className="price">
                   {prices[key]} <small>{t('products.once')}</small>
                 </p>
-                <Link className="btn btn-secondary btn-block" href={`/${locale}/start`}>
+                <Link className="btn btn-secondary btn-block" href={`/${locale}/start?p=${key}`}>
                   {t('products.choose')}
                 </Link>
               </article>

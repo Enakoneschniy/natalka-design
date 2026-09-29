@@ -61,5 +61,5 @@ module = ["natalka_document.styles", "natalka_document.render"]
 disallow_subclassing_any = false  # ReportLab ships no type information
 
 [tool.pytest.ini_options]
-testpaths = ["packages", "apps/worker"]
+testpaths = ["packages", "apps/worker", "tests"]
 addopts = "-q"

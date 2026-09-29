@@ -57,6 +57,9 @@ interface PreviewRequest {
   facts: Record<string, unknown>;
   lang: string;
   gender?: 'f' | 'm' | 'n';
+  product?: string;
+  first_name?: string;
+  second_name?: string;
 }
 
 /** The free passages shown before payment.
@@ -66,13 +69,29 @@ interface PreviewRequest {
  * the key — it is a hash of the birth moment, the place and the language. */
 async function previewText(request: Request, env: Env): Promise<Response> {
   const body = (await request.json()) as PreviewRequest;
-  const birth = (body.facts?.birth ?? {}) as Record<string, unknown>;
-  if (!birth.date) return json({ error: 'facts are required' }, 400);
+  // A synastry payload carries two charts and has no `birth` of its own.
+  const facts = body.facts ?? {};
+  const first = ((facts.first as Record<string, unknown>)?.birth ?? facts.birth ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const second = ((facts.second as Record<string, unknown>)?.birth ?? {}) as Record<
+    string,
+    unknown
+  >;
+  if (!first.date) return json({ error: 'facts are required' }, 400);
 
+  const moment = (b: Record<string, unknown>) =>
+    b.date ? [b.date, b.time ?? '', b.zone, b.latitude, b.longitude].join('|') : '';
   const key = await sha256Hex(
     new TextEncoder().encode(
-      [birth.date, birth.time ?? '', birth.zone, birth.latitude, birth.longitude, body.lang,
-        body.gender ?? 'n'].join('|'),
+      [
+        body.product ?? 'natal',
+        moment(first),
+        moment(second),
+        body.lang,
+        body.gender ?? 'n',
+      ].join('#'),
     ).buffer as ArrayBuffer,
   );
 

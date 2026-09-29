@@ -81,7 +81,7 @@
         "text": "The chart wheel, position table, aspects and a short text about your Sun, Moon and Ascendant — right away."
       },
       {
-        "title": "Отримайте PDF",
+        "title": "Get the PDF",
         "text": "The document arrives by email in 5–15 minutes and stays available at your link."
       }
     ]
@@ -168,6 +168,24 @@
       "date": "Enter the date as dd.mm.yyyy",
       "time": "Enter the time as hh:mm, or tick that you don't know it",
       "city": "Pick a city from the list"
+    },
+    "you": "You",
+    "partner": "Your partner",
+    "partnerNameHint": "How the reading will refer to the other person",
+    "childName": "The child's name",
+    "childNameHint": "How the reading will refer to the child",
+    "childGender": "The child's gender",
+    "childGenderHint": "Affects grammatical forms only",
+    "titles": {
+      "natal": "Birth details",
+      "forecast": "Birth details",
+      "bundle": "Birth details",
+      "child": "The child's birth details",
+      "synastry": "Birth details for both of you"
+    },
+    "leads": {
+      "synastry": "Both charts are needed. The more exact the times, the more exact the contacts between them.",
+      "child": "The more precise, the more precise the chart. Everything except the time is required."
     }
   },
   "preview": {
@@ -197,7 +215,12 @@
     "wheelHint": "Hover or tap a planet to highlight the aspects it makes.",
     "writing": "Writing…",
     "readingTitle": "A first look",
-    "readingLead": "Three passages from your chart, free and before any payment. The full reading goes a great deal deeper."
+    "readingLead": "Three passages from your chart, free and before any payment. The full reading goes a great deal deeper.",
+    "synastryTitle": "Two charts side by side",
+    "personOne": "The first person",
+    "personTwo": "The second person",
+    "contactsTitle": "Contacts between the charts",
+    "contactsLead": "Aspects from one chart's planets to the other's. {total} in all — {harmonious} harmonious and {tense} tense. The closest ones are below."
   },
   "chart": {
     "planets": {
@@ -312,7 +335,8 @@
           "Saturn in the eighth house adds caution around shared money and credit."
         ]
       }
-    ]
+    ],
+    "leadSynastry": "20–30 pages about the two of you: what pulls you together, where the friction is and how to live with it. The PDF arrives by email 5–15 minutes after payment."
   },
   "checkout": {
     "title": "Your order",

@@ -20,8 +20,7 @@ class SizedProvider:
         # Filler with no letter unique to either language: the editor rejects a Ukrainian word
         # in a Russian reading, and this double is used for both.
         body = "\n\n".join(
-            f"Абзац номер {i + 1}, достатньо довгий, щоб потрапити в PDF."
-            for i in range(wanted)
+            f"Абзац номер {i + 1}, достатньо довгий, щоб потрапити в PDF." for i in range(wanted)
         )
         return Completion(
             text=body, tokens_in=1200, tokens_out=800, model="anthropic/claude-sonnet-5"
