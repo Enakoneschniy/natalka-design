@@ -656,6 +656,43 @@ BUNDLE: tuple[SectionSpec, ...] = (
 BY_PRODUCT["bundle"] = BUNDLE
 
 
+#: The subscription horoscope. One model call, not a document: the reader gets it in a chat or an
+#: email and reads it in two minutes. Both cadences are written to the same rule — every claim
+#: about timing quotes a date the engine computed, and a quiet week is called quiet.
+HOROSCOPE_WEEK = SectionSpec(
+    id="horoscope.week",
+    brief=(
+        "A horoscope for one week, in four paragraphs and nothing else. First: the tone of the "
+        "week as a whole, named through the transits that define it. Then the two or three dates "
+        "that matter, each with the date itself and what a passage like it is usually felt as. "
+        "Then one paragraph on where the attention is best spent — tied to the natal house the "
+        "transit falls in, not to general advice. Finally one short paragraph that closes without "
+        "summarising. Never promise events; describe weather, not verdicts."
+    ),
+    paragraphs=(4, 4),
+    needs_transits=True,
+    titles=_t("Тиждень", "Неделя", "The week"),
+)
+
+HOROSCOPE_MONTH = SectionSpec(
+    id="horoscope.month",
+    brief=(
+        "A horoscope for one month, in six or seven paragraphs. First the shape of the month: "
+        "which transits define it and how it is divided — where it is dense and where it is "
+        "quiet. Then the dates in order, grouped by week, each tied to the natal point it "
+        "touches and the house that point occupies. Then one paragraph on work and one on "
+        "relationships, but only where the month actually says something about them; if it says "
+        "nothing, write about what it does say instead of filling the space. Close with one "
+        "paragraph of what to do with the month, tied to specific dates."
+    ),
+    paragraphs=(6, 7),
+    needs_transits=True,
+    titles=_t("Місяць", "Месяц", "The month"),
+)
+
+HOROSCOPE = {"week": HOROSCOPE_WEEK, "month": HOROSCOPE_MONTH}
+
+
 #: The free preview: three short passages a visitor reads before paying, and the first words the
 #: product ever says to them. One model call rather than three — the fact sheet is most of the
 #: input, and paying for it three times would triple both the bill and the wait.

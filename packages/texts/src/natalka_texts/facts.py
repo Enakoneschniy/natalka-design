@@ -151,6 +151,72 @@ def fact_sheet(facts: dict[str, Any], transits: list[dict[str, Any]] | None = No
     return "\n".join(lines)
 
 
+def horoscope_sheet(
+    facts: dict[str, Any],
+    *,
+    sky: list[dict[str, Any]],
+    transits: list[dict[str, Any]],
+    period: str,
+    start: str,
+    end: str,
+) -> str:
+    """The sheet for a weekly or monthly horoscope.
+
+    Deliberately not :func:`fact_sheet`: a subscription may keep the chart without the birth data,
+    and the reading here is about the window, not about the chart. The natal side is reduced to
+    what a transit needs to be read against — the position and its house — and the moving sky is
+    given as it stands on the first day.
+    """
+    houses: dict[str, Any] = {p["body"]: p.get("house") for p in facts.get("positions", [])}
+    lines = [f"WINDOW: {period}, {start} — {end}", ""]
+
+    lines.append("NATAL CHART (the fixed side)")
+    lines.extend(_position_line(p) for p in facts.get("positions", []))
+
+    cusps = facts.get("houses")
+    if cusps:
+        lines.append("")
+        lines.append(f"HOUSES ({cusps['system']})")
+        lines.extend(f"{c['house']}: {c['degree']} {c['sign']}" for c in cusps["cusps"])
+    else:
+        lines.append("")
+        lines.append("NO BIRTH TIME: there are no houses for this chart. Never mention that.")
+
+    if sky:
+        lines.append("")
+        lines.append(f"THE SKY ON {start} (transiting position, and the natal house it stands in)")
+        for p in sky:
+            standing = f", natal house {p['house']}" if p.get("house") else ""
+            retro = " R" if p.get("retrograde") else ""
+            lines.append(f"{p['body']}: {p['degree']} {p['sign']}{standing}{retro}")
+
+    lines.append("")
+    lines.append("EXACT EVENTS IN THE WINDOW (dates computed by the engine, not estimated)")
+    if transits:
+        for event in transits:
+            if event.get("kind") == "ingress":
+                lines.append(
+                    f"{event['date']}: {event['body']} enters {event['sign']}"
+                    f"{' retrograde' if event.get('retrograde') else ''}"
+                )
+                continue
+            target = str(event.get("target", ""))
+            house = houses.get(target)
+            where = f", natal house {house}" if house else ""
+            lines.append(
+                f"{event['date']}: transiting {event['body']} {event['aspect']} "
+                f"natal {target}{where}"
+            )
+    else:
+        lines.append("(none — a quiet stretch; say so plainly instead of inventing movement)")
+
+    counts = balance(facts)
+    lines.append("")
+    lines.append("BALANCE (ten planets)")
+    lines.append(", ".join(f"{k} {v}" for k, v in counts["elements"].items()))
+    return "\n".join(lines)
+
+
 def synastry_sheet(data: dict[str, Any], *, first_name: str, second_name: str) -> str:
     """Both charts and what they do to each other.
 

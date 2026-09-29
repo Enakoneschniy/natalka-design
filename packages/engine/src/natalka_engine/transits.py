@@ -11,7 +11,7 @@ Nothing here is estimated: every timestamp is a bisection root of the exact ephe
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -201,6 +201,33 @@ def transit_events(
     ingresses: bool = True,
 ) -> list[TransitEvent]:
     """All ingresses and exact hits for a chart in a window, chronological."""
+    return events_for(
+        chart.longitudes,
+        start,
+        end,
+        bodies=bodies,
+        targets=targets,
+        aspects=aspects,
+        ingresses=ingresses,
+    )
+
+
+def events_for(
+    natal: Mapping[Body, float],
+    start: datetime,
+    end: datetime,
+    *,
+    bodies: Iterable[Body] = OUTER_PLANETS,
+    targets: Iterable[Body] = DEFAULT_TARGETS,
+    aspects: Iterable[AspectType] = DEFAULT_KINDS,
+    ingresses: bool = True,
+) -> list[TransitEvent]:
+    """The same, from natal longitudes alone.
+
+    A subscription keeps the chart and not the birth data, so there is nothing to rebuild a
+    :class:`NatalChart` from — and nothing here needs one: a transit is a relation between a
+    moving longitude and a fixed one.
+    """
     if start.tzinfo is None or end.tzinfo is None:
         raise ValueError("start/end must be timezone-aware")
     kinds = tuple(aspects)
@@ -208,7 +235,6 @@ def transit_events(
         if k not in MAJOR:
             raise ValueError(f"transit aspects are limited to majors, got {k}")
     events: list[TransitEvent] = []
-    natal = chart.longitudes
     for body in bodies:
         if ingresses:
             events.extend(sign_ingresses(body, start, end))

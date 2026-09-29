@@ -28,8 +28,18 @@ from natalka_engine import (
     synastry_to_dict,
     transit_events,
 )
+from natalka_engine.bodies import (
+    OUTER_PLANETS,
+    PERSONAL_PLANETS,
+    PLANETS,
+    Body,
+    Sign,
+    format_degree,
+)
+from natalka_engine.chart import house_of
 from natalka_engine.geo import zone_for
 from natalka_engine.timeutil import UnknownTimeZoneError
+from natalka_engine.transits import events_for, positions_at
 from natalka_texts import (
     PREVIEW,
     PREVIEW_NO_TIME,
@@ -44,7 +54,7 @@ from natalka_texts import (
     synastry_sheet,
     title,
 )
-from natalka_texts.generate import MAX_TOKENS
+from natalka_texts.generate import MAX_TOKENS, write_horoscope
 from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
 from natalka_texts.validate import check
 from pydantic import BaseModel, Field, field_validator
@@ -208,6 +218,112 @@ def preview(req: PreviewRequest) -> dict[str, Any]:
         "tokens_out": completion.tokens_out,
         "cost_micros": completion.cost_micros,
         "model": completion.model,
+    }
+
+
+class HoroscopeRequest(BaseModel):
+    """A week or a month for one chart.
+
+    Takes the chart rather than the birth data: a subscription only needs the longitudes, and the
+    fewer copies of a birth certificate travel between services, the better.
+    """
+
+    facts: dict[str, Any]
+    period: Literal["week", "month"] = "week"
+    #: The first day of the window. Absent means "from today".
+    start: dt.date | None = None
+    lang: str = Field(default="uk", pattern=r"^[a-z]{2}$")
+    gender: Literal["f", "m", "n"] = "n"
+    name: str = ""
+
+
+#: How long each cadence runs. A month is 30 days rather than a calendar month so that the window
+#: never depends on which month it starts in.
+PERIOD_DAYS = {"week": 7, "month": 30}
+
+
+def _longitudes(facts: dict[str, Any]) -> dict[Body, float]:
+    out: dict[Body, float] = {}
+    for position in facts.get("positions", []):
+        try:
+            out[Body(position["body"])] = float(position["longitude"])
+        except (ValueError, KeyError, TypeError):
+            continue
+    return out
+
+
+def _sky(when: dt.datetime, facts: dict[str, Any]) -> list[dict[str, Any]]:
+    """Where the planets stand on the first day, and which natal house each one is crossing."""
+    houses = facts.get("houses")
+    cusps = tuple(c["longitude"] for c in houses["cusps"]) if houses else ()
+    out: list[dict[str, Any]] = []
+    for body, longitude in positions_at(when, PLANETS).items():
+        out.append(
+            {
+                "body": body.value,
+                "longitude": round(longitude, 4),
+                "sign": Sign.of(longitude).key,
+                "degree": format_degree(longitude),
+                "house": house_of(longitude, cusps) if cusps else None,
+            }
+        )
+    return out
+
+
+@app.post("/v1/horoscope")
+def horoscope(req: HoroscopeRequest) -> dict[str, Any]:
+    """One window, one model call.
+
+    The transiting bodies include the personal planets: over a week the outer planets barely move,
+    and a horoscope built from them alone would say the same thing for two months.
+    """
+    natal = _longitudes(req.facts)
+    if not natal:
+        raise HTTPException(422, "the chart has no positions")
+
+    start = dt.datetime.combine(req.start or dt.datetime.now(UTC).date(), dt.time(), tzinfo=UTC)
+    end = start + dt.timedelta(days=PERIOD_DAYS[req.period])
+    # Angles are natal targets, never transiting bodies.
+    skip = (Body.DSC, Body.IC, Body.SOUTH_NODE, Body.VERTEX, Body.PARS_FORTUNAE)
+    targets = tuple(b for b in natal if b not in skip)
+    events = events_for(
+        natal,
+        start,
+        end,
+        bodies=(*PERSONAL_PLANETS, *OUTER_PLANETS),
+        targets=targets,
+    )
+    transits = events_to_list(events)
+
+    try:
+        reading = write_horoscope(
+            req.facts,
+            provider=OpenRouterProvider(),
+            sky=_sky(start, req.facts),
+            transits=transits,
+            period=req.period,
+            start=start.date().isoformat(),
+            end=end.date().isoformat(),
+            lang=req.lang,
+            name=req.name,
+            gender=req.gender,
+        )
+    except ModelUnavailableError as exc:
+        raise HTTPException(503, f"model unavailable: {exc}") from exc
+
+    section = reading.sections[0]
+    return {
+        "title": section.title,
+        "text": section.text,
+        "period": req.period,
+        "start": start.date().isoformat(),
+        "end": end.date().isoformat(),
+        "events": len(transits),
+        "problems": list(section.problems),
+        "tokens_in": reading.tokens_in,
+        "tokens_out": reading.tokens_out,
+        "cost_micros": reading.cost_micros,
+        "model": reading.model,
     }
 
 

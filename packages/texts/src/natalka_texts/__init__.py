@@ -1,7 +1,7 @@
 """Prompts, model access and the editor that checks what comes back."""
 
 from .facts import fact_sheet, synastry_sheet
-from .generate import Reading, SectionText, write_reading
+from .generate import Reading, SectionText, write_horoscope, write_reading
 from .providers import (
     Completion,
     ModelUnavailableError,
@@ -43,5 +43,6 @@ __all__ = [
     "specs",
     "synastry_sheet",
     "title",
+    "write_horoscope",
     "write_reading",
 ]

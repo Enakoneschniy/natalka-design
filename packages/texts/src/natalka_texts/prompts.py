@@ -49,6 +49,14 @@ ADDRESSEE = {
         "Never address the child, never predict who they will become, and never write anything a "
         "parent could read as a diagnosis or a limit on the child."
     ),
+    "horoscope": (
+        "This is a subscription horoscope for one window of time, not a reading of the chart. The "
+        "chart is the ground the transits fall on; the subject is the window. Every claim about "
+        "timing must quote a date from the fact sheet, and a date with nothing on it stays "
+        "unmentioned. The reader gets one of these every week or every month: do not open with a "
+        "greeting, do not explain what a transit is, and do not repeat the natal chart back to "
+        "them. Start with the week or the month itself."
+    ),
     "forecast": (
         "This is a twelve-month forecast. The natal chart is background; the subject is what the "
         "sky does to it and when. Every claim about timing must quote a date from the fact sheet."

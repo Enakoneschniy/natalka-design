@@ -11,10 +11,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from .facts import fact_sheet
+from .facts import fact_sheet, horoscope_sheet
 from .prompts import repair_prompt, section_prompt, system_prompt
 from .providers import Completion, ModelUnavailableError, Provider
-from .sections import SectionSpec, specs, title
+from .sections import HOROSCOPE, SectionSpec, specs, title
 from .validate import check
 
 log = logging.getLogger(__name__)
@@ -132,4 +132,33 @@ def write_reading(
             raise
         reading.sections.append(section)
         written.append(f"{title(spec, lang)}: {section.text[:160]}…")
+    return reading
+
+
+def write_horoscope(
+    facts: dict[str, Any],
+    *,
+    provider: Provider,
+    sky: list[dict[str, Any]],
+    transits: list[dict[str, Any]],
+    period: str = "week",
+    start: str,
+    end: str,
+    lang: str = "uk",
+    name: str = "",
+    gender: str = "n",
+) -> Reading:
+    """One window, one model call (two if the editor rejects the first).
+
+    A horoscope is short enough to write in one piece, so it does not go through the section loop:
+    splitting four paragraphs into four requests would pay for the fact sheet four times over.
+    """
+    spec = HOROSCOPE[period]
+    sheet = horoscope_sheet(facts, sky=sky, transits=transits, period=period, start=start, end=end)
+    system = system_prompt(lang, gender, "horoscope")
+    user = section_prompt(spec, name=name or "—", sheet=sheet, written_so_far=[])
+    reading = Reading(lang=lang)
+    reading.sections.append(
+        _one_section(provider, spec, system=system, user=user, lang=lang, reading=reading)
+    )
     return reading

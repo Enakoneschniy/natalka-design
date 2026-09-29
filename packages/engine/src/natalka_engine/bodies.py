@@ -104,6 +104,10 @@ ASPECTABLE: tuple[Body, ...] = (*PLANETS, Body.CHIRON, Body.NORTH_NODE, Body.ASC
 OUTER_PLANETS: tuple[Body, ...] = (Body.JUPITER, Body.SATURN, Body.URANUS, Body.NEPTUNE, Body.PLUTO)
 """Transiting bodies whose passages are slow enough to be meaningful with day precision."""
 
+PERSONAL_PLANETS: tuple[Body, ...] = (Body.SUN, Body.MERCURY, Body.VENUS, Body.MARS)
+"""Transiting bodies fast enough to say something about a single week. The Moon is left out on
+purpose: it makes four exact aspects a day, which is noise at this length."""
+
 # Traditional sign rulers (modern), used for "ruler of house X" in the facts JSON.
 RULERS: dict[Sign, Body] = {
     Sign.ARIES: Body.MARS,
