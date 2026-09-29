@@ -136,9 +136,13 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
           <ol className="steps">
             {steps.map((i) => (
               <li key={i}>
-                <span className="step-n mono">{i + 1}</span>
-                <h3>{t(`how.steps.${i}.title`)}</h3>
-                <p className="muted">{t(`how.steps.${i}.text`)}</p>
+                <span className="step-node">
+                  <span className="step-n">{i + 1}</span>
+                </span>
+                <div className="step-body">
+                  <h3>{t(`how.steps.${i}.title`)}</h3>
+                  <p className="muted">{t(`how.steps.${i}.text`)}</p>
+                </div>
               </li>
             ))}
           </ol>

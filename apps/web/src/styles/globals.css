@@ -793,42 +793,55 @@
   color: var(--color-ink-3);
 }
 
+/* Three steps on one path. The line runs behind the numbers and stops at the last of them, so
+   the section reads as a route from the form to the document rather than as three loose columns. */
 .steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
+  gap: 24px 36px;
   list-style: none;
   padding: 0;
 }
 .steps li {
-  border-top: 1px solid var(--color-line-strong);
-  padding-top: 20px;
   position: relative;
+  display: grid;
+  gap: 18px;
 }
-.steps li::before {
+.steps li:not(:last-child)::before {
   content: '';
   position: absolute;
-  top: -1px;
-  left: 0;
-  width: 48px;
+  top: 21px;
+  left: 52px;
+  right: -36px;
   height: 1px;
-  background: var(--color-accent);
+  background: linear-gradient(90deg, var(--color-accent-soft), var(--color-line));
 }
-.steps .step-n {
-  display: block;
+.step-node {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(231, 183, 92, 0.32);
+  background: radial-gradient(circle at 50% 40%, rgba(231, 183, 92, 0.12), transparent 70%),
+    var(--color-surface-solid);
+  /* The ring sits on the line, so it needs the page colour around it to cut the line cleanly. */
+  box-shadow: 0 0 0 6px var(--color-bg);
+  position: relative;
+}
+.step-n {
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: 19px;
   line-height: 1;
   color: var(--color-accent);
-  opacity: 0.85;
-  margin-bottom: 14px;
 }
 .steps h3 {
-  font-size: 22px;
+  font-size: 21px;
   margin-bottom: 10px;
 }
 .steps p {
   font-size: 15px;
+  max-width: 34ch;
 }
 
 .faq-grid {
@@ -2305,6 +2318,24 @@
   .steps,
   .faq-grid {
     grid-template-columns: 1fr;
+  }
+  /* Stacked, the same path turns vertical and runs down the left through the numbers. */
+  .steps li {
+    grid-template-columns: 42px 1fr;
+    column-gap: 18px;
+    align-items: start;
+  }
+  .steps li:not(:last-child)::before {
+    top: 50px;
+    bottom: -24px;
+    left: 21px;
+    right: auto;
+    width: 1px;
+    height: auto;
+    background: linear-gradient(180deg, var(--color-accent-soft), var(--color-line));
+  }
+  .steps p {
+    max-width: none;
   }
   .cta-card {
     flex-direction: column;
