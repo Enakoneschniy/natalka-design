@@ -89,3 +89,16 @@ def test_an_opening_may_be_impersonal() -> None:
         f"{about}\n\n{about}", lang="ru", min_paragraphs=2, max_paragraphs=3, impersonal_ok=True
     )
     assert relaxed.ok
+
+
+def test_informal_address_is_rejected() -> None:
+    text = "Твой Марс в Овне даёт скорость.\n\nЕсли тебе кажется, что это давит, — это транзит."
+    report = check(text, lang="ru", min_paragraphs=2, max_paragraphs=2)
+    assert any("informally" in p for p in report.problems)
+    # And it is not also reported as impersonal: it addresses the reader, just wrongly.
+    assert not any("talks about the reader" in p for p in report.problems)
+
+
+def test_formal_address_passes() -> None:
+    text = "Ваш Марс в Овне даёт скорость.\n\nЕсли вам кажется, что это давит, — это транзит."
+    assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok

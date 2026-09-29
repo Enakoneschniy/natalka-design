@@ -91,12 +91,22 @@ CLICHES: dict[str, tuple[str, ...]] = {
     ),
 }
 
+#: The reading is written on formal terms. A model that slips into «ты» has not made a stylistic
+#: choice — it has changed the relationship, in a document someone paid for.
+#:
+#: Matched on word boundaries, not as substrings: "робити" ends in "ти" and "основы" ends in "вы",
+#: and a plain `in` check turns both into false accusations.
+INFORMAL = {
+    "ru": re.compile(r"\b(ты|теб[яе]|тобой|тво[йяёеи]\w*)\b", re.IGNORECASE),
+    "uk": re.compile(r"\b(ти|тоб[іи]|тебе|тобою|тво[їяєё]\w*)\b", re.IGNORECASE),
+}
+
 #: A section written *about* the reader instead of *to* them reads like a horoscope column and
 #: slips into the wrong gender. Any real section of a reading addresses them at least once.
-SECOND_PERSON: dict[str, tuple[str, ...]] = {
-    "ru": ("вы ", "вы,", "вас", "вам", "ваш", "вами", "вы."),
-    "uk": ("ви ", "ви,", "вас", "вам", "ваш", "вами", "ви."),
-    "en": ("you ", "you,", "your", "you."),
+SECOND_PERSON = {
+    "ru": re.compile(r"\b(вы|вас|вам|вами|ваш\w*)\b", re.IGNORECASE),
+    "uk": re.compile(r"\b(ви|вас|вам|вами|ваш\w*)\b", re.IGNORECASE),
+    "en": re.compile(r"\b(you|your|yours)\b", re.IGNORECASE),
 }
 #: Below this a section is an opening or a closing line, where an impersonal sentence is fine.
 ADDRESS_MIN_CHARS = 400
@@ -145,10 +155,16 @@ def _language_problems(text: str, lang: str, *, impersonal_ok: bool = False) -> 
         if latin:
             problems.append(f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
 
+    informal_re = INFORMAL.get(lang)
+    informal = informal_re.search(text) if informal_re else None
+    if informal:
+        problems.append(
+            f"addresses the reader informally ({informal.group(0)}); the reading is on «вы»"
+        )
+
     if not impersonal_ok and len(text) > ADDRESS_MIN_CHARS:
-        markers = SECOND_PERSON.get(lang, ())
-        low = text.lower()
-        if markers and not any(m in low for m in markers):
+        formal = SECOND_PERSON.get(lang)
+        if formal and not formal.search(text) and not informal:
             problems.append("the section talks about the reader instead of addressing them")
     return problems
 

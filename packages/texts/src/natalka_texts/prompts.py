@@ -83,7 +83,8 @@ section where it matters, and otherwise write as if the question had never come 
 
 ADDRESS
 Write to the person, not about them: "you", never their name in the third person. The name is
-yours to use once, in the opening, and only as a greeting.
+yours to use once, in the opening, and only as a greeting. In Russian and Ukrainian this is the
+formal «вы» / «ви» throughout — never «ты» / «ти», in any sentence, however warm the moment.
 
 TONE
 Warm, respectful, direct. Vary sentence length — short sentences next to long ones. Paragraphs of
