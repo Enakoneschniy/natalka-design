@@ -229,6 +229,75 @@
   }
 }
 
+/* The far half of the star field. Fixed to the viewport and nudged by the parallax handler, so
+   it travels slower than the page; the inner layer is a tile taller on each side than the shift
+   it ever takes. */
+.sky-far {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sky-far-inner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -360px;
+  bottom: -360px;
+  background-repeat: repeat;
+  will-change: transform;
+}
+
+/* One streak across the sky, then gone. Fixed, because a shooting star belongs to the screen the
+   visitor is looking at rather than to a place in the document. */
+.shooting {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.shot {
+  position: absolute;
+  height: 1px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, rgba(220, 228, 255, 0), rgba(226, 232, 255, 0.85));
+  transform-origin: left center;
+  opacity: 0;
+  animation-name: shoot;
+  animation-timing-function: cubic-bezier(0.3, 0.5, 0.2, 1);
+  animation-fill-mode: forwards;
+}
+/* The bright head at the leading end of the tail. */
+.shot::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -1px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px 2px rgba(220, 228, 255, 0.7);
+}
+@keyframes shoot {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateX(0) scaleX(0.3);
+  }
+  15% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateX(var(--travel)) scaleX(1);
+  }
+}
+
 .sky {
   position: absolute;
   inset: 0;

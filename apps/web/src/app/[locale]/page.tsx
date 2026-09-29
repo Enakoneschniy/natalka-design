@@ -150,7 +150,7 @@ function Landing({ locale, prices }: { locale: Locale; prices: Record<ProductKey
           <div className="section-title">
             <h2>{t('faq.title')}</h2>
             <p className="muted">
-              {t('faq.contact')} <a href="mailto:hi@chronika.me">hi@chronika.me</a>
+              {t('faq.contact')} <a href="mailto:help@chronika.me">help@chronika.me</a>
               {t('faq.contactAfter')}
             </p>
           </div>

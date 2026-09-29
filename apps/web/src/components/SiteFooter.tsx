@@ -44,7 +44,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
             <h4>{t('contacts')}</h4>
             <ul>
               <li>
-                <a href="mailto:hi@chronika.me">hi@chronika.me</a>
+                <a href="mailto:help@chronika.me">help@chronika.me</a>
               </li>
               <li>{t('hours')}</li>
             </ul>
