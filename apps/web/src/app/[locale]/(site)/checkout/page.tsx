@@ -1,9 +1,10 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { StartGeneration } from '@/components/StartGeneration';
 import { Stepper } from '@/components/Stepper';
-import { PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
+import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
+import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
 /** One visitor's own page: never indexed, open shop or not. */
 export const metadata = { robots: { index: false, follow: false } };
@@ -37,7 +38,8 @@ export default async function CheckoutPage({
 
   const country = (await headers()).get('cf-ipcountry');
   const product = isProduct(one(search.p)) ? (one(search.p) as ProductKey) : 'natal';
-  const price = priceFor(product, country);
+  const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
+  const price = product === 'bundle' ? bundlePrice(country, variant) : priceFor(product, country);
 
   const birth = [
     one(search.d)?.split('-').reverse().join('.'),

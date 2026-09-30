@@ -11,7 +11,6 @@ export interface OrderRequest {
   country?: string;
   amount_minor: number;
   currency: string;
-  test?: boolean;
   cancel_url?: string;
   product_name?: string;
   birth: BirthInput;

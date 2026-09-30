@@ -66,8 +66,6 @@ interface CreateOrder {
   country?: string;
   amount_minor: number;
   currency: string;
-  /** Marks a run that was not paid for — the staging site creates these. */
-  test?: boolean;
   /** Where Stripe sends the customer back if they abandon the payment page. */
   cancel_url?: string;
   /** The product's title in the customer's language, for the payment page. */
@@ -176,6 +174,13 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   const jobId = crypto.randomUUID();
   const retention = Number(env.RETENTION_DAYS ?? '30');
 
+  // What decides whether this order is a test is the state of the worker, not a flag in the
+  // request: without a Stripe key nothing can be charged, and with one nothing is free unless
+  // it carries the test key. The caller cannot make itself free by asking.
+  const testKey = request.headers.get('x-test-order');
+  const test =
+    !env.STRIPE_SECRET_KEY || Boolean(env.TEST_ORDER_KEY && testKey && testKey === env.TEST_ORDER_KEY);
+
   await insertOrder(env.DB, {
     id: orderId,
     email: body.email,
@@ -184,7 +189,7 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     country: body.country ?? null,
     amount_minor: body.amount_minor,
     currency: body.currency,
-    status: body.test ? 'test' : 'pending',
+    status: test ? 'test' : 'pending',
     created_at: now(),
   });
 
@@ -210,12 +215,8 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   // The token is the only thing the browser needs afterwards: it names the order and expires.
   const token = await signToken({ order: orderId, job: jobId }, env.LINK_KEY, LINK_TTL_SECONDS);
 
-  // A test order skips payment. Only with the key, and only while payments are not live at all:
-  // once Stripe is configured, nothing is generated for free by accident.
-  const testKey = request.headers.get('x-test-order');
-  const test = Boolean(env.TEST_ORDER_KEY && testKey && testKey === env.TEST_ORDER_KEY);
-  if (!env.STRIPE_SECRET_KEY || test) {
-    if (env.STRIPE_SECRET_KEY && !test) return json({ error: 'payment required' }, 402);
+  // A test order skips the payment and goes straight to the queue.
+  if (test) {
     await env.JOBS.send({ jobId });
     return json({ order_id: orderId, job_id: jobId, token }, 201);
   }
