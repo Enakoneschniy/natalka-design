@@ -2678,7 +2678,9 @@ main > .hero-film:first-child {
 .lightbox {
   position: fixed;
   inset: 0;
-  height: 100svh;
+  /* Dynamic, not small: a phone's toolbar slides away as you scroll, and a box fixed to the
+     height it had while the toolbar was up leaves a band of the page showing beneath it. */
+  height: 100dvh;
   z-index: 60;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
