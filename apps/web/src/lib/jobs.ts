@@ -11,6 +11,9 @@ export interface OrderRequest {
   country?: string;
   amount_minor: number;
   currency: string;
+  /** Which side of the price experiment the visitor was shown; kept with the order so the
+   * experiment can be settled against the money rather than against a click. */
+  variant?: string | null;
   cancel_url?: string;
   product_name?: string;
   birth: BirthInput;
@@ -39,6 +42,11 @@ export interface OrderCreated {
 
 export interface JobStatus {
   paid: boolean;
+  /** A run that was never charged for: it must not be reported as a sale. */
+  test?: boolean;
+  order_id?: string;
+  amount_minor?: number | null;
+  currency?: string | null;
   step: 'calc' | 'texts' | 'pdf' | 'email' | 'done';
   status: 'queued' | 'running' | 'failed' | 'done';
   written: number;

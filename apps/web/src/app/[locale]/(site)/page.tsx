@@ -1,10 +1,12 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { setRequestLocale } from 'next-intl/server';
 import { ANGLES, type Angle, Landing } from '@/components/Landing';
 import { StructuredData } from '@/components/StructuredData';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
+import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
+import { count } from '@/lib/stats';
 
 const facts = demo as unknown as ChartFacts;
 
@@ -23,14 +25,13 @@ export default async function LandingPage({
   const angle = (Array.isArray(asked) ? asked[0] : asked) ?? '';
   // The country header is read so the page is rendered per-region, the way the rest of the site is.
   await headers();
+  const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
+  const chosen = (ANGLES as readonly string[]).includes(angle) ? (angle as Angle) : 'dates';
+  await count('landing', { variant, angle: chosen });
   return (
     <>
       <StructuredData locale={locale} />
-      <Landing
-        locale={locale as Locale}
-        facts={facts}
-        angle={(ANGLES as readonly string[]).includes(angle) ? (angle as Angle) : 'dates'}
-      />
+      <Landing locale={locale as Locale} facts={facts} angle={chosen} />
     </>
   );
 }

@@ -13,6 +13,8 @@ export interface OrderRow {
   amount_minor: number;
   currency: string;
   status: string;
+  /** Which side of the price experiment this order was shown. */
+  variant: string | null;
   created_at: string;
 }
 
@@ -39,8 +41,8 @@ export const expiryFrom = (days: number): string =>
 export async function insertOrder(db: D1Database, order: OrderRow): Promise<void> {
   await db
     .prepare(
-      `INSERT INTO orders (id, email, product, locale, country, amount_minor, currency, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO orders (id, email, product, locale, country, amount_minor, currency, status, variant, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       order.id,
@@ -51,6 +53,7 @@ export async function insertOrder(db: D1Database, order: OrderRow): Promise<void
       order.amount_minor,
       order.currency,
       order.status,
+      order.variant,
       order.created_at,
     )
     .run();
@@ -204,6 +207,19 @@ export async function cachePreview(
     .run();
 }
 
+/** The few fields the counters need when an order is paid for. */
+export const orderFacts = (db: D1Database, id: string) =>
+  db
+    .prepare('SELECT variant, country, currency, amount_minor, product FROM orders WHERE id = ?')
+    .bind(id)
+    .first<{
+      variant: string | null;
+      country: string | null;
+      currency: string;
+      amount_minor: number;
+      product: string;
+    }>();
+
 export async function orderContact(
   db: D1Database,
   orderId: string,
@@ -335,4 +351,43 @@ export async function setOrderSession(db: D1Database, orderId: string, sessionId
 export async function orderStatus(db: D1Database, orderId: string): Promise<string | null> {
   const row = await db.prepare('SELECT status FROM orders WHERE id = ?').bind(orderId).first<{ status: string }>();
   return row?.status ?? null;
+}
+
+// ---- what the site is doing -----------------------------------------------------------------
+
+export interface StatKey {
+  event: string;
+  variant?: string | null;
+  angle?: string | null;
+  country?: string | null;
+  currency?: string | null;
+  /** Money, for the events that carry any. */
+  amountMinor?: number;
+}
+
+/** One row per combination per day, bumped in place.
+ *
+ * Aggregates, written from the request that caused them: nobody is followed between two of
+ * these, and there is nothing in a row that points at a person. A failure here must never cost
+ * a visitor their page, so the caller runs it after the response has gone.
+ */
+export async function bumpStat(db: D1Database, key: StatKey): Promise<void> {
+  const day = new Date().toISOString().slice(0, 10);
+  await db
+    .prepare(
+      `INSERT INTO stats (day, event, variant, angle, country, currency, count, amount_minor)
+       VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+       ON CONFLICT (day, event, variant, angle, country, currency)
+       DO UPDATE SET count = count + 1, amount_minor = amount_minor + excluded.amount_minor`,
+    )
+    .bind(
+      day,
+      key.event,
+      key.variant ?? '',
+      key.angle ?? '',
+      (key.country ?? '').toUpperCase(),
+      key.currency ?? '',
+      key.amountMinor ?? 0,
+    )
+    .run();
 }

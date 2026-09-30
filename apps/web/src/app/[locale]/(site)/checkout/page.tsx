@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { StartGeneration } from '@/components/StartGeneration';
 import { Stepper } from '@/components/Stepper';
+import { TrackEvent } from '@/components/TrackEvent';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
+import { count } from '@/lib/stats';
 
 /** One visitor's own page: never indexed, open shop or not. */
 export const metadata = { robots: { index: false, follow: false } };
@@ -40,6 +42,7 @@ export default async function CheckoutPage({
   const product = isProduct(one(search.p)) ? (one(search.p) as ProductKey) : 'natal';
   const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
   const price = product === 'bundle' ? bundlePrice(country, variant) : priceFor(product, country);
+  await count('checkout', { variant });
 
   const birth = [
     one(search.d)?.split('-').reverse().join('.'),
@@ -83,6 +86,7 @@ export default async function CheckoutPage({
 
   return (
     <div className="flow">
+      <TrackEvent step="checkout" value={price.amount} currency={price.currency} />
       <div className="container-page narrow">
         <div className="flow-head">
           <Stepper current="payment" />

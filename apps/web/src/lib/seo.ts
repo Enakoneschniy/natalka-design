@@ -1,4 +1,3 @@
-
 /** Everything the site says about itself to a machine.
  *
  * Two audiences, one set of facts: search engines, which want canonical URLs, alternates and a

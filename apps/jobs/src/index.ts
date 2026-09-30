@@ -27,6 +27,8 @@ import {
   now,
   orderContact,
   setOrderSession,
+  orderFacts,
+  bumpStat,
   type Product,
   updateJob,
 } from './db';
@@ -66,6 +68,8 @@ interface CreateOrder {
   country?: string;
   amount_minor: number;
   currency: string;
+  /** Which side of the price experiment the visitor was shown. */
+  variant?: string | null;
   /** Where Stripe sends the customer back if they abandon the payment page. */
   cancel_url?: string;
   /** The product's title in the customer's language, for the payment page. */
@@ -190,6 +194,7 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     amount_minor: body.amount_minor,
     currency: body.currency,
     status: test ? 'test' : 'pending',
+    variant: body.variant ?? null,
     created_at: now(),
   });
 
@@ -212,6 +217,13 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   }
 
   await insertJob(env.DB, { id: jobId, order_id: orderId, kind: body.product });
+  // Counted here rather than in the browser: an order is a thing that happened, not a click.
+  await bumpStat(env.DB, {
+    event: 'order',
+    variant: body.variant,
+    country: body.country,
+    currency: body.currency,
+  });
   // The token is the only thing the browser needs afterwards: it names the order and expires.
   const token = await signToken({ order: orderId, job: jobId }, env.LINK_KEY, LINK_TTL_SECONDS);
 
@@ -254,7 +266,19 @@ async function stripeWebhook(request: Request, env: Env): Promise<Response> {
     const jobId = session.metadata?.job_id;
     if (!orderId || !jobId) return json({ received: true, ignored: 'no order' });
     const flipped = await markOrderPaid(env.DB, orderId, session.payment_intent ?? null);
-    if (flipped) await env.JOBS.send({ jobId });
+    if (flipped) {
+      await env.JOBS.send({ jobId });
+      const facts = await orderFacts(env.DB, orderId);
+      if (facts) {
+        await bumpStat(env.DB, {
+          event: 'paid',
+          variant: facts.variant,
+          country: facts.country,
+          currency: facts.currency,
+          amountMinor: facts.amount_minor,
+        });
+      }
+    }
     return json({ received: true, queued: flipped });
   }
   if (event.type === 'checkout.session.async_payment_failed') {
@@ -277,12 +301,19 @@ async function jobStatus(env: Env, token: string): Promise<Response> {
   const written = payload.sections?.length ?? 0;
   const document = job.step === 'done' ? await documentForOrder(env.DB, job.order_id) : null;
   const order = await orderStatus(env.DB, job.order_id);
+  // The sale, for the conversion the browser reports once the buyer is back from the payment
+  // page. A run that was never charged says so, so that a free document is not counted as one.
+  const facts = order === 'paid' ? await orderFacts(env.DB, job.order_id) : null;
 
   return json({
     step: job.step,
     status: job.status,
     // 'pending' means the payment page was opened and nothing has settled yet.
     paid: order === 'paid' || order === 'test',
+    test: order === 'test',
+    order_id: job.order_id,
+    amount_minor: facts?.amount_minor ?? null,
+    currency: facts?.currency ?? null,
     written,
     total,
     // Calculation is quick and rendering is a few seconds; the text is the whole wait.

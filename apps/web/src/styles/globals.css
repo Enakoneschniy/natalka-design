@@ -333,6 +333,34 @@
   margin-top: 18px;
 }
 
+/* The cookie question: a small card in the corner, not a wall across the page. It appears once
+   and only while there is something to ask about. */
+.consent {
+  position: fixed;
+  z-index: 50;
+  left: var(--gutter, 16px);
+  bottom: var(--gutter, 16px);
+  width: min(420px, calc(100vw - 2 * var(--gutter, 16px)));
+  padding: 18px 20px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card, 14px);
+  background: rgba(10, 14, 33, 0.94);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  animation: fade-up 0.4s ease-out 0.8s both;
+}
+.consent p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-ink-2);
+}
+.consent-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
 /* ---------- the mark ---------- */
 /* Not a header: a line of the page that happens to hold the logo, transparent, with the hero or
    the first heading starting directly underneath. The hero subtracts this height so that its

@@ -3,9 +3,15 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { TrackEvent } from '@/components/TrackEvent';
 
 interface Status {
   paid: boolean;
+  /** A run that was never charged for: it must not be reported as a sale. */
+  test?: boolean;
+  order_id?: string;
+  amount_minor?: number | null;
+  currency?: string | null;
   step: string;
   status: string;
   written: number;
@@ -177,6 +183,17 @@ export function GenerationProgress({
           {done ? t('readyBody', { pages: status?.pages ?? 0 }) : label}
         </p>
       </div>
+
+      {/* The sale, once, when the buyer is back from the payment page and the money is in. A
+          free run reports nothing. */}
+      {status?.paid && !status.test && status.amount_minor ? (
+        <TrackEvent
+          step="purchase"
+          value={status.amount_minor}
+          currency={status.currency}
+          eventId={status.order_id}
+        />
+      ) : null}
 
       {done ? (
         <div className="waiting-actions">

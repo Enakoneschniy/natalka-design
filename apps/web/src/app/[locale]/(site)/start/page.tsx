@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BirthForm } from '@/components/BirthForm';
 import { Stepper } from '@/components/Stepper';
 import { PRODUCTS } from '@/lib/pricing';
+import { count } from '@/lib/stats';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -19,6 +20,7 @@ export default async function StartPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  await count('start');
   const search = await searchParams;
   const asked = Array.isArray(search.p) ? search.p[0] : search.p;
   // The horoscope subscription takes the same form but leads to a subscription, not a preview.

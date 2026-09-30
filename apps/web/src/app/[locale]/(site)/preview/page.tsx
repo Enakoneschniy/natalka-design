@@ -7,12 +7,14 @@ import { Paywall, type TransitHint } from '@/components/Paywall';
 import { PreviewReading } from '@/components/PreviewReading';
 import { Stepper } from '@/components/Stepper';
 import { SynastryPreview } from '@/components/SynastryPreview';
+import { TrackEvent } from '@/components/TrackEvent';
 import { Wheel } from '@/components/Wheel';
 import { type BirthInput, calcChart, calcSynastry, calcTransits } from '@/lib/api';
 import { type ChartFacts, MAJOR_ASPECTS, monthLabel } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
+import { count } from '@/lib/stats';
 
 /** One visitor's own page: never indexed, open shop or not. */
 export const metadata = { robots: { index: false, follow: false } };
@@ -210,6 +212,10 @@ export default async function PreviewPage({
   // function and the same signed cookie, so they cannot drift apart.
   const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
   const bundle = bundlePrice(country, variant);
+  // Two events, because the gap between them is the question: how many read the preview, and
+  // how many of those reach the offer at the end of it.
+  await count('preview', { variant });
+  await count('paywall', { variant });
   // The order screen needs the same birth data; carrying the query string keeps it stateless.
   const checkout = (product: string) => {
     const params = new URLSearchParams();
@@ -234,6 +240,7 @@ export default async function PreviewPage({
 
   return (
     <div className="flow">
+      <TrackEvent step="view" value={bundle.amount} currency={bundle.currency} />
       <div className="container-page">
         <div className="flow-head">
           <Stepper current="preview" />

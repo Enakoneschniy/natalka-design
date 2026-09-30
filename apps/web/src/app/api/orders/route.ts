@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       country: country ?? undefined,
       amount_minor: price.amount,
       currency: price.currency,
+      variant,
       birth: body.birth as OrderRequest['birth'],
       birth_second: product === 'synastry' ? body.birth_second : undefined,
       cancel_url: body.cancel_url,
