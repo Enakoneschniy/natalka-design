@@ -22,7 +22,7 @@
 .film {
   position: relative;
   width: 100%;
-  min-height: calc(100svh - var(--mark-h));
+  min-height: 100svh;
   display: grid;
   overflow: hidden;
 }
@@ -33,7 +33,7 @@
      as the headings the visitor scrolls into. */
   width: min(1240px, 100% - 2 * var(--gutter, 24px));
   margin-inline: auto;
-  padding: 28px 0 32px;
+  padding: calc(var(--mark-h) - 8px) 0 32px;
   display: grid;
   grid-template-rows: 1fr auto;
   gap: 24px;
@@ -418,6 +418,7 @@
   color: var(--color-accent);
 }
 .film-title {
+  text-wrap: balance;
   font-size: clamp(34px, 3.9vw, 62px);
   line-height: 1.04;
   letter-spacing: -0.015em;
@@ -517,6 +518,52 @@
   }
 }
 
+/* A phone, or anything driven by a finger: the seven-second film is a desktop luxury. Here the
+   first screen is handed over almost at once — a star bursting behind a headline someone is
+   already scrolling past is the animation they see stutter, and the big line in the middle of it
+   drifts across their reading. The settled frame arrives in about a second instead. */
+@media (max-width: 1000px), (orientation: portrait), (pointer: coarse) {
+  .film-line,
+  .film-burst,
+  .film-shock,
+  .film-warp {
+    display: none;
+  }
+  .film-glow {
+    opacity: 0.6;
+    animation: film-breathe 16s ease-in-out 1s infinite;
+  }
+  .film-wheel {
+    /* The settled frame, stated rather than animated to: only the arrival fades. */
+    translate: calc(-50% + 34vw) -50%;
+    scale: 0.92;
+    animation: film-wheel-settle 1.1s var(--in) both;
+  }
+  .film-wheel .wheel-zodiac,
+  .film-wheel .wheel-ticks,
+  .film-wheel .wheel-houses,
+  .film-wheel .wheel-planet,
+  .film-wheel .wheel-aspects {
+    animation: none;
+    opacity: 1;
+  }
+  .film-text {
+    animation: fade-up 0.7s ease-out 0.25s both;
+  }
+  .film-foot {
+    animation: fade-up 0.7s ease-out 0.45s both;
+  }
+}
+
+@keyframes film-wheel-settle {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
 /* A phone: the chart is the sky above the words — only its lower arc is on screen, faded out
    where the text begins, so that no aspect line crosses a sentence. */
 @media (max-width: 1000px), (orientation: portrait) {
@@ -544,33 +591,9 @@
   }
   .film-wheel {
     width: min(112vw, 560px);
+    translate: -50% -108%;
+    scale: 0.86;
     mask-image: linear-gradient(to bottom, #000 58%, transparent 88%);
-    animation-name: film-wheel-up;
-  }
-  @keyframes film-wheel-up {
-    0%,
-    52% {
-      opacity: 0;
-      translate: -50% -50%;
-      scale: 0.88;
-      animation-timing-function: var(--in);
-    }
-    70% {
-      opacity: 1;
-      translate: -50% -50%;
-      scale: 1;
-    }
-    76% {
-      translate: -50% -50%;
-      scale: 1;
-      animation-timing-function: var(--in);
-    }
-    92%,
-    100% {
-      opacity: 0.9;
-      translate: -50% -108%;
-      scale: 0.86;
-    }
   }
   .film-foot {
     justify-content: center;
@@ -599,37 +622,10 @@
 @media (min-width: 600px) and (max-width: 1000px), (min-width: 600px) and (orientation: portrait) {
   .film-wheel {
     width: min(94vw, 700px);
+    translate: -50% -86%;
+    scale: 0.92;
     mask-image: linear-gradient(to bottom, #000 50%, transparent 84%);
-  }
-  @keyframes film-wheel-up {
-    0%,
-    52% {
-      opacity: 0;
-      translate: -50% -50%;
-      scale: 0.88;
-      animation-timing-function: var(--in);
-    }
-    70% {
-      opacity: 1;
-      translate: -50% -50%;
-      scale: 1;
-    }
-    76% {
-      translate: -50% -50%;
-      scale: 1;
-      animation-timing-function: var(--in);
-    }
-    92%,
-    100% {
-      opacity: 0.9;
-      translate: -50% -86%;
-      scale: 0.92;
-    }
   }
 }
 
-@media (prefers-reduced-motion: reduce) and (max-width: 1000px) {
-  .film-wheel {
-    translate: -50% -108%;
-  }
-}
+

@@ -47,6 +47,10 @@ function starTile(size: number, count: number, seed: number, dpr: number): strin
  */
 const PER_SCREEN = 11;
 const MOST = 140;
+/** A phone has a slower compositor and a much smaller screen: the same density there is both
+ * heavier and unnecessary, and a hundred fading elements is what makes a scroll stutter. */
+const PER_SCREEN_SMALL = 6;
+const MOST_SMALL = 48;
 
 interface Twinkler {
   id: number;
@@ -133,9 +137,13 @@ export function Sky() {
 
     // Positions are decided after mount: the server has no business guessing them, and a random
     // value in the markup is a hydration mismatch waiting to happen.
+    const small = window.matchMedia('(max-width: 1000px), (pointer: coarse)').matches;
     const fill = () => {
       const screens = Math.max(1, document.body.scrollHeight / window.innerHeight);
-      const count = Math.min(MOST, Math.round(screens * PER_SCREEN));
+      const count = Math.min(
+        small ? MOST_SMALL : MOST,
+        Math.round(screens * (small ? PER_SCREEN_SMALL : PER_SCREEN)),
+      );
       setStars((current) => (current.length === count ? current : twinklers(count)));
     };
     fill();
@@ -154,7 +162,13 @@ export function Sky() {
   useEffect(() => {
     const layer = far.current;
     if (!layer) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Moving a fixed layer on every scroll frame is the one thing a phone cannot do smoothly,
+    // and the depth it buys is invisible on a small screen anyway.
+    if (
+      window.matchMedia('(prefers-reduced-motion: reduce), (max-width: 1000px), (pointer: coarse)')
+        .matches
+    )
+      return;
     let frame = 0;
     const onScroll = () => {
       if (frame) return;

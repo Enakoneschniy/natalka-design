@@ -331,17 +331,34 @@
    the first heading starting directly underneath. The hero subtracts this height so that its
    first screen still ends exactly at the fold. */
 .site-mark {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% 0;
   z-index: 20;
   height: var(--mark-h);
   display: flex;
   align-items: center;
   width: min(1240px, 100% - 2 * var(--gutter, 24px));
-  margin-inline: auto;
+  /* Nothing but the logo may catch a tap: the rest of this strip is the page underneath. */
+  pointer-events: none;
+}
+.site-mark .logo {
+  pointer-events: auto;
+}
+/* Pages start below the mark; the hero starts under it, because there the logo belongs to the
+   composition rather than to a bar above it. */
+main {
+  padding-top: var(--mark-h);
+}
+main > .hero-film:first-child {
+  margin-top: calc(-1 * var(--mark-h));
 }
 .site-mark .logo {
   font-size: 20px;
   gap: 10px;
+  /* It sits over the chart on the first screen, so it carries its own night behind it. */
+  text-shadow: 0 2px 18px rgba(3, 5, 16, 0.9);
 }
 @media (max-width: 760px) {
   :root {
@@ -2647,21 +2664,21 @@
 /* A page of the sample, over the landing rather than in a tab of its own. */
 /* The backdrop of the lightbox: a button, so that "click away to close" is also a key press,
    laid over the whole dialog and under everything in it. */
+/* Behind everything else in the dialog — including the image, which must not close it — but
+   still inside it, so the empty space around the page closes on a click or a key. Painting it
+   below in-flow content is also what stops it from swallowing taps meant for the arrows. */
 .lightbox-backdrop {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   background: none;
   border: 0;
   cursor: zoom-out;
 }
-.lightbox > *:not(.lightbox-backdrop) {
-  position: relative;
-  z-index: 1;
-}
 .lightbox {
   position: fixed;
   inset: 0;
+  height: 100svh;
   z-index: 60;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -2677,10 +2694,12 @@
 }
 .lightbox img {
   grid-column: 2;
+  min-height: 0;
   max-width: min(100%, 720px);
   max-height: 100%;
   width: auto;
   height: auto;
+  object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
   cursor: default;
@@ -2759,9 +2778,8 @@
 }
 .l-mark {
   font-style: normal;
-  color: var(--color-ink);
-  border-bottom: 1px solid var(--color-accent);
-  padding-bottom: 1px;
+  font-weight: 500;
+  color: var(--color-accent);
 }
 /* A section's own lead takes the width of its section, not the 520px of a body paragraph. */
 .section-title .lead {
