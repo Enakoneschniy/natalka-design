@@ -127,7 +127,8 @@ export function SampleGallery({ labels }: { labels: string[] }) {
             ‹
           </button>
           {/* biome-ignore lint/performance/noImgElement: a static asset, not a photo */}
-          <img src={`/sample/page-${open + 1}.png`} alt={labels[open]} />
+          {/* A bigger file than the thumbnail: this one is meant to be read. */}
+          <img src={`/sample/page-${open + 1}-full.jpg`} alt={labels[open]} />
           <button
             type="button"
             className="lightbox-arrow is-next"

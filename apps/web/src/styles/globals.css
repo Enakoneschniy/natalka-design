@@ -1189,7 +1189,9 @@ main > .hero-film:first-child {
 }
 .section-title {
   margin-bottom: 48px;
-  max-width: 760px;
+  /* Wide enough for a heading to stay on one line; the measure of the heading itself and of the
+     lead under it is set below, each to what its own type needs. */
+  max-width: 940px;
 }
 .section-title h2 {
   font-size: 44px;
@@ -2841,7 +2843,9 @@ main > .hero-film:first-child {
 .lightbox img {
   grid-column: 2;
   min-height: 0;
-  max-width: min(100%, 720px);
+  /* A page of a document, as large as the window allows: the height is what a reader needs,
+     and 1400px is the file itself — past that it would only be blurrier. */
+  max-width: min(100%, 1400px);
   max-height: 100%;
   width: auto;
   height: auto;
@@ -2931,10 +2935,10 @@ main > .hero-film:first-child {
 .section-title .lead {
   max-width: 64ch;
 }
-/* Long enough that a short heading stays on one line, balanced so a two-line one never ends on
-   a single orphan word. */
+/* Long enough that a short heading stays on one line — at 34ch a heading of thirty-four
+   characters still wrapped — and balanced so a two-line one never ends on a single orphan word. */
 .section-title h2 {
-  max-width: 34ch;
+  max-width: 44ch;
   text-wrap: balance;
 }
 
