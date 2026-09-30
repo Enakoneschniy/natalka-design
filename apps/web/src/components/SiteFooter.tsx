@@ -51,6 +51,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </div>
         <div className="footer-legal">
           <span>{t('disclaimer')}</span>
+          {/* Who is actually selling this. Required of a European shop, and the first thing a
+              payment provider looks for on the page. */}
+          <span className="footer-seller">{t('seller')}</span>
         </div>
         <div className="footer-mark" aria-hidden="true">
           Chronika

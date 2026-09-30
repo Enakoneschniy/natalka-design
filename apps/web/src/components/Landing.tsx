@@ -132,9 +132,12 @@ export function Landing({
           </div>
           <div className="card l-offer">
             <h3>{t('offer.product', years)}</h3>
-            {/* No figure here: the price is decided at the paywall, where the experiment runs,
-                and a number on this page would contradict it. */}
+            {/* A range rather than a figure: the price is decided at the paywall, where the
+                experiment runs, and one number here would contradict half of what is shown
+                there. A buyer — and a payment provider reviewing the site — still has to be able
+                to see what this costs before starting. */}
             <p className="muted">{t('offer.meta')}</p>
+            <p className="l-price">{t('offer.price')}</p>
             <ul>
               {[0, 1, 2, 3, 4].map((i) => (
                 <li key={i}>{t(`offer.items.${i}`, years)}</li>
