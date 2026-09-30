@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
-import { countryLocale, isRussianAllowed, routing } from '@/i18n/routing';
+import { routing } from '@/i18n/routing';
 import {
   EXPERIMENT_COOKIE,
   EXPERIMENT_MAX_AGE,
@@ -13,7 +13,7 @@ import { INDEXABLE, isPrivatePath } from '@/lib/seo';
 
 const intl = createMiddleware(routing);
 
-/** Cloudflare sets `cf-ipcountry`; locally it is absent and detection falls back to Accept-Language. */
+/** Cloudflare sets `cf-ipcountry`; locally it is absent. */
 export async function middleware(request: NextRequest) {
   const country = request.headers.get('cf-ipcountry');
 
@@ -22,16 +22,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL('/unavailable', request.url));
   }
 
-  // In Ukraine the Russian locale is not offered at all.
-  if (!isRussianAllowed(country) && request.nextUrl.pathname.startsWith('/ru')) {
-    return NextResponse.redirect(
-      new URL(request.nextUrl.pathname.replace(/^\/ru/, '/uk'), request.url),
-    );
-  }
-
-  const geoLocale = country ? countryLocale[country] : undefined;
-  if (geoLocale && request.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL(`/${geoLocale}`, request.url));
+  // The site used to be in three languages. Anyone holding one of those links — a bookmark, a
+  // message, the odd crawler — lands on the same page in Russian rather than on a 404.
+  const gone = request.nextUrl.pathname.match(/^\/(uk|en)(\/.*)?$/);
+  if (gone) {
+    const url = new URL(`/ru${gone[2] ?? ''}${request.nextUrl.search}`, request.url);
+    return NextResponse.redirect(url, 308);
   }
 
   const response = intl(request);

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const created = await createOrder({
       email: body.email,
       product,
-      locale: body.locale ?? 'uk',
+      locale: body.locale ?? 'ru',
       country: country ?? undefined,
       amount_minor: price.amount,
       currency: price.currency,

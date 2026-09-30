@@ -40,7 +40,7 @@ export async function StructuredData({ locale }: { locale: string }) {
       '@type': 'ContactPoint',
       contactType: 'customer support',
       email: SELLER.email,
-      availableLanguage: ['uk', 'ru', 'en'],
+      availableLanguage: ['ru'],
     },
   };
 

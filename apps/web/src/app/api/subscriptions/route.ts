@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   try {
     const created = await createSubscription({
       email: body.email,
-      locale: body.locale ?? 'uk',
+      locale: body.locale ?? 'ru',
       cadence: body.cadence,
       birth: body.birth as SubscriptionRequest['birth'],
     });

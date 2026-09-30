@@ -28,7 +28,7 @@ export async function generateMetadata({
     metadataBase: new URL(SITE_URL),
     alternates: alternates(locale),
     openGraph: openGraph(locale, '', title, description),
-    twitter: twitter(locale, title, description),
+    twitter: twitter(title, description),
     // Closed to search engines until the shop can take money. The middleware sends the same
     // answer as a header, which also covers the PDFs and the API routes.
     robots: robotsFor(),

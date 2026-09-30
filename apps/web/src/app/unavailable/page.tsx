@@ -7,10 +7,10 @@ export default function Unavailable() {
       <body>
         <main className="unavailable">
           <div className="card">
-            <h1 lang="uk">Сервіс недоступний у вашому регіоні</h1>
-            <p lang="uk">
-              Chronika не працює з користувачами з Російської Федерації. Оплату з цього регіону ми
-              не приймаємо, документи не надсилаємо.
+            <h1 lang="ru">Сервис недоступен в вашем регионе</h1>
+            <p lang="ru">
+              Chronika не работает с пользователями из Российской Федерации. Оплату из этого региона
+              мы не принимаем, документы не отправляем.
             </p>
             <hr />
             <h2>Not available in your region</h2>

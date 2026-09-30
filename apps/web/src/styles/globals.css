@@ -3418,7 +3418,13 @@ main > .hero-film:first-child {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: stretch;
   gap: 12px;
+}
+/* Two buttons side by side are one row: a difference of eight pixels between them is the first
+   thing the eye finds. */
+.waiting-actions .btn {
+  min-height: 60px;
 }
 .telegram-link {
   gap: 10px;
