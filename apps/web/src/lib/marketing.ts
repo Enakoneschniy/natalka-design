@@ -29,3 +29,17 @@ export type Consent = 'granted' | 'denied';
 
 export const readConsent = (value: string | undefined): Consent | null =>
   value === 'granted' || value === 'denied' ? value : null;
+
+/** The campaign that brought them, kept for the visit and no longer.
+ *
+ * A label like "meta" or "tiktok_spring", never an identifier: it says which advert worked, not
+ * who clicked it. It is a session cookie on purpose — attribution has to survive the walk from
+ * the landing to the payment page, which takes minutes, and nothing after that. */
+export const SOURCE_COOKIE = 'chr_src';
+
+/** Whatever arrives in utm_source, reduced to something safe to store and print. */
+export const cleanSource = (value: string | null | undefined): string =>
+  (value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]/g, '')
+    .slice(0, 24);

@@ -2,6 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { createOrder, type OrderRequest } from '@/lib/jobs';
+import { CONSENT_COOKIE, readConsent, SOURCE_COOKIE } from '@/lib/marketing';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
 /** Where the payment provider forbids what we sell (psychic services and fortune tellers are on
@@ -29,7 +30,12 @@ export async function POST(request: NextRequest) {
   // The bundle runs the price experiment, and the figure the paywall showed is the figure that
   // must be charged. It is taken from the signed cookie here, on the server: a price that
   // arrived in the request body would be a price the buyer chose.
-  const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
+  const jar = await cookies();
+  const variant = await readVariant(jar.get(EXPERIMENT_COOKIE)?.value);
+  // Kept with the order because the payment webhook arrives later, without a browser: this is
+  // the only moment at which either of these is knowable.
+  const consent = readConsent(jar.get(CONSENT_COOKIE)?.value);
+  const source = jar.get(SOURCE_COOKIE)?.value ?? null;
   const price = product === 'bundle' ? bundlePrice(country, variant) : priceFor(product, country);
 
   try {
@@ -41,6 +47,8 @@ export async function POST(request: NextRequest) {
       amount_minor: price.amount,
       currency: price.currency,
       variant,
+      consent,
+      source,
       birth: body.birth as OrderRequest['birth'],
       birth_second: product === 'synastry' ? body.birth_second : undefined,
       cancel_url: body.cancel_url,

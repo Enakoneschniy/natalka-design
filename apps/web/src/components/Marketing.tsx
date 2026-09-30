@@ -3,6 +3,21 @@ import Script from 'next/script';
 import { Consent } from '@/components/Consent';
 import { anyTag, CONSENT_COOKIE, readConsent, tags } from '@/lib/marketing';
 
+/** Cloudflare Web Analytics: page views, referrers, countries, devices. No cookie, no
+ * identifier, and the beacon reports to our own Cloudflare account rather than to a third party,
+ * so it runs for everybody, with or without consent, and needs no banner. */
+function Beacon() {
+  const token = process.env.CF_BEACON_TOKEN;
+  if (!token) return null;
+  return (
+    <Script
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      strategy="afterInteractive"
+      data-cf-beacon={JSON.stringify({ token })}
+    />
+  );
+}
+
 /** What the advertising platforms are allowed to see.
  *
  * Until the visitor answers, the only thing on the page is Google's consent-mode default, which
@@ -14,13 +29,14 @@ import { anyTag, CONSENT_COOKIE, readConsent, tags } from '@/lib/marketing';
  */
 export async function Marketing() {
   const t = tags();
-  if (!anyTag(t)) return null;
-
   const consent = readConsent((await cookies()).get(CONSENT_COOKIE)?.value);
+
+  if (!anyTag(t)) return <Beacon />;
 
   if (consent !== 'granted') {
     return (
       <>
+        <Beacon />
         {(t.ga || t.ads) && (
           <Script id="consent-default" strategy="beforeInteractive">
             {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
@@ -34,6 +50,7 @@ export async function Marketing() {
 
   return (
     <>
+      <Beacon />
       {(t.ga || t.ads) && (
         <>
           <Script id="consent-granted" strategy="beforeInteractive">

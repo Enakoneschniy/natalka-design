@@ -70,6 +70,9 @@ interface CreateOrder {
   currency: string;
   /** Which side of the price experiment the visitor was shown. */
   variant?: string | null;
+  /** Their answer to the cookie question, and where they came from. */
+  consent?: string | null;
+  source?: string | null;
   /** Where Stripe sends the customer back if they abandon the payment page. */
   cancel_url?: string;
   /** The product's title in the customer's language, for the payment page. */
@@ -195,6 +198,8 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     currency: body.currency,
     status: test ? 'test' : 'pending',
     variant: body.variant ?? null,
+    consent: body.consent ?? null,
+    source: body.source ?? null,
     created_at: now(),
   });
 
@@ -221,6 +226,7 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   await bumpStat(env.DB, {
     event: 'order',
     variant: body.variant,
+    source: body.source,
     country: body.country,
     currency: body.currency,
   });
@@ -273,6 +279,7 @@ async function stripeWebhook(request: Request, env: Env): Promise<Response> {
         await bumpStat(env.DB, {
           event: 'paid',
           variant: facts.variant,
+          source: facts.source,
           country: facts.country,
           currency: facts.currency,
           amountMinor: facts.amount_minor,

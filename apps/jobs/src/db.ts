@@ -15,6 +15,10 @@ export interface OrderRow {
   status: string;
   /** Which side of the price experiment this order was shown. */
   variant: string | null;
+  /** The visitor's answer to the cookie question, as it stood when they bought. */
+  consent: string | null;
+  /** Where they came from: utm_source, as it arrived. */
+  source: string | null;
   created_at: string;
 }
 
@@ -41,8 +45,9 @@ export const expiryFrom = (days: number): string =>
 export async function insertOrder(db: D1Database, order: OrderRow): Promise<void> {
   await db
     .prepare(
-      `INSERT INTO orders (id, email, product, locale, country, amount_minor, currency, status, variant, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO orders (id, email, product, locale, country, amount_minor, currency, status,
+                            variant, consent, source, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       order.id,
@@ -54,6 +59,8 @@ export async function insertOrder(db: D1Database, order: OrderRow): Promise<void
       order.currency,
       order.status,
       order.variant,
+      order.consent,
+      order.source,
       order.created_at,
     )
     .run();
@@ -210,10 +217,14 @@ export async function cachePreview(
 /** The few fields the counters need when an order is paid for. */
 export const orderFacts = (db: D1Database, id: string) =>
   db
-    .prepare('SELECT variant, country, currency, amount_minor, product FROM orders WHERE id = ?')
+    .prepare(
+      'SELECT variant, consent, source, country, currency, amount_minor, product FROM orders WHERE id = ?',
+    )
     .bind(id)
     .first<{
       variant: string | null;
+      consent: string | null;
+      source: string | null;
       country: string | null;
       currency: string;
       amount_minor: number;
@@ -359,6 +370,7 @@ export interface StatKey {
   event: string;
   variant?: string | null;
   angle?: string | null;
+  source?: string | null;
   country?: string | null;
   currency?: string | null;
   /** Money, for the events that carry any. */
@@ -375,9 +387,9 @@ export async function bumpStat(db: D1Database, key: StatKey): Promise<void> {
   const day = new Date().toISOString().slice(0, 10);
   await db
     .prepare(
-      `INSERT INTO stats (day, event, variant, angle, country, currency, count, amount_minor)
-       VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-       ON CONFLICT (day, event, variant, angle, country, currency)
+      `INSERT INTO stats (day, event, variant, angle, source, country, currency, count, amount_minor)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+       ON CONFLICT (day, event, variant, angle, source, country, currency)
        DO UPDATE SET count = count + 1, amount_minor = amount_minor + excluded.amount_minor`,
     )
     .bind(
@@ -385,6 +397,7 @@ export async function bumpStat(db: D1Database, key: StatKey): Promise<void> {
       key.event,
       key.variant ?? '',
       key.angle ?? '',
+      key.source ?? '',
       (key.country ?? '').toUpperCase(),
       key.currency ?? '',
       key.amountMinor ?? 0,

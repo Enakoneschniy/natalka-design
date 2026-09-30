@@ -24,9 +24,12 @@
     "NATALKA_JOBS_URL": "https://natalka-jobs.ceo-63e.workers.dev",
     // The bot's public username; the waiting screen offers a Telegram link when it is set.
     "TELEGRAM_BOT_USERNAME": "chronikame_bot",
+    // Cloudflare Web Analytics: page views and referrers, cookie-free, reported to our own
+    // account. Public by design — it sits in the page for anyone to read.
+    "CF_BEACON_TOKEN": "294e847c58d240f0bac5936bd973b1bd",
     // The one switch that opens the site to search and answer engines: robots.txt, the sitemap,
     // llms.txt and every page's metadata follow it. Turn it on when payments are live — until
     // then a reading can be had without paying, and that is not a thing to be found by.
-    "SITE_INDEXABLE": "false"
+    "SITE_INDEXABLE": "true"
   }
 }

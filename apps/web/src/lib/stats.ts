@@ -1,5 +1,6 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { SOURCE_COOKIE } from '@/lib/marketing';
 
 /** Our own counters.
  *
@@ -29,15 +30,16 @@ export async function count(
     const db = (env as unknown as { DB?: D1Database }).DB;
     if (!db) return;
     const country = (list.get('cf-ipcountry') ?? '').toUpperCase();
+    const source = (await cookies()).get(SOURCE_COOKIE)?.value ?? '';
     const day = new Date().toISOString().slice(0, 10);
     const write = db
       .prepare(
-        `INSERT INTO stats (day, event, variant, angle, country, currency, count, amount_minor)
-         VALUES (?, ?, ?, ?, ?, '', 1, 0)
-         ON CONFLICT (day, event, variant, angle, country, currency)
+        `INSERT INTO stats (day, event, variant, angle, source, country, currency, count, amount_minor)
+         VALUES (?, ?, ?, ?, ?, ?, '', 1, 0)
+         ON CONFLICT (day, event, variant, angle, source, country, currency)
          DO UPDATE SET count = count + 1`,
       )
-      .bind(day, event, extra.variant ?? '', extra.angle ?? '', country)
+      .bind(day, event, extra.variant ?? '', extra.angle ?? '', source, country)
       .run();
     ctx.waitUntil(write);
   } catch {

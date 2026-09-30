@@ -9,6 +9,7 @@ import {
   randomVariant,
   readVariant,
 } from '@/lib/experiment';
+import { cleanSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { INDEXABLE, isPrivatePath } from '@/lib/seo';
 
 const intl = createMiddleware(routing);
@@ -46,6 +47,14 @@ export async function middleware(request: NextRequest) {
       });
     }
   }
+  // Where this visit came from, taken from the advert's own link and kept until the browser is
+  // closed. First touch wins: the landing is where the campaign is named, and the pages after it
+  // carry no utm of their own.
+  const source = cleanSource(request.nextUrl.searchParams.get('utm_source'));
+  if (source && !request.cookies.get(SOURCE_COOKIE)) {
+    response.cookies.set(SOURCE_COOKIE, source, { sameSite: 'lax', secure: true, path: '/' });
+  }
+
   // The header repeats what the page metadata says, for the crawlers that read one and not the
   // other — and it is the only thing that covers the PDFs and the API routes, which have no
   // metadata of their own.
