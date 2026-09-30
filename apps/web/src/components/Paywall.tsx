@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { forecastYears } from '@/components/Landing';
+import { StickyBuy } from '@/components/StickyBuy';
 
 const PAGES = [0, 1, 2] as const;
 const ITEMS = [0, 1, 2, 3] as const;
@@ -70,7 +71,8 @@ export function Paywall({
             {dates.map((hint) => (
               <li key={hint.when}>
                 <span className="mono">{hint.when}</span>
-                <span className="muted">— ?</span>
+                {/* The leader line already says the answer is missing; a dash as well is noise. */}
+                <span className="muted">?</span>
               </li>
             ))}
           </ul>
@@ -96,11 +98,7 @@ export function Paywall({
       </div>
 
       {/* On a phone the offer scrolls away while the reader is still deciding. */}
-      <div className="paywall-sticky">
-        <Link className="btn btn-primary btn-lg btn-block" href={checkoutHref}>
-          {t('sticky', { price })}
-        </Link>
-      </div>
+      <StickyBuy href={checkoutHref} label={t('sticky', { price })} />
     </section>
   );
 }
