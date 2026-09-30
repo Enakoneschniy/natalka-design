@@ -618,5 +618,13 @@
       "cta": "Build your chart free",
       "under": "No account, no card"
     }
+  },
+  "meta": {
+    "title": "Natal chart reading with a dated forecast",
+    "description": "A 35-page personal natal chart reading and a month-by-month forecast to {year}, with the exact dates. Free preview in a minute; the PDF arrives by email.",
+    "productName": "Natal chart reading and forecast to {year}",
+    "productDescription": "A 35-page PDF: who you are by the chart, relationships, work and money, a month-by-month forecast and a page of exact dates. One payment, no subscription.",
+    "subscribeTitle": "A horoscope from your own chart, weekly or monthly",
+    "subscribeDescription": "A short reading from your natal chart: the period ahead and what it touches. By email or Telegram, once a week or once a month."
   }
 }

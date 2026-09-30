@@ -326,6 +326,13 @@
   }
 }
 
+.flow-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-top: 18px;
+}
+
 /* ---------- the mark ---------- */
 /* Not a header: a line of the page that happens to hold the logo, transparent, with the hero or
    the first heading starting directly underneath. The hero subtracts this height so that its

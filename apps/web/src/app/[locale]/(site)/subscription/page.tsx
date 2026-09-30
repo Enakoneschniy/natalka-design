@@ -1,6 +1,9 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { SubscriptionPanel } from '@/components/SubscriptionPanel';
 
+/** One visitor's own page: never indexed, open shop or not. */
+export const metadata = { robots: { index: false, follow: false } };
+
 export const dynamic = 'force-dynamic';
 
 /** Everything about one subscription, behind its signed link: the latest horoscope, the

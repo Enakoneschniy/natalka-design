@@ -9,6 +9,7 @@ import {
   randomVariant,
   readVariant,
 } from '@/lib/experiment';
+import { INDEXABLE, isPrivatePath } from '@/lib/seo';
 
 const intl = createMiddleware(routing);
 
@@ -49,9 +50,12 @@ export async function middleware(request: NextRequest) {
       });
     }
   }
-  // Closed to search engines for now. The header repeats what the page metadata says, for the
-  // crawlers that read one and not the other.
-  response.headers.set('x-robots-tag', 'noindex, nofollow');
+  // The header repeats what the page metadata says, for the crawlers that read one and not the
+  // other — and it is the only thing that covers the PDFs and the API routes, which have no
+  // metadata of their own.
+  if (!INDEXABLE || isPrivatePath(request.nextUrl.pathname)) {
+    response.headers.set('x-robots-tag', 'noindex, nofollow');
+  }
   return response;
 }
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { isDraft, LEGAL, type LegalDoc, legalTitle, renderLegal } from '@/content/legal';
+import { alternates, robotsFor } from '@/lib/seo';
 
 const isDoc = (value: string): value is LegalDoc => value in LEGAL;
 
@@ -17,7 +18,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, doc } = await params;
   if (!isDoc(doc)) return {};
-  return { title: `${legalTitle(source(doc, locale))} — Chronika` };
+  const rest = `/legal/${doc}`;
+  return {
+    title: legalTitle(source(doc, locale)),
+    alternates: alternates(locale, rest),
+    robots: robotsFor(rest),
+  };
 }
 
 export default async function LegalPage({

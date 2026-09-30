@@ -3,6 +3,9 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { GenerationProgress } from '@/components/GenerationProgress';
 import { telegramCode } from '@/lib/jobs';
 
+/** One visitor's own page: never indexed, open shop or not. */
+export const metadata = { robots: { index: false, follow: false } };
+
 export const dynamic = 'force-dynamic';
 
 /** A waiting room, not a page of the site: one screen tall, no navigation to wander off into,

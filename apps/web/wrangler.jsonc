@@ -23,6 +23,10 @@
     // Orders, generation progress and finished documents.
     "NATALKA_JOBS_URL": "https://natalka-jobs.ceo-63e.workers.dev",
     // The bot's public username; the waiting screen offers a Telegram link when it is set.
-    "TELEGRAM_BOT_USERNAME": "chronikame_bot"
+    "TELEGRAM_BOT_USERNAME": "chronikame_bot",
+    // The one switch that opens the site to search and answer engines: robots.txt, the sitemap,
+    // llms.txt and every page's metadata follow it. Turn it on when payments are live — until
+    // then a reading can be had without paying, and that is not a thing to be found by.
+    "SITE_INDEXABLE": "false"
   }
 }

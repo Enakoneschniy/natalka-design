@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { forecastYears } from '@/components/Landing';
 import { Sky } from '@/components/Sky';
 import { routing } from '@/i18n/routing';
+import { alternates, openGraph, robotsFor, SITE_URL, twitter } from '@/lib/seo';
 import '@/styles/globals.css';
 
 export function generateStaticParams() {
@@ -16,14 +18,30 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'hero' });
+  const t = await getTranslations({ locale, namespace: 'meta' });
+  const title = `${t('title')} — Chronika`;
+  const description = t('description', forecastYears());
   return {
-    title: `Chronika — ${t('titleLead')} ${t('titleAccent')}`,
-    description: t('lead'),
-    metadataBase: new URL('https://chronika.me'),
-    // Closed to search engines until the shop actually sells something. The middleware sends the
-    // same answer as a header, which also covers the PDFs and the API routes.
-    robots: { index: false, follow: false },
+    // A page that sets no title of its own is the landing; the rest override both.
+    title: { default: title, template: '%s — Chronika' },
+    description,
+    metadataBase: new URL(SITE_URL),
+    alternates: alternates(locale),
+    openGraph: openGraph(locale, '', title, description),
+    twitter: twitter(locale, title, description),
+    // Closed to search engines until the shop can take money. The middleware sends the same
+    // answer as a header, which also covers the PDFs and the API routes.
+    robots: robotsFor(),
+    applicationName: 'Chronika',
+    category: 'astrology',
+    // Search Console and Bing hand out a token each; they go in the worker's environment, not
+    // in the repository, and are simply absent until they are set.
+    verification: {
+      google: process.env.GOOGLE_SITE_VERIFICATION,
+      other: process.env.BING_SITE_VERIFICATION
+        ? { 'msvalidate.01': process.env.BING_SITE_VERIFICATION }
+        : {},
+    },
   };
 }
 

@@ -14,6 +14,9 @@ import demo from '@/lib/demo-chart.json';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 
+/** One visitor's own page: never indexed, open shop or not. */
+export const metadata = { robots: { index: false, follow: false } };
+
 export const dynamic = 'force-dynamic';
 
 type Search = Record<string, string | string[] | undefined>;

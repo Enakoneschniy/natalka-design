@@ -4,6 +4,13 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { SubscribeForm } from '@/components/SubscribeForm';
 import { subscriptionPrice } from '@/lib/pricing';
 
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'meta' });
+  // A step of a purchase, carrying one person's birth data in the query.
+  return { title: t('subscribeTitle'), robots: { index: false, follow: false } };
+}
+
 type Search = Record<string, string | string[] | undefined>;
 const one = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;

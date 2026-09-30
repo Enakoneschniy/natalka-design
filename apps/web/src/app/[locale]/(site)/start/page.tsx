@@ -6,7 +6,8 @@ import { PRODUCTS } from '@/lib/pricing';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'form' });
-  return { title: `Chronika — ${t('title')}` };
+  // The form is a step of a purchase, not a page anyone should arrive at from a search.
+  return { title: t('title'), robots: { index: false, follow: false } };
 }
 
 export default async function StartPage({
