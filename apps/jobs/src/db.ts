@@ -180,6 +180,21 @@ export const expired = (db: D1Database) =>
     .bind(now())
     .all<{ id: string; order_id: string; storage_key: string }>();
 
+/** A shopper's job keeps the calculated chart (birth date, time and place) and every text written
+ * from it. Past the retention date both go, like the charts and the PDF; the order and the cost
+ * stay for accounting. A seller's reading is kept on purpose: it belongs to their client base. */
+export async function scrubExpiredJobPayloads(db: D1Database, days: number): Promise<number> {
+  const result = await db
+    .prepare(
+      `UPDATE jobs SET payload = NULL
+       WHERE payload IS NOT NULL
+         AND order_id IN (SELECT id FROM orders WHERE pro_account_id IS NULL AND created_at < ?)`,
+    )
+    .bind(expiryFrom(-days))
+    .run();
+  return result.meta.changes ?? 0;
+}
+
 export interface PreviewRow {
   key: string;
   lang: string;

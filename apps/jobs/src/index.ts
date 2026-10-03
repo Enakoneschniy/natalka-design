@@ -29,6 +29,7 @@ import {
   setOrderSession,
   orderFacts,
   bumpStat,
+  scrubExpiredJobPayloads,
   type Product,
   updateJob,
 } from './db';
@@ -604,6 +605,7 @@ export default {
       return;
     }
     await dropExpiredBirths(env.DB);
+    const scrubbed = await scrubExpiredJobPayloads(env.DB, Number(env.RETENTION_DAYS ?? '30'));
     const stale = await expired(env.DB);
     for (const row of stale.results ?? []) {
       await env.DOCS.delete(row.storage_key);
@@ -616,6 +618,6 @@ export default {
     await env.DB.prepare('DELETE FROM pro_login_tokens WHERE expires_at < ?')
       .bind(new Date(Date.now() - 86_400_000).toISOString())
       .run();
-    console.log(`retention: removed ${stale.results?.length ?? 0} documents`);
+    console.log(`retention: removed ${stale.results?.length ?? 0} documents, cleared ${scrubbed} job payloads`);
   },
 };
