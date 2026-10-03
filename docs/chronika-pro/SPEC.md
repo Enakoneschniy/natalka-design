@@ -87,3 +87,18 @@ Each phase ships working, tested software on its own.
 | 4 | **Credit packs** | Stripe Checkout for packs, webhook → ledger, refunds policy. |
 | 5 | **Cabinet UI** | Host routing, login pages (POST-only consumption), clients, readings, brand settings, buy credits, report a problem. |
 | 6 | **Admin, landing, launch** | `/admin` behind Access, invite codes UI, funnel page, landing, legal drafts. |
+
+## Operations
+
+Phase 1 deploy, done by the owner:
+
+1. Session secret, a fresh random value that is never the same as `LINK_KEY`:
+   `openssl rand -base64 48 | pnpm --filter @natalka/jobs exec wrangler secret put SESSION_KEY`
+2. Remote migration (a production write): `pnpm --filter @natalka/jobs migrate`
+3. Deploy: `pnpm --filter @natalka/jobs deploy`
+4. Invite code for the marketer (until /admin exists):
+   ```bash
+   pnpm --filter @natalka/jobs exec wrangler d1 execute natalka --remote --command \
+     "INSERT INTO pro_invite_codes (code, credits, max_uses, note, created_at)
+      VALUES ('START3', 3, 50, 'marketer pilot', strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+   ```
