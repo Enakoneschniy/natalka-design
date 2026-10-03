@@ -156,7 +156,21 @@ export async function assemblePdf(env: Env, accountId: string, orderId: string):
     .bind(now(), row.job_id)
     .run();
   if (!moved.meta.changes) return 'building';
-  await env.JOBS.send({ jobId: row.job_id });
+  try {
+    await env.JOBS.send({ jobId: row.job_id });
+  } catch (error) {
+    console.error('PDF assembly could not be queued', row.job_id, error);
+    try {
+      await env.DB.prepare(
+        "UPDATE jobs SET step = 'done', status = 'done', updated_at = ? WHERE id = ? AND step = 'pdf'",
+      )
+        .bind(now(), row.job_id)
+        .run();
+    } catch (cleanupError) {
+      console.error('undoing the PDF request failed', row.job_id, cleanupError);
+    }
+    throw error;
+  }
   return 'queued';
 }
 
