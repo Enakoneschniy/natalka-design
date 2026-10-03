@@ -211,10 +211,14 @@ async function writeSections(
   const plan = payload.plan ?? [];
   const sections = payload.sections ?? [];
   const written = new Set(sections.map((s) => s.id));
+  // Chapters the text API no longer knows. They leave the saved plan too, so a seller's reading
+  // is not left with a section that can never be written.
+  const gone = new Set<string>();
+  const current = (): JobPayload => ({ ...payload, plan: plan.filter((p) => !gone.has(p.id)), sections });
 
   for (const entry of plan) {
     if (written.has(entry.id)) continue;
-    if (Date.now() > deadline) return { payload: { ...payload, sections }, done: false };
+    if (Date.now() > deadline) return { payload: current(), done: false };
 
     let section: WrittenSection;
     try {
@@ -225,7 +229,7 @@ async function writeSections(
       // throw away everything written so far.
       if (error instanceof Error && error.message.includes('unknown section')) {
         console.warn('section gone since the plan was made', entry.id);
-        written.add(entry.id);
+        gone.add(entry.id);
         continue;
       }
       throw error;
@@ -234,14 +238,14 @@ async function writeSections(
 
     // Cost is banked after every section: an order that fails halfway still shows what it spent.
     await updateJob(env.DB, job.id, {
-      payload: JSON.stringify({ ...payload, sections }),
+      payload: JSON.stringify(current()),
       tokens_in: sections.reduce((n, s) => n + s.tokens_in, 0),
       tokens_out: sections.reduce((n, s) => n + s.tokens_out, 0),
       cost_micros: sections.reduce((n, s) => n + s.cost_micros, 0),
       model: section.model,
     });
   }
-  return { payload: { ...payload, sections }, done: true };
+  return { payload: current(), done: true };
 }
 
 async function render(env: Env, job: JobRow, people: People, payload: JobPayload): Promise<void> {

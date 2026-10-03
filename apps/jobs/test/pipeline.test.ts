@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getJob } from '../src/db';
 import { dropDocuments } from '../src/pipeline';
 import { armFailure, runJob, testEnv } from './env';
+import { FAKE_PLAN } from './fakes';
 import { seedOrder } from './seed';
 
 const count = async (sql: string, ...args: unknown[]) =>
@@ -50,6 +51,21 @@ describe('pipeline', () => {
     const written = JSON.parse((await getJob(testEnv.DB, jobId))?.payload ?? '{}').sections;
     expect(written.map((s: { id: string }) => s.id)).toEqual(['a']);
     expect(await runJob(jobId)).toBe(true);
+  });
+
+  it("drops a section the text API no longer knows from a seller's plan", async () => {
+    const { jobId } = await seedOrder({ pro: true, name: 'Ушла' });
+    const plan = [...FAKE_PLAN, { id: 'gone', title: 'Ушла', quote: false }];
+    await testEnv.DB.prepare("UPDATE jobs SET step = 'texts', payload = ? WHERE id = ?")
+      .bind(JSON.stringify({ facts: { birth: {} }, transits: [], plan, sections: [] }), jobId)
+      .run();
+
+    expect(await runJob(jobId)).toBe(true);
+    const job = await getJob(testEnv.DB, jobId);
+    expect(job?.step).toBe('done');
+    const payload = JSON.parse(job?.payload ?? '{}');
+    expect(payload.plan.map((p: { id: string }) => p.id)).toEqual(['a', 'b', 'c']);
+    expect(payload.sections).toHaveLength(3);
   });
 
   it('drops every document of an order, objects first', async () => {
