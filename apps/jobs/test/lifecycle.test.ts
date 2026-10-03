@@ -48,6 +48,29 @@ describe('settleFailedJob', () => {
     expect(JSON.parse(job?.payload ?? '{}').sections ?? []).toEqual([]);
   });
 
+  it('books the refund, the reading and the job in one batch', async () => {
+    const { account, id, jobId } = await readingFor('Пакет', { date: '1900-01-01' });
+    await expect(runJob(jobId)).rejects.toThrow(/ephemeris/);
+    let batches = 0;
+    const db = new Proxy(testEnv.DB, {
+      get(target, key) {
+        const value = Reflect.get(target, key, target);
+        if (key === 'batch') {
+          return (...args: unknown[]) => {
+            batches++;
+            return (value as (...a: unknown[]) => unknown).apply(target, args);
+          };
+        }
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    expect(await settleFailedJob({ ...testEnv, DB: db }, jobId)).toBe(true);
+    expect(batches).toBe(1);
+    expect(await balance(testEnv.DB, account.id)).toBe(3);
+    expect((await readingRow(testEnv.DB, id, account.id))?.refunded_at).not.toBeNull();
+    expect((await getJob(testEnv.DB, jobId))?.status).toBe('failed');
+  });
+
   it('delivers what was written and lists the rest as missing', async () => {
     const { account, id, jobId } = await readingFor('Частично');
     await armFailure('Частично|b');

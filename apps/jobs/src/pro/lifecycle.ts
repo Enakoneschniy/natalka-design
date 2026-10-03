@@ -5,7 +5,7 @@ import { documentForOrder, getJob, now, updateJob } from '../db';
 import type { Env } from '../env';
 import { documentFilename } from '../filename';
 import { dropDocuments, type JobPayload, loadBirth, loadPeople, type WrittenSection, writeSection } from '../pipeline';
-import { refund } from './credits';
+import { refundStatement } from './credits';
 import { readingRow, readingStatus, REGENERATIONS_PER_READING } from './readings';
 
 /** Deliveries a job message gets before the queue gives up: the first plus max_retries (3, in
@@ -31,11 +31,16 @@ export async function settleFailedJob(env: Env, jobId: string): Promise<boolean>
   }
   const payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
   if ((payload.sections ?? []).length === 0) {
-    await refund(env.DB, jobId);
-    await env.DB.prepare('UPDATE pro_readings SET refunded_at = COALESCE(refunded_at, ?) WHERE order_id = ?')
-      .bind(now(), reading.order_id)
-      .run();
-    await updateJob(env.DB, jobId, { status: 'failed' });
+    // One batch: a refund without the mark would be repeatable, a mark without the refund a loss.
+    const ts = now();
+    await env.DB.batch([
+      refundStatement(env.DB, jobId),
+      env.DB.prepare('UPDATE pro_readings SET refunded_at = COALESCE(refunded_at, ?) WHERE order_id = ?').bind(
+        ts,
+        reading.order_id,
+      ),
+      env.DB.prepare("UPDATE jobs SET status = 'failed', updated_at = ? WHERE id = ?").bind(ts, jobId),
+    ]);
     return true;
   }
   await updateJob(env.DB, jobId, { step: 'done', status: 'done' });

@@ -6,11 +6,11 @@
  */
 
 import { encryptJson } from '../crypto';
-import { documentForOrder, expiryFrom, type JobStatus, type JobStep, now, type Product, updateJob } from '../db';
+import { documentForOrder, expiryFrom, type JobStatus, type JobStep, now, type Product } from '../db';
 import type { Env } from '../env';
 import { dropDocuments, type JobPayload } from '../pipeline';
 import { type ClientBirth, getClient } from './clients';
-import { balance, CREDIT_COST, refund, spend } from './credits';
+import { balance, CREDIT_COST, refund, refundStatement, spend } from './credits';
 
 /** Seller readings are written in Russian during the pilot. */
 export const PRO_LANG = 'ru';
@@ -122,9 +122,12 @@ export async function createReading(
   } catch (error) {
     console.error('reading could not be queued', jobId, error);
     try {
-      await refund(env.DB, jobId);
-      await env.DB.prepare('UPDATE pro_readings SET refunded_at = ? WHERE order_id = ?').bind(now(), orderId).run();
-      await updateJob(env.DB, jobId, { status: 'failed' });
+      const ts = now();
+      await env.DB.batch([
+        refundStatement(env.DB, jobId),
+        env.DB.prepare('UPDATE pro_readings SET refunded_at = ? WHERE order_id = ?').bind(ts, orderId),
+        env.DB.prepare("UPDATE jobs SET status = 'failed', updated_at = ? WHERE id = ?").bind(ts, jobId),
+      ]);
     } catch (cleanupError) {
       console.error('refund after queue failure failed', jobId, cleanupError);
     }

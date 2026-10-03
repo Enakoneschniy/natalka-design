@@ -80,16 +80,20 @@ export async function spend(
   return (result.meta.changes ?? 0) > 0;
 }
 
-/** Gives back what the job named by `ref` took. False when it took nothing or was refunded. */
-export async function refund(db: D1Database, ref: string): Promise<boolean> {
-  const result = await db
+/** The refund as a statement, for callers that book it together with other writes in one batch. */
+export function refundStatement(db: D1Database, ref: string): D1PreparedStatement {
+  return db
     .prepare(
       `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
        SELECT ?, account_id, -delta, 'refund', ref, ?
        FROM credit_ledger WHERE reason = 'report' AND ref = ?
        ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
     )
-    .bind(crypto.randomUUID(), now(), ref)
-    .run();
+    .bind(crypto.randomUUID(), now(), ref);
+}
+
+/** Gives back what the job named by `ref` took. False when it took nothing or was refunded. */
+export async function refund(db: D1Database, ref: string): Promise<boolean> {
+  const result = await refundStatement(db, ref).run();
   return (result.meta.changes ?? 0) > 0;
 }
