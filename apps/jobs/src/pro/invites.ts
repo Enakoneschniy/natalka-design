@@ -1,0 +1,73 @@
+/** Invite codes: how the marketer's sellers get their trial credits.
+ *
+ * Redeeming is one D1 batch, and a batch is one transaction:
+ * 1. record the redemption, but only from a code that is live and not used up;
+ * 2. count the use;
+ * 3. book the credits.
+ * Steps 2 and 3 read the row step 1 wrote, so if step 1 finds no live code, nothing happens. The
+ * redemption's primary key is the account: a second redemption by the same seller, even a racing
+ * one, fails the whole batch.
+ */
+
+import { now } from '../db';
+
+export type InviteResult =
+  | { status: 'granted'; credits: number }
+  | { status: 'invalid' }
+  | { status: 'already' };
+
+export async function hasRedeemed(db: D1Database, accountId: string): Promise<boolean> {
+  const row = await db
+    .prepare('SELECT 1 AS yes FROM pro_invite_redemptions WHERE account_id = ?')
+    .bind(accountId)
+    .first<{ yes: number }>();
+  return Boolean(row);
+}
+
+export async function redeemInvite(
+  db: D1Database,
+  accountId: string,
+  rawCode: unknown,
+): Promise<InviteResult> {
+  const code = typeof rawCode === 'string' ? rawCode.trim().toUpperCase() : '';
+  if (!code) return { status: 'invalid' };
+  if (await hasRedeemed(db, accountId)) return { status: 'already' };
+
+  const ts = now();
+  let inserted: D1Result | undefined;
+  try {
+    [inserted] = await db.batch([
+      db
+        .prepare(
+          `INSERT INTO pro_invite_redemptions (account_id, code, credits, created_at)
+           SELECT ?, code, credits, ? FROM pro_invite_codes
+           WHERE code = ? AND uses < max_uses AND (expires_at IS NULL OR expires_at > ?)`,
+        )
+        .bind(accountId, ts, code, ts),
+      db
+        .prepare(
+          `UPDATE pro_invite_codes SET uses = uses + 1
+           WHERE code IN (SELECT code FROM pro_invite_redemptions WHERE account_id = ?)`,
+        )
+        .bind(accountId),
+      db
+        .prepare(
+          `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+           SELECT ?, account_id, credits, 'trial', 'invite:' || account_id, ?
+           FROM pro_invite_redemptions WHERE account_id = ?`,
+        )
+        .bind(crypto.randomUUID(), ts, accountId),
+    ]);
+  } catch (error) {
+    // The same seller redeeming twice at once: the second batch hits the primary key and rolls back.
+    if (String(error).includes('UNIQUE')) return { status: 'already' };
+    throw error;
+  }
+  if (!inserted?.meta.changes) return { status: 'invalid' };
+
+  const row = await db
+    .prepare('SELECT credits FROM pro_invite_redemptions WHERE account_id = ?')
+    .bind(accountId)
+    .first<{ credits: number }>();
+  return { status: 'granted', credits: row?.credits ?? 0 };
+}
