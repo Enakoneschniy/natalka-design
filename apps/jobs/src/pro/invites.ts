@@ -4,9 +4,9 @@
  * 1. record the redemption, but only from a code that is live and not used up;
  * 2. count the use;
  * 3. book the credits.
- * Steps 2 and 3 read the row step 1 wrote, so if step 1 finds no live code, nothing happens. The
- * redemption's primary key is the account: a second redemption by the same seller, even a racing
- * one, fails the whole batch.
+ * Steps 2 and 3 read the row step 1 wrote, matched by account and this batch's timestamp, so if
+ * step 1 finds no live code, nothing happens. The redemption's primary key is the account: a
+ * second redemption by the same seller, even a racing one, fails the whole batch.
  */
 
 import { now } from '../db';
@@ -47,16 +47,16 @@ export async function redeemInvite(
       db
         .prepare(
           `UPDATE pro_invite_codes SET uses = uses + 1
-           WHERE code IN (SELECT code FROM pro_invite_redemptions WHERE account_id = ?)`,
+           WHERE code IN (SELECT code FROM pro_invite_redemptions WHERE account_id = ? AND created_at = ?)`,
         )
-        .bind(accountId),
+        .bind(accountId, ts),
       db
         .prepare(
           `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
            SELECT ?, account_id, credits, 'trial', 'invite:' || account_id, ?
-           FROM pro_invite_redemptions WHERE account_id = ?`,
+           FROM pro_invite_redemptions WHERE account_id = ? AND created_at = ?`,
         )
-        .bind(crypto.randomUUID(), ts, accountId),
+        .bind(crypto.randomUUID(), ts, accountId, ts),
     ]);
   } catch (error) {
     // The same seller redeeming twice at once: the second batch hits the primary key and rolls back.
