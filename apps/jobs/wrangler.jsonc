@@ -11,7 +11,9 @@
     // Days a document and the birth data behind it are kept.
     "RETENTION_DAYS": "30",
     // The ready letter links to the waiting screen here, which turns into the download.
-    "SITE_URL": "https://chronika.me"
+    "SITE_URL": "https://chronika.me",
+    // The seller cabinet; sign-in letters link to it.
+    "PRO_SITE_URL": "https://pro.chronika.me"
   },
   // Worker-to-worker over a service binding, not a public fetch: Cloudflare refuses the latter
   // between two workers on the same zone (error 1042), and this keeps the call private and fast.

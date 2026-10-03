@@ -53,6 +53,7 @@ import {
 import { contentDisposition, documentFilename } from './filename';
 import { createCheckoutSession, verifyWebhook } from './stripe';
 import { advance, type JobPayload, loadBirth } from './pipeline';
+import { handlePro } from './pro/routes';
 
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
  * so we stop writing after four minutes and let the message come back for the rest. */
@@ -546,6 +547,9 @@ export default {
     if (status?.[1]) return jobStatus(env, status[1]);
     const file = url.pathname.match(/^\/d\/(.+)$/);
     if (file?.[1]) return download(env, file[1]);
+
+    const pro = await handlePro(request, env, url);
+    if (pro) return pro;
 
     return new Response('not found', { status: 404 });
   },

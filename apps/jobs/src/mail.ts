@@ -112,6 +112,46 @@ export async function sendReady(
   return { status: 'sent', providerId: data.id ?? null };
 }
 
+/** The sign-in letter for Chronika Pro. Russian only for the pilot. */
+const LOGIN_COPY: Copy = {
+  subject: 'Вход в Chronika Pro',
+  ready: 'Нажмите кнопку, чтобы войти в кабинет. Ссылка действует 15 минут и срабатывает один раз.',
+  open: 'Войти в кабинет',
+  keeps: 'Если вы не запрашивали вход, просто проигнорируйте это письмо — без ссылки в кабинет не попасть.',
+  sign: 'Chronika Pro · pro.chronika.me',
+  window: '',
+  manage: '',
+  unsubscribe: '',
+};
+
+export async function sendLoginLink(env: Env, to: string, link: string): Promise<Sent> {
+  if (!env.RESEND_API_KEY) {
+    // Local development only: production always has the key, and without it nobody could sign in.
+    console.log('pro sign-in link (no mail provider configured):', link);
+    return { status: 'skipped', providerId: null };
+  }
+  const response = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: FROM,
+      to: [to],
+      subject: LOGIN_COPY.subject,
+      html: html(LOGIN_COPY, link),
+      text: `${LOGIN_COPY.ready}\n\n${link}\n\n${LOGIN_COPY.keeps}\n\n${LOGIN_COPY.sign}`,
+    }),
+  });
+  if (!response.ok) {
+    console.error('resend', response.status, (await response.text()).slice(0, 300));
+    throw new Error(`mail provider answered ${response.status}`);
+  }
+  const data = (await response.json()) as { id?: string };
+  return { status: 'sent', providerId: data.id ?? null };
+}
+
 export interface HoroscopeLetter {
   title: string;
   text: string;
