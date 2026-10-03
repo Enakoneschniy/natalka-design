@@ -1,11 +1,12 @@
 /** What happens to a seller's reading after it is ordered: settling a failure, rewriting a
  * section, assembling and fetching the PDF. */
 
-import { getJob, now, updateJob } from '../db';
+import { documentForOrder, getJob, now, updateJob } from '../db';
 import type { Env } from '../env';
-import { dropDocuments, type JobPayload, loadPeople, type WrittenSection, writeSection } from '../pipeline';
+import { documentFilename } from '../filename';
+import { dropDocuments, type JobPayload, loadBirth, loadPeople, type WrittenSection, writeSection } from '../pipeline';
 import { refund } from './credits';
-import { readingRow, REGENERATIONS_PER_READING } from './readings';
+import { readingRow, readingStatus, REGENERATIONS_PER_READING } from './readings';
 
 /** Deliveries a job message gets before the queue gives up: the first plus max_retries (3, in
  * wrangler.jsonc). Keep the two in step. */
@@ -134,4 +135,44 @@ export async function regenerateSection(
     section: { id: written.id, title: written.title, text: written.text },
     regenerations_left: Math.max(0, REGENERATIONS_PER_READING - (used?.regenerations ?? 0)),
   };
+}
+
+export type AssembleResult = 'queued' | 'not_found' | 'not_ready' | 'incomplete' | 'building';
+
+/** Puts a finished reading back on the queue to have its PDF made. Every planned section must be
+ * there: a PDF with a hole in it is not something to hand a client. */
+export async function assemblePdf(env: Env, accountId: string, orderId: string): Promise<AssembleResult> {
+  const row = await readingRow(env.DB, orderId, accountId);
+  if (!row) return 'not_found';
+  if (row.step === 'pdf') return 'building';
+  if (readingStatus(row) !== 'ready') return 'not_ready';
+  const payload: JobPayload = row.payload ? (JSON.parse(row.payload) as JobPayload) : {};
+  const written = new Set((payload.sections ?? []).map((s) => s.id));
+  if ((payload.plan ?? []).some((p) => !written.has(p.id))) return 'incomplete';
+
+  const moved = await env.DB.prepare(
+    "UPDATE jobs SET step = 'pdf', status = 'queued', updated_at = ? WHERE id = ? AND step = 'done'",
+  )
+    .bind(now(), row.job_id)
+    .run();
+  if (!moved.meta.changes) return 'building';
+  await env.JOBS.send({ jobId: row.job_id });
+  return 'queued';
+}
+
+/** The reading's PDF and the name it should be saved under, if it has been assembled. */
+export async function readingPdf(
+  env: Env,
+  accountId: string,
+  orderId: string,
+): Promise<{ body: ReadableStream; filename: string } | null> {
+  const row = await readingRow(env.DB, orderId, accountId);
+  if (!row || row.step !== 'done') return null;
+  const document = await documentForOrder(env.DB, orderId);
+  if (!document) return null;
+  const object = await env.DOCS.get(document.storage_key);
+  if (!object) return null;
+  const first = await loadBirth(env, orderId);
+  const second = row.product === 'synastry' ? await loadBirth(env, orderId, 2) : null;
+  return { body: object.body, filename: documentFilename(row.product, first.lang, first, second) };
 }
