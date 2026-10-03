@@ -2224,7 +2224,7 @@ In `apps/jobs/src/pro/routes.ts`, import the new modules and add handlers. Keep 
 import { contentDisposition } from '../filename';
 import { createClient, getClient, listClients, parseClientBirth } from './clients';
 import { assemblePdf, readingPdf, regenerateSection } from './lifecycle';
-import { createReading, deleteClient, listReadings, readingRow, readingView } from './readings';
+import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from './readings';
 ```
 
 ```ts
@@ -2246,7 +2246,7 @@ async function orderReading(request: Request, env: Env, account: ProAccount): Pr
 
 /** The sample reading: texts only, nothing about whose chart it is. */
 async function demo(env: Env): Promise<Response> {
-  const row = env.PRO_DEMO_ORDER_ID ? await readingRow(env.DB, env.PRO_DEMO_ORDER_ID, null) : null;
+  const row = env.PRO_DEMO_ORDER_ID ? await demoReadingRow(env.DB, env.PRO_DEMO_ORDER_ID) : null;
   if (!row || row.step !== 'done') return json({ error: 'not found' }, 404);
   const view = await readingView(env, row);
   return json({ product: view.product, sections: view.sections });
