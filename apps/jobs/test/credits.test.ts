@@ -71,4 +71,26 @@ describe('credits', () => {
     expect(await spend(db(), { accountId: id, amount: -3, ref: 'job-neg' })).toBe(false);
     expect(await balance(db(), id)).toBe(5);
   });
+
+  it('rejects a grant that is not a non-zero whole number, instead of calling it a repeat', async () => {
+    const id = await seller('badgrant');
+    await expect(grant(db(), { accountId: id, delta: 0, reason: 'purchase', ref: 'cs_zero' })).rejects.toThrow(RangeError);
+    await expect(grant(db(), { accountId: id, delta: 1.5, reason: 'purchase', ref: 'cs_frac' })).rejects.toThrow(RangeError);
+    await expect(grant(db(), { accountId: id, delta: -1, reason: 'purchase', ref: 'cs_neg' })).rejects.toThrow(RangeError);
+    expect(await balance(db(), id)).toBe(0);
+  });
+
+  it('lets an adjustment take credits away', async () => {
+    const id = await seller('adjdown');
+    await grant(db(), { accountId: id, delta: 5, reason: 'adjust', ref: null });
+    expect(await grant(db(), { accountId: id, delta: -2, reason: 'adjust', ref: null })).toBe(true);
+    expect(await balance(db(), id)).toBe(3);
+  });
+
+  it('surfaces a bad reason instead of reporting it as already booked', async () => {
+    const id = await seller('badreason');
+    await expect(
+      grant(db(), { accountId: id, delta: 1, reason: 'bogus' as never, ref: 'cs_bogus' }),
+    ).rejects.toThrow();
+  });
 });

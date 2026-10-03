@@ -36,10 +36,17 @@ export async function grant(
     ref: string | null;
   },
 ): Promise<boolean> {
+  if (!Number.isInteger(entry.delta) || entry.delta === 0) {
+    throw new RangeError('delta must be a non-zero whole number');
+  }
+  if (entry.delta < 0 && entry.reason !== 'adjust') {
+    throw new RangeError('only an adjustment can take credits away');
+  }
   const result = await db
     .prepare(
-      `INSERT OR IGNORE INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
     )
     .bind(crypto.randomUUID(), entry.accountId, entry.delta, entry.reason, entry.ref, now())
     .run();
@@ -55,9 +62,10 @@ export async function spend(
   if (!Number.isInteger(entry.amount) || entry.amount <= 0) return false;
   const result = await db
     .prepare(
-      `INSERT OR IGNORE INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+      `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
        SELECT ?, ?, ?, 'report', ?, ?
-       WHERE (SELECT COALESCE(SUM(delta), 0) FROM credit_ledger WHERE account_id = ?) >= ?`,
+       WHERE (SELECT COALESCE(SUM(delta), 0) FROM credit_ledger WHERE account_id = ?) >= ?
+       ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
     )
     .bind(
       crypto.randomUUID(),
@@ -76,9 +84,10 @@ export async function spend(
 export async function refund(db: D1Database, ref: string): Promise<boolean> {
   const result = await db
     .prepare(
-      `INSERT OR IGNORE INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+      `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
        SELECT ?, account_id, -delta, 'refund', ref, ?
-       FROM credit_ledger WHERE reason = 'report' AND ref = ?`,
+       FROM credit_ledger WHERE reason = 'report' AND ref = ?
+       ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
     )
     .bind(crypto.randomUUID(), now(), ref)
     .run();
