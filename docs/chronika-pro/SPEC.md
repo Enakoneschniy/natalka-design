@@ -37,7 +37,9 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
   **10 credits — €99 · 30 — €249 · 100 — €690**.
 - Weights: **bundle = 2 credits**, every other product = 1.
 - **Credits never expire.**
-- A failed generation **returns its credits automatically**.
+- Credits are spent when a reading is ordered. If nothing at all could be written, they come back
+  automatically. If some sections were written, the reading is delivered and the missing sections
+  are written free on request (not counted in the 10 rewrites).
 - Money back only within 14 days of purchase and only if no credit of that pack was spent.
 - Variable cost per reading ≈ €0.2–0.6 (LLM), regeneration of a section ≈ €0.01–0.03.
 
@@ -48,6 +50,8 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
 - **3 trial credits only with an invite code** from the marketer; without one, a demo reading on a
   sample chart under the seller's brand.
 - The invite code is also where a seller came from (no commission accounting).
+- **Demo**: one pre-generated sample reading (var `PRO_DEMO_ORDER_ID`) that every signed-in seller
+  can open; it replaces trial credits for sellers without an invite code.
 
 ## Data
 
@@ -56,6 +60,12 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
 - On creating a client the seller confirms **"I have my client's consent"**.
 - We are the processor, the seller the controller. Terms: **resale licence** (seller may present
   the reading as their own work) + data-processing terms. Drafted by us, reviewed by a lawyer.
+- **Readings**: texts are kept for as long as the client is (`jobs.payload`); the PDF lives 30 days
+  and is re-assembled on demand. Deleting a client deletes every reading they appear in, as client
+  or synastry partner, with its charts and PDFs. The credit ledger keeps its rows.
+- A synastry partner is a client in the seller's base like any other.
+- A shopper's job payload (calculated chart + texts) is cleared after `RETENTION_DAYS`, with the
+  charts and the PDF — as the ready letter promises.
 
 ## Architecture
 
@@ -106,3 +116,8 @@ breaks the nightly sweep.
      "INSERT INTO pro_invite_codes (code, credits, max_uses, note, created_at)
       VALUES ('START3', 3, 50, 'marketer pilot', strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
    ```
+
+Phase 2: apply migration `0009_pro_readings.sql` (`pnpm --filter @natalka/jobs migrate`, a
+production write) **before** deploying the worker — the nightly sweep reads `orders.pro_account_id`.
+Demo: once the cabinet exists, order a natal reading for a sample chart of a fictional person (the section texts address the client by name, and every seller will read them) from the owner's seller
+account, then set `PRO_DEMO_ORDER_ID` to its id in `apps/jobs/wrangler.jsonc` vars and deploy.
