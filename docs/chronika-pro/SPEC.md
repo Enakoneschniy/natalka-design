@@ -90,13 +90,17 @@ Each phase ships working, tested software on its own.
 
 ## Operations
 
-Phase 1 deploy, done by the owner:
+Phase 1 deploy, done by the owner. Run the steps in this order: deploying before the migration
+breaks the nightly sweep.
 
 1. Session secret, a fresh random value that is never the same as `LINK_KEY`:
    `openssl rand -base64 48 | pnpm --filter @natalka/jobs exec wrangler secret put SESSION_KEY`
-2. Remote migration (a production write): `pnpm --filter @natalka/jobs migrate`
-3. Deploy: `pnpm --filter @natalka/jobs deploy`
-4. Invite code for the marketer (until /admin exists):
+2. Shared key for `/v1/pro/*`, a fresh random value of its own. The pro site's server will need the
+   same value in Phase 5:
+   `openssl rand -base64 48 | pnpm --filter @natalka/jobs exec wrangler secret put PRO_API_KEY`
+3. Remote migration (a production write): `pnpm --filter @natalka/jobs migrate`
+4. Deploy: `pnpm --filter @natalka/jobs deploy`
+5. Invite code for the marketer (until /admin exists) (a production write):
    ```bash
    pnpm --filter @natalka/jobs exec wrangler d1 execute natalka --remote --command \
      "INSERT INTO pro_invite_codes (code, credits, max_uses, note, created_at)
