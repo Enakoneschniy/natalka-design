@@ -3,8 +3,9 @@
 
 import { getJob, now, updateJob } from '../db';
 import type { Env } from '../env';
-import type { JobPayload } from '../pipeline';
+import { dropDocuments, type JobPayload, loadPeople, type WrittenSection, writeSection } from '../pipeline';
 import { refund } from './credits';
+import { readingRow, REGENERATIONS_PER_READING } from './readings';
 
 /** Deliveries a job message gets before the queue gives up: the first plus max_retries (3, in
  * wrangler.jsonc). Keep the two in step. */
@@ -38,4 +39,91 @@ export async function settleFailedJob(env: Env, jobId: string): Promise<boolean>
   }
   await updateJob(env.DB, jobId, { step: 'done', status: 'done' });
   return true;
+}
+
+export type RegenerateResult =
+  | { status: 'ok'; section: { id: string; title: string; text: string }; regenerations_left: number }
+  | { status: 'not_found' | 'not_ready' | 'frozen' | 'limit' | 'busy' | 'failed' };
+
+const giveBack = (db: D1Database, orderId: string) =>
+  db.prepare('UPDATE pro_readings SET regenerations = regenerations - 1 WHERE order_id = ? AND regenerations > 0')
+    .bind(orderId)
+    .run();
+
+/** Rewrites one section of a finished reading. A section that was never written is filled free;
+ * rewriting a written one uses one of the reading's paid rewrites, and only within the edit
+ * window. The rewrite is reserved before the model is called and given back if nothing is saved. */
+export async function regenerateSection(
+  env: Env,
+  accountId: string,
+  orderId: string,
+  sectionId: string,
+): Promise<RegenerateResult> {
+  const row = await readingRow(env.DB, orderId, accountId);
+  if (!row) return { status: 'not_found' };
+  if (row.refunded_at || row.step !== 'done') return { status: 'not_ready' };
+  const payload: JobPayload = row.payload ? (JSON.parse(row.payload) as JobPayload) : {};
+  const plan = payload.plan ?? [];
+  if (!plan.some((p) => p.id === sectionId)) return { status: 'not_found' };
+  const sections = payload.sections ?? [];
+  const paid = sections.some((s) => s.id === sectionId);
+
+  if (paid) {
+    const ts = now();
+    const reserved = await env.DB.prepare(
+      `UPDATE pro_readings SET regenerations = regenerations + 1
+       WHERE order_id = ? AND regenerations < ? AND editable_until > ?`,
+    )
+      .bind(orderId, REGENERATIONS_PER_READING, ts)
+      .run();
+    if (!reserved.meta.changes) return { status: row.editable_until <= ts ? 'frozen' : 'limit' };
+  }
+
+  let written: WrittenSection;
+  try {
+    const people = await loadPeople(env, { order_id: orderId, kind: row.product });
+    const others = sections.filter((s) => s.id !== sectionId);
+    written = await writeSection(env, row.product, people, payload, sectionId, others);
+  } catch (error) {
+    console.error('regenerating a section', orderId, sectionId, error instanceof Error ? error.message : error);
+    if (paid) await giveBack(env.DB, orderId);
+    return { status: 'failed' };
+  }
+
+  // Back in plan order, the new text in place of the old.
+  const order = new Map(plan.map((p, index) => [p.id, index]));
+  const next = [...sections.filter((s) => s.id !== sectionId), written].sort(
+    (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
+  );
+  const saved = await env.DB.prepare(
+    `UPDATE jobs SET payload = ?, tokens_in = tokens_in + ?, tokens_out = tokens_out + ?,
+                     cost_micros = cost_micros + ?, model = ?, updated_at = ?
+     WHERE id = ? AND updated_at = ?`,
+  )
+    .bind(
+      JSON.stringify({ ...payload, sections: next }),
+      written.tokens_in,
+      written.tokens_out,
+      written.cost_micros,
+      written.model,
+      now(),
+      row.job_id,
+      row.updated_at,
+    )
+    .run();
+  if (!saved.meta.changes) {
+    // Another rewrite of this reading landed first; saving now would undo it.
+    if (paid) await giveBack(env.DB, orderId);
+    return { status: 'busy' };
+  }
+  await dropDocuments(env, orderId);
+
+  const used = await env.DB.prepare('SELECT regenerations FROM pro_readings WHERE order_id = ?')
+    .bind(orderId)
+    .first<{ regenerations: number }>();
+  return {
+    status: 'ok',
+    section: { id: written.id, title: written.title, text: written.text },
+    regenerations_left: Math.max(0, REGENERATIONS_PER_READING - (used?.regenerations ?? 0)),
+  };
 }
