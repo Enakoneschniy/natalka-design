@@ -79,44 +79,52 @@ export async function regenerateSection(
     if (!reserved.meta.changes) return { status: row.editable_until <= ts ? 'frozen' : 'limit' };
   }
 
+  let saved = false;
   let written: WrittenSection;
   try {
-    const people = await loadPeople(env, { order_id: orderId, kind: row.product });
-    const others = sections.filter((s) => s.id !== sectionId);
-    written = await writeSection(env, row.product, people, payload, sectionId, others);
-  } catch (error) {
-    console.error('regenerating a section', orderId, sectionId, error instanceof Error ? error.message : error);
-    if (paid) await giveBack(env.DB, orderId);
-    return { status: 'failed' };
-  }
+    try {
+      const people = await loadPeople(env, { order_id: orderId, kind: row.product });
+      const others = sections.filter((s) => s.id !== sectionId);
+      written = await writeSection(env, row.product, people, payload, sectionId, others);
+    } catch (error) {
+      console.error('regenerating a section', orderId, sectionId, error instanceof Error ? error.message : error);
+      return { status: 'failed' };
+    }
 
-  // Back in plan order, the new text in place of the old.
-  const order = new Map(plan.map((p, index) => [p.id, index]));
-  const next = [...sections.filter((s) => s.id !== sectionId), written].sort(
-    (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
-  );
-  const saved = await env.DB.prepare(
-    `UPDATE jobs SET payload = ?, tokens_in = tokens_in + ?, tokens_out = tokens_out + ?,
-                     cost_micros = cost_micros + ?, model = ?, updated_at = ?
-     WHERE id = ? AND updated_at = ?`,
-  )
-    .bind(
-      JSON.stringify({ ...payload, sections: next }),
-      written.tokens_in,
-      written.tokens_out,
-      written.cost_micros,
-      written.model,
-      now(),
-      row.job_id,
-      row.updated_at,
+    // Back in plan order, the new text in place of the old.
+    const order = new Map(plan.map((p, index) => [p.id, index]));
+    const next = [...sections.filter((s) => s.id !== sectionId), written].sort(
+      (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
+    );
+    const result = await env.DB.prepare(
+      `UPDATE jobs SET payload = ?, tokens_in = tokens_in + ?, tokens_out = tokens_out + ?,
+                       cost_micros = cost_micros + ?, model = ?, updated_at = ?
+       WHERE id = ? AND updated_at = ?`,
     )
-    .run();
-  if (!saved.meta.changes) {
-    // Another rewrite of this reading landed first; saving now would undo it.
-    if (paid) await giveBack(env.DB, orderId);
-    return { status: 'busy' };
+      .bind(
+        JSON.stringify({ ...payload, sections: next }),
+        written.tokens_in,
+        written.tokens_out,
+        written.cost_micros,
+        written.model,
+        now(),
+        row.job_id,
+        row.updated_at,
+      )
+      .run();
+    // Another rewrite of this reading landing first means saving now would undo it.
+    if (!result.meta.changes) return { status: 'busy' };
+    saved = true;
+  } finally {
+    // Whatever stopped the save, a rewrite that kept nothing is not charged.
+    if (paid && !saved) await giveBack(env.DB, orderId);
   }
-  await dropDocuments(env, orderId);
+  try {
+    await dropDocuments(env, orderId);
+  } catch (error) {
+    // The text is saved and the rewrite spent; a stale PDF is rebuilt on the next request.
+    console.error('dropping stale documents', orderId, error instanceof Error ? error.message : error);
+  }
 
   const used = await env.DB.prepare('SELECT regenerations FROM pro_readings WHERE order_id = ?')
     .bind(orderId)

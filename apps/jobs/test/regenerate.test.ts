@@ -96,4 +96,18 @@ describe('regenerateSection', () => {
     expect(await regenerateSection(testEnv, stranger.account.id, id, 'a')).toEqual({ status: 'not_found' });
     expect(await regenerateSection(testEnv, account.id, id, 'zzz')).toEqual({ status: 'not_found' });
   });
+
+  it('never keeps a rewrite that lost the race for the same section', async () => {
+    const { account, id, jobId } = await readingFor('Двойник');
+    await runJob(jobId);
+    const results = await Promise.all([
+      regenerateSection(testEnv, account.id, id, 'a'),
+      regenerateSection(testEnv, account.id, id, 'a'),
+    ]);
+    const statuses = results.map((r) => r.status);
+    expect(statuses.every((s) => s === 'ok' || s === 'busy')).toBe(true);
+    const oks = statuses.filter((s) => s === 'ok').length;
+    expect(oks).toBeGreaterThanOrEqual(1);
+    expect((await view(id, account.id)).regenerations_left).toBe(10 - oks);
+  });
 });
