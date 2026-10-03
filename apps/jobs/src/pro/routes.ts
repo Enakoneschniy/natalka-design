@@ -1,7 +1,7 @@
 /** /v1/pro/* — the seller cabinet's API.
  *
- * Called only by the pro site's server; the browser never sees this worker. Every route but the
- * two sign-in steps needs a session.
+ * Called only by the pro site's server, which proves itself with PRO_API_KEY (x-pro-key); the
+ * browser never has the key. Past that, every route but the two sign-in steps needs a session.
  */
 
 import type { Env } from '../env';
@@ -71,8 +71,20 @@ async function invite(request: Request, env: Env, account: ProAccount): Promise<
   return json({ credits: result.credits, balance: await balance(env.DB, account.id) });
 }
 
+/** Constant-time check of the shared key; fails closed when the secret is not configured. */
+function hasProKey(request: Request, env: Env): boolean {
+  const expected = env.PRO_API_KEY;
+  const given = request.headers.get('x-pro-key');
+  if (!expected || !given) return false;
+  const encoder = new TextEncoder();
+  const a = encoder.encode(given);
+  const b = encoder.encode(expected);
+  return a.byteLength === b.byteLength && crypto.subtle.timingSafeEqual(a, b);
+}
+
 export async function handlePro(request: Request, env: Env, url: URL): Promise<Response | null> {
   if (!url.pathname.startsWith('/v1/pro/')) return null;
+  if (!hasProKey(request, env)) return json({ error: 'unauthorized' }, 401);
   const route = `${request.method} ${url.pathname}`;
 
   // Only POST spends a sign-in token: mail scanners open links with GET.

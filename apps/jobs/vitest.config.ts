@@ -26,6 +26,7 @@ export default defineConfig({
           DATA_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
           LINK_KEY: 'test-link-key',
           SESSION_KEY: 'test-session-key',
+          PRO_API_KEY: 'test-pro-key',
         },
       },
     }),

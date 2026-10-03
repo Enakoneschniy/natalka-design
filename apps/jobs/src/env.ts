@@ -40,6 +40,9 @@ export interface Env {
   /** HMAC secret for Chronika Pro sessions. Worker secret; never the same value as LINK_KEY, so a
    * download link can never be replayed as a session. */
   SESSION_KEY: string;
+  /** Shared secret for /v1/pro/*. Worker secret: the pro site's server sends it as x-pro-key; the
+   * browser never has it. */
+  PRO_API_KEY: string;
   /** Where the seller cabinet lives; sign-in letters link to it. */
   PRO_SITE_URL: string;
 }

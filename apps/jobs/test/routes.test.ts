@@ -3,11 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { createLoginToken } from '../src/pro/auth';
 import { testEnv } from './env';
 
-const call = (method: string, path: string, body?: unknown, session?: string) =>
+const call = (method: string, path: string, body?: unknown, session?: string, key: string | null = 'test-pro-key') =>
   SELF.fetch(`https://jobs.test${path}`, {
     method,
     headers: {
       'content-type': 'application/json',
+      ...(key === null ? {} : { 'x-pro-key': key }),
       ...(session ? { authorization: `Bearer ${session}` } : {}),
     },
     body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
@@ -37,7 +38,9 @@ describe('/v1/pro', () => {
 
   it('never spends a sign-in token on a GET', async () => {
     const token = (await createLoginToken(testEnv.DB, 'scanner@routes.test')) as string;
-    const scanned = await SELF.fetch(`https://jobs.test/v1/pro/session?token=${token}`);
+    const scanned = await SELF.fetch(`https://jobs.test/v1/pro/session?token=${token}`, {
+      headers: { 'x-pro-key': 'test-pro-key' },
+    });
     expect(scanned.status).not.toBe(200);
     expect((await call('POST', '/v1/pro/session', { token })).status).toBe(200);
   });
@@ -88,6 +91,19 @@ describe('/v1/pro', () => {
   it('answers 401 without a session and with a forged one', async () => {
     expect((await call('GET', '/v1/pro/me')).status).toBe(401);
     expect((await call('GET', '/v1/pro/me', undefined, 'a.b.c')).status).toBe(401);
+  });
+
+  it('answers 401 to a caller without the shared key, before doing any work', async () => {
+    const response = await call('POST', '/v1/pro/login', { email: 'nokey@routes.test' }, undefined, null);
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: 'unauthorized' });
+  });
+
+  it('answers 401 to a wrong key, even with a valid session', async () => {
+    expect((await call('POST', '/v1/pro/login', { email: 'a@routes.test' }, undefined, 'nope')).status).toBe(401);
+    const session = await sessionFor('wrongkey@routes.test');
+    expect((await call('GET', '/v1/pro/me', undefined, session, 'test-pro-key-x')).status).toBe(401);
+    expect((await call('GET', '/v1/pro/me', undefined, session, 'wrong')).status).toBe(401);
   });
 
   it('leaves the B2C routes alone', async () => {
