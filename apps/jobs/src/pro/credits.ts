@@ -1,0 +1,86 @@
+/** Credits: what a seller has paid for and not yet spent.
+ *
+ * A ledger, not a counter. Each entry is booked once per cause — (reason, ref) is unique — so a
+ * webhook delivered twice or a retried job cannot book twice. A spend is one INSERT whose SELECT
+ * only yields a row while the balance covers it; SQLite runs it as a single write, so two spends
+ * racing for the last credit cannot both land.
+ */
+
+import { now, type Product } from '../db';
+
+export const CREDIT_COST: Record<Product, number> = {
+  natal: 1,
+  forecast: 1,
+  synastry: 1,
+  child: 1,
+  bundle: 2,
+};
+
+export type CreditReason = 'purchase' | 'trial' | 'report' | 'refund' | 'adjust';
+
+export async function balance(db: D1Database, accountId: string): Promise<number> {
+  const row = await db
+    .prepare('SELECT COALESCE(SUM(delta), 0) AS n FROM credit_ledger WHERE account_id = ?')
+    .bind(accountId)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+/** Adds (or, for an adjustment, removes) credits. False when this cause was already booked. */
+export async function grant(
+  db: D1Database,
+  entry: {
+    accountId: string;
+    delta: number;
+    reason: Exclude<CreditReason, 'report' | 'refund'>;
+    ref: string | null;
+  },
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `INSERT OR IGNORE INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(crypto.randomUUID(), entry.accountId, entry.delta, entry.reason, entry.ref, now())
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+/** Takes `amount` credits for the job named by `ref`. False when the balance is short or the job
+ * has already paid. */
+export async function spend(
+  db: D1Database,
+  entry: { accountId: string; amount: number; ref: string },
+): Promise<boolean> {
+  if (!Number.isInteger(entry.amount) || entry.amount <= 0) return false;
+  const result = await db
+    .prepare(
+      `INSERT OR IGNORE INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+       SELECT ?, ?, ?, 'report', ?, ?
+       WHERE (SELECT COALESCE(SUM(delta), 0) FROM credit_ledger WHERE account_id = ?) >= ?`,
+    )
+    .bind(
+      crypto.randomUUID(),
+      entry.accountId,
+      -entry.amount,
+      entry.ref,
+      now(),
+      entry.accountId,
+      entry.amount,
+    )
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+/** Gives back what the job named by `ref` took. False when it took nothing or was refunded. */
+export async function refund(db: D1Database, ref: string): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `INSERT OR IGNORE INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+       SELECT ?, account_id, -delta, 'refund', ref, ?
+       FROM credit_ledger WHERE reason = 'report' AND ref = ?`,
+    )
+    .bind(crypto.randomUUID(), now(), ref)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
