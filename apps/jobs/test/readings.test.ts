@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createClient } from '../src/pro/clients';
 import { balance, grant } from '../src/pro/credits';
-import { createReading, deleteClient, listReadings, readingRow, readingView } from '../src/pro/readings';
+import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from '../src/pro/readings';
 import { ANNA } from './people';
 import { runJob, signIn, testEnv } from './env';
 
@@ -111,6 +111,14 @@ describe('reading view', () => {
     const stranger = await seller('theirs');
     const { id } = (await createReading(testEnv, account, { product: 'natal', client_id: clientId })) as { id: string };
     expect(await readingRow(testEnv.DB, id, stranger.account.id)).toBeNull();
+    expect(await readingRow(testEnv.DB, id, account.id)).not.toBeNull();
+  });
+
+  it('gives the demo row for an existing order and nothing for an unknown one', async () => {
+    const { account, clientId } = await seller('demo');
+    const { id } = (await createReading(testEnv, account, { product: 'natal', client_id: clientId })) as { id: string };
+    expect((await demoReadingRow(testEnv.DB, id))?.order_id).toBe(id);
+    expect(await demoReadingRow(testEnv.DB, crypto.randomUUID())).toBeNull();
   });
 
   it("lists a seller's readings, and a client's", async () => {

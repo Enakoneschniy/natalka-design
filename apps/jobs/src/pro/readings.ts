@@ -6,7 +6,7 @@
  */
 
 import { encryptJson } from '../crypto';
-import { documentForOrder, expiryFrom, type JobStatus, type JobStep, now, type Product } from '../db';
+import { documentForOrder, expiryFrom, type JobStatus, type JobStep, now, type Product, updateJob } from '../db';
 import type { Env } from '../env';
 import { dropDocuments, type JobPayload } from '../pipeline';
 import { type ClientBirth, getClient } from './clients';
@@ -110,10 +110,26 @@ export async function createReading(
       ).bind(orderId, account.id, jobId, client.id, partner?.id ?? null, expiryFrom(EDITABLE_DAYS), ts),
     ]);
   } catch (error) {
-    await refund(env.DB, jobId);
+    try {
+      await refund(env.DB, jobId);
+    } catch (refundError) {
+      console.error('refund failed', jobId, refundError);
+    }
     throw error;
   }
-  await env.JOBS.send({ jobId });
+  try {
+    await env.JOBS.send({ jobId });
+  } catch (error) {
+    console.error('reading could not be queued', jobId, error);
+    try {
+      await refund(env.DB, jobId);
+      await env.DB.prepare('UPDATE pro_readings SET refunded_at = ? WHERE order_id = ?').bind(now(), orderId).run();
+      await updateJob(env.DB, jobId, { status: 'failed' });
+    } catch (cleanupError) {
+      console.error('refund after queue failure failed', jobId, cleanupError);
+    }
+    throw error;
+  }
   return { status: 'created', id: orderId };
 }
 
@@ -139,11 +155,15 @@ const READING_SELECT = `SELECT r.order_id, r.account_id, r.job_id, r.client_id, 
        o.product, j.step, j.status, j.payload, j.updated_at
   FROM pro_readings r JOIN orders o ON o.id = r.order_id JOIN jobs j ON j.id = r.job_id`;
 
-/** A reading, if it is this seller's. `accountId` null skips the owner check: the demo only. */
-export function readingRow(db: D1Database, orderId: string, accountId: string | null): Promise<ReadingRow | null> {
-  return accountId === null
-    ? db.prepare(`${READING_SELECT} WHERE r.order_id = ?`).bind(orderId).first<ReadingRow>()
-    : db.prepare(`${READING_SELECT} WHERE r.order_id = ? AND r.account_id = ?`).bind(orderId, accountId).first<ReadingRow>();
+/** A reading, only if it is this seller's. */
+export function readingRow(db: D1Database, orderId: string, accountId: string): Promise<ReadingRow | null> {
+  return db.prepare(`${READING_SELECT} WHERE r.order_id = ? AND r.account_id = ?`).bind(orderId, accountId).first<ReadingRow>();
+}
+
+/** A reading with no owner check. Only for the order named by PRO_DEMO_ORDER_ID: callers must pass
+ * that var, never user input. */
+export function demoReadingRow(db: D1Database, orderId: string): Promise<ReadingRow | null> {
+  return db.prepare(`${READING_SELECT} WHERE r.order_id = ?`).bind(orderId).first<ReadingRow>();
 }
 
 export type ReadingStatus = 'writing' | 'ready' | 'failed';
