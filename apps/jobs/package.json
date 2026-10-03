@@ -6,13 +6,16 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "migrate:local": "wrangler d1 migrations apply natalka --local",
     "migrate": "wrangler d1 migrations apply natalka --remote",
     "cf-typegen": "wrangler types"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.3.6",
     "@cloudflare/workers-types": "^4.20250927.0",
     "typescript": "^5.9.2",
+    "vitest": "^4.1.11",
     "wrangler": "^4.142.0"
   }
 }
