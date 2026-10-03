@@ -11,6 +11,7 @@ import {
   insertEmailEvent,
   type JobRow,
   orderContact,
+  type Product,
   telegramWaiting,
   updateJob,
 } from './db';
@@ -29,13 +30,13 @@ export interface BirthData {
   lang: string;
 }
 
-interface SectionPlan {
+export interface SectionPlan {
   id: string;
   title: string;
   quote: boolean;
 }
 
-interface WrittenSection extends SectionPlan {
+export interface WrittenSection extends SectionPlan {
   text: string;
   problems: string[];
   attempts: number;
@@ -82,11 +83,38 @@ export async function loadBirth(env: Env, orderId: string, personNo = 1): Promis
   return decryptJson<BirthData>(row.birth_ciphertext, row.birth_nonce, env.DATA_KEY);
 }
 
+/** Whose order this is: a shopper's (null) or a seller's account. */
+export async function proAccountOf(db: D1Database, orderId: string): Promise<string | null> {
+  const row = await db
+    .prepare('SELECT pro_account_id FROM orders WHERE id = ?')
+    .bind(orderId)
+    .first<{ pro_account_id: string | null }>();
+  return row?.pro_account_id ?? null;
+}
+
+/** The people a job is about, decrypted. */
+export async function loadPeople(env: Env, job: Pick<JobRow, 'order_id' | 'kind'>): Promise<People> {
+  return {
+    first: await loadBirth(env, job.order_id),
+    second: job.kind === 'synastry' ? await loadBirth(env, job.order_id, 2) : null,
+  };
+}
+
+/** Removes an order's PDFs: the objects first, then the rows that point at them. A seller's PDF
+ * is replaced when it is assembled again and goes stale when a section is rewritten. */
+export async function dropDocuments(env: Env, orderId: string): Promise<void> {
+  const { results } = await env.DB.prepare('SELECT storage_key FROM documents WHERE order_id = ?')
+    .bind(orderId)
+    .all<{ storage_key: string }>();
+  for (const row of results) await env.DOCS.delete(row.storage_key);
+  await env.DB.prepare('DELETE FROM documents WHERE order_id = ?').bind(orderId).run();
+}
+
 /** "Оксана і Ігор" on the cover of a synastry. */
 const AND: Record<string, string> = { uk: 'і', ru: 'и', en: 'and', pl: 'i', de: 'und' };
 
 /** The people a job is about: one, or two for a synastry. */
-interface People {
+export interface People {
   first: BirthData;
   second: BirthData | null;
 }
@@ -141,6 +169,33 @@ async function calculate(env: Env, job: JobRow, people: People): Promise<JobPayl
   return { facts, transits, plan: plan.sections, sections: [] };
 }
 
+/** Writes one section, with the others as context. Throws on any API error. */
+export async function writeSection(
+  env: Env,
+  kind: Product,
+  people: People,
+  payload: JobPayload,
+  sectionId: string,
+  others: WrittenSection[],
+): Promise<WrittenSection> {
+  const { first: birth, second } = people;
+  return api<WrittenSection>(env, '/v1/section', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      facts: payload.facts,
+      transits: payload.transits ?? [],
+      section_id: sectionId,
+      product: kind,
+      lang: birth.lang,
+      name: birth.name,
+      gender: birth.gender,
+      second_name: second?.name ?? '',
+      written_so_far: others.map((s) => `${s.title}: ${s.text.slice(0, 160)}…`),
+    }),
+  });
+}
+
 /** Writes the sections that are still missing, oldest first, and stops when the budget runs out.
  *
  * The queue message is re-sent rather than held open for the whole document: a reading is fifteen
@@ -153,7 +208,6 @@ async function writeSections(
   payload: JobPayload,
   deadline: number,
 ): Promise<{ payload: JobPayload; done: boolean }> {
-  const { first: birth, second } = people;
   const plan = payload.plan ?? [];
   const sections = payload.sections ?? [];
   const written = new Set(sections.map((s) => s.id));
@@ -164,21 +218,7 @@ async function writeSections(
 
     let section: WrittenSection;
     try {
-      section = await api<WrittenSection>(env, '/v1/section', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          facts: payload.facts,
-          transits: payload.transits ?? [],
-          section_id: entry.id,
-          product: job.kind,
-          lang: birth.lang,
-          name: birth.name,
-          gender: birth.gender,
-          second_name: second?.name ?? '',
-          written_so_far: sections.map((s) => `${s.title}: ${s.text.slice(0, 160)}…`),
-        }),
-      });
+      section = await writeSection(env, job.kind, people, payload, entry.id, sections);
     } catch (error) {
       // A deploy can land between the plan and the writing, and the chapter this job was told
       // to write may no longer exist. Skipping it finishes the document; failing the job would
@@ -260,10 +300,8 @@ async function render(env: Env, job: JobRow, people: People, payload: JobPayload
 
 /** One pass over a job. Returns true when the document is finished. */
 export async function advance(env: Env, job: JobRow, deadline: number): Promise<boolean> {
-  const people: People = {
-    first: await loadBirth(env, job.order_id),
-    second: job.kind === 'synastry' ? await loadBirth(env, job.order_id, 2) : null,
-  };
+  const people = await loadPeople(env, job);
+  const seller = await proAccountOf(env.DB, job.order_id);
   let payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
 
   if (job.step === 'calc') {
@@ -283,11 +321,23 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
       await updateJob(env.DB, job.id, { payload: JSON.stringify(payload) });
       return false;
     }
+    if (seller) {
+      // A seller reads the texts first and asks for the PDF when they are happy with them.
+      await updateJob(env.DB, job.id, { step: 'done', status: 'done', payload: JSON.stringify(payload) });
+      return true;
+    }
     await updateJob(env.DB, job.id, { step: 'pdf', payload: JSON.stringify(payload) });
     job = { ...job, step: 'pdf' };
   }
 
   if (job.step === 'pdf') {
+    if (seller) {
+      await dropDocuments(env, job.order_id);
+      await render(env, job, people, payload);
+      // The seller delivers the reading themselves: no letter, no bot.
+      await updateJob(env.DB, job.id, { step: 'done', status: 'done' });
+      return true;
+    }
     await render(env, job, people, payload);
     await updateJob(env.DB, job.id, { step: 'email' });
     job = { ...job, step: 'email' };

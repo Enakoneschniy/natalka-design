@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
 import { defineConfig } from 'vitest/config';
+import { fakeApi, fakeEphemeris } from './test/fakes';
 
 // The real wrangler.jsonc names service bindings (the API container, the ephemeris service, the
 // bot) that do not exist in a test run, so the runtime is described here instead. Keys are fixed
@@ -17,6 +18,8 @@ export default defineConfig({
         d1Databases: ['DB'],
         r2Buckets: ['DOCS'],
         queueProducers: { JOBS: 'natalka-jobs' },
+        // The text API and the ephemeris service, faked in Node (see test/fakes.ts).
+        serviceBindings: { API: fakeApi, EPHEMERIS: fakeEphemeris },
         bindings: {
           TEST_MIGRATIONS: migrations,
           NATALKA_API_URL: 'https://api.test',
