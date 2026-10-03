@@ -607,6 +607,11 @@ export default {
     await env.DB.prepare('DELETE FROM documents WHERE expires_at < ?').bind(now()).run();
     await env.DB.prepare('DELETE FROM charts WHERE expires_at < ?').bind(now()).run();
     await env.DB.prepare('DELETE FROM previews WHERE expires_at < ?').bind(now()).run();
+    // Sign-in links are worth nothing a day after they expire; the hour of history the throttle
+    // needs is long past by then.
+    await env.DB.prepare('DELETE FROM pro_login_tokens WHERE expires_at < ?')
+      .bind(new Date(Date.now() - 86_400_000).toISOString())
+      .run();
     console.log(`retention: removed ${stale.results?.length ?? 0} documents`);
   },
 };

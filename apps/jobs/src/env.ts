@@ -37,4 +37,9 @@ export interface Env {
   DATA_KEY: string;
   /** HMAC secret for download links. Worker secret. */
   LINK_KEY: string;
+  /** HMAC secret for Chronika Pro sessions. Worker secret; never the same value as LINK_KEY, so a
+   * download link can never be replayed as a session. */
+  SESSION_KEY: string;
+  /** Where the seller cabinet lives; sign-in letters link to it. */
+  PRO_SITE_URL: string;
 }
