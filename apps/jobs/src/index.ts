@@ -54,6 +54,7 @@ import {
 import { contentDisposition, documentFilename } from './filename';
 import { createCheckoutSession, verifyWebhook } from './stripe';
 import { advance, type JobPayload, loadBirth } from './pipeline';
+import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
 import { handlePro } from './pro/routes';
 
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
@@ -589,6 +590,17 @@ export default {
         await updateJob(env.DB, job.id, { status: 'failed', last_error: reason.slice(0, 500) });
         console.error('job failed', job.id, reason);
         // Retry with the queue's backoff; the work already banked in payload is not repeated.
+        if (message.attempts >= MAX_DELIVERIES) {
+          try {
+            if (await settleFailedJob(env, job.id)) {
+              // A seller's reading is settled here rather than left in the dead-letter queue.
+              message.ack();
+              continue;
+            }
+          } catch (settleError) {
+            console.error('settling a failed reading', job.id, settleError);
+          }
+        }
         message.retry();
       }
     }

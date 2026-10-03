@@ -1,6 +1,10 @@
 import { encryptJson } from '../src/crypto';
 import { insertChart, insertJob, type Product } from '../src/db';
+import { createClient } from '../src/pro/clients';
+import { grant } from '../src/pro/credits';
+import { createReading, readingRow } from '../src/pro/readings';
 import { signIn, testEnv } from './env';
+import { ANNA } from './people';
 
 /** An order with one chart and a queued job, inserted directly, B2C or a seller's. */
 export async function seedOrder(opts: {
@@ -47,4 +51,14 @@ export async function seedOrder(opts: {
   });
   await insertJob(testEnv.DB, { id: jobId, order_id: orderId, kind: product });
   return { orderId, jobId, accountId };
+}
+
+/** A signed-in seller with 3 credits, one client and one freshly ordered reading. */
+export async function readingFor(name: string, overrides: Partial<typeof ANNA> = {}, product = 'natal') {
+  const { account } = await signIn(`r-${crypto.randomUUID()}@life.test`);
+  await grant(testEnv.DB, { accountId: account.id, delta: 3, reason: 'adjust', ref: null });
+  const clientId = await createClient(testEnv, account.id, { ...ANNA, name, ...overrides });
+  const created = (await createReading(testEnv, account, { product, client_id: clientId })) as { id: string };
+  const row = await readingRow(testEnv.DB, created.id, account.id);
+  return { account, clientId, id: created.id, jobId: row?.job_id as string };
 }
