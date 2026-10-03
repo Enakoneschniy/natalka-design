@@ -298,10 +298,22 @@ async function render(env: Env, job: JobRow, people: People, payload: JobPayload
   });
 }
 
-/** One pass over a job. Returns true when the document is finished. */
+/** One pass over a job. Returns true when the document is finished.
+ *
+ * A seller's reading whose credits were refunded is never run again: the job stays 'failed', so a
+ * duplicate or redriven delivery (or a send that threw yet did enqueue) would otherwise write a
+ * reading nobody paid for. */
 export async function advance(env: Env, job: JobRow, deadline: number): Promise<boolean> {
+  const order = await env.DB.prepare(
+    `SELECT o.pro_account_id, r.refunded_at
+     FROM orders o LEFT JOIN pro_readings r ON r.order_id = o.id
+     WHERE o.id = ?`,
+  )
+    .bind(job.order_id)
+    .first<{ pro_account_id: string | null; refunded_at: string | null }>();
+  const seller = order?.pro_account_id ?? null;
+  if (seller && order?.refunded_at) return true;
   const people = await loadPeople(env, job);
-  const seller = await proAccountOf(env.DB, job.order_id);
   let payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
 
   if (job.step === 'calc') {

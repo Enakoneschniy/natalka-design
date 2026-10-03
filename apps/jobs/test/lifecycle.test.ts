@@ -20,6 +20,34 @@ describe('settleFailedJob', () => {
     expect(view.status).toBe('failed');
   });
 
+  it('never runs a refunded reading again, even when a late delivery arrives', async () => {
+    const { account, jobId } = await readingFor('Возврат', { date: '1900-01-01' });
+    await expect(runJob(jobId)).rejects.toThrow(/ephemeris/);
+    await settleFailedJob(testEnv, jobId);
+    expect(await balance(testEnv.DB, account.id)).toBe(3);
+
+    expect(await runJob(jobId)).toBe(true);
+    expect(await balance(testEnv.DB, account.id)).toBe(3);
+    const job = await getJob(testEnv.DB, jobId);
+    expect(job?.status).toBe('failed');
+    expect(JSON.parse(job?.payload ?? '{}').sections ?? []).toEqual([]);
+  });
+
+  it('does not write a free reading after the sections failed and were refunded', async () => {
+    const { account, jobId } = await readingFor('Возврат два');
+    await armFailure('Возврат два|*');
+    await expect(runJob(jobId)).rejects.toThrow(/503/);
+    await settleFailedJob(testEnv, jobId);
+    expect(await balance(testEnv.DB, account.id)).toBe(3);
+
+    await armFailure('Возврат два|*', 0);
+    expect(await runJob(jobId)).toBe(true);
+    expect(await balance(testEnv.DB, account.id)).toBe(3);
+    const job = await getJob(testEnv.DB, jobId);
+    expect(job?.status).toBe('failed');
+    expect(JSON.parse(job?.payload ?? '{}').sections ?? []).toEqual([]);
+  });
+
   it('delivers what was written and lists the rest as missing', async () => {
     const { account, id, jobId } = await readingFor('Частично');
     await armFailure('Частично|b');
