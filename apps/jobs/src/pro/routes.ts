@@ -5,6 +5,7 @@
  */
 
 import type { Env } from '../env';
+import { contentDisposition } from '../filename';
 import { sendLoginLink } from '../mail';
 import {
   authenticate,
@@ -15,8 +16,11 @@ import {
   normalizeEmail,
   type ProAccount,
 } from './auth';
+import { createClient, getClient, listClients, parseClientBirth } from './clients';
 import { balance } from './credits';
 import { hasRedeemed, redeemInvite } from './invites';
+import { assemblePdf, readingPdf, regenerateSection } from './lifecycle';
+import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from './readings';
 
 const json = (body: unknown, status = 200): Response =>
   Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
@@ -71,6 +75,95 @@ async function invite(request: Request, env: Env, account: ProAccount): Promise<
   return json({ credits: result.credits, balance: await balance(env.DB, account.id) });
 }
 
+async function addClient(request: Request, env: Env, account: ProAccount): Promise<Response> {
+  const body = await readBody(request);
+  if (body?.consent !== true) return json({ error: 'consent' }, 400);
+  const birth = parseClientBirth(body);
+  if (!birth) return json({ error: 'birth' }, 400);
+  return json({ id: await createClient(env, account.id, birth) }, 201);
+}
+
+async function orderReading(request: Request, env: Env, account: ProAccount): Promise<Response> {
+  const body = (await readBody(request)) ?? {};
+  const result = await createReading(env, account, body);
+  if (result.status === 'created') return json({ id: result.id }, 201);
+  if (result.status === 'insufficient') return json({ error: 'insufficient credits', balance: result.balance }, 402);
+  return json({ error: result.error }, 400);
+}
+
+/** The sample reading: texts only, nothing about whose chart it is. */
+async function demo(env: Env): Promise<Response> {
+  const row = env.PRO_DEMO_ORDER_ID ? await demoReadingRow(env.DB, env.PRO_DEMO_ORDER_ID) : null;
+  if (!row || row.step !== 'done') return json({ error: 'not found' }, 404);
+  const view = await readingView(env, row);
+  return json({ product: view.product, sections: view.sections });
+}
+
+const CLIENT = /^\/v1\/pro\/clients\/([^/]+)$/;
+const READING = /^\/v1\/pro\/readings\/([^/]+)$/;
+const REGENERATE = /^\/v1\/pro\/readings\/([^/]+)\/sections\/([^/]+)\/regenerate$/;
+const PDF = /^\/v1\/pro\/readings\/([^/]+)\/pdf$/;
+
+async function readingRoutes(request: Request, env: Env, url: URL, account: ProAccount): Promise<Response | null> {
+  const { method } = request;
+  const path = url.pathname;
+
+  if (path === '/v1/pro/clients') {
+    if (method === 'POST') return addClient(request, env, account);
+    if (method === 'GET') return json({ clients: await listClients(env, account.id) });
+  }
+  const client = path.match(CLIENT);
+  if (client?.[1]) {
+    if (method === 'GET') {
+      const found = await getClient(env, account.id, client[1]);
+      if (!found) return json({ error: 'not found' }, 404);
+      return json({ client: found, readings: await listReadings(env, account.id, found.id) });
+    }
+    if (method === 'DELETE') {
+      return (await deleteClient(env, account.id, client[1])) ? json({ ok: true }) : json({ error: 'not found' }, 404);
+    }
+  }
+  if (path === '/v1/pro/readings') {
+    if (method === 'POST') return orderReading(request, env, account);
+    if (method === 'GET') return json({ readings: await listReadings(env, account.id) });
+  }
+  const reading = path.match(READING);
+  if (reading?.[1] && method === 'GET') {
+    const row = await readingRow(env.DB, reading[1], account.id);
+    return row ? json(await readingView(env, row)) : json({ error: 'not found' }, 404);
+  }
+  const rewrite = path.match(REGENERATE);
+  if (rewrite?.[1] && rewrite[2] && method === 'POST') {
+    const result = await regenerateSection(env, account.id, rewrite[1], rewrite[2]);
+    if (result.status === 'ok') return json({ section: result.section, regenerations_left: result.regenerations_left });
+    if (result.status === 'not_found') return json({ error: 'not found' }, 404);
+    if (result.status === 'failed') return json({ error: 'failed' }, 503);
+    return json({ error: result.status }, 409);
+  }
+  const pdf = path.match(PDF);
+  if (pdf?.[1]) {
+    if (method === 'POST') {
+      const result = await assemblePdf(env, account.id, pdf[1]);
+      if (result === 'queued') return json({ ok: true }, 202);
+      if (result === 'not_found') return json({ error: 'not found' }, 404);
+      return json({ error: result }, 409);
+    }
+    if (method === 'GET') {
+      const found = await readingPdf(env, account.id, pdf[1]);
+      if (!found) return json({ error: 'not found' }, 404);
+      return new Response(found.body, {
+        headers: {
+          'content-type': 'application/pdf',
+          'content-disposition': contentDisposition(found.filename),
+          'cache-control': 'private, no-store',
+        },
+      });
+    }
+  }
+  if (path === '/v1/pro/demo' && method === 'GET') return demo(env);
+  return null;
+}
+
 /** Constant-time check of the shared key; fails closed when the secret is not configured. */
 function hasProKey(request: Request, env: Env): boolean {
   const expected = env.PRO_API_KEY;
@@ -100,5 +193,7 @@ export async function handlePro(request: Request, env: Env, url: URL): Promise<R
     await endSessions(env.DB, account.id);
     return json({ ok: true });
   }
+  const handled = await readingRoutes(request, env, url, account);
+  if (handled) return handled;
   return json({ error: 'not found' }, 404);
 }

@@ -45,4 +45,7 @@ export interface Env {
   PRO_API_KEY: string;
   /** Where the seller cabinet lives; sign-in letters link to it. */
   PRO_SITE_URL: string;
+  /** The order of the sample reading every seller can open before they have credits. Optional:
+   * without it the demo route answers 404. */
+  PRO_DEMO_ORDER_ID?: string;
 }
