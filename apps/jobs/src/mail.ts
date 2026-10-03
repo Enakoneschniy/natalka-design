@@ -77,6 +77,40 @@ export interface Sent {
   providerId: string | null;
 }
 
+interface Letter {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  headers?: Record<string, string>;
+}
+
+/** The one door every letter leaves through. Callers check the provider key first. */
+async function deliver(env: Env, letter: Letter): Promise<Sent> {
+  const response = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: FROM,
+      to: [letter.to],
+      subject: letter.subject,
+      html: letter.html,
+      text: letter.text,
+      headers: letter.headers,
+    }),
+  });
+  if (!response.ok) {
+    // The body names the reason (bad key, unverified domain); the log gets it, the client does not.
+    console.error('resend', response.status, (await response.text()).slice(0, 300));
+    throw new Error(`mail provider answered ${response.status}`);
+  }
+  const data = (await response.json()) as { id?: string };
+  return { status: 'sent', providerId: data.id ?? null };
+}
+
 /** Sends the ready letter, or reports that it could not because no provider is configured.
  * Any other failure throws: the pipeline records the step and the queue retries it. */
 export async function sendReady(
@@ -89,27 +123,12 @@ export async function sendReady(
   const copy = COPY[locale] ?? COPY.en;
   if (!copy) return { status: 'skipped', providerId: null };
 
-  const response = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: FROM,
-      to: [to],
-      subject: copy.subject,
-      html: html(copy, link),
-      text: `${copy.ready}\n\n${link}\n\n${copy.keeps}\n\n${copy.sign}`,
-    }),
+  return deliver(env, {
+    to,
+    subject: copy.subject,
+    html: html(copy, link),
+    text: `${copy.ready}\n\n${link}\n\n${copy.keeps}\n\n${copy.sign}`,
   });
-  if (!response.ok) {
-    // The body names the reason (bad key, unverified domain); the log gets it, the client does not.
-    console.error('resend', response.status, (await response.text()).slice(0, 300));
-    throw new Error(`mail provider answered ${response.status}`);
-  }
-  const data = (await response.json()) as { id?: string };
-  return { status: 'sent', providerId: data.id ?? null };
 }
 
 /** The sign-in letter for Chronika Pro. Russian only for the pilot. */
@@ -130,26 +149,12 @@ export async function sendLoginLink(env: Env, to: string, link: string): Promise
     console.log('pro sign-in link (no mail provider configured):', link);
     return { status: 'skipped', providerId: null };
   }
-  const response = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: FROM,
-      to: [to],
-      subject: LOGIN_COPY.subject,
-      html: html(LOGIN_COPY, link),
-      text: `${LOGIN_COPY.ready}\n\n${link}\n\n${LOGIN_COPY.keeps}\n\n${LOGIN_COPY.sign}`,
-    }),
+  return deliver(env, {
+    to,
+    subject: LOGIN_COPY.subject,
+    html: html(LOGIN_COPY, link),
+    text: `${LOGIN_COPY.ready}\n\n${link}\n\n${LOGIN_COPY.keeps}\n\n${LOGIN_COPY.sign}`,
   });
-  if (!response.ok) {
-    console.error('resend', response.status, (await response.text()).slice(0, 300));
-    throw new Error(`mail provider answered ${response.status}`);
-  }
-  const data = (await response.json()) as { id?: string };
-  return { status: 'sent', providerId: data.id ?? null };
 }
 
 export interface HoroscopeLetter {
@@ -189,25 +194,11 @@ export async function sendHoroscope(
   if (!env.RESEND_API_KEY) return { status: 'skipped', providerId: null };
   const copy = COPY[locale] ?? COPY.en;
   if (!copy) return { status: 'skipped', providerId: null };
-  const response = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: FROM,
-      to: [to],
-      subject: `${letter.title} · ${dmy(letter.start)} — ${dmy(letter.end)}`,
-      html: horoscopeHtml(copy, letter),
-      text: `${letter.title}\n${copy.window} ${dmy(letter.start)} — ${dmy(letter.end)}\n\n${letter.text}\n\n${copy.manage}: ${letter.manage}\n\n${copy.unsubscribe}`,
-      headers: { 'List-Unsubscribe': `<${letter.manage}>` },
-    }),
+  return deliver(env, {
+    to,
+    subject: `${letter.title} · ${dmy(letter.start)} — ${dmy(letter.end)}`,
+    html: horoscopeHtml(copy, letter),
+    text: `${letter.title}\n${copy.window} ${dmy(letter.start)} — ${dmy(letter.end)}\n\n${letter.text}\n\n${copy.manage}: ${letter.manage}\n\n${copy.unsubscribe}`,
+    headers: { 'List-Unsubscribe': `<${letter.manage}>` },
   });
-  if (!response.ok) {
-    console.error('resend', response.status, (await response.text()).slice(0, 300));
-    throw new Error(`mail provider answered ${response.status}`);
-  }
-  const data = (await response.json()) as { id?: string };
-  return { status: 'sent', providerId: data.id ?? null };
 }
