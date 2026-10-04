@@ -272,7 +272,7 @@ async function stripeWebhook(request: Request, env: Env): Promise<Response> {
     const session = event.data.object;
     if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
       if (session.payment_status !== 'paid') return json({ received: true });
-      if (!session.payment_intent) console.error('pro pack paid without a payment_intent', packMeta.purchase_id);
+      if (!session.payment_intent) console.error('pro pack paid without a payment_intent; a later refund will not be matched to it', packMeta.purchase_id);
       const pack = await markPaid(env.DB, {
         purchaseId: packMeta.purchase_id ?? '',
         accountId: packMeta.account_id ?? '',
@@ -280,11 +280,25 @@ async function stripeWebhook(request: Request, env: Env): Promise<Response> {
         amountSubtotal: session.amount_subtotal ?? -1,
         currency: session.currency ?? '',
       });
+      if (pack === 'mismatch') {
+        // The seller paid an amount we did not ask for and got no credits: the owner must refund.
+        console.error('pro pack amount mismatch', {
+          purchase_id: packMeta.purchase_id,
+          account_id: packMeta.account_id,
+          amount_subtotal: session.amount_subtotal,
+          currency: session.currency,
+        });
+      }
       return json({ received: true, pack });
     }
     if (event.type === 'checkout.session.async_payment_failed') {
       await markFailed(env.DB, packMeta.purchase_id ?? '', packMeta.account_id ?? '');
       return json({ received: true });
+    }
+    if (event.type === 'checkout.session.expired') {
+      // An abandoned checkout; markFailed leaves a purchase that is already paid alone.
+      await markFailed(env.DB, packMeta.purchase_id ?? '', packMeta.account_id ?? '');
+      return json({ received: true, pack: 'expired' });
     }
   }
   if (event.type === 'charge.refunded') {

@@ -48,9 +48,9 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
 - Variable cost per reading ≈ €0.2–0.6 (LLM), regeneration of a section ≈ €0.01–0.03.
 - If `STRIPE_SECRET_KEY` is not configured, pack purchases return 503 and are unavailable;
   there are no free test purchases (unlike the B2C channel).
-- Refunds are initiated by the seller in the Stripe dashboard. The system marks the purchase
+- Refunds are initiated by the owner in the Stripe dashboard. The system marks the purchase
   refunded, takes the credits back via the ledger (negative adjustment), and may result in a
-  negative balance. `refundable` eligibility (≤14 days, unpent credits) is shown as advisory,
+  negative balance. `refundable` eligibility (≤14 days, unspent credits) is shown as advisory,
   not enforced.
 
 ## Access
@@ -142,5 +142,8 @@ for the brand (`/v1/pro/brand`, `/v1/pro/brand/logo|photo`) need no extra config
 are limited to PNG/JPEG ≤ 1 MB and ≤ 4000 px per side.
 
 Phase 4: apply migration `0011_pro_purchases.sql` (a production write) before deploying
-the jobs worker. In the Stripe dashboard, add `charge.refunded` to webhook endpoint events.
+the jobs worker. In the Stripe dashboard, enable these webhook endpoint events: `checkout.session.completed`,
+`checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
+`checkout.session.expired`, `charge.refunded`. A pack whose amount does not match is marked failed
+and logged ("pro pack amount mismatch"); the owner refunds it in Stripe.
 Stripe Tax requires `STRIPE_TAX=1`. Packs are priced inline in EUR minor units.

@@ -61,6 +61,11 @@ describe('credit pack webhook', () => {
     await send(sessionEvent('checkout.session.completed', p, { payment_status: 'unpaid' }));
     expect(await balance(db(), id)).toBe(0);
     expect(await status(p.id)).toBe('pending');
+
+    const later = await send(sessionEvent('checkout.session.async_payment_succeeded', p));
+    expect(await later.json()).toMatchObject({ pack: 'paid' });
+    expect(await balance(db(), id)).toBe(30);
+    expect(await status(p.id)).toBe('paid');
   });
 
   it('rejects a bad signature and changes nothing', async () => {
@@ -128,6 +133,25 @@ describe('credit pack webhook', () => {
     await send(sessionEvent('checkout.session.completed', p));
     const res = await send(refundEvent('pi_b2c_something', true));
     expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ received: true, refund: 'unknown' });
+    expect(await balance(db(), id)).toBe(30);
+  });
+
+  it('marks an abandoned checkout failed', async () => {
+    const id = await seller('expired');
+    const p = await createPurchase(db(), id, 'p30');
+    const res = await send(sessionEvent('checkout.session.expired', p, { payment_status: 'unpaid', payment_intent: null }));
+    expect(await res.json()).toEqual({ received: true, pack: 'expired' });
+    expect(await status(p.id)).toBe('failed');
+    expect(await balance(db(), id)).toBe(0);
+  });
+
+  it('leaves a paid pack paid when an expired event arrives', async () => {
+    const id = await seller('expiredpaid');
+    const p = await createPurchase(db(), id, 'p30');
+    await send(sessionEvent('checkout.session.completed', p));
+    await send(sessionEvent('checkout.session.expired', p));
+    expect(await status(p.id)).toBe('paid');
     expect(await balance(db(), id)).toBe(30);
   });
 

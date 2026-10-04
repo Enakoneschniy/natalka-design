@@ -20,4 +20,4 @@ CREATE TABLE pro_purchases (
 );
 CREATE INDEX pro_purchases_account ON pro_purchases (account_id, created_at);
 CREATE UNIQUE INDEX pro_purchases_session ON pro_purchases (stripe_session_id) WHERE stripe_session_id IS NOT NULL;
-CREATE INDEX pro_purchases_intent ON pro_purchases (stripe_payment_intent) WHERE stripe_payment_intent IS NOT NULL;
+CREATE UNIQUE INDEX pro_purchases_intent ON pro_purchases (stripe_payment_intent) WHERE stripe_payment_intent IS NOT NULL;

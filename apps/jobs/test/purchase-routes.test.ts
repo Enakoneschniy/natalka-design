@@ -56,6 +56,7 @@ describe('POST /v1/pro/purchases', () => {
     expect(sent['metadata[kind]']).toBe('pro_pack');
     expect(sent['metadata[purchase_id]']).toBe(id);
     expect(sent['tax_id_collection[enabled]']).toBe('true');
+    expect(sent['payment_intent_data[description]']).toBe('Chronika Pro · 30 кредитов');
     expect(sent.customer_email).toBe(email);
     expect(sent.success_url).toBe(`https://pro.chronika.test/credits?purchase=${id}`);
     expect(sent.cancel_url).toBe('https://pro.chronika.test/credits');

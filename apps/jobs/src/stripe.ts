@@ -105,6 +105,7 @@ export async function createPackCheckout(env: Env, input: PackCheckoutInput): Pr
     'line_items[0][price_data][product_data][name]': `Chronika Pro · ${input.credits} кредитов`,
     customer_email: input.email,
     client_reference_id: input.purchaseId,
+    'payment_intent_data[description]': `Chronika Pro · ${input.credits} кредитов`,
     'metadata[kind]': 'pro_pack',
     'metadata[purchase_id]': input.purchaseId,
     'metadata[account_id]': input.accountId,
