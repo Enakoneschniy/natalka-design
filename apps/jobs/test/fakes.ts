@@ -1,7 +1,8 @@
 /** Stand-ins for the Python text API and the ephemeris service, bound into the worker under test
  * as service bindings. They run in Node, outside the worker. A test arms a failure by POSTing
  * { key, times } to /__fail on the API binding; keys name the client, so tests running side by
- * side never trip each other. A birth date of 1900-01-01 always fails the calculation. */
+ * side never trip each other ("<name>|pdf" fails the skeleton, "<name>|nobrand" drops the brand from
+ * it). A birth date of 1900-01-01 always fails the calculation. */
 
 export const FAKE_PLAN = [
   { id: 'a', title: 'Первая', quote: false },
@@ -72,10 +73,13 @@ export async function fakeApi(request: Request): Promise<Response> {
     });
   }
   if (path === '/v1/skeleton') {
-    const body = (await request.json()) as { name: string };
+    const body = (await request.json()) as { name: string; brand?: unknown; order_ref?: string | null };
     lastSeen.set(`/v1/skeleton|${body.name}`, body);
     if (trips(`${body.name}|pdf`)) return new Response('render down', { status: 500 });
-    return json({ document: true });
+    // Like the real API, a brand keeps the order reference off the document. Armed with
+    // "<name>|nobrand" it answers like an older image that silently drops the brand.
+    const brand = trips(`${body.name}|nobrand`) ? undefined : body.brand;
+    return json({ document: true, brand: brand ?? null, meta: { order_ref: brand ? null : (body.order_ref ?? null) } });
   }
   if (path === '/v1/document') {
     return new Response(new Uint8Array([37, 80, 68, 70]), {

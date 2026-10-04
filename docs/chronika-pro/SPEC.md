@@ -125,7 +125,10 @@ Demo: once the cabinet exists, order a natal reading for a sample chart of a fic
 account, then set `PRO_DEMO_ORDER_ID` to its id in `apps/jobs/wrangler.jsonc` vars and deploy.
 
 Phase 3: apply migration `0010_pro_brand.sql` (a production write) before deploying the jobs
-worker. Deploy the API container (worker + document + texts) before the jobs worker, since the
-jobs worker sends `address` and `brand` the old container would reject. New jobs worker routes
+worker. Deploy the API container (worker + document + texts) before the jobs worker. An old
+container would not reject the `address` and `brand` the new jobs worker sends: it would drop them
+and assemble the reading under our name. The jobs worker refuses to store a seller's PDF whose
+document came back without the brand, so a skew fails the assembly instead of shipping it, and
+from this phase on the container refuses fields it does not know. New jobs worker routes
 for the brand (`/v1/pro/brand`, `/v1/pro/brand/logo|photo`) need no extra configuration. Images
 are limited to PNG/JPEG ≤ 1 MB and ≤ 4000 px per side.

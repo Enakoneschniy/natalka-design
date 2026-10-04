@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { saveBrand } from '../src/pro/brand';
 import { assemblePdf, regenerateSection } from '../src/pro/lifecycle';
-import { lastRequest, runJob, testEnv } from './env';
+import { armFailure, lastRequest, runJob, testEnv } from './env';
 import { readingFor, seedOrder } from './seed';
 
 const BRAND = { name: 'Мария', contacts: ['@maria'], accent: '#8E7CC3', intro: '', outro: '', signature: '' };
@@ -28,6 +28,19 @@ describe('seller readings', () => {
     await runJob(r.jobId);
     const skeleton = await lastRequest('/v1/skeleton|Бренд');
     expect(skeleton?.brand).toMatchObject({ name: 'Мария', accent: '#8E7CC3' });
+  });
+
+  it('are never stored under our branding when the API drops the brand', async () => {
+    const r = await readingFor('Старый образ');
+    await runJob(r.jobId);
+    await saveBrand(testEnv, r.account.id, BRAND);
+    expect(await assemblePdf(testEnv, r.account.id, r.id)).toBe('queued');
+    await armFailure('Старый образ|nobrand', 1);
+    await expect(runJob(r.jobId)).rejects.toThrow(/brand/);
+    const rows = await testEnv.DB.prepare('SELECT COUNT(*) AS n FROM documents WHERE order_id = ?')
+      .bind(r.id)
+      .first<{ n: number }>();
+    expect(rows?.n).toBe(0);
   });
 
   it("leave a shopper's requests exactly as they were", async () => {

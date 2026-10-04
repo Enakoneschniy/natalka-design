@@ -35,7 +35,7 @@ from natalka_texts.address import Address
 from natalka_texts.generate import MAX_TOKENS, write_horoscope
 from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
 from natalka_texts.validate import check
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 app = FastAPI(title="Natalka internal API", version="0.1.0", docs_url=None, redoc_url=None)
 
@@ -176,6 +176,10 @@ class SectionRequest(BaseModel):
     something honest to show ("12 of 27 written").
     """
 
+    #: A field this image does not know is refused, not dropped: after a deploy skew an older image
+    #: would otherwise ignore a seller's brand and answer as if nothing were missing.
+    model_config = ConfigDict(extra="forbid")
+
     facts: dict[str, Any]
     transits: list[dict[str, Any]] = Field(default_factory=list)
     section_id: str
@@ -294,6 +298,10 @@ class WrittenSection(BaseModel):
 
 class SkeletonRequest(BaseModel):
     """Assemble a document: the fixed structure plus the sections that were written."""
+
+    #: A field this image does not know is refused, not dropped: after a deploy skew an older image
+    #: would otherwise ignore a seller's brand and answer as if nothing were missing.
+    model_config = ConfigDict(extra="forbid")
 
     facts: dict[str, Any]
     #: The partner's chart. For a synastry, `facts` is the payload from /v1/synastry and this is

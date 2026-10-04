@@ -300,6 +300,17 @@ async function render(
       })),
     }),
   });
+  // An API image older than the jobs worker ignores the fields it does not know, and would
+  // assemble a seller's reading under our name with the order reference on it. Refuse it here
+  // rather than hand that PDF to the seller's client.
+  if (seller) {
+    const meta = document.meta as { order_ref?: string | null } | undefined;
+    if (!document.brand || meta?.order_ref != null) {
+      throw new Error(
+        `/v1/skeleton returned no seller brand for order ${job.order_id}: the API image is older than the jobs worker`,
+      );
+    }
+  }
 
   const pdf = await env.API.fetch(`${env.NATALKA_API_URL}/v1/document`, {
     method: 'POST',

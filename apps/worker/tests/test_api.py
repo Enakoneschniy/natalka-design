@@ -83,3 +83,12 @@ def test_the_pdf_download_name_is_neutral(facts: dict[str, Any]) -> None:
     r = client.post("/v1/document", json=doc)
     assert r.status_code == 200
     assert 'filename="reading.pdf"' in r.headers["content-disposition"]
+
+
+def test_a_field_this_image_does_not_know_is_refused(facts: dict[str, Any]) -> None:
+    """An older image must not drop a newer field (a seller's brand) and answer as if all is well."""
+    skeleton_body: dict[str, Any] = {"facts": facts, "name": "Аня", "sections": []}
+    assert client.post("/v1/skeleton", json=skeleton_body).status_code == 200
+    assert client.post("/v1/skeleton", json={**skeleton_body, "logo_v2": "x"}).status_code == 422
+    section_body = {"facts": facts, "section_id": "intro", "name": "Аня", "tone_v2": "warm"}
+    assert client.post("/v1/section", json=section_body).status_code == 422
