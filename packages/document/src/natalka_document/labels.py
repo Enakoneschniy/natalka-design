@@ -197,6 +197,7 @@ SIGNS: Final[dict[str, tuple[str, ...]]] = {
 UI: Final[dict[str, dict[str, str]]] = {
     "uk": {
         "contents": "Зміст",
+        "from_author": "Від автора",
         "positions": "Позиції планет",
         "planet": "Планета",
         "sign": "Знак",
@@ -225,6 +226,7 @@ UI: Final[dict[str, dict[str, str]]] = {
     },
     "en": {
         "contents": "Contents",
+        "from_author": "From the author",
         "positions": "Planet positions",
         "planet": "Planet",
         "sign": "Sign",
@@ -253,6 +255,7 @@ UI: Final[dict[str, dict[str, str]]] = {
     },
     "ru": {
         "contents": "Содержание",
+        "from_author": "От автора",
         "positions": "Позиции планет",
         "planet": "Планета",
         "sign": "Знак",
@@ -281,6 +284,7 @@ UI: Final[dict[str, dict[str, str]]] = {
     },
     "pl": {
         "contents": "Spis treści",
+        "from_author": "Od autora",
         "positions": "Pozycje planet",
         "planet": "Planeta",
         "sign": "Znak",
@@ -309,6 +313,7 @@ UI: Final[dict[str, dict[str, str]]] = {
     },
     "de": {
         "contents": "Inhalt",
+        "from_author": "Vom Autor",
         "positions": "Planetenpositionen",
         "planet": "Planet",
         "sign": "Zeichen",

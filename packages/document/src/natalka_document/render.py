@@ -8,20 +8,26 @@ are rendered as given.
 
 from __future__ import annotations
 
+import base64
 import io
 import math
 import random
 from pathlib import Path
 from typing import Any
+from xml.sax.saxutils import escape
 
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.colors import Color, HexColor
+from reportlab.lib.enums import TA_RIGHT
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import (
     BaseDocTemplate,
     Flowable,
     Frame,
+    Image,
     KeepTogether,
     NextPageTemplate,
     PageBreak,
@@ -41,6 +47,7 @@ from .labels import ROMAN, SIGN_KEYS, body_name, sign_name, ui
 from .schema import (
     AspectGrid,
     Block,
+    Brand,
     BulletList,
     DatesTable,
     Document,
@@ -122,6 +129,15 @@ def _glyph_drawing(path: str, size: float, color: str) -> Drawing:
     return d
 
 
+def _paragraphs(text: str) -> list[str]:
+    """Split seller text into paragraphs on blank lines; drop the empty ones."""
+    return [p.strip() for p in text.split("\n\n") if p.strip()]
+
+
+def _image_reader(b64: str) -> ImageReader:
+    return ImageReader(io.BytesIO(base64.b64decode(b64)))
+
+
 def _tight(*extra: tuple[Any, ...]) -> TableStyle:
     return TableStyle(
         [
@@ -144,6 +160,13 @@ class Renderer:
         self._positions_second = {
             p["body"]: p for p in (document.facts_second or {}).get("positions", [])
         }
+        brand = document.brand
+        self.accent = HexColor(brand.accent) if brand else st.GOLD_BRIGHT
+        self.s_eyebrow = (
+            ParagraphStyle("EyebrowBrand", parent=st.s_eyebrow, textColor=HexColor(brand.accent))
+            if brand
+            else st.s_eyebrow
+        )
 
     # ---------- public ----------
     def render(self, target: str | Path | io.BytesIO) -> int:
@@ -156,9 +179,12 @@ class Renderer:
             topMargin=st.MARGIN,
             bottomMargin=st.MARGIN,
             title=f"{self.doc.cover.title} — {self.doc.person.name}",
-            author="Chronika",
+            author=self.doc.brand.name if self.doc.brand else "Chronika",
             subject=self.doc.meta.product,
         )
+        if self.doc.brand:
+            # The producer line still names ReportLab; the creator is the seller, never us.
+            doc.creator = self.doc.brand.name
         cover_frame = Frame(
             0,
             0,
@@ -184,12 +210,20 @@ class Renderer:
 
     # ---------- story ----------
     def _story(self) -> list[Flowable]:
+        brand = self.doc.brand
+        intro = bool(brand and (brand.intro or brand.photo))
+        toc_theme = _ThemeMarker(motifs.PageTheme("toc", ui(self.lang, "contents")))
         story: list[Flowable] = [
-            _ThemeMarker(motifs.PageTheme("toc", ui(self.lang, "contents"))),
+            _ThemeMarker(motifs.PageTheme("intro", ui(self.lang, "from_author")))
+            if intro
+            else toc_theme,
             NextPageTemplate("Body"),
             Spacer(1, 1),
             PageBreak(),
         ]
+        if brand and intro:
+            story += self._from_author(brand)
+            story += [toc_theme, PageBreak()]
         story += self._toc()
         number = 0
         label = ""
@@ -206,6 +240,8 @@ class Renderer:
                 story.append(_ThemeMarker(motifs.PageTheme(theme, label, opener=False)))
             else:
                 story += self._section(section, 0)
+        if brand and brand.outro:
+            story += self._outro(brand)
         if self.doc.closing_note:
             story += [
                 Spacer(1, 18),
@@ -217,12 +253,47 @@ class Renderer:
             story += [Spacer(1, 10), Paragraph(self.doc.disclaimer, st.s_caption)]
         return story
 
+    # ---------- a seller's own pages ----------
+    def _signature(self, brand: Brand) -> list[Flowable]:
+        if not brand.signature:
+            return []
+        style = ParagraphStyle(
+            "Signature", parent=st.s_body, fontName="PlayfairDisplay-Italic", alignment=TA_RIGHT
+        )
+        return [Spacer(1, 6), Paragraph(escape(brand.signature), style)]
+
+    def _from_author(self, brand: Brand) -> list[Flowable]:
+        """The seller's opening page. Its theme marker sits before the cover's page break."""
+        out: list[Flowable] = [
+            Paragraph(ui(self.lang, "from_author").upper(), self.s_eyebrow),
+            Spacer(1, 10),
+        ]
+        if brand.photo:
+            raw = base64.b64decode(brand.photo)
+            iw, ih = ImageReader(io.BytesIO(raw)).getSize()
+            width = 4.5 * cm
+            photo = Image(io.BytesIO(raw), width=width, height=width * ih / iw)
+            photo.hAlign = "LEFT"
+            out += [photo, Spacer(1, 12)]
+        out += [Paragraph(escape(p), st.s_body) for p in _paragraphs(brand.intro)]
+        out += self._signature(brand)
+        return out
+
+    def _outro(self, brand: Brand) -> list[Flowable]:
+        out: list[Flowable] = [Spacer(1, 18), st.HRule(), Spacer(1, 8)]
+        out += [Paragraph(escape(p), st.s_body) for p in _paragraphs(brand.outro)]
+        out += self._signature(brand)
+        if brand.contacts:
+            out.append(Spacer(1, 6))
+            out += [Paragraph(escape(c), st.s_caption) for c in brand.contacts]
+        return out
+
     def _toc(self) -> list[Flowable]:
         toc = TableOfContents()
         toc.levelStyles = [st.s_toc_1, st.s_toc_2]
         toc.dotsMinLevel = 0
         return [
-            Paragraph(ui(self.lang, "contents").upper(), st.s_eyebrow),
+            Paragraph(ui(self.lang, "contents").upper(), self.s_eyebrow),
             Paragraph(ui(self.lang, "contents"), st.s_h1),
             st.HRule(),
             Spacer(1, 10),
@@ -237,7 +308,7 @@ class Renderer:
                 f"{ui(self.lang, 'section')} {ROMAN[number - 1]}" if number else ""
             )
             if eyebrow:
-                head.append(Paragraph(eyebrow.upper(), st.s_eyebrow))
+                head.append(Paragraph(eyebrow.upper(), self.s_eyebrow))
             head += [
                 _Heading(s.title, st.s_h1_big if number else st.s_h1, 0, s.toc),
                 st.HRule(),
@@ -562,11 +633,11 @@ class Renderer:
         d.drawOn(canv, (w - size) / 2, h * wheel_cy - size / 2)
         # thin gold rule with a diamond between the sky and the text block
         y_rule = h * 0.325
-        canv.setStrokeColor(st.GOLD_BRIGHT)
+        canv.setStrokeColor(self.accent)
         canv.setLineWidth(0.6)
         canv.line(w * 0.3, y_rule, w * 0.46, y_rule)
         canv.line(w * 0.54, y_rule, w * 0.7, y_rule)
-        canv.setFillColor(st.GOLD_BRIGHT)
+        canv.setFillColor(self.accent)
         p = canv.beginPath()
         p.moveTo(w / 2, y_rule + 3)
         p.lineTo(w / 2 + 3, y_rule)
@@ -576,9 +647,19 @@ class Renderer:
         canv.drawPath(p, stroke=0, fill=1)
         # text block
         cx = w / 2
-        canv.setFillColor(st.GOLD_BRIGHT)
-        canv.setFont(st.SANS, 8.5)
-        canv.drawCentredString(cx, h * 0.295, "C H R O N I K A")
+        brand = self.doc.brand
+        if brand and brand.logo:
+            logo = _image_reader(brand.logo)
+            iw, ih = logo.getSize()
+            scale = min(1.2 * cm / ih, 5 * cm / iw)
+            lw, lh = iw * scale, ih * scale
+            # Centred on the wordmark line, so a tall logo stays clear of the gold rule above.
+            canv.drawImage(logo, cx - lw / 2, h * 0.298 - lh / 2, lw, lh, mask="auto")
+        else:
+            canv.setFillColor(self.accent)
+            canv.setFont(st.SANS, 8.5)
+            name = " ".join(brand.name.upper()) if brand else "C H R O N I K A"
+            canv.drawCentredString(cx, h * 0.295, name)
         canv.setFillColor(HexColor("#F4F1E8"))
         canv.setFont("PlayfairDisplay-Medium", 32)
         canv.drawCentredString(cx, h * 0.245, self.doc.cover.title)
@@ -597,7 +678,7 @@ class Renderer:
         col_w = w / 3
         for i, (lbl, val) in enumerate(zip(labels, values, strict=True)):
             xx = col_w * (i + 0.5)
-            canv.setFillColor(st.GOLD_BRIGHT)
+            canv.setFillColor(self.accent)
             canv.setFont(st.SANS, 7.5)
             canv.drawCentredString(xx, y, "  ".join(lbl.upper()))
             canv.setFillColor(HexColor("#F4F1E8"))
@@ -609,10 +690,14 @@ class Renderer:
             canv.line(col_w * i, y - 21, col_w * i, y + 7)
         canv.setFillColor(HexColor("#767B99"))
         canv.setFont(st.SANS, 7.5)
-        ref = f"{self.doc.meta.order_ref}  ·  " if self.doc.meta.order_ref else ""
-        canv.drawCentredString(
-            cx, 1.3 * cm, f"{ref}{self.doc.meta.generated_at:%Y-%m-%d}  ·  chronika.me"
-        )
+        if brand:
+            contact = f"  ·  {brand.contacts[0]}" if brand.contacts else ""
+            canv.drawCentredString(cx, 1.3 * cm, f"{self.doc.meta.generated_at:%Y-%m-%d}{contact}")
+        else:
+            ref = f"{self.doc.meta.order_ref}  ·  " if self.doc.meta.order_ref else ""
+            canv.drawCentredString(
+                cx, 1.3 * cm, f"{ref}{self.doc.meta.generated_at:%Y-%m-%d}  ·  chronika.me"
+            )
         canv.restoreState()
 
 

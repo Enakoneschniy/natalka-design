@@ -7,6 +7,7 @@ engine JSON, so the numbers in the PDF can never drift from the calculation.
 
 from __future__ import annotations
 
+import base64
 import re
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
@@ -178,6 +179,34 @@ class Section(_Strict):
     blocks: list[Block] = Field(default_factory=list)
 
 
+class Brand(_Strict):
+    """A seller's brand. When present, the document is the seller's: nothing of ours is drawn."""
+
+    name: str = Field(min_length=1, max_length=60)
+    contacts: list[Annotated[str, Field(min_length=1, max_length=80)]] = Field(
+        default_factory=list, max_length=4
+    )
+    accent: str = Field(default="#E7B75C", pattern=r"^#[0-9A-Fa-f]{6}$")
+    intro: str = Field(default="", max_length=3000)
+    outro: str = Field(default="", max_length=3000)
+    signature: str = Field(default="", max_length=80)
+    #: PNG or JPEG, base64, at most 1 MB decoded.
+    logo: str | None = None
+    photo: str | None = None
+
+    @field_validator("logo", "photo")
+    @classmethod
+    def _image(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        raw = base64.b64decode(value, validate=True)
+        if len(raw) > 1_048_576:
+            raise ValueError("image larger than 1 MB")
+        if not (raw.startswith(b"\x89PNG\r\n\x1a\n") or raw.startswith(b"\xff\xd8\xff")):
+            raise ValueError("image must be PNG or JPEG")
+        return value
+
+
 class Document(_Strict):
     meta: Meta
     person: Person
@@ -190,6 +219,8 @@ class Document(_Strict):
     sections: list[Section] = Field(default_factory=list)
     closing_note: str = ""  # e.g. "✦ на цьому розбір завершено ✦"
     disclaimer: str = ""
+    #: A seller's brand (Chronika Pro). Absent for our own readings.
+    brand: Brand | None = None
 
     @property
     def unknown_time(self) -> bool:
