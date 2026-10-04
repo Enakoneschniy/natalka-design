@@ -16,7 +16,9 @@ from typing import Any
 import pytest
 
 MESSAGES = Path(__file__).resolve().parents[1] / "apps" / "web" / "messages"
-LANGUAGES = ("uk", "en", "ru")
+#: The languages the site ships today (one file each). The site went Russian-only; the checks that
+#: compare languages run only when the files they compare are there.
+LANGUAGES = tuple(sorted(p.stem for p in MESSAGES.glob("*.json")))
 
 #: Letters that belong to one language and not the other. A handful, but enough to catch a
 #: sentence that wandered across.
@@ -49,14 +51,27 @@ def messages() -> dict[str, dict[str, str]]:
     }
 
 
+def _need(*langs: str) -> None:
+    missing = [lang for lang in langs if lang not in LANGUAGES]
+    if missing:
+        pytest.skip(f"no {', '.join(missing)} messages shipped")
+
+
+def test_the_site_ships_some_copy() -> None:
+    assert LANGUAGES, f"no message files in {MESSAGES}"
+
+
 def test_every_language_has_the_same_keys(messages: dict[str, dict[str, str]]) -> None:
-    reference = set(messages["uk"])
+    if len(LANGUAGES) < 2:
+        pytest.skip("one language: nothing to compare")
+    reference = set(messages[LANGUAGES[0]])
     for lang in LANGUAGES[1:]:
         assert set(messages[lang]) == reference, f"{lang} has different keys"
 
 
 @pytest.mark.parametrize("lang", ["ru", "uk"])
 def test_no_letters_from_the_other_language(lang: str, messages: dict[str, dict[str, str]]) -> None:
+    _need(lang)
     pattern = re.compile(rf"\b[\w'’-]*[{FOREIGN[lang]}][\w'’-]*\b", re.IGNORECASE)
     bad = {key: value for key, value in messages[lang].items() if pattern.search(value)}
     assert not bad, f"{lang}: {bad}"
@@ -64,6 +79,7 @@ def test_no_letters_from_the_other_language(lang: str, messages: dict[str, dict[
 
 def test_the_russian_copy_is_not_the_ukrainian_one(messages: dict[str, dict[str, str]]) -> None:
     """A phrase identical in both files is usually one that was copied and never translated."""
+    _need("ru", "uk")
     same = {
         key: value
         for key, value in messages["ru"].items()
@@ -75,5 +91,6 @@ def test_the_russian_copy_is_not_the_ukrainian_one(messages: dict[str, dict[str,
 
 
 def test_the_english_copy_has_no_cyrillic(messages: dict[str, dict[str, str]]) -> None:
+    _need("en")
     bad = {k: v for k, v in messages["en"].items() if re.search(r"[а-яіїєґ]", v, re.IGNORECASE)}
     assert not bad, f"english: {bad}"
