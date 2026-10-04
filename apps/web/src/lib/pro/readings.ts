@@ -3,6 +3,7 @@
  * the client card, the order form and the reading page share it. */
 
 import { creditsLabel } from './credits';
+import { TRY_LATER } from './messages';
 
 export type Product = 'natal' | 'forecast' | 'synastry' | 'child' | 'bundle';
 export type ReadingStatus = 'writing' | 'ready' | 'failed';
@@ -181,8 +182,6 @@ export function missingNote(missing: readonly { id?: string; title: string }[]):
   return `Сначала допишите: ${missing.map((m) => `«${m.title}»`).join(', ')}`;
 }
 
-const TRY_AGAIN_SOON = 'Не получилось отправить. Попробуйте ещё раз через минуту.';
-
 const REWRITE_REFUSED: Record<string, string> = {
   limit: `Переписывать больше нельзя: использованы все ${REGENERATIONS_PER_READING} попыток`,
   frozen: 'Срок правок закончился',
@@ -195,7 +194,7 @@ export function rewriteError(status: number, error?: string): string {
   if (status === 409 && error && REWRITE_REFUSED[error]) return REWRITE_REFUSED[error];
   if (status === 503) return 'Не получилось переписать раздел. Попробуйте ещё раз.';
   if (status === 404) return 'Раздел не найден. Обновите страницу.';
-  return TRY_AGAIN_SOON;
+  return TRY_LATER;
 }
 
 const ASSEMBLE_REFUSED: Record<string, string> = {
@@ -206,14 +205,14 @@ const ASSEMBLE_REFUSED: Record<string, string> = {
 
 /** Why «Собрать PDF» was refused (409 `error`). */
 export function assembleError(error: string | undefined): string {
-  return (error && ASSEMBLE_REFUSED[error]) || TRY_AGAIN_SOON;
+  return (error && ASSEMBLE_REFUSED[error]) || TRY_LATER;
 }
 
 /** Why a report did not go. */
 export function reportError(status: number): string {
   if (status === 400) return 'Напишите, что не так: до 1000 символов';
   if (status === 429) return 'Слишком много сообщений. Попробуйте через час.';
-  return TRY_AGAIN_SOON;
+  return TRY_LATER;
 }
 
 export interface Run {
@@ -253,6 +252,33 @@ export function richParagraphs(text: string): Run[][] {
       return runs;
     })
     .filter((runs) => runs.length > 0);
+}
+
+/** The reading once a rewrite or a fill came back: the new text in place (a filled section joins
+ * the end until the next look at the reading puts it in plan order), the new counter, and no PDF,
+ * since the worker drops the old one. */
+export function applyRewrite(
+  view: ReadingView,
+  section: ReadingSection,
+  regenerationsLeft: number | undefined,
+): ReadingView {
+  const known = view.sections.some((s) => s.id === section.id);
+  return {
+    ...view,
+    sections: known
+      ? view.sections.map((s) => (s.id === section.id ? section : s))
+      : [...view.sections, section],
+    missing: view.missing.filter((m) => m.id !== section.id),
+    written: known ? view.written : view.written + 1,
+    regenerations_left: regenerationsLeft ?? view.regenerations_left,
+    pdf: 'none',
+    pages: null,
+  };
+}
+
+/** A PDF build that ended without a PDF: the worker gave up on it. */
+export function pdfBuildFailed(before: ReadingView['pdf'], after: ReadingView['pdf']): boolean {
+  return before === 'building' && after === 'none';
 }
 
 const ROMAN: [number, string][] = [

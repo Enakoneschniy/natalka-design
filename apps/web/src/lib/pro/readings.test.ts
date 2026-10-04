@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyRewrite,
   assembleError,
   CREDIT_COST,
   dockState,
@@ -9,6 +10,7 @@ import {
   needsPolling,
   orderLabel,
   PRODUCT_LABEL,
+  pdfBuildFailed,
   progressLabel,
   type ReadingView,
   readingDate,
@@ -281,5 +283,50 @@ describe('readingDate', () => {
 
   it('keeps quiet about a date it cannot read', () => {
     expect(readingDate('nonsense', now)).toBe('');
+  });
+});
+
+describe('applyRewrite', () => {
+  const sun = { id: 'b', title: 'Солнце', text: 'Новый текст' };
+
+  it('moves a filled section out of missing and into the sections', () => {
+    const before = view({
+      written: 2,
+      sections: [{ id: 'a', title: 'Асцендент', text: 'A' }],
+      missing: [{ id: 'b', title: 'Солнце' }],
+    });
+    const after = applyRewrite(before, sun, 9);
+    expect(after.missing).toEqual([]);
+    expect(after.sections.map((s) => s.id)).toEqual(['a', 'b']);
+    expect(after.written).toBe(3);
+  });
+
+  it('replaces the text of a rewritten section and takes the new counter', () => {
+    const before = view({ sections: [{ id: 'b', title: 'Солнце', text: 'Старый' }] });
+    const after = applyRewrite(before, sun, 8);
+    expect(after.sections).toEqual([sun]);
+    expect(after.regenerations_left).toBe(8);
+    expect(after.written).toBe(3);
+  });
+
+  it('forgets the PDF, which the worker dropped', () => {
+    const before = view({
+      sections: [{ id: 'b', title: 'Солнце', text: 'Старый' }],
+      pdf: 'ready',
+      pages: 34,
+    });
+    expect(applyRewrite(before, sun, undefined)).toMatchObject({
+      pdf: 'none',
+      pages: null,
+      regenerations_left: 9,
+    });
+  });
+});
+
+describe('pdfBuildFailed', () => {
+  it('is true only when a build ends with no PDF', () => {
+    expect(pdfBuildFailed('building', 'none')).toBe(true);
+    expect(pdfBuildFailed('building', 'ready')).toBe(false);
+    expect(pdfBuildFailed('none', 'none')).toBe(false);
   });
 });

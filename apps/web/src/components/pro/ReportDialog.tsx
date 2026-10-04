@@ -22,6 +22,8 @@ export function ReportDialog({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Two taps in one frame both see `sending` false; the ref sees the first at once.
+  const inFlight = useRef(false);
 
   useEffect(() => {
     const node = dialog.current;
@@ -34,6 +36,8 @@ export function ReportDialog({
     event.preventDefault();
     const text = comment.trim();
     if (!text) return setError(reportError(400));
+    if (inFlight.current) return;
+    inFlight.current = true;
     setSending(true);
     setError(null);
     const { status } = await sendJson<{ ok?: boolean }>(
@@ -43,6 +47,7 @@ export function ReportDialog({
     );
     setSending(false);
     if (status === 201) return setSent(true);
+    inFlight.current = false;
     if (status === 401) return signInAgain();
     setError(reportError(status));
   }

@@ -1,14 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPoller } from '@/lib/pro/poll';
 import {
+  applyRewrite,
   assembleError,
   dockState,
   editLine,
   missingNote,
   needsPolling,
+  pdfBuildFailed,
   type ReadingSection,
   type ReadingView,
   readingPill,
@@ -35,8 +37,14 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
   const [reporting, setReporting] = useState<{ id: string; title: string } | null>(null);
   const [dockBusy, setDockBusy] = useState(false);
   const [dockError, setDockError] = useState<{ text: string; brand: boolean } | null>(null);
+  const [gone, setGone] = useState(false);
+  // Sections with a rewrite on its way: state lands a render late, a ref holds at once.
+  const inFlight = useRef<Set<string>>(new Set());
+  // Set when this page asked for the PDF, so a build that ends with none can be said out loud.
+  const assembling = useRef(false);
+  const lastPdf = useRef(view.pdf);
   const id = view.id;
-  const polling = needsPolling(view);
+  const polling = needsPolling(view) && !gone;
 
   /** One look at the reading; true when it came back. */
   const reload = useCallback(async (): Promise<boolean> => {
@@ -52,31 +60,55 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
 
   useEffect(() => {
     if (!polling) return;
-    let signedOut = false;
+    // Signed out or deleted: nothing more to ask, not even when the tab comes back.
+    let over = false;
     const poller = createPoller<ReadingView | null>({
       intervalMs: POLL_MS,
       tick: async () => {
         const { status, data } = await sendJson<ReadingView>(`/api/pro/x/readings/${id}`, 'GET');
         if (status === 401) {
-          signedOut = true;
+          over = true;
           signInAgain();
+          return null;
+        }
+        if (status === 404) {
+          over = true;
+          setGone(true);
           return null;
         }
         if (status !== 200 || !data) throw new Error(`reading → ${status}`);
         setView(data);
         return data;
       },
-      shouldStop: (data) => signedOut || data === null || !needsPolling(data),
+      shouldStop: (data) => over || data === null || !needsPolling(data),
     });
-    poller.start();
-    return () => poller.stop();
+    // A hidden tab asks nothing; it picks up again when shown. One poller, so one timer.
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') poller.stop();
+      else if (!over) poller.start();
+    };
+    if (document.visibilityState !== 'hidden') poller.start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      poller.stop();
+    };
   }, [id, polling]);
+
+  useEffect(() => {
+    if (pdfBuildFailed(lastPdf.current, view.pdf) && assembling.current) {
+      setDockError({ text: 'Не удалось собрать PDF, попробуйте ещё раз', brand: false });
+    }
+    if (view.pdf !== 'building') assembling.current = false;
+    lastPdf.current = view.pdf;
+  }, [view.pdf]);
 
   const setRow = (sectionId: string, state: RowState) =>
     setRows((current) => ({ ...current, [sectionId]: state }));
 
   async function regenerate(sectionId: string) {
-    if (rows[sectionId]?.busy) return;
+    if (inFlight.current.has(sectionId)) return;
+    inFlight.current.add(sectionId);
     setRow(sectionId, { busy: true });
     const { status, data } = await sendJson<{
       section?: ReadingSection;
@@ -85,19 +117,17 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
     }>(`/api/pro/x/readings/${id}/sections/${sectionId}/regenerate`, 'POST');
     if (status === 401) return signInAgain();
     if (status !== 200 || !data?.section) {
+      inFlight.current.delete(sectionId);
       setRow(sectionId, { busy: false, error: rewriteError(status, data?.error) });
       return;
     }
     const section = data.section;
-    setView((current) => ({
-      ...current,
-      sections: current.sections.map((s) => (s.id === section.id ? section : s)),
-      regenerations_left: data.regenerations_left ?? current.regenerations_left,
-    }));
-    // A filled section takes its place in the plan, and any PDF made before is gone: the
-    // reading's own answer says both. The row stays busy until it is in.
-    await reload();
+    // In step at once, whatever the next look says: the text, the counter, and no PDF.
+    setView((current) => applyRewrite(current, section, data.regenerations_left));
+    inFlight.current.delete(sectionId);
     setRow(sectionId, { busy: false });
+    // The reading's own answer puts a filled section in its plan position.
+    await reload();
   }
 
   async function assemble() {
@@ -110,6 +140,7 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
     setDockBusy(false);
     if (status === 401) return signInAgain();
     if (status === 202 || (status === 409 && data?.error === 'building')) {
+      assembling.current = true;
       setView((current) => ({ ...current, pdf: 'building' }));
       return;
     }
@@ -124,6 +155,17 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
       else next.add(sectionId);
       return next;
     });
+
+  if (gone) {
+    return (
+      <div className="card">
+        <p>Отчёт не найден</p>
+        <Link href="/" className="btn ghost small start">
+          К отчётам
+        </Link>
+      </div>
+    );
+  }
 
   const ready = view.status === 'ready';
   const building = view.pdf === 'building';

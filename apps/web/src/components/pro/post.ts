@@ -41,7 +41,7 @@ export function signInAgain(): void {
   window.location.assign('/login?expired=1');
 }
 
-export const TRY_LATER = 'Не получилось отправить. Попробуйте ещё раз через минуту.';
+export { TRY_LATER } from '@/lib/pro/messages';
 
 export const UNAVAILABLE = 'Сервис временно недоступен, попробуйте через минуту';
 
