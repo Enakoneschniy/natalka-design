@@ -22,9 +22,11 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
 - All five products: natal, forecast, synastry, child, bundle.
 - **Client base**: saved clients, new readings for an existing client.
 - **Branding in the PDF**: logo, name, contacts, photo, signature, intro and closing text written
-  by the seller, one accent colour (replaces our gold). Assets in R2. **No mention of us
-  anywhere** in the PDF (content, metadata, file name). One mandatory line at the end: a short
-  "for entertainment / self-reflection" disclaimer without our name.
+  by the seller, one accent colour (replaces our gold). Assets in R2. Logo or name on the cover,
+  accent colour on the cover and section labels, an «От автора» page (photo, intro, signature)
+  when filled in, a closing block (outro, signature, contacts), PDF author = the seller. No order
+  reference, domain or name of ours anywhere. A PDF cannot be assembled until the brand has a
+  name. **Tone** is snapshotted on each reading when it is ordered.
 - **Tone** per account: «ты» / «вы» — passed to the text prompts.
 - **Astrology settings**: none. Placidus only. Requests are logged, not built.
 - Same text methodology as B2C; the model words each reading afresh.
@@ -121,3 +123,9 @@ Phase 2: apply migration `0009_pro_readings.sql` (`pnpm --filter @natalka/jobs m
 production write) **before** deploying the worker — the nightly sweep reads `orders.pro_account_id`.
 Demo: once the cabinet exists, order a natal reading for a sample chart of a fictional person (the section texts address the client by name, and every seller will read them) from the owner's seller
 account, then set `PRO_DEMO_ORDER_ID` to its id in `apps/jobs/wrangler.jsonc` vars and deploy.
+
+Phase 3: apply migration `0010_pro_brand.sql` (a production write) before deploying the jobs
+worker. Deploy the API container (worker + document + texts) before the jobs worker, since the
+jobs worker sends `address` and `brand` the old container would reject. New jobs worker routes
+for the brand (`/v1/pro/brand`, `/v1/pro/brand/logo|photo`) need no extra configuration. Images
+are limited to PNG/JPEG ≤ 1 MB and ≤ 4000 px per side.
