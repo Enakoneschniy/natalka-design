@@ -102,13 +102,14 @@ export async function loadPeople(env: Env, job: Pick<JobRow, 'order_id' | 'kind'
 }
 
 /** Removes an order's PDFs: the objects first, then the rows that point at them. A seller's PDF
- * is replaced when it is assembled again and goes stale when a section is rewritten. */
-export async function dropDocuments(env: Env, orderId: string): Promise<void> {
-  const { results } = await env.DB.prepare('SELECT storage_key FROM documents WHERE order_id = ?')
-    .bind(orderId)
+ * is replaced when it is assembled again and goes stale when a section is rewritten. `keep` names
+ * the one document to leave in place: the PDF that has just replaced the others. */
+export async function dropDocuments(env: Env, orderId: string, keep?: string): Promise<void> {
+  const { results } = await env.DB.prepare('SELECT storage_key FROM documents WHERE order_id = ? AND id IS NOT ?')
+    .bind(orderId, keep ?? null)
     .all<{ storage_key: string }>();
   for (const row of results) await env.DOCS.delete(row.storage_key);
-  await env.DB.prepare('DELETE FROM documents WHERE order_id = ?').bind(orderId).run();
+  await env.DB.prepare('DELETE FROM documents WHERE order_id = ? AND id IS NOT ?').bind(orderId, keep ?? null).run();
 }
 
 /** "Оксана і Ігор" on the cover of a synastry. */
@@ -321,10 +322,15 @@ async function render(
   const pages = Number(pdf.headers.get('x-pages') ?? 0);
   const bytes = await pdf.arrayBuffer();
 
-  const key = `${job.order_id}/${job.kind}-${birth.lang}.pdf`;
+  // A seller's PDF is rebuilt in place of the last one, so it gets a key of its own: the previous
+  // PDF stays readable until this one is stored, and only then is it removed.
+  const key = seller
+    ? `${job.order_id}/${job.kind}-${birth.lang}-${crypto.randomUUID()}.pdf`
+    : `${job.order_id}/${job.kind}-${birth.lang}.pdf`;
+  const id = crypto.randomUUID();
   await env.DOCS.put(key, bytes, { httpMetadata: { contentType: 'application/pdf' } });
   await insertDocument(env.DB, {
-    id: crypto.randomUUID(),
+    id,
     order_id: job.order_id,
     storage_key: key,
     sha256: await sha256Hex(bytes),
@@ -333,6 +339,7 @@ async function render(
     lang: birth.lang,
     expires_at: expiryFrom(Number(env.RETENTION_DAYS ?? '30')),
   });
+  if (seller) await dropDocuments(env, job.order_id, id);
 }
 
 /** One pass over a job. Returns true when the document is finished.
@@ -382,7 +389,7 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
 
   if (job.step === 'pdf') {
     if (seller) {
-      await dropDocuments(env, job.order_id);
+      // The new PDF replaces the old one only once it is stored: a failed render keeps the last.
       await render(env, job, people, payload, { accountId: seller, address });
       // The seller delivers the reading themselves: no letter, no bot.
       await updateJob(env.DB, job.id, { step: 'done', status: 'done' });

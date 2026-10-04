@@ -1,6 +1,6 @@
 import { saveBrand } from '../src/pro/brand';
 import { describe, expect, it } from 'vitest';
-import { getJob } from '../src/db';
+import { documentForOrder, getJob } from '../src/db';
 import { dropDocuments } from '../src/pipeline';
 import { armFailure, runJob, testEnv } from './env';
 import { FAKE_PLAN } from './fakes';
@@ -44,6 +44,32 @@ describe('pipeline', () => {
       .bind(orderId)
       .first<{ storage_key: string }>();
     expect(await testEnv.DOCS.get(doc?.storage_key ?? '')).not.toBeNull();
+  });
+
+  it("keeps a seller's previous PDF until the new one is rendered", async () => {
+    const { orderId, jobId, accountId } = await seedOrder({ pro: true, name: 'Замена' });
+    await runJob(jobId);
+    await saveBrand(testEnv, accountId as string, { name: 'Тест', contacts: [], accent: '#E7B75C', intro: '', outro: '', signature: '' });
+    const assemble = () => testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
+    await assemble();
+    expect(await runJob(jobId)).toBe(true);
+    const before = await documentForOrder(testEnv.DB, orderId);
+    expect(before).not.toBeNull();
+
+    await assemble();
+    await armFailure('Замена|pdf', 1);
+    await expect(runJob(jobId)).rejects.toThrow(/500/);
+    expect((await documentForOrder(testEnv.DB, orderId))?.id).toBe(before?.id);
+    expect(await count('SELECT COUNT(*) AS n FROM documents WHERE order_id = ?', orderId)).toBe(1);
+    expect(await testEnv.DOCS.get(before?.storage_key ?? '')).not.toBeNull();
+
+    expect(await runJob(jobId)).toBe(true);
+    const after = await documentForOrder(testEnv.DB, orderId);
+    expect(after?.id).not.toBe(before?.id);
+    expect(after?.storage_key).not.toBe(before?.storage_key);
+    expect(await count('SELECT COUNT(*) AS n FROM documents WHERE order_id = ?', orderId)).toBe(1);
+    expect(await testEnv.DOCS.get(after?.storage_key ?? '')).not.toBeNull();
+    expect(await testEnv.DOCS.get(before?.storage_key ?? '')).toBeNull();
   });
 
   it('keeps what was written when a section fails, for the retry to resume', async () => {
