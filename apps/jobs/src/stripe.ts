@@ -149,7 +149,10 @@ export interface StripeEvent {
       client_reference_id?: string | null;
       metadata?: Record<string, string>;
       amount_total?: number;
+      amount_subtotal?: number;
       currency?: string;
+      refunded?: boolean;
+      amount_refunded?: number;
     };
   };
 }

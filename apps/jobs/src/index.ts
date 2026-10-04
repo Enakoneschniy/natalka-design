@@ -56,6 +56,7 @@ import { createCheckoutSession, verifyWebhook } from './stripe';
 import { advance, type JobPayload, loadBirth } from './pipeline';
 import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
 import { handlePro } from './pro/routes';
+import { markFailed, markPaid, markRefunded } from './pro/purchases';
 
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
  * so we stop writing after four minutes and let the message come back for the rest. */
@@ -264,6 +265,39 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
 async function stripeWebhook(request: Request, env: Env): Promise<Response> {
   const event = await verifyWebhook(env, request);
   if (!event) return new Response('bad signature', { status: 400 });
+
+  // A seller's credit pack never reaches the B2C order code below.
+  const packMeta = event.data.object.metadata;
+  if (packMeta?.kind === 'pro_pack') {
+    const session = event.data.object;
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+      if (session.payment_status !== 'paid') return json({ received: true });
+      if (!session.payment_intent) console.error('pro pack paid without a payment_intent', packMeta.purchase_id);
+      const pack = await markPaid(env.DB, {
+        purchaseId: packMeta.purchase_id ?? '',
+        accountId: packMeta.account_id ?? '',
+        paymentIntent: session.payment_intent ?? null,
+        amountSubtotal: session.amount_subtotal ?? -1,
+        currency: session.currency ?? '',
+      });
+      return json({ received: true, pack });
+    }
+    if (event.type === 'checkout.session.async_payment_failed') {
+      await markFailed(env.DB, packMeta.purchase_id ?? '', packMeta.account_id ?? '');
+      return json({ received: true });
+    }
+  }
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object;
+    if (charge.refunded === true && charge.payment_intent) {
+      const refund = await markRefunded(env.DB, charge.payment_intent);
+      return json({ received: true, refund });
+    }
+    if (charge.refunded === false) {
+      console.warn('partial refund ignored', charge.id, charge.amount_refunded);
+      return json({ received: true, ignored: 'partial refund' });
+    }
+  }
 
   if (
     event.type === 'checkout.session.completed' ||
