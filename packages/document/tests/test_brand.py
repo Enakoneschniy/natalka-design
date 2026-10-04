@@ -193,3 +193,23 @@ def test_a_multi_picture_phone_jpeg_is_accepted_and_renders() -> None:
     brand = Brand(name="X", photo=base64.b64encode(raw).decode())
     texts, _ = _render(_doc(brand))
     assert texts
+
+
+@pytest.mark.parametrize("lang", ["ru", "uk"])
+def test_the_chart_page_is_titled_in_the_reading_s_form_of_address(facts: dict, lang: str) -> None:
+    def title(product: str, address: str) -> str:
+        doc = skeleton(
+            facts,
+            product=product,  # type: ignore[arg-type]
+            person=Person(name="Аня"),
+            facts_second=facts if product == "synastry" else None,
+            place="Київ",
+            lang=lang,
+            address=address,  # type: ignore[arg-type]
+        )
+        return doc.sections[0].title
+
+    assert title("natal", "ty") == "Твоя карта"
+    assert title("natal", "vy") == "Ваша карта"
+    # A synastry speaks to two people: the plural stays.
+    assert title("synastry", "ty") == "Ваша карта"

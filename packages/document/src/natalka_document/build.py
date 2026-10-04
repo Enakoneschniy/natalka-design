@@ -210,6 +210,8 @@ CHART_SECTION_TITLE = {
     "pl": "Twoja karta",
     "de": "Ihr Horoskop",
 }
+#: The chart page's title in the informal «ты» form, where it differs from the formal one above.
+CHART_SECTION_TITLE_TY = {"ru": "Твоя карта", "uk": "Твоя карта"}
 DISCLAIMER = {
     "uk": "Розбір має розважально-пізнавальний характер і не є медичною, психологічною чи фінансовою порадою.",
     "en": "This reading is for entertainment and self-reflection and is not medical, psychological or financial advice.",
@@ -282,9 +284,13 @@ def skeleton(
         ]
     else:
         chart_blocks = [WheelBlock(size="full"), PositionsTable(highlight="sun"), AspectGrid()]
+    # A synastry speaks to two people, so its chart page keeps the plural whatever the address.
+    chart_title = (
+        CHART_SECTION_TITLE_TY.get(lang) if address == "ty" and product != "synastry" else None
+    ) or _t(CHART_SECTION_TITLE, lang)
     chart_section = Section(
         id="chart",
-        title=_t(CHART_SECTION_TITLE, lang),
+        title=chart_title,
         eyebrow="",
         page_break_before=True,
         blocks=chart_blocks,
