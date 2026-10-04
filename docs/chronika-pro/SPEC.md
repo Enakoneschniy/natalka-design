@@ -159,3 +159,17 @@ jobs worker logs the link (dev only). The session cookie is `Secure`, so a local
 `localhost` host: browsers keep Secure cookies on `http://localhost` but drop them on any other
 plain-http host such as `astro:3000`, where sign-in would seem to succeed and land back on the
 sign-in page. Use `PRO_HOSTS=localhost:3000` and open `http://localhost:3000`.
+
+Phase 5b: to look at the cabinet without a jobs worker, start the fake one,
+`node apps/web/scripts/fake-pro-jobs.mjs` (port 8799, no dependencies, in-memory, reset on
+restart), and run `apps/web` with `NATALKA_JOBS_URL=http://localhost:8799 PRO_API_KEY=dev
+PRO_HOSTS=localhost:3000`. It accepts any `x-pro-key`, any bearer and any sign-in token, and it
+answers every `/v1/pro/*` call the cabinet makes with a seller holding 12 credits, three clients,
+readings in every state (one being written gains a section on each look), a brand and a few
+purchases. A bought pack's checkout link leads back to `/credits?purchase=<id>` and is paid
+seven seconds later; the invite code `START3` adds 3 credits. Sign in by asking for a link with
+any address and opening `/login/<anything>`. The fake exists only for visual checks: it never
+runs anywhere but a dev box. For screenshots from another container (the Playwright server),
+add that host to `PRO_HOSTS` (e.g. `astro:3005`) and set the `chp_session` cookie through the
+browser context instead of signing in, since a plain-http non-localhost host drops the Secure
+cookie.
