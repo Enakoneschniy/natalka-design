@@ -46,6 +46,12 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
   are written free on request (not counted in the 10 rewrites).
 - Money back only within 14 days of purchase and only if no credit of that pack was spent.
 - Variable cost per reading ≈ €0.2–0.6 (LLM), regeneration of a section ≈ €0.01–0.03.
+- If `STRIPE_SECRET_KEY` is not configured, pack purchases return 503 and are unavailable;
+  there are no free test purchases (unlike the B2C channel).
+- Refunds are initiated by the seller in the Stripe dashboard. The system marks the purchase
+  refunded, takes the credits back via the ledger (negative adjustment), and may result in a
+  negative balance. `refundable` eligibility (≤14 days, unpent credits) is shown as advisory,
+  not enforced.
 
 ## Access
 
@@ -134,3 +140,7 @@ document came back without the brand, so a skew fails the assembly instead of sh
 from this phase on the container refuses fields it does not know. New jobs worker routes
 for the brand (`/v1/pro/brand`, `/v1/pro/brand/logo|photo`) need no extra configuration. Images
 are limited to PNG/JPEG ≤ 1 MB and ≤ 4000 px per side.
+
+Phase 4: apply migration `0011_pro_purchases.sql` (a production write) before deploying
+the jobs worker. In the Stripe dashboard, add `charge.refunded` to webhook endpoint events.
+Stripe Tax requires `STRIPE_TAX=1`. Packs are priced inline in EUR minor units.
