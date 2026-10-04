@@ -16,6 +16,16 @@ import {
   normalizeEmail,
   type ProAccount,
 } from './auth';
+import {
+  brandImage,
+  deleteBrandImage,
+  getBrand,
+  type ImageKind,
+  parseBrand,
+  putBrandImage,
+  saveBrand,
+  setTone,
+} from './brand';
 import { createClient, getClient, listClients, parseClientBirth } from './clients';
 import { balance } from './credits';
 import { hasRedeemed, redeemInvite } from './invites';
@@ -97,6 +107,52 @@ async function demo(env: Env): Promise<Response> {
   if (!row || row.step !== 'done') return json({ error: 'not found' }, 404);
   const view = await readingView(env, row);
   return json({ product: view.product, sections: view.sections });
+}
+
+const BRAND_IMAGE = /^\/v1\/pro\/brand\/(logo|photo)$/;
+
+async function putBrand(request: Request, env: Env, account: ProAccount): Promise<Response> {
+  const body = await readBody(request);
+  const brand = parseBrand(body);
+  if (!brand) return json({ error: 'brand' }, 400);
+  const tone = body?.tone;
+  if (tone !== undefined && tone !== 'vy' && tone !== 'ty') return json({ error: 'tone' }, 400);
+  await saveBrand(env, account.id, brand);
+  if (tone !== undefined) await setTone(env, account.id, tone);
+  return json({ ok: true });
+}
+
+async function brandRoutes(request: Request, env: Env, url: URL, account: ProAccount): Promise<Response | null> {
+  const { method } = request;
+  const path = url.pathname;
+
+  if (path === '/v1/pro/brand') {
+    if (method === 'GET') {
+      return json({ brand: await getBrand(env, account.id), tone: account.tone });
+    }
+    if (method === 'PUT') return putBrand(request, env, account);
+  }
+  const image = path.match(BRAND_IMAGE);
+  if (image?.[1]) {
+    const kind = image[1] as ImageKind;
+    if (method === 'PUT') {
+      const result = await putBrandImage(env, account.id, kind, await request.arrayBuffer());
+      if (result === 'ok') return json({ ok: true });
+      return result === 'no_brand' ? json({ error: 'no_brand' }, 409) : json({ error: 'image' }, 400);
+    }
+    if (method === 'GET') {
+      const found = await brandImage(env, account.id, kind);
+      if (!found) return json({ error: 'not found' }, 404);
+      return new Response(found.body, {
+        headers: { 'content-type': found.contentType, 'cache-control': 'private, no-store' },
+      });
+    }
+    if (method === 'DELETE') {
+      await deleteBrandImage(env, account.id, kind);
+      return json({ ok: true });
+    }
+  }
+  return null;
 }
 
 const CLIENT = /^\/v1\/pro\/clients\/([^/]+)$/;
@@ -193,6 +249,8 @@ export async function handlePro(request: Request, env: Env, url: URL): Promise<R
     await endSessions(env.DB, account.id);
     return json({ ok: true });
   }
+  const branded = await brandRoutes(request, env, url, account);
+  if (branded) return branded;
   const handled = await readingRoutes(request, env, url, account);
   if (handled) return handled;
   return json({ error: 'not found' }, 404);
