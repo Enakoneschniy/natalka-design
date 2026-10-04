@@ -193,11 +193,16 @@ def _check_drawable(raw: bytes) -> None:
         with Image.open(io.BytesIO(raw)) as img:
             img.verify()
         with Image.open(io.BytesIO(raw)) as img:
-            fmt, (w, h) = img.format, img.size
+            w, h = img.size
+            if img.format not in {"PNG", "JPEG"}:
+                raise ValueError(message)
+            # Bounds before decoding, so a decompression bomb is refused without being inflated.
+            if max(w, h) > MAX_IMAGE_SIDE or w * h > MAX_IMAGE_PIXELS:
+                raise ValueError(message)
+            # verify() does not decode JPEG data; only a full load notices a truncated file.
+            img.load()
     except Exception as exc:  # Pillow raises many types for broken or hostile input
         raise ValueError(message) from exc
-    if fmt not in {"PNG", "JPEG"} or max(w, h) > MAX_IMAGE_SIDE or w * h > MAX_IMAGE_PIXELS:
-        raise ValueError(message)
 
 
 class Brand(_Strict):

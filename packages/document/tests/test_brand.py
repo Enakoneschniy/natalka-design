@@ -1,5 +1,6 @@
 import base64
 import io
+import random
 import struct
 import zlib
 from pathlib import Path
@@ -8,6 +9,7 @@ import pypdfium2 as pdfium
 import pytest
 from natalka_document.render import render_pdf
 from natalka_document.schema import Brand, Document
+from PIL import Image
 from pydantic import ValidationError
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "natal-uk.json"
@@ -146,3 +148,15 @@ def test_an_outro_alone_adds_no_page_from_the_author() -> None:
     assert all("ВІД АВТОРА" not in t.upper() for t in texts)
     assert "ЗМІСТ" in texts[1]
     assert any("Спасибо, что доверились" in t for t in texts[-3:])
+
+
+@pytest.mark.parametrize("fmt", ["JPEG", "PNG"])
+def test_an_image_that_stops_halfway_is_refused(fmt: str) -> None:
+    # Noise, so the pixel data dwarfs the header and the cut lands inside the image data.
+    noise = bytes(random.Random(7).randrange(256) for _ in range(256 * 256 * 3))
+    buf = io.BytesIO()
+    Image.frombytes("RGB", (256, 256), noise).save(buf, format=fmt)
+    whole = buf.getvalue()
+    Brand(name="X", photo=base64.b64encode(whole).decode())  # the whole image is fine
+    with pytest.raises(ValidationError):
+        Brand(name="X", photo=base64.b64encode(whole[: len(whole) // 2]).decode())
