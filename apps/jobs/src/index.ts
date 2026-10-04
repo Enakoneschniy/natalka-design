@@ -567,7 +567,7 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // The site asks for the code behind its Telegram link; the token is the authentication.
@@ -598,7 +598,7 @@ export default {
     const file = url.pathname.match(/^\/d\/(.+)$/);
     if (file?.[1]) return download(env, file[1]);
 
-    const pro = await handlePro(request, env, url);
+    const pro = await handlePro(request, env, url, ctx);
     if (pro) return pro;
 
     return new Response('not found', { status: 404 });

@@ -1,5 +1,5 @@
 import { SELF } from 'cloudflare:test';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { consumeLoginToken, createLoginToken } from '../src/pro/auth';
 import { signIn, testEnv } from './env';
 
@@ -26,16 +26,34 @@ const tokens = async (email: string): Promise<TokenRow[]> =>
       .all<TokenRow>()
   ).results;
 
-/** The raw token is only in the letter, so tests swap the stored hash for one they know. */
-async function knownToken(email: string): Promise<string> {
-  const raw = `known-${email}`;
-  const hash = [
-    ...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw))),
-  ]
+const sha256 = async (raw: string): Promise<string> =>
+  [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)))]
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-  await testEnv.DB.prepare('UPDATE pro_login_tokens SET token_hash = ? WHERE email = ?').bind(hash, email).run();
-  return raw;
+
+/** With no mail key the worker logs the link it would have sent; the spy keeps those out of the
+ * test output and hands the real token to the test. */
+let logged: string[] = [];
+beforeEach(() => {
+  logged = [];
+  vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+    logged.push(args.map(String).join(' '));
+  });
+});
+afterEach(() => vi.restoreAllMocks());
+
+/** The token in the last link the worker logged, checked to be a /login/ link whose hash is stored. */
+async function lastLinkToken(email: string): Promise<string> {
+  const link = logged.at(-1)?.match(/(https?:\/\/\S+)$/)?.[1];
+  expect(link).toBeTruthy();
+  const match = (link as string).match(/\/login\/([\w-]+)$/);
+  expect(match).toBeTruthy();
+  const token = (match as RegExpMatchArray)[1] as string;
+  const row = await testEnv.DB.prepare('SELECT 1 AS yes FROM pro_login_tokens WHERE email = ? AND token_hash = ?')
+    .bind(email, await sha256(token))
+    .first();
+  expect(row).toBeTruthy();
+  return token;
 }
 
 const accounts = async (email: string) =>
@@ -62,6 +80,8 @@ describe('POST /v1/pro/login', () => {
     const after = await tokens('known@signup.test');
     expect(after).toHaveLength(before + 1);
     expect(after.at(-1)?.purpose).toBe('login');
+    const token = await lastLinkToken('known@signup.test');
+    expect((await call('/v1/pro/session', { token })).status).toBe(200);
   });
 });
 
@@ -83,7 +103,7 @@ describe('POST /v1/pro/signup', () => {
     ]);
     expect(await accounts('new@signup.test')).toHaveLength(0);
 
-    const token = await knownToken('new@signup.test');
+    const token = await lastLinkToken('new@signup.test');
     const started = await call('/v1/pro/session', { token });
     expect(started.status).toBe(200);
     const { session } = (await started.json()) as { session: string };
@@ -107,15 +127,8 @@ describe('POST /v1/pro/signup', () => {
     expect(rows).toHaveLength(before + 1);
     expect(rows.at(-1)).toEqual({ purpose: 'login', signup_name: null, signup_invite: null });
 
-    await testEnv.DB.prepare("UPDATE pro_login_tokens SET token_hash = ? WHERE email = ? AND purpose = 'login' AND used_at IS NULL")
-      .bind(
-        [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('old-token')))]
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join(''),
-        'old@signup.test',
-      )
-      .run();
-    expect((await call('/v1/pro/session', { token: 'old-token' })).status).toBe(200);
+    const token = await lastLinkToken('old@signup.test');
+    expect((await call('/v1/pro/session', { token })).status).toBe(200);
     const after = await accounts('old@signup.test');
     expect(after).toHaveLength(1);
     expect(after[0]?.name).toBe('Старое');
@@ -140,7 +153,7 @@ describe('POST /v1/pro/signup', () => {
 
   it('still creates the account when the invite code is invalid', async () => {
     await call('/v1/pro/signup', { email: 'badcode@signup.test', name: 'Ира', invite: 'NOSUCH', terms: true });
-    const token = await knownToken('badcode@signup.test');
+    const token = await lastLinkToken('badcode@signup.test');
     const started = await call('/v1/pro/session', { token });
     expect(started.status).toBe(200);
     const { session } = (await started.json()) as { session: string };
@@ -150,11 +163,29 @@ describe('POST /v1/pro/signup', () => {
 
   it('spends a sign-up token once', async () => {
     await call('/v1/pro/signup', { email: 'twice@signup.test', name: 'Оля', terms: true });
-    const token = await knownToken('twice@signup.test');
+    const token = await lastLinkToken('twice@signup.test');
     expect((await call('/v1/pro/session', { token })).status).toBe(200);
     const again = await call('/v1/pro/session', { token });
     expect(again.status).toBe(400);
     expect(await again.json()).toEqual({ error: 'link expired' });
+  });
+});
+
+describe('the answer and the throttle', () => {
+  it('shares one throttle between sign-up and login, and still answers 202', async () => {
+    const email = 'busy@signup.test';
+    await signIn(email); // registers the address; its token is the 1st this hour
+    const body = { email, name: 'Катя', terms: true };
+    for (let i = 0; i < 2; i++) expect((await call('/v1/pro/signup', body)).status).toBe(202);
+    for (let i = 0; i < 2; i++) expect((await call('/v1/pro/login', { email })).status).toBe(202);
+    expect(await tokens(email)).toHaveLength(5);
+
+    logged = [];
+    const sixth = await call('/v1/pro/signup', body);
+    expect(sixth.status).toBe(202);
+    expect(await sixth.json()).toEqual({ ok: true });
+    expect(await tokens(email)).toHaveLength(5);
+    expect(logged).toHaveLength(0);
   });
 });
 

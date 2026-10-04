@@ -49,55 +49,51 @@ const readBody = async (request: Request): Promise<Record<string, unknown> | nul
   }
 };
 
-/** Mails a sign-in link to a registered address. False when the mail provider failed. */
-async function mailLoginLink(env: Env, email: string): Promise<boolean> {
+/** Lets a letter leave after the answer: the response must not take longer for an address that
+ * gets one. Without a context (direct callers, tests) the send is awaited, so it is deterministic.
+ * A failed send is logged and never shown: it would tell whether a letter was attempted. */
+async function dispatch(ctx: ExecutionContext | undefined, send: Promise<unknown>): Promise<void> {
+  const logged = send.catch((error) => console.error('pro letter failed', error));
+  if (ctx) ctx.waitUntil(logged);
+  else await logged;
+}
+
+/** Stores a sign-in token for a registered address and sends the letter. */
+async function mailLoginLink(env: Env, ctx: ExecutionContext | undefined, email: string): Promise<void> {
   const token = await createLoginToken(env.DB, email);
-  if (!token) return true;
-  try {
-    await sendLoginLink(env, email, `${env.PRO_SITE_URL}/login/${token}`);
-    return true;
-  } catch {
-    return false;
-  }
+  if (token) await dispatch(ctx, sendLoginLink(env, email, `${env.PRO_SITE_URL}/login/${token}`));
 }
 
 /** Always 202 for a well-formed address: the answer must not tell whether an account exists.
  * A link goes out only when there is an account to sign in to. */
-async function requestLogin(request: Request, env: Env): Promise<Response> {
+async function requestLogin(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
   const email = normalizeEmail((await readBody(request))?.email);
   if (!email) return json({ error: 'email' }, 400);
-  if ((await accountExists(env.DB, email)) && !(await mailLoginLink(env, email))) {
-    return json({ error: 'mail unavailable' }, 503);
-  }
+  if (await accountExists(env.DB, email)) await mailLoginLink(env, ctx, email);
   return json({ ok: true }, 202);
 }
 
+const MAX_INVITE = 64;
+
 /** Registers a seller: a confirm letter for a new address, a sign-in letter for a registered one.
  * Either way the answer is the same 202. */
-async function requestSignup(request: Request, env: Env): Promise<Response> {
+async function requestSignup(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
   const body = await readBody(request);
   const email = normalizeEmail(body?.email);
   if (!email) return json({ error: 'email' }, 400);
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
   if (name.length < 1 || name.length > 60) return json({ error: 'name' }, 400);
   if (body?.terms !== true) return json({ error: 'terms' }, 400);
-  const invite = typeof body.invite === 'string' ? body.invite : null;
+  const code = typeof body.invite === 'string' ? body.invite.trim() : '';
+  const invite = code && code.length <= MAX_INVITE ? code : null;
 
-  let sent: boolean;
   if (await accountExists(env.DB, email)) {
-    sent = await mailLoginLink(env, email);
+    await mailLoginLink(env, ctx, email);
   } else {
     const token = await createSignupToken(env.DB, email, { name, invite });
-    sent = true;
-    if (token) {
-      try {
-        await sendSignupLink(env, email, `${env.PRO_SITE_URL}/login/${token}`);
-      } catch {
-        sent = false;
-      }
-    }
+    if (token) await dispatch(ctx, sendSignupLink(env, email, `${env.PRO_SITE_URL}/login/${token}`));
   }
-  return sent ? json({ ok: true }, 202) : json({ error: 'mail unavailable' }, 503);
+  return json({ ok: true }, 202);
 }
 
 async function startSession(request: Request, env: Env): Promise<Response> {
@@ -312,14 +308,19 @@ function hasProKey(request: Request, env: Env): boolean {
   return a.byteLength === b.byteLength && crypto.subtle.timingSafeEqual(a, b);
 }
 
-export async function handlePro(request: Request, env: Env, url: URL): Promise<Response | null> {
+export async function handlePro(
+  request: Request,
+  env: Env,
+  url: URL,
+  ctx?: ExecutionContext,
+): Promise<Response | null> {
   if (!url.pathname.startsWith('/v1/pro/')) return null;
   if (!hasProKey(request, env)) return json({ error: 'unauthorized' }, 401);
   const route = `${request.method} ${url.pathname}`;
 
   // Only POST spends a sign-in token: mail scanners open links with GET.
-  if (route === 'POST /v1/pro/login') return requestLogin(request, env);
-  if (route === 'POST /v1/pro/signup') return requestSignup(request, env);
+  if (route === 'POST /v1/pro/login') return requestLogin(request, env, ctx);
+  if (route === 'POST /v1/pro/signup') return requestSignup(request, env, ctx);
   if (route === 'POST /v1/pro/session') return startSession(request, env);
 
   const account = await authenticate(request, env);
