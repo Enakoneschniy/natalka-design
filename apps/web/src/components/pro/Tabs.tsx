@@ -13,8 +13,11 @@ const TABS = [
 /** The public path of the page, whether Next reports the address bar or the internal `/pro` tree. */
 const publicPath = (pathname: string) => pathname.replace(/^\/pro(?=\/|$)/, '') || '/';
 
+/** A reading, a new order and the sample all belong to the Отчёты tab. */
 const isActive = (path: string, href: string) =>
-  href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
+  href === '/'
+    ? path === '/' || path === '/example' || path.startsWith('/readings/')
+    : path === href || path.startsWith(`${href}/`);
 
 export function Tabs() {
   const path = publicPath(usePathname() ?? '/');

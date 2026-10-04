@@ -712,3 +712,233 @@ fieldset.field {
   border-color: rgba(255, 138, 120, 0.45);
   background: var(--danger-soft);
 }
+
+/* ---- readings: the order form, a reading's sections and its dock ---- */
+
+.input.select {
+  padding: 6px 8px;
+  appearance: auto;
+}
+
+.item .input.select {
+  border-color: transparent;
+  background: transparent;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+textarea.input {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.45;
+}
+
+.strong {
+  font-weight: 500;
+}
+
+.center {
+  text-align: center;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.prod {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.prod.wide {
+  grid-column: span 2;
+}
+
+.prod b {
+  font: 500 14px/1.25 var(--font-display);
+}
+
+.prod span {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.prod[aria-pressed="true"] {
+  border-color: rgba(231, 183, 92, 0.6);
+  background: var(--accent-soft);
+}
+
+.head {
+  align-items: flex-start;
+}
+
+.head h1 {
+  font-size: 20px;
+}
+
+.head .pill {
+  margin-top: 4px;
+}
+
+.sections {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.sec {
+  display: grid;
+  gap: 7px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.sec .h {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.pro .sec h2 {
+  flex: 1;
+  font: 500 16px/1.25 var(--font-display);
+}
+
+.sec .n {
+  font: 500 10.5px var(--font-mono);
+  color: var(--accent);
+  min-width: 1.5em;
+}
+
+.sec.missing {
+  border: 1px dashed rgba(255, 138, 120, 0.45);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--danger-soft);
+}
+
+.sec.missing .n {
+  color: var(--danger);
+}
+
+.sec .note {
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+
+.text {
+  display: grid;
+  gap: 10px;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 68ch;
+}
+
+.text p {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.text b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.text.preview {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.text.preview p {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sec .acts {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.spin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--info);
+  font-size: 12.5px;
+}
+
+.spin::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--info-soft);
+  border-top-color: var(--info);
+  animation: pro-spin 0.9s linear infinite;
+}
+
+@keyframes pro-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The dock stays in reach above the phone's tab bar while the sections scroll under it. */
+.dock {
+  position: sticky;
+  bottom: calc(var(--tabs-h) + 22px + env(safe-area-inset-bottom));
+  z-index: 5;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: rgba(11, 16, 39, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.dock:empty {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .dock {
+    bottom: 16px;
+  }
+}
+
+/* The report dialog: a sheet over the reading. */
+dialog.sheet {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-card);
+  background: var(--surface-solid);
+  color: var(--text);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+dialog.sheet::backdrop {
+  background: rgba(6, 9, 26, 0.7);
+}
