@@ -511,6 +511,7 @@ git commit -m "Build a seller's document with their brand and their form of addr
 
 **Interfaces:**
 - `SectionRequest.address: Literal["vy", "ty"] = "vy"`. It is used in `system_prompt(...)`, in both `check(...)` calls, and in both `title(spec, req.lang, req.address)` calls.
+- Both `check(...)` calls in `/v1/section` also pass `pair=(req.product == "synastry")` (Task 1 added `check(..., pair)`: in «ты» mode a synastry section may address the pair as plural «вы»).
 - `GET /v1/sections?address=vy|ty` (default `vy`) is used for titles.
 - `SkeletonRequest.address: Literal["vy", "ty"] = "vy"` and `SkeletonRequest.brand: Brand | None = None`, passed to `build_skeleton`. When `brand` is set, `order_ref` is ignored (pass `None`) so it cannot reach the cover.
 - `/v1/document`: `content-disposition: attachment; filename="reading.pdf"`.
