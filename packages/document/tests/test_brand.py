@@ -178,3 +178,18 @@ def test_skeleton_carries_the_brand_and_the_address(facts: dict) -> None:
     plain = skeleton(facts, product="forecast", person=Person(name="Аня"), place="Київ", lang="ru")
     assert plain.brand is None
     assert plain.cover.subtitle == "по транзитам вашей карты"
+
+
+def test_a_multi_picture_phone_jpeg_is_accepted_and_renders() -> None:
+    # Phones write MPF JPEGs (HDR gain maps); Pillow names them "MPO", and the upload takes them.
+    buf = io.BytesIO()
+    first = Image.new("RGB", (32, 24), (200, 120, 60))
+    second = Image.new("RGB", (32, 24), (20, 40, 60))
+    first.save(buf, format="MPO", save_all=True, append_images=[second])
+    raw = buf.getvalue()
+    assert raw.startswith(b"\xff\xd8\xff")
+    with Image.open(io.BytesIO(raw)) as img:
+        assert img.format == "MPO"
+    brand = Brand(name="X", photo=base64.b64encode(raw).decode())
+    texts, _ = _render(_doc(brand))
+    assert texts

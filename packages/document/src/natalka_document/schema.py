@@ -194,7 +194,8 @@ def _check_drawable(raw: bytes) -> None:
             img.verify()
         with Image.open(io.BytesIO(raw)) as img:
             w, h = img.size
-            if img.format not in {"PNG", "JPEG"}:
+            # Phones write multi-picture JPEGs (MPF, HDR gain maps), which Pillow names "MPO".
+            if img.format not in {"PNG", "JPEG", "MPO"}:
                 raise ValueError(message)
             # Bounds before decoding, so a decompression bomb is refused without being inflated.
             if max(w, h) > MAX_IMAGE_SIDE or w * h > MAX_IMAGE_PIXELS:
