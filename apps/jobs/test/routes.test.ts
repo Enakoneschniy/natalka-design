@@ -1,7 +1,6 @@
 import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { createLoginToken } from '../src/pro/auth';
-import { testEnv } from './env';
+import { testEnv, tokenFor } from './env';
 
 const call = (method: string, path: string, body?: unknown, session?: string, key: string | null = 'test-pro-key') =>
   SELF.fetch(`https://jobs.test${path}`, {
@@ -15,7 +14,7 @@ const call = (method: string, path: string, body?: unknown, session?: string, ke
   });
 
 async function sessionFor(email: string): Promise<string> {
-  const token = await createLoginToken(testEnv.DB, email);
+  const token = await tokenFor(email);
   const response = await call('POST', '/v1/pro/session', { token });
   expect(response.status).toBe(200);
   return ((await response.json()) as { session: string }).session;
@@ -37,7 +36,7 @@ describe('/v1/pro', () => {
   });
 
   it('never spends a sign-in token on a GET', async () => {
-    const token = (await createLoginToken(testEnv.DB, 'scanner@routes.test')) as string;
+    const token = (await tokenFor('scanner@routes.test')) as string;
     const scanned = await SELF.fetch(`https://jobs.test/v1/pro/session?token=${token}`, {
       headers: { 'x-pro-key': 'test-pro-key' },
     });
@@ -46,7 +45,7 @@ describe('/v1/pro', () => {
   });
 
   it('refuses a spent token', async () => {
-    const token = await createLoginToken(testEnv.DB, 'spent@routes.test');
+    const token = await tokenFor('spent@routes.test');
     await call('POST', '/v1/pro/session', { token });
     const again = await call('POST', '/v1/pro/session', { token });
     expect(again.status).toBe(400);
@@ -59,6 +58,7 @@ describe('/v1/pro', () => {
     expect(me.status).toBe(200);
     expect(await me.json()).toEqual({
       email: 'me@routes.test',
+      name: 'Test',
       tone: 'vy',
       balance: 0,
       invite_redeemed: false,

@@ -1,10 +1,9 @@
 import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { createLoginToken } from '../src/pro/auth';
 import { grant } from '../src/pro/credits';
 import { handlePro } from '../src/pro/routes';
 import { ANNA } from './people';
-import { runJob, testEnv } from './env';
+import { runJob, testEnv, tokenFor } from './env';
 
 const call = (method: string, path: string, session: string, body?: unknown) =>
   SELF.fetch(`https://jobs.test${path}`, {
@@ -18,7 +17,7 @@ const call = (method: string, path: string, session: string, body?: unknown) =>
   });
 
 async function sellerSession(name: string, credits = 3): Promise<{ session: string; accountId: string }> {
-  const token = await createLoginToken(testEnv.DB, `${name}@routes2.test`);
+  const token = await tokenFor(`${name}@routes2.test`);
   const response = await SELF.fetch('https://jobs.test/v1/pro/session', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-pro-key': 'test-pro-key' },

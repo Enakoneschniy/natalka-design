@@ -2,14 +2,29 @@ import { env } from 'cloudflare:workers';
 import { getJob } from '../src/db';
 import { advance } from '../src/pipeline';
 import type { Env } from '../src/env';
-import { consumeLoginToken, createLoginToken, issueSession, type ProAccount } from '../src/pro/auth';
+import {
+  accountExists,
+  consumeLoginToken,
+  createLoginToken,
+  createSignupToken,
+  issueSession,
+  type ProAccount,
+} from '../src/pro/auth';
 
 /** The worker's bindings as the tests see them. */
 export const testEnv = env as unknown as Env;
 
+/** A token that signs `email` in: a login token for a registered address, a sign-up token (which
+ * creates the account) for a new one. */
+export async function tokenFor(email: string): Promise<string | null> {
+  return (await accountExists(testEnv.DB, email))
+    ? createLoginToken(testEnv.DB, email)
+    : createSignupToken(testEnv.DB, email, { name: 'Test' });
+}
+
 /** A signed-in seller with a fresh session, for tests that need one. */
 export async function signIn(email: string): Promise<{ account: ProAccount; session: string }> {
-  const raw = await createLoginToken(testEnv.DB, email);
+  const raw = await tokenFor(email);
   if (!raw) throw new Error('throttled');
   const account = await consumeLoginToken(testEnv.DB, raw);
   if (!account) throw new Error('sign-in failed');

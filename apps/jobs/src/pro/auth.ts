@@ -9,6 +9,7 @@
 import { sha256Hex, signToken, verifyToken } from '../crypto';
 import { now } from '../db';
 import type { Env } from '../env';
+import { redeemInvite } from './invites';
 
 export const LOGIN_TTL_SECONDS = 15 * 60;
 export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -18,12 +19,13 @@ export const LOGIN_REQUESTS_PER_HOUR = 5;
 export interface ProAccount {
   id: string;
   email: string;
+  name: string | null;
   tone: 'ty' | 'vy';
   session_epoch: number;
   created_at: string;
 }
 
-const ACCOUNT_COLUMNS = 'id, email, tone, session_epoch, created_at';
+const ACCOUNT_COLUMNS = 'id, email, name, tone, session_epoch, created_at';
 
 export function normalizeEmail(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
@@ -44,8 +46,20 @@ function randomToken(): string {
     .replace(/=+$/, '');
 }
 
-/** A single-use sign-in token for an address, or null when it has asked too often this hour. */
-export async function createLoginToken(db: D1Database, email: string): Promise<string | null> {
+export async function accountExists(db: D1Database, email: string): Promise<boolean> {
+  const row = await db.prepare('SELECT 1 AS yes FROM pro_accounts WHERE email = ?').bind(email).first();
+  return Boolean(row);
+}
+
+interface TokenInput {
+  purpose: 'login' | 'signup';
+  name: string | null;
+  invite: string | null;
+}
+
+/** Stores a single-use token for an address, or returns null when it has asked too often this
+ * hour. The throttle counts login and sign-up tokens together. */
+async function createToken(db: D1Database, email: string, input: TokenInput): Promise<string | null> {
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const recent = await db
     .prepare('SELECT COUNT(*) AS n FROM pro_login_tokens WHERE email = ? AND created_at > ?')
@@ -56,19 +70,40 @@ export async function createLoginToken(db: D1Database, email: string): Promise<s
   const raw = randomToken();
   await db
     .prepare(
-      'INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)',
+      `INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at, purpose, signup_name, signup_invite)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       await hashToken(raw),
       email,
       new Date(Date.now() + LOGIN_TTL_SECONDS * 1000).toISOString(),
       now(),
+      input.purpose,
+      input.name,
+      input.invite,
     )
     .run();
   return raw;
 }
 
-/** Spends a sign-in token and returns the account behind it, creating it on first sign-in.
+/** A single-use sign-in token for an address, or null when it has asked too often this hour. */
+export const createLoginToken = (db: D1Database, email: string): Promise<string | null> =>
+  createToken(db, email, { purpose: 'login', name: null, invite: null });
+
+/** A single-use token that, once spent, creates the account for an address. */
+export const createSignupToken = (
+  db: D1Database,
+  email: string,
+  { name, invite }: { name: string | null; invite?: string | null },
+): Promise<string | null> =>
+  createToken(db, email, {
+    purpose: 'signup',
+    name,
+    invite: invite?.trim().toUpperCase() || null,
+  });
+
+/** Spends a token and returns the account behind it. A sign-up token creates the account (an
+ * existing one is left as it is); a login token needs the account to exist already.
  * The UPDATE is the whole check: of two requests racing with one token, only one gets a row. */
 export async function consumeLoginToken(db: D1Database, raw: string): Promise<ProAccount | null> {
   if (!raw) return null;
@@ -77,16 +112,29 @@ export async function consumeLoginToken(db: D1Database, raw: string): Promise<Pr
     .prepare(
       `UPDATE pro_login_tokens SET used_at = ?
        WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?
-       RETURNING email`,
+       RETURNING email, purpose, signup_name, signup_invite`,
     )
     .bind(ts, await hashToken(raw), ts)
-    .first<{ email: string }>();
+    .first<{ email: string; purpose: 'login' | 'signup'; signup_name: string | null; signup_invite: string | null }>();
   if (!used) return null;
 
-  await db
-    .prepare('INSERT INTO pro_accounts (id, email, created_at) VALUES (?, ?, ?) ON CONFLICT (email) DO NOTHING')
-    .bind(crypto.randomUUID(), used.email, ts)
-    .run();
+  if (used.purpose === 'signup') {
+    const created = await db
+      .prepare(
+        `INSERT INTO pro_accounts (id, email, name, terms_accepted_at, created_at) VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT (email) DO NOTHING RETURNING id`,
+      )
+      .bind(crypto.randomUUID(), used.email, used.signup_name, ts, ts)
+      .first<{ id: string }>();
+    if (created && used.signup_invite) {
+      // A code that does not work must not stop the sign-up: the seller can enter one later.
+      try {
+        await redeemInvite(db, created.id, used.signup_invite);
+      } catch (error) {
+        console.error('sign-up invite failed', created.id, error);
+      }
+    }
+  }
   return db
     .prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE email = ?`)
     .bind(used.email)

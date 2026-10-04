@@ -1,8 +1,7 @@
 import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { createLoginToken } from '../src/pro/auth';
 import { brandForDocument, parseBrand } from '../src/pro/brand';
-import { testEnv } from './env';
+import { testEnv, tokenFor } from './env';
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const u32 = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
@@ -18,7 +17,7 @@ const PNG = png(8, 8);
 const JPEG = jpeg(8, 8);
 
 async function session(name: string) {
-  const token = await createLoginToken(testEnv.DB, `${name}@brand.test`);
+  const token = await tokenFor(`${name}@brand.test`);
   const r = await SELF.fetch('https://jobs.test/v1/pro/session', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-pro-key': 'test-pro-key' },

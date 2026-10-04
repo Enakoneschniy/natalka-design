@@ -6,11 +6,13 @@
 
 import type { Env } from '../env';
 import { contentDisposition } from '../filename';
-import { sendLoginLink } from '../mail';
+import { sendLoginLink, sendSignupLink } from '../mail';
 import {
+  accountExists,
   authenticate,
   consumeLoginToken,
   createLoginToken,
+  createSignupToken,
   endSessions,
   issueSession,
   normalizeEmail,
@@ -47,19 +49,55 @@ const readBody = async (request: Request): Promise<Record<string, unknown> | nul
   }
 };
 
-/** Always 202 for a well-formed address: the answer must not tell whether an account exists. */
+/** Mails a sign-in link to a registered address. False when the mail provider failed. */
+async function mailLoginLink(env: Env, email: string): Promise<boolean> {
+  const token = await createLoginToken(env.DB, email);
+  if (!token) return true;
+  try {
+    await sendLoginLink(env, email, `${env.PRO_SITE_URL}/login/${token}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Always 202 for a well-formed address: the answer must not tell whether an account exists.
+ * A link goes out only when there is an account to sign in to. */
 async function requestLogin(request: Request, env: Env): Promise<Response> {
   const email = normalizeEmail((await readBody(request))?.email);
   if (!email) return json({ error: 'email' }, 400);
-  const token = await createLoginToken(env.DB, email);
-  if (token) {
-    try {
-      await sendLoginLink(env, email, `${env.PRO_SITE_URL}/login/${token}`);
-    } catch {
-      return json({ error: 'mail unavailable' }, 503);
-    }
+  if ((await accountExists(env.DB, email)) && !(await mailLoginLink(env, email))) {
+    return json({ error: 'mail unavailable' }, 503);
   }
   return json({ ok: true }, 202);
+}
+
+/** Registers a seller: a confirm letter for a new address, a sign-in letter for a registered one.
+ * Either way the answer is the same 202. */
+async function requestSignup(request: Request, env: Env): Promise<Response> {
+  const body = await readBody(request);
+  const email = normalizeEmail(body?.email);
+  if (!email) return json({ error: 'email' }, 400);
+  const name = typeof body?.name === 'string' ? body.name.trim() : '';
+  if (name.length < 1 || name.length > 60) return json({ error: 'name' }, 400);
+  if (body?.terms !== true) return json({ error: 'terms' }, 400);
+  const invite = typeof body.invite === 'string' ? body.invite : null;
+
+  let sent: boolean;
+  if (await accountExists(env.DB, email)) {
+    sent = await mailLoginLink(env, email);
+  } else {
+    const token = await createSignupToken(env.DB, email, { name, invite });
+    sent = true;
+    if (token) {
+      try {
+        await sendSignupLink(env, email, `${env.PRO_SITE_URL}/login/${token}`);
+      } catch {
+        sent = false;
+      }
+    }
+  }
+  return sent ? json({ ok: true }, 202) : json({ error: 'mail unavailable' }, 503);
 }
 
 async function startSession(request: Request, env: Env): Promise<Response> {
@@ -75,6 +113,7 @@ async function startSession(request: Request, env: Env): Promise<Response> {
 async function me(env: Env, account: ProAccount): Promise<Response> {
   return json({
     email: account.email,
+    name: account.name,
     tone: account.tone,
     balance: await balance(env.DB, account.id),
     invite_redeemed: await hasRedeemed(env.DB, account.id),
@@ -280,6 +319,7 @@ export async function handlePro(request: Request, env: Env, url: URL): Promise<R
 
   // Only POST spends a sign-in token: mail scanners open links with GET.
   if (route === 'POST /v1/pro/login') return requestLogin(request, env);
+  if (route === 'POST /v1/pro/signup') return requestSignup(request, env);
   if (route === 'POST /v1/pro/session') return startSession(request, env);
 
   const account = await authenticate(request, env);

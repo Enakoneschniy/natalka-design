@@ -157,6 +157,32 @@ export async function sendLoginLink(env: Env, to: string, link: string): Promise
   });
 }
 
+/** The letter that confirms a new seller's address. */
+const SIGNUP_COPY: Copy = {
+  subject: 'Подтвердите почту для Chronika Pro',
+  ready: 'Чтобы открыть кабинет, подтвердите адрес по ссылке ниже. Ссылка действует 15 минут.',
+  open: 'Подтвердить и войти',
+  keeps: 'Если вы не регистрировались, просто удалите это письмо',
+  sign: 'Chronika Pro · pro.chronika.me',
+  window: '',
+  manage: '',
+  unsubscribe: '',
+};
+
+export async function sendSignupLink(env: Env, to: string, link: string): Promise<Sent> {
+  if (!env.RESEND_API_KEY) {
+    // Local development only: production always has the key, and without it nobody could register.
+    console.log('pro sign-up link (no mail provider configured):', link);
+    return { status: 'skipped', providerId: null };
+  }
+  return deliver(env, {
+    to,
+    subject: SIGNUP_COPY.subject,
+    html: html(SIGNUP_COPY, link),
+    text: `${SIGNUP_COPY.ready}\n\n${link}\n\n${SIGNUP_COPY.keeps}\n\n${SIGNUP_COPY.sign}`,
+  });
+}
+
 export interface HoroscopeLetter {
   title: string;
   text: string;

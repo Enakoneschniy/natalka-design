@@ -4,6 +4,7 @@ import {
   authenticate,
   consumeLoginToken,
   createLoginToken,
+  createSignupToken,
   endSessions,
   issueSession,
   LOGIN_REQUESTS_PER_HOUR,
@@ -27,8 +28,8 @@ describe('normalizeEmail', () => {
 });
 
 describe('login tokens', () => {
-  it('creates the account on first use and works only once', async () => {
-    const raw = await createLoginToken(testEnv.DB, 'first@auth.test');
+  it('creates the account on first use of a sign-up token and works only once', async () => {
+    const raw = await createSignupToken(testEnv.DB, 'first@auth.test', { name: 'Первая' });
     expect(raw).toBeTruthy();
     const account = await consumeLoginToken(testEnv.DB, raw as string);
     expect(account?.email).toBe('first@auth.test');
@@ -43,7 +44,7 @@ describe('login tokens', () => {
   });
 
   it('refuses an expired token', async () => {
-    const raw = (await createLoginToken(testEnv.DB, 'late@auth.test')) as string;
+    const raw = (await createSignupToken(testEnv.DB, 'late@auth.test', { name: 'Поздняя' })) as string;
     await testEnv.DB.prepare(
       "UPDATE pro_login_tokens SET expires_at = '2000-01-01T00:00:00.000Z' WHERE email = ?",
     )
