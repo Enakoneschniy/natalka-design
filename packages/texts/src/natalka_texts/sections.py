@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .address import Address
+
 
 @dataclass(frozen=True, slots=True)
 class SectionSpec:
@@ -26,6 +28,8 @@ class SectionSpec:
     #: chapters about the person may not, and the editor enforces that only where it applies.
     impersonal_ok: bool = False
     titles: dict[str, str] = field(default_factory=dict)
+    #: Titles for the informal «ты» form, where they differ from `titles`.
+    titles_ty: dict[str, str] = field(default_factory=dict)
 
 
 def _t(uk: str, ru: str, en: str) -> dict[str, str]:
@@ -203,6 +207,7 @@ NATAL: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         titles=_t("Як ви працюєте", "Как вы работаете", "How you work"),
+        titles_ty={"ru": "Как ты работаешь", "uk": "Як ти працюєш"},
     ),
     SectionSpec(
         id="work.money",
@@ -380,7 +385,9 @@ def specs(product: str, *, unknown_time: bool) -> tuple[SectionSpec, ...]:
     return chosen
 
 
-def title(spec: SectionSpec, lang: str) -> str:
+def title(spec: SectionSpec, lang: str, address: Address = "vy") -> str:
+    if address == "ty" and lang in spec.titles_ty:
+        return spec.titles_ty[lang]
     return spec.titles.get(lang) or spec.titles.get("en") or spec.id
 
 
@@ -395,6 +402,7 @@ FORECAST: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         titles=_t("Ґрунт вашої карти", "Почва вашей карты", "The ground of your chart"),
+        titles_ty={"ru": "Почва твоей карты", "uk": "Ґрунт твоєї карти"},
     ),
     *TRANSITS,
     SectionSpec(

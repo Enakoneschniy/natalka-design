@@ -12,6 +12,7 @@ two deliberate removals:
 
 from __future__ import annotations
 
+from .address import Address
 from .sections import SectionSpec
 
 LANGUAGE = {
@@ -66,7 +67,7 @@ ADDRESSEE = {
     ),
 }
 
-SYSTEM = """\
+_SYSTEM_TEMPLATE = """\
 You are an experienced astrologer writing a paid, personal birth-chart reading. You write like a
 person who has read thousands of charts, not like a language model.
 
@@ -94,8 +95,7 @@ section where it matters, and otherwise write as if the question had never come 
 
 ADDRESS
 Write to the person, not about them: "you", never their name in the third person. The name is
-yours to use once, in the opening, and only as a greeting. In Russian and Ukrainian this is the
-formal «вы» / «ви» throughout — never «ты» / «ти», in any sentence, however warm the moment.
+yours to use once, in the opening, and only as a greeting. {address_rule}
 
 TONE
 Warm, respectful, direct. Vary sentence length — short sentences next to long ones. Paragraphs of
@@ -115,10 +115,23 @@ are asked for — no title, no preamble, no commentary about what you are doing.
 """
 
 
-def system_prompt(lang: str, gender: str, product: str = "natal") -> str:
+ADDRESS_RULE: dict[str, str] = {
+    "vy": (
+        "In Russian and Ukrainian this is the\nformal «вы» / «ви» throughout — never «ты» / «ти», "
+        "in any sentence, however warm the moment."
+    ),
+    "ty": (
+        "In Russian and Ukrainian this is the\ninformal «ты» / «ти» throughout — warm and direct, "
+        "never «вы» / «ви» to this one person. In a synastry the two of them together may be «вы»."
+    ),
+}
+SYSTEM = _SYSTEM_TEMPLATE.replace("{address_rule}", ADDRESS_RULE["vy"])
+
+
+def system_prompt(lang: str, gender: str, product: str = "natal", address: Address = "vy") -> str:
     language = LANGUAGE.get(lang, f"in {lang}")
     who = GENDER.get(gender, GENDER["n"]).get(lang) or GENDER[gender]["en"]
-    parts = [SYSTEM]
+    parts = [_SYSTEM_TEMPLATE.replace("{address_rule}", ADDRESS_RULE[address])]
     if product in ADDRESSEE:
         parts.append(ADDRESSEE[product])
     parts.append(f"Write {language}. The person the chart belongs to is {who}.")

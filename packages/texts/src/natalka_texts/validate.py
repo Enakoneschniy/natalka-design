@@ -14,6 +14,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from .address import Address
+
 #: Phrases that betray a source we do not have. Checked per language we ship.
 IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
     "ru": (
@@ -26,6 +28,16 @@ IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
         "у вас сейчас не клеится",
         "вы упомянули",
         "из вашего письма",
+        "ты писал",
+        "ты писала",
+        "ты говорил",
+        "ты говорила",
+        "как ты знаешь",
+        "как ты сам",
+        "как ты сама",
+        "ты упомянул",
+        "ты упомянула",
+        "из твоего письма",
     ),
     "uk": (
         "ви писали",
@@ -36,6 +48,14 @@ IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
         "ви зараз переживаєте",
         "ви згадували",
         "з вашого листа",
+        "ти писав",
+        "ти писала",
+        "ти казав",
+        "ти казала",
+        "як ти знаєш",
+        "як ти сам",
+        "як ти сама",
+        "з твого листа",
     ),
     "en": (
         "you wrote",
@@ -151,7 +171,32 @@ def _found(text: str, needles: tuple[str, ...]) -> list[str]:
     return [n for n in needles if n in low]
 
 
-def _language_problems(text: str, lang: str, *, impersonal_ok: bool = False) -> list[str]:
+def _address_problems(text: str, lang: str, *, impersonal_ok: bool, address: Address) -> list[str]:
+    """The form of address: «вы» by default, «ты» when the seller asked for it."""
+    problems: list[str] = []
+    informal_re = INFORMAL.get(lang)
+    informal = informal_re.search(text) if informal_re else None
+    if informal and address == "vy":
+        problems.append(
+            f"addresses the reader informally ({informal.group(0)}); the reading is on «вы»"
+        )
+
+    if not impersonal_ok and len(text) > ADDRESS_MIN_CHARS:
+        if address == "ty" and informal_re:
+            if not informal:
+                problems.append(
+                    "the section talks about the reader instead of addressing them as «ты»"
+                )
+        else:
+            formal = SECOND_PERSON.get(lang)
+            if formal and not formal.search(text) and not informal:
+                problems.append("the section talks about the reader instead of addressing them")
+    return problems
+
+
+def _language_problems(
+    text: str, lang: str, *, impersonal_ok: bool = False, address: Address = "vy"
+) -> list[str]:
     """Checks that only make sense for a given language: banned phrases, stray Latin, address."""
     problems: list[str] = []
     for phrase in _found(text, IMPLIES_KNOWLEDGE.get(lang, ())):
@@ -173,17 +218,7 @@ def _language_problems(text: str, lang: str, *, impersonal_ok: bool = False) -> 
         if words:
             problems.append(f"words from the other language: {', '.join(sorted(words)[:3])}")
 
-    informal_re = INFORMAL.get(lang)
-    informal = informal_re.search(text) if informal_re else None
-    if informal:
-        problems.append(
-            f"addresses the reader informally ({informal.group(0)}); the reading is on «вы»"
-        )
-
-    if not impersonal_ok and len(text) > ADDRESS_MIN_CHARS:
-        formal = SECOND_PERSON.get(lang)
-        if formal and not formal.search(text) and not informal:
-            problems.append("the section talks about the reader instead of addressing them")
+    problems.extend(_address_problems(text, lang, impersonal_ok=impersonal_ok, address=address))
     return problems
 
 
@@ -194,6 +229,7 @@ def check(
     min_paragraphs: int,
     max_paragraphs: int,
     impersonal_ok: bool = False,
+    address: Address = "vy",
 ) -> Report:
     problems: list[str] = []
 
@@ -210,7 +246,9 @@ def check(
     if len(paragraphs) > max_paragraphs + 1:
         problems.append(f"{len(paragraphs)} paragraphs, at most {max_paragraphs} were asked for")
 
-    problems.extend(_language_problems(stripped, lang, impersonal_ok=impersonal_ok))
+    problems.extend(
+        _language_problems(stripped, lang, impersonal_ok=impersonal_ok, address=address)
+    )
 
     if "!" in stripped:
         problems.append("exclamation marks are not used in the reading")
