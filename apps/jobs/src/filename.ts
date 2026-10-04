@@ -61,7 +61,7 @@ const clean = (text: string) => text.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g
 /** Content-Disposition for a non-ASCII name: the RFC 5987 form for browsers that read it, an
  * ASCII fallback for the rest. */
 export function contentDisposition(filename: string, inline = true): string {
-  const ascii = filename.replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '') || 'chronika.pdf';
-  const fallback = ascii.endsWith('.pdf') ? ascii : 'chronika.pdf';
+  const ascii = filename.replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '') || 'reading.pdf';
+  const fallback = ascii.endsWith('.pdf') ? ascii : 'reading.pdf';
   return `${inline ? 'inline' : 'attachment'}; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }

@@ -25,9 +25,11 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
   by the seller, one accent colour (replaces our gold). Assets in R2. Logo or name on the cover,
   accent colour on the cover and section labels, an «От автора» page (photo, intro, signature)
   when filled in, a closing block (outro, signature, contacts), PDF author = the seller. No order
-  reference, domain or name of ours anywhere. A PDF cannot be assembled until the brand has a
-  name. **Tone** is snapshotted on each reading when it is ordered.
-- **Tone** per account: «ты» / «вы» — passed to the text prompts.
+  reference, domain or name of ours anywhere. One mandatory line at the end: a short
+  "for entertainment / self-reflection" disclaimer without our name. A PDF cannot be assembled
+  until the brand has a name.
+- **Tone** per account: «ты» / «вы» — passed to the text prompts. Tone is snapshotted on each
+  reading when it is ordered.
 - **Astrology settings**: none. Placidus only. Requests are logged, not built.
 - Same text methodology as B2C; the model words each reading afresh.
 - **Report a problem** button on a section (stores section + comment in D1, alerts the existing
