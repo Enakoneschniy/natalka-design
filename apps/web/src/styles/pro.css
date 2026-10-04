@@ -58,6 +58,15 @@ body.pro {
   color: var(--accent);
 }
 
+/* A link dressed as a button keeps the button's text colour, not the link's. */
+.pro a.btn {
+  color: var(--accent-text-on);
+}
+
+.pro a.btn.ghost {
+  color: var(--text);
+}
+
 .pro h1,
 .pro h2 {
   font: 500 24px/1.15 var(--font-display);

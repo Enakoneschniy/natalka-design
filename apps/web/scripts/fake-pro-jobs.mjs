@@ -242,9 +242,9 @@ const PACKS = {
 const purchases = [
   {
     id: 'pu-1',
-    pack: 'p30',
-    credits: 30,
-    amount_minor: 24900,
+    pack: 'p10',
+    credits: 10,
+    amount_minor: 9900,
     currency: 'EUR',
     status: 'paid',
     created_at: ago(3),
