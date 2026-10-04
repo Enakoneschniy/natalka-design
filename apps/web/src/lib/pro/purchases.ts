@@ -90,12 +90,21 @@ export function buyError(status: number): string {
   return status === 503 ? PAYMENT_UNAVAILABLE : TRY_LATER;
 }
 
-/** Where «Купить» may send the browser: an https page (Stripe Checkout) or one of the cabinet's
- * own paths. Anything else — a script URL, a protocol-relative host — is refused. */
-export function checkoutTarget(url: unknown): string | null {
+const STRIPE_CHECKOUT = 'checkout.stripe.com';
+
+/** Where «Купить» may send the browser: Stripe Checkout over https, or a page of the cabinet
+ * itself (`base` is its origin). The address is parsed the way the browser will parse it, so a
+ * protocol-relative host, a tab or newline smuggled into the path, or a script URL is refused. */
+export function checkoutTarget(url: unknown, base: string): string | null {
   if (typeof url !== 'string') return null;
-  if (url.startsWith('https://')) return url;
-  if (url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\')) return url;
+  let target: URL;
+  try {
+    target = new URL(url, base);
+  } catch {
+    return null;
+  }
+  if (target.origin === new URL(base).origin) return target.href;
+  if (target.protocol === 'https:' && target.host === STRIPE_CHECKOUT) return target.href;
   return null;
 }
 
@@ -135,6 +144,6 @@ export function inviteOutcome(
       : { ok: true, text: 'Код принят' };
   }
   if (status === 404) return { ok: false, text: 'Код не найден' };
-  if (status === 409) return { ok: false, text: 'Код уже использован' };
+  if (status === 409) return { ok: false, text: 'Вы уже активировали инвайт-код' };
   return { ok: false, text: TRY_LATER };
 }

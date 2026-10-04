@@ -23,7 +23,8 @@ export function BuyPack() {
       'POST',
       { pack },
     );
-    const target = status === 201 ? checkoutTarget(data?.checkout_url) : null;
+    const target =
+      status === 201 ? checkoutTarget(data?.checkout_url, window.location.origin) : null;
     if (target) {
       // The page is left; the buttons stay held until it is.
       window.location.assign(target);

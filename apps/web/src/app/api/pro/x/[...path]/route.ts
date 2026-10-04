@@ -23,6 +23,16 @@ type Context = { params: Promise<{ path: string[] }> };
 const notFound = () => NextResponse.json({ error: 'not found' }, { status: 404 });
 const signedOut = () => NextResponse.json({ error: 'signed out' }, { status: 401 });
 
+/** A file is opened by a link, not by the cabinet's scripts: a JSON 401 would be saved as the
+ * download. Sign-in comes instead, saying why; a relative Location keeps the host. */
+const signInForFile = () =>
+  new Response(null, {
+    status: 303,
+    headers: { location: '/login?expired=1', 'cache-control': 'no-store' },
+  });
+
+const isFile = (match: ProxyMatch) => match.kind === 'pdf' || match.kind === 'image';
+
 async function proxy(request: Request, { params }: Context): Promise<Response> {
   const blocked = notOnProHost(request);
   if (blocked) return blocked;
@@ -40,7 +50,7 @@ async function proxy(request: Request, { params }: Context): Promise<Response> {
   }
 
   const session = sessionFrom(request);
-  if (!session) return signedOut();
+  if (!session) return isFile(match) ? signInForFile() : signedOut();
 
   const body = await bodyOf(request, match);
   if (body instanceof Response) return body;
@@ -56,8 +66,11 @@ async function proxy(request: Request, { params }: Context): Promise<Response> {
   } catch {
     return unavailable();
   }
-  if (upstream.status === 401) return signedOut();
-  if ((match.kind === 'pdf' || match.kind === 'image') && upstream.ok) return stream(upstream);
+  // Redirects are not followed (`proForward`), and jobs has none to give: one is an outage.
+  if (upstream.type === 'opaqueredirect' || (upstream.status >= 300 && upstream.status < 400))
+    return unavailable();
+  if (upstream.status === 401) return isFile(match) ? signInForFile() : signedOut();
+  if (isFile(match) && upstream.ok) return stream(upstream);
   return relayJson(upstream);
 }
 

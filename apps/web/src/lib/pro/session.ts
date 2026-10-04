@@ -1,3 +1,4 @@
+import { RequestCookies } from 'next/dist/server/web/spec-extension/cookies';
 import { cookies } from 'next/headers';
 
 export const SESSION_COOKIE = 'chp_session';
@@ -25,18 +26,9 @@ export async function readSession(): Promise<string | null> {
 }
 
 /** The session from the request's own `Cookie` header: for route handlers that are handed the
- * request, and testable without Next's request scope. */
+ * request, and testable without Next's request scope. Read with Next's own cookie parser, so it
+ * agrees with `readSession`: the last `chp_session` wins, names match exactly, and a pair whose
+ * value will not decode is skipped. */
 export function sessionFrom(request: Request): string | null {
-  for (const pair of (request.headers.get('cookie') ?? '').split(';')) {
-    const at = pair.indexOf('=');
-    if (at > 0 && pair.slice(0, at).trim() === SESSION_COOKIE) {
-      const value = pair.slice(at + 1).trim();
-      try {
-        return decodeURIComponent(value) || null;
-      } catch {
-        return null;
-      }
-    }
-  }
-  return null;
+  return new RequestCookies(request.headers).get(SESSION_COOKIE)?.value || null;
 }

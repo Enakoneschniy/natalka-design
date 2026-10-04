@@ -54,6 +54,8 @@ export function proForward(
     headers,
     body: init.body,
     cache: 'no-store',
+    // A redirect is not followed: the key and the bearer go to the jobs worker and nowhere else.
+    redirect: 'manual',
   });
 }
 

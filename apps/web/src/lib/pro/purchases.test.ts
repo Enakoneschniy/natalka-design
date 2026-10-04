@@ -84,16 +84,24 @@ describe('buying', () => {
     expect(buyError(0)).toBe(TRY_LATER);
   });
 
-  it('goes only to an https page or one of the cabinet own paths', () => {
-    expect(checkoutTarget('https://checkout.stripe.com/c/pay/cs_1')).toBe(
-      'https://checkout.stripe.com/c/pay/cs_1',
-    );
-    expect(checkoutTarget('/credits?purchase=pu-1')).toBe('/credits?purchase=pu-1');
-    expect(checkoutTarget('javascript:alert(1)')).toBeNull();
-    expect(checkoutTarget('//evil.example/x')).toBeNull();
-    expect(checkoutTarget('/\\evil.example/x')).toBeNull();
-    expect(checkoutTarget('http://checkout.example')).toBeNull();
-    expect(checkoutTarget(undefined)).toBeNull();
+  it('goes only to Stripe Checkout over https or a page of the cabinet itself', () => {
+    const base = 'https://pro.chronika.me';
+    const to = (url: unknown) => checkoutTarget(url, base);
+    expect(to('https://checkout.stripe.com/c/pay/x')).toBe('https://checkout.stripe.com/c/pay/x');
+    expect(to('/credits?purchase=pu-1')).toBe('https://pro.chronika.me/credits?purchase=pu-1');
+    expect(to('https://pro.chronika.me/credits')).toBe('https://pro.chronika.me/credits');
+    expect(to('https://evil.example')).toBeNull();
+    expect(to('https://evil.example/c/pay/x')).toBeNull();
+    expect(to('/\t/evil.example')).toBeNull();
+    expect(to('/\n/evil.example/x')).toBeNull();
+    expect(to('//evil.example/x')).toBeNull();
+    expect(to('/\\evil.example/x')).toBeNull();
+    expect(to('javascript:alert(1)')).toBeNull();
+    expect(to('http://checkout.stripe.com/c/pay/x')).toBeNull();
+    expect(to('https://checkout.stripe.com.evil.example/x')).toBeNull();
+    expect(to('https://checkout.stripe.com:8443/x')).toBeNull();
+    expect(to('http://pro.chronika.me/credits')).toBeNull();
+    expect(to(undefined)).toBeNull();
   });
 });
 
@@ -127,7 +135,10 @@ describe('inviteOutcome', () => {
     expect(inviteOutcome(200, { credits: 3 })).toEqual({ ok: true, text: '+3 кредита' });
     expect(inviteOutcome(200, null)).toEqual({ ok: true, text: 'Код принят' });
     expect(inviteOutcome(404, null)).toEqual({ ok: false, text: 'Код не найден' });
-    expect(inviteOutcome(409, null)).toEqual({ ok: false, text: 'Код уже использован' });
+    expect(inviteOutcome(409, null)).toEqual({
+      ok: false,
+      text: 'Вы уже активировали инвайт-код',
+    });
     expect(inviteOutcome(502, null)).toEqual({ ok: false, text: TRY_LATER });
   });
 });

@@ -204,6 +204,53 @@ describe('api/pro/x proxy', () => {
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(new Uint8Array([1, 2]));
   });
 
+  it('answers 503 to a jobs redirect and does not follow it', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(null, { status: 302, headers: { location: 'https://elsewhere.test/' } }),
+    );
+    const res = await GET(req('GET', 'me'), ctx('me'));
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'unavailable' });
+    expect(sent().init.redirect).toBe('manual');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers 503 to a redirect on a file too', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 307, headers: { location: '/x' } }));
+    const res = await GET(req('GET', 'readings/r-1/pdf'), ctx('readings/r-1/pdf'));
+    expect(res.status).toBe(503);
+  });
+
+  describe('a file opened by a link with no live session', () => {
+    const files = ['readings/r-1/pdf', 'brand/logo'];
+
+    it('goes to sign-in when there is no session, without calling jobs', async () => {
+      for (const path of files) {
+        const res = await GET(req('GET', path, { headers: { cookie: null } }), ctx(path));
+        expect(res.status, path).toBe(303);
+        expect(res.headers.get('location'), path).toBe('/login?expired=1');
+        expect(res.headers.get('cache-control'), path).toBe('no-store');
+      }
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('goes to sign-in when jobs answers 401', async () => {
+      for (const path of files) {
+        fetchMock.mockResolvedValueOnce(json(401, { error: 'unauthorized' }));
+        const res = await GET(req('GET', path), ctx(path));
+        expect(res.status, path).toBe(303);
+        expect(res.headers.get('location'), path).toBe('/login?expired=1');
+      }
+    });
+
+    it('leaves JSON calls with a JSON 401', async () => {
+      fetchMock.mockResolvedValueOnce(json(401, { error: 'unauthorized' }));
+      const res = await GET(req('GET', 'readings/r-1'), ctx('readings/r-1'));
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: 'signed out' });
+    });
+  });
+
   describe('logo upload', () => {
     const upload = (headers: Record<string, string | null>, body: BodyInit = new Uint8Array(4)) =>
       PUT(req('PUT', 'brand/logo', { headers, body }), ctx('brand/logo'));
