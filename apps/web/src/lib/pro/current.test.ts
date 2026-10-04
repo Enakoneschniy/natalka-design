@@ -2,14 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const readSession = vi.fn();
 const me = vi.fn();
+const proCall = vi.fn();
 vi.mock('./session', () => ({ readSession: () => readSession() }));
 vi.mock('./client', async (original) => ({
   ...(await original<typeof import('./client')>()),
   me: (session: string) => me(session),
+  proCall: (path: string, init: unknown) => proCall(path, init),
 }));
 
 const { ProUnauthorized } = await import('./client');
-const { currentSeller, hasLiveSession } = await import('./current');
+const { cabinetGet, currentSeller, hasLiveSession } = await import('./current');
 
 /** `redirect()` throws; the target is in the error's digest. */
 const redirectedTo = async (run: () => Promise<unknown>) => {
@@ -75,5 +77,36 @@ describe('hasLiveSession', () => {
     readSession.mockResolvedValue('good');
     me.mockResolvedValue({ name: 'Анна', balance: 0 });
     expect(await hasLiveSession()).toBe(true);
+  });
+});
+
+describe('cabinetGet', () => {
+  beforeEach(() => {
+    readSession.mockReset();
+    proCall.mockReset();
+  });
+
+  it('sends a visitor without a session to sign-in', async () => {
+    readSession.mockResolvedValue(null);
+    expect(await redirectedTo(() => cabinetGet('/v1/pro/clients'))).toContain(';/login;');
+    expect(proCall).not.toHaveBeenCalled();
+  });
+
+  it('sends a rejected session to the logout route', async () => {
+    readSession.mockResolvedValue('stale');
+    proCall.mockRejectedValue(new ProUnauthorized());
+    expect(await redirectedTo(() => cabinetGet('/v1/pro/clients'))).toContain(
+      ';/logout?expired=1;',
+    );
+  });
+
+  it('asks as the seller and returns the answer', async () => {
+    readSession.mockResolvedValue('good');
+    proCall.mockResolvedValue({ status: 200, data: { clients: [] } });
+    await expect(cabinetGet('/v1/pro/clients')).resolves.toEqual({
+      status: 200,
+      data: { clients: [] },
+    });
+    expect(proCall).toHaveBeenCalledWith('/v1/pro/clients', { session: 'good' });
   });
 });

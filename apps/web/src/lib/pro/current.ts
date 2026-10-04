@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
-import { me, type ProMe, ProUnauthorized } from './client';
+import { me, type ProMe, ProUnauthorized, proCall } from './client';
 import { readSession } from './session';
 
 /** The signed-in seller, once per request, for the cabinet's layout and pages alike.
@@ -30,5 +30,18 @@ export async function hasLiveSession(): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/** A GET to the jobs worker as the signed-in seller, for the cabinet's server pages. A session
+ * the worker no longer accepts goes the way `currentSeller` sends it. */
+export async function cabinetGet<T>(path: string): Promise<{ status: number; data: T }> {
+  const session = await readSession();
+  if (!session) redirect('/login');
+  try {
+    return await proCall<T>(path, { session });
+  } catch (error) {
+    if (error instanceof ProUnauthorized) redirect('/logout?expired=1');
+    throw error;
   }
 }

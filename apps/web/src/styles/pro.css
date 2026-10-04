@@ -504,3 +504,211 @@ body.pro {
 .alt {
   text-align: center;
 }
+
+/* ---- clients and readings: lists, the client card, the new-client form ---- */
+
+ul.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item.link {
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.item.link:hover {
+  border-color: var(--line-strong);
+}
+
+.item .t,
+.item .s {
+  display: block;
+}
+
+.av {
+  margin-top: 1px;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 500 13px var(--font-display);
+  background: var(--surface-2);
+  color: var(--accent);
+  border: 1px solid var(--line);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
+.meta .s {
+  white-space: nowrap;
+}
+
+.progress {
+  display: block;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.progress i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #f2c978);
+}
+
+.back {
+  font: 400 26px/1 var(--font-text);
+  color: var(--text-2);
+  text-decoration: none;
+  padding: 0 6px 4px 0;
+}
+
+.pro a.back {
+  color: var(--text-2);
+}
+
+.clip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pro h2 {
+  font-size: 19px;
+}
+
+.facts {
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--text-3);
+  font-size: 12.5px;
+}
+
+.facts dd {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+fieldset.field {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.field .label {
+  padding: 0;
+  margin-bottom: 5px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  letter-spacing: 0.02em;
+}
+
+.input:disabled {
+  opacity: 0.5;
+}
+
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-field);
+  overflow: hidden;
+}
+
+.seg button {
+  background: transparent;
+  color: var(--text-2);
+  border: 0;
+  padding: 10px 4px;
+  font: 500 13px var(--font-text);
+  cursor: pointer;
+}
+
+.seg button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* The city combobox: the options drop over the form below. */
+.combo {
+  position: relative;
+  display: grid;
+  gap: 5px;
+}
+
+.combo .options {
+  position: absolute;
+  top: 46px;
+  inset-inline: 0;
+  z-index: 5;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface-solid);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-field);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.combo .options li {
+  display: grid;
+  gap: 1px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.combo .options li[aria-selected="true"] {
+  background: var(--accent-soft);
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #1a0805;
+}
+
+.btn.ghost.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: rgba(255, 138, 120, 0.45);
+}
+
+.card.confirm {
+  border-color: rgba(255, 138, 120, 0.45);
+  background: var(--danger-soft);
+}
