@@ -15,6 +15,11 @@ export function notSameOrigin(request: Request): Response | null {
   if (!type.toLowerCase().startsWith('application/json')) {
     return NextResponse.json({ error: 'content-type' }, { status: 415 });
   }
+  return notFromThisOrigin(request);
+}
+
+/** The origin half of `notSameOrigin`, for a body that is not JSON (an image upload). */
+export function notFromThisOrigin(request: Request): Response | null {
   const site = request.headers.get('sec-fetch-site');
   if (site !== null) return site === 'same-origin' ? null : forbidden();
   const origin = request.headers.get('origin');
@@ -28,6 +33,26 @@ export function notSameOrigin(request: Request): Response | null {
 }
 
 const forbidden = () => NextResponse.json({ error: 'origin' }, { status: 403 });
+
+/** The most a logo or photo upload may be, as the jobs worker allows. */
+export const MAX_IMAGE_BYTES = 1_048_576;
+
+/** Refuses an upload that is not a PNG or JPEG (415) or that says it is over the cap (413).
+ * A missing or unreadable `content-length` is refused too (411): the size must be known
+ * before anything is read. */
+export function notImageUpload(request: Request): Response | null {
+  const type = (request.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase();
+  if (type !== 'image/png' && type !== 'image/jpeg') {
+    return NextResponse.json({ error: 'content-type' }, { status: 415 });
+  }
+  const raw = request.headers.get('content-length');
+  if (raw === null || !/^\d+$/.test(raw.trim())) {
+    return NextResponse.json({ error: 'length' }, { status: 411 });
+  }
+  return Number(raw) > MAX_IMAGE_BYTES ? tooLarge() : null;
+}
+
+export const tooLarge = () => NextResponse.json({ error: 'too large' }, { status: 413 });
 
 /** The request's JSON object, or null when the body is not one. */
 export async function jsonBody(request: Request): Promise<Record<string, unknown> | null> {

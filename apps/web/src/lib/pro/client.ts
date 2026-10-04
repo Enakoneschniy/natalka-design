@@ -37,6 +37,26 @@ export async function proCall<T>(
   return { status: response.status, data };
 }
 
+/** The jobs worker's raw answer, for the cabinet proxy to stream or relay as it is. `path`
+ * starts with `/v1/pro/` and must come from the allowlist; the body is passed on untouched. */
+export function proForward(
+  path: string,
+  init: { method: string; session: string; body?: BodyInit; contentType?: string },
+): Promise<Response> {
+  const { base, key } = config();
+  const headers: Record<string, string> = {
+    'x-pro-key': key,
+    authorization: `Bearer ${init.session}`,
+  };
+  if (init.contentType) headers['content-type'] = init.contentType;
+  return fetch(`${base}${path}`, {
+    method: init.method,
+    headers,
+    body: init.body,
+    cache: 'no-store',
+  });
+}
+
 export interface ProAccount {
   email: string;
   tone: string;
