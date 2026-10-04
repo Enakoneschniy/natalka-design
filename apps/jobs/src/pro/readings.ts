@@ -29,7 +29,7 @@ const isProduct = (value: unknown): value is Product =>
 
 export async function createReading(
   env: Env,
-  account: { id: string; email: string },
+  account: { id: string; email: string; tone?: 'ty' | 'vy' },
   input: { product?: unknown; client_id?: unknown; partner_client_id?: unknown },
 ): Promise<CreateReadingResult> {
   if (!isProduct(input.product)) return { status: 'invalid', error: 'product' };
@@ -105,9 +105,18 @@ export async function createReading(
       ).bind(jobId, orderId, product, ts, ts),
       env.DB.prepare(
         `INSERT INTO pro_readings (order_id, account_id, job_id, client_id, partner_client_id,
-                                   editable_until, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      ).bind(orderId, account.id, jobId, client.id, partner?.id ?? null, expiryFrom(EDITABLE_DAYS), ts),
+                                   editable_until, address, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(
+        orderId,
+        account.id,
+        jobId,
+        client.id,
+        partner?.id ?? null,
+        expiryFrom(EDITABLE_DAYS),
+        account.tone ?? 'vy',
+        ts,
+      ),
     ]);
   } catch (error) {
     try {
@@ -145,6 +154,7 @@ export interface ReadingRow {
   regenerations: number;
   editable_until: string;
   refunded_at: string | null;
+  address: 'vy' | 'ty';
   created_at: string;
   product: Product;
   step: JobStep;
@@ -154,7 +164,7 @@ export interface ReadingRow {
 }
 
 const READING_SELECT = `SELECT r.order_id, r.account_id, r.job_id, r.client_id, r.partner_client_id,
-       r.regenerations, r.editable_until, r.refunded_at, r.created_at,
+       r.regenerations, r.editable_until, r.refunded_at, r.address, r.created_at,
        o.product, j.step, j.status, j.payload, j.updated_at
   FROM pro_readings r JOIN orders o ON o.id = r.order_id JOIN jobs j ON j.id = r.job_id`;
 

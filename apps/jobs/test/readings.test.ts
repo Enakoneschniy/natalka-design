@@ -17,6 +17,14 @@ const jobOf = async (orderId: string) =>
     ?.job_id as string;
 
 describe('createReading', () => {
+  it("remembers the seller's form of address on the reading", async () => {
+    const { account, clientId } = await seller('tone');
+    await testEnv.DB.prepare("UPDATE pro_accounts SET tone = 'ty' WHERE id = ?").bind(account.id).run();
+    const { id } = (await createReading(testEnv, { ...account, tone: 'ty' }, { product: 'natal', client_id: clientId })) as { id: string };
+    await testEnv.DB.prepare("UPDATE pro_accounts SET tone = 'vy' WHERE id = ?").bind(account.id).run();
+    expect((await readingRow(testEnv.DB, id, account.id))?.address).toBe('ty');
+  });
+
   it('spends the credits and queues a reading about the client', async () => {
     const { account, clientId } = await seller('natal');
     const result = await createReading(testEnv, account, { product: 'natal', client_id: clientId });
