@@ -137,6 +137,36 @@ describe('reading view', () => {
     expect((await listReadings(testEnv, account.id)).map((r) => r.product)).toEqual(['forecast', 'natal']);
     expect((await listReadings(testEnv, account.id, second)).map((r) => r.product)).toEqual(['forecast']);
   });
+
+  it('says in the list how many sections are missing and whether the PDF is ready', async () => {
+    const { account, clientId } = await seller('pills');
+    const { id } = (await createReading(testEnv, account, { product: 'natal', client_id: clientId })) as { id: string };
+    const summary = async () => (await listReadings(testEnv, account.id)).find((r) => r.id === id);
+    expect(await summary()).toMatchObject({ status: 'writing', missing: 0, pdf_ready: false });
+
+    const jobId = await jobOf(id);
+    await runJob(jobId);
+    expect(await summary()).toMatchObject({ status: 'ready', missing: 0, pdf_ready: false });
+
+    const { payload } = (await testEnv.DB.prepare('SELECT payload FROM jobs WHERE id = ?')
+      .bind(jobId)
+      .first<{ payload: string }>())!;
+    const parsed = JSON.parse(payload) as { sections: { id: string }[] };
+    parsed.sections = parsed.sections.filter((s) => s.id !== 'b');
+    await testEnv.DB.prepare('UPDATE jobs SET payload = ? WHERE id = ?').bind(JSON.stringify(parsed), jobId).run();
+    expect(await summary()).toMatchObject({ status: 'ready', missing: 1, pdf_ready: false });
+
+    await testEnv.DB.prepare(
+      `INSERT INTO documents (id, order_id, storage_key, sha256, pages, bytes, lang, expires_at, created_at)
+       VALUES (?, ?, 'k', 'x', 1, 3, 'ru', '2999-01-01T00:00:00.000Z', '2026-10-03T00:00:00.000Z')`,
+    )
+      .bind(crypto.randomUUID(), id)
+      .run();
+    expect(await summary()).toMatchObject({ pdf_ready: true });
+
+    await testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
+    expect(await summary()).toMatchObject({ status: 'ready', pdf_ready: false });
+  });
 });
 
 describe('deleteClient', () => {

@@ -163,10 +163,15 @@ export interface ReadingRow {
   updated_at: string;
 }
 
-const READING_SELECT = `SELECT r.order_id, r.account_id, r.job_id, r.client_id, r.partner_client_id,
+const READING_COLUMNS = `r.order_id, r.account_id, r.job_id, r.client_id, r.partner_client_id,
        r.regenerations, r.editable_until, r.refunded_at, r.address, r.created_at,
-       o.product, j.step, j.status, j.payload, j.updated_at
-  FROM pro_readings r JOIN orders o ON o.id = r.order_id JOIN jobs j ON j.id = r.job_id`;
+       o.product, j.step, j.status, j.payload, j.updated_at`;
+const READING_FROM = 'FROM pro_readings r JOIN orders o ON o.id = r.order_id JOIN jobs j ON j.id = r.job_id';
+const READING_SELECT = `SELECT ${READING_COLUMNS}\n  ${READING_FROM}`;
+/** The list also says whether a PDF exists, in the same query rather than one per reading. */
+const LIST_SELECT = `SELECT ${READING_COLUMNS},
+       EXISTS (SELECT 1 FROM documents d WHERE d.order_id = r.order_id) AS has_document
+  ${READING_FROM}`;
 
 /** A reading, only if it is this seller's. */
 export function readingRow(db: D1Database, orderId: string, accountId: string): Promise<ReadingRow | null> {
@@ -241,7 +246,19 @@ export interface ReadingSummary {
   client_id: string;
   partner_client_id: string | null;
   status: ReadingStatus;
+  /** Planned sections not written; only counted once the reading is ready, else 0. */
+  missing: number;
+  /** A PDF has been assembled and is not being rebuilt. */
+  pdf_ready: boolean;
   created_at: string;
+}
+
+/** Planned sections that a ready reading lacks, from the payload the row already carries. */
+function missingCount(row: ReadingRow): number {
+  if (readingStatus(row) !== 'ready' || !row.payload) return 0;
+  const payload = JSON.parse(row.payload) as JobPayload;
+  const written = new Set((payload.sections ?? []).map((s) => s.id));
+  return (payload.plan ?? []).filter((p) => !written.has(p.id)).length;
 }
 
 export async function listReadings(env: Env, accountId: string, clientId?: string): Promise<ReadingSummary[]> {
@@ -249,15 +266,19 @@ export async function listReadings(env: Env, accountId: string, clientId?: strin
     ? 'WHERE r.account_id = ? AND (r.client_id = ? OR r.partner_client_id = ?)'
     : 'WHERE r.account_id = ?';
   const binds = clientId ? [accountId, clientId, clientId] : [accountId];
-  const { results } = await env.DB.prepare(`${READING_SELECT} ${where} ORDER BY r.created_at DESC, r.rowid DESC`)
+  const { results } = await env.DB.prepare(
+    `${LIST_SELECT} ${where} ORDER BY r.created_at DESC, r.rowid DESC`,
+  )
     .bind(...binds)
-    .all<ReadingRow>();
+    .all<ReadingRow & { has_document: number }>();
   return results.map((row) => ({
     id: row.order_id,
     product: row.product,
     client_id: row.client_id,
     partner_client_id: row.partner_client_id,
     status: readingStatus(row),
+    missing: missingCount(row),
+    pdf_ready: row.step === 'done' && row.has_document === 1,
     created_at: row.created_at,
   }));
 }
