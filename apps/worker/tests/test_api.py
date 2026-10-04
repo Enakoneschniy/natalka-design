@@ -1,3 +1,8 @@
+import json
+from pathlib import Path
+from typing import Any
+
+import pytest
 from fastapi.testclient import TestClient
 from natalka_worker.api import app
 
@@ -22,3 +27,59 @@ def test_horoscope_needs_a_chart() -> None:
         json={"facts": {}, "period": "week", "start": "2026-09-29", "end": "2026-10-06"},
     )
     assert r.status_code == 422
+
+
+@pytest.fixture
+def facts() -> dict[str, Any]:
+    path = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "chart-1994-05-15.json"
+    return json.loads(path.read_text())  # type: ignore[no-any-return]
+
+
+def test_sections_titles_follow_the_address() -> None:
+    vy = client.get("/v1/sections", params={"product": "natal", "lang": "ru"}).json()["sections"]
+    ty = client.get(
+        "/v1/sections", params={"product": "natal", "lang": "ru", "address": "ty"}
+    ).json()["sections"]
+    titles_vy = {s["id"]: s["title"] for s in vy}
+    titles_ty = {s["id"]: s["title"] for s in ty}
+    assert "Как вы работаете" in titles_vy.values()
+    assert "Как ты работаешь" in titles_ty.values()
+    assert client.get("/v1/sections", params={"address": "they"}).status_code == 422
+
+
+def test_skeleton_takes_a_brand_and_drops_the_order_ref(facts: dict[str, Any]) -> None:
+    body: dict[str, Any] = {
+        "facts": facts,
+        "transits": [],
+        "sections": [],
+        "product": "natal",
+        "lang": "ru",
+        "name": "Аня",
+        "gender": "f",
+        "place": "Київ",
+        "order_ref": "ORDER-1",
+        "brand": {"name": "Мария"},
+        "address": "ty",
+    }
+    doc = client.post("/v1/skeleton", json=body).json()
+    assert doc["brand"]["name"] == "Мария"
+    assert doc["meta"]["order_ref"] is None
+    body.pop("brand")
+    assert client.post("/v1/skeleton", json=body).json()["meta"]["order_ref"] == "ORDER-1"
+
+
+def test_the_pdf_download_name_is_neutral(facts: dict[str, Any]) -> None:
+    body = {
+        "facts": facts,
+        "transits": [],
+        "sections": [],
+        "product": "natal",
+        "lang": "ru",
+        "name": "Аня",
+        "gender": "f",
+        "place": "Київ",
+    }
+    doc = client.post("/v1/skeleton", json=body).json()
+    r = client.post("/v1/document", json=doc)
+    assert r.status_code == 200
+    assert 'filename="reading.pdf"' in r.headers["content-disposition"]

@@ -16,7 +16,7 @@ from fastapi.responses import Response
 from natalka_document.build import SECTIONS, fill_sections
 from natalka_document.build import skeleton as build_skeleton
 from natalka_document.render import render_pdf
-from natalka_document.schema import Document, Person
+from natalka_document.schema import Brand, Document, Person
 from natalka_texts import (
     PREVIEW,
     PREVIEW_NO_TIME,
@@ -31,6 +31,7 @@ from natalka_texts import (
     synastry_sheet,
     title,
 )
+from natalka_texts.address import Address
 from natalka_texts.generate import MAX_TOKENS, write_horoscope
 from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
 from natalka_texts.validate import check
@@ -186,6 +187,8 @@ class SectionRequest(BaseModel):
     written_so_far: list[str] = Field(default_factory=list)
     #: The partner's name; only a synastry has one, and the sheet is written around the two names.
     second_name: str = ""
+    #: «вы» or «ты»: the seller's choice, applied to the prompt, the check and the titles.
+    address: Address = "vy"
 
 
 @app.get("/v1/sections")
@@ -193,12 +196,15 @@ def sections(
     product: Literal["natal", "forecast", "synastry", "child", "bundle"] = "natal",
     lang: str = "uk",
     unknown_time: bool = False,
+    address: Address = "vy",
 ) -> dict[str, Any]:
     """The plan for a document: which sections to write, in order."""
     chosen = specs(product, unknown_time=unknown_time)
     return {
         "product": product,
-        "sections": [{"id": s.id, "title": title(s, lang), "quote": s.quote} for s in chosen],
+        "sections": [
+            {"id": s.id, "title": title(s, lang, address), "quote": s.quote} for s in chosen
+        ],
     }
 
 
@@ -209,7 +215,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
         raise HTTPException(404, f"unknown section: {req.section_id}")
 
     provider = OpenRouterProvider()
-    system = system_prompt(req.lang, req.gender, req.product)
+    system = system_prompt(req.lang, req.gender, req.product, req.address)
     if req.product == "synastry":
         sheet = synastry_sheet(req.facts, first_name=req.name, second_name=req.second_name or "—")
     else:
@@ -229,6 +235,8 @@ def section(req: SectionRequest) -> dict[str, Any]:
             min_paragraphs=spec.paragraphs[0],
             max_paragraphs=spec.paragraphs[1],
             impersonal_ok=spec.impersonal_ok,
+            address=req.address,
+            pair=(req.product == "synastry"),
         )
         attempts = 1
         if not report.ok:
@@ -244,11 +252,13 @@ def section(req: SectionRequest) -> dict[str, Any]:
                 min_paragraphs=spec.paragraphs[0],
                 max_paragraphs=spec.paragraphs[1],
                 impersonal_ok=spec.impersonal_ok,
+                address=req.address,
+                pair=(req.product == "synastry"),
             )
             # Keep the receipt of both attempts: the caller pays for them either way.
             return {
                 "id": spec.id,
-                "title": title(spec, req.lang),
+                "title": title(spec, req.lang, req.address),
                 "quote": spec.quote,
                 "text": completion2.text,
                 "problems": list(report2.problems),
@@ -263,7 +273,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
 
     return {
         "id": spec.id,
-        "title": title(spec, req.lang),
+        "title": title(spec, req.lang, req.address),
         "quote": spec.quote,
         "text": completion.text,
         "problems": [],
@@ -297,6 +307,9 @@ class SkeletonRequest(BaseModel):
     gender: Literal["f", "m", "n"] = "n"
     place: str = ""
     order_ref: str | None = None
+    address: Address = "vy"
+    #: The seller's brand. When set, the document is the seller's, so the order reference stays out.
+    brand: Brand | None = None
 
 
 @app.post("/v1/skeleton")
@@ -310,7 +323,9 @@ def skeleton(req: SkeletonRequest) -> dict[str, Any]:
         person=Person(name=req.name, gender=req.gender),
         place=req.place,
         lang=req.lang,
-        order_ref=req.order_ref,
+        order_ref=None if req.brand else req.order_ref,
+        brand=req.brand,
+        address=req.address,
         transits=req.transits,
         engine_version="ephemeris-service",
     )
@@ -331,7 +346,7 @@ def document(doc: Document) -> Response:
         buffer.getvalue(),
         media_type="application/pdf",
         headers={
-            "content-disposition": 'attachment; filename="chronika.pdf"',
+            "content-disposition": 'attachment; filename="reading.pdf"',
             # The caller records the page count with the document; counting it again would mean
             # parsing the PDF it just received.
             "x-pages": str(pages),
