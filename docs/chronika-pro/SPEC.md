@@ -155,4 +155,7 @@ the `pro.chronika.me` custom domain; the jobs var `PRO_SITE_URL` is already
 `https://pro.chronika.me`, which is where the letters' `/login/<token>` links point. Local
 try-out: run `apps/web` with `PRO_HOSTS=astro:3000` to see the cabinet at that host, and set
 `NATALKA_JOBS_URL` to a jobs dev instance and `PRO_API_KEY` to its key. Without a mail key the
-jobs worker logs the link (dev only).
+jobs worker logs the link (dev only). The session cookie is `Secure`, so a local try-out needs https or a
+`localhost` host: browsers keep Secure cookies on `http://localhost` but drop them on any other
+plain-http host such as `astro:3000`, where sign-in would seem to succeed and land back on the
+sign-in page. Use `PRO_HOSTS=localhost:3000` and open `http://localhost:3000`.

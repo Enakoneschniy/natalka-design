@@ -90,6 +90,23 @@ body.pro {
   font: 500 40px/1 var(--font-display);
 }
 
+/* The balance: the number large, the noun beside it on the same baseline. */
+.balance {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.balance .muted {
+  font-size: 14px;
+}
+
+/* Keeps a button or link its own width inside a grid or column card. */
+.start {
+  justify-self: start;
+  align-self: flex-start;
+}
+
 .row {
   display: flex;
   align-items: center;
@@ -277,6 +294,26 @@ body.pro {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: right;
+}
+
+.bar .signout {
+  font-size: 12.5px;
+  color: var(--text-2);
+  text-decoration: none;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+
+.bar .signout:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+/* A bar inside a padded screen (the public terms page) brings no side padding of its own. */
+.bar.flush {
+  padding: 14px 0 10px;
 }
 
 .bar .credits {

@@ -12,7 +12,7 @@ export default function Reports() {
         <p className="muted">
           Скоро здесь можно будет открыть готовый разбор и посмотреть, что получит клиент.
         </p>
-        <button type="button" className="btn ghost small" style={{ justifySelf: 'start' }} disabled>
+        <button type="button" className="btn ghost small start" disabled>
           Открыть пример
         </button>
       </div>

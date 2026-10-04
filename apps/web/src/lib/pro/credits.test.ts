@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { creditsLabel } from './credits';
+import { creditsLabel, creditsNoun } from './credits';
 
 describe('creditsLabel', () => {
   it('agrees the noun with the number', () => {
@@ -9,5 +9,11 @@ describe('creditsLabel', () => {
     expect(creditsLabel(12)).toBe('12 кредитов');
     expect(creditsLabel(21)).toBe('21 кредит');
     expect(creditsLabel(104)).toBe('104 кредита');
+  });
+
+  it('gives the bare noun for a number shown on its own', () => {
+    expect(creditsNoun(1)).toBe('кредит');
+    expect(creditsNoun(3)).toBe('кредита');
+    expect(creditsNoun(12)).toBe('кредитов');
   });
 });

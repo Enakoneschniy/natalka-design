@@ -6,7 +6,7 @@ export const metadata = { title: 'Условия работы' };
 export default function Terms() {
   return (
     <main className="screen plain">
-      <header className="bar" style={{ padding: '14px 0 10px' }}>
+      <header className="bar flush">
         <Link href="/" className="logo">
           Chronika<small>PRO</small>
         </Link>

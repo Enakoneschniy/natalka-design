@@ -3,7 +3,10 @@ import { Tabs } from '@/components/pro/Tabs';
 import { creditsLabel } from '@/lib/pro/credits';
 import { currentSeller } from '@/lib/pro/current';
 
-/** Every signed-in page: the mark, who is signed in, the balance, and the four tabs. */
+/** Every signed-in page: the mark, who is signed in, the balance, sign-out and the four tabs.
+ *
+ * «Выйти» is a plain anchor on purpose: a prefetching `next/link` would GET `/logout` from the
+ * cabinet itself, same-origin, and sign the seller out just by showing the header. */
 export default async function CabinetLayout({ children }: { children: React.ReactNode }) {
   const seller = await currentSeller();
   return (
@@ -12,8 +15,11 @@ export default async function CabinetLayout({ children }: { children: React.Reac
         <Link href="/" className="logo">
           Chronika<small>PRO</small>
         </Link>
-        <span className="who">{seller.name}</span>
+        <span className="who">{seller.name?.trim() || seller.email}</span>
         <span className="credits">{creditsLabel(seller.balance)}</span>
+        <a href="/logout" className="signout">
+          Выйти
+        </a>
       </header>
       <main className="screen">{children}</main>
       <Tabs />
