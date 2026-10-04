@@ -2,17 +2,20 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { postJson, TRY_LATER } from './post';
+import { confirmOutcome, postJson, TRY_LATER, UNAVAILABLE } from './post';
 
 /** The one button that spends the emailed token. Opening the link alone spends nothing. */
 export function ConfirmLogin({ token }: { token: string }) {
-  const [state, setState] = useState<'idle' | 'sending' | 'expired' | 'failed'>('idle');
+  const [state, setState] = useState<'idle' | 'sending' | 'expired' | 'unavailable' | 'failed'>(
+    'idle',
+  );
 
   async function enter() {
     setState('sending');
     const { status } = await postJson('/api/pro/session', { token });
-    if (status === 200) return window.location.assign('/');
-    setState(status === 400 ? 'expired' : 'failed');
+    const outcome = confirmOutcome(status);
+    if (outcome === 'signed-in') return window.location.assign('/');
+    setState(outcome);
   }
 
   if (state === 'expired') {
@@ -31,9 +34,9 @@ export function ConfirmLogin({ token }: { token: string }) {
       <button className="btn" type="button" onClick={enter} disabled={state === 'sending'}>
         Войти
       </button>
-      {state === 'failed' && (
+      {(state === 'failed' || state === 'unavailable') && (
         <p className="field-error" role="alert">
-          {TRY_LATER}
+          {state === 'unavailable' ? UNAVAILABLE : TRY_LATER}
         </p>
       )}
     </>

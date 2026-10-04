@@ -17,3 +17,14 @@ export async function postJson(
 }
 
 export const TRY_LATER = 'Не получилось отправить. Попробуйте ещё раз через минуту.';
+
+export const UNAVAILABLE = 'Сервис временно недоступен, попробуйте через минуту';
+
+/** What the confirm page makes of `/api/pro/session`'s answer: a dead link (400) and a service
+ * that is down (503) read differently; anything else, offline included, is a plain retry. */
+export function confirmOutcome(status: number): 'signed-in' | 'expired' | 'unavailable' | 'failed' {
+  if (status === 200) return 'signed-in';
+  if (status === 400) return 'expired';
+  if (status === 503) return 'unavailable';
+  return 'failed';
+}

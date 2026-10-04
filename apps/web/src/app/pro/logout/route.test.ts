@@ -53,12 +53,22 @@ describe('GET /logout', () => {
   });
 
   it.each(['cross-site', 'same-site'])(
-    'ignores a %s link: no logout, off to the cabinet',
+    'ignores a %s link: no logout, no cleared cookie, off to sign-in',
     async (site) => {
-      const res = await GET(visit('?expired=1', site));
+      const res = await GET(visit('', site));
       expect(logout).not.toHaveBeenCalled();
-      expect(res.headers.get('location')).toBe('/');
+      expect(res.status).toBe(303);
+      expect(res.headers.get('location')).toBe('/login');
       expect(res.headers.get('set-cookie')).toBeNull();
     },
   );
+
+  it('ends a cross-site stale-session redirect at sign-in, not back in the cabinet', async () => {
+    // The cabinet layout sent a stale session here; the browser kept `cross-site` from the
+    // original link. Answering `/` would bounce back to the layout and loop.
+    const res = await GET(visit('?expired=1', 'cross-site'));
+    expect(logout).not.toHaveBeenCalled();
+    expect(res.headers.get('location')).toBe('/login?expired=1');
+    expect(res.headers.get('set-cookie')).toBeNull();
+  });
 });

@@ -43,7 +43,8 @@ export interface ProAccount {
 }
 
 export interface ProMe extends ProAccount {
-  name: string;
+  /** Null for a seller who never gave one; show the email instead. */
+  name: string | null;
   balance: number;
   invite_redeemed: boolean;
 }
@@ -75,7 +76,9 @@ export function requestSignup(input: SignupInput): Promise<Accepted> {
   return accepted('/v1/pro/signup', input);
 }
 
-/** Trades the emailed token for a session, or null when the link is not good. */
+/** Trades the emailed token for a session; null when the jobs worker says the link is not good
+ * (400). Anything else — an outage, a status it never sends — throws, so the caller can tell a
+ * dead link from a service that is down. */
 export async function startSession(
   token: string,
 ): Promise<{ session: string; account: ProAccount } | null> {
@@ -83,7 +86,9 @@ export async function startSession(
     '/v1/pro/session',
     { method: 'POST', body: { token } },
   );
-  return status === 200 && data ? data : null;
+  if (status === 400) return null;
+  if (status === 200 && data?.session) return data;
+  throw new Error(`session → ${status}`);
 }
 
 export async function me(session: string): Promise<ProMe> {

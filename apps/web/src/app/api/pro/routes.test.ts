@@ -114,6 +114,21 @@ describe('api/pro routes', () => {
       expect(res.headers.get('set-cookie')).toBeNull();
     });
 
+    it.each([500, 503, 401, 200])('answers 503 and sets no cookie on a jobs %s', async (code) => {
+      fetchMock.mockResolvedValue(reply(code, code === 200 ? {} : { error: 'x' }));
+      const res = await session(post('session', { token: 't-1' }));
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({ error: 'unavailable' });
+      expect(res.headers.get('set-cookie')).toBeNull();
+    });
+
+    it('answers 503 when the jobs worker cannot be reached', async () => {
+      fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+      const res = await session(post('session', { token: 't-1' }));
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({ error: 'unavailable' });
+    });
+
     it('is not there on the shop host', async () => {
       const res = await session(post('session', { token: 't-1' }, 'chronika.me'));
       expect(res.status).toBe(404);

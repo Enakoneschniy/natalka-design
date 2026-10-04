@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProUnauthorized, proCall, requestLogin } from './client';
+import { ProUnauthorized, proCall, requestLogin, startSession } from './client';
 
 const headersOf = (init: RequestInit | undefined) =>
   (init?.headers ?? {}) as Record<string, string>;
@@ -51,6 +51,26 @@ describe('pro client', () => {
     expect(init?.method).toBe('POST');
     expect(JSON.parse(String(init?.body))).toEqual({ email: 'a@b.co' });
     expect(headersOf(init).authorization).toBeUndefined();
+  });
+
+  describe('startSession', () => {
+    it('returns the session on 200', async () => {
+      const good = { session: 's-1', account: { email: 'a@b.co', tone: 'vy' } };
+      fetchMock.mockResolvedValue(reply(200, good));
+      await expect(startSession('t-1')).resolves.toEqual(good);
+    });
+
+    it('returns null when the jobs worker refuses the link (400)', async () => {
+      fetchMock.mockResolvedValue(reply(400, { error: 'invalid' }));
+      await expect(startSession('used')).resolves.toBeNull();
+    });
+
+    it('throws on an outage rather than calling the link expired', async () => {
+      fetchMock.mockResolvedValue(reply(503));
+      await expect(startSession('t-1')).rejects.toThrow('session → 503');
+      fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+      await expect(startSession('t-1')).rejects.toThrow('fetch failed');
+    });
   });
 
   it('says clearly what is missing', async () => {
