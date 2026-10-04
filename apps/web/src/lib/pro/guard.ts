@@ -7,6 +7,28 @@ export function notOnProHost(request: Request): Response | null {
   return isProHost(request.headers.get('host')) ? null : new Response(null, { status: 404 });
 }
 
+/** Refuses anything a page on another site could send: a non-JSON body (a cross-site
+ * `<form enctype="text/plain">` needs no preflight) and a request the browser marks as not
+ * same-origin. Without `Sec-Fetch-Site` (older browsers) the `Origin` must name this host. */
+export function notSameOrigin(request: Request): Response | null {
+  const type = request.headers.get('content-type') ?? '';
+  if (!type.toLowerCase().startsWith('application/json')) {
+    return NextResponse.json({ error: 'content-type' }, { status: 415 });
+  }
+  const site = request.headers.get('sec-fetch-site');
+  if (site !== null) return site === 'same-origin' ? null : forbidden();
+  const origin = request.headers.get('origin');
+  const host = request.headers.get('host');
+  if (!origin || !host) return forbidden();
+  try {
+    return new URL(origin).host.toLowerCase() === host.trim().toLowerCase() ? null : forbidden();
+  } catch {
+    return forbidden();
+  }
+}
+
+const forbidden = () => NextResponse.json({ error: 'origin' }, { status: 403 });
+
 /** The request's JSON object, or null when the body is not one. */
 export async function jsonBody(request: Request): Promise<Record<string, unknown> | null> {
   const body: unknown = await request.json().catch(() => null);

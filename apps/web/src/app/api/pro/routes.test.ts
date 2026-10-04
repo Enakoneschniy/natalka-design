@@ -6,11 +6,31 @@ import { POST as signup } from './signup/route';
 const reply = (status: number, body?: unknown) =>
   new Response(body === undefined ? null : JSON.stringify(body), { status });
 
-const post = (path: string, body: unknown, host = 'pro.chronika.me') =>
+/** What a same-origin `fetch` from the cabinet's own page sends. */
+const post = (
+  path: string,
+  body: unknown,
+  host = 'pro.chronika.me',
+  headers: Record<string, string> = {},
+) =>
   new Request(`https://${host}/api/pro/${path}`, {
     method: 'POST',
-    headers: { host, 'content-type': 'application/json' },
+    headers: {
+      host,
+      'content-type': 'application/json',
+      'sec-fetch-site': 'same-origin',
+      origin: `https://${host}`,
+      ...headers,
+    },
     body: JSON.stringify(body),
+  });
+
+/** Like `post`, but with exactly these headers (plus host): to drop the browser's own. */
+const raw = (path: string, headers: Record<string, string>, body: string) =>
+  new Request(`https://pro.chronika.me/api/pro/${path}`, {
+    method: 'POST',
+    headers: { host: 'pro.chronika.me', ...headers },
+    body,
   });
 
 describe('api/pro routes', () => {
@@ -50,6 +70,15 @@ describe('api/pro routes', () => {
       const res = await signup(post('signup', input));
       expect(res.status).toBe(400);
       expect(await res.json()).toEqual({ error: 'name' });
+    });
+
+    it('forwards terms:false for anything but true, and leaves an empty invite out', async () => {
+      fetchMock.mockResolvedValue(reply(400, { error: 'terms' }));
+      const res = await signup(post('signup', { ...input, invite: '  ', terms: 'yes' }));
+      expect(res.status).toBe(400);
+      const sent = forwarded().body;
+      expect(sent.terms).toBe(false);
+      expect(sent).not.toHaveProperty('invite');
     });
 
     it('is not there on the shop host', async () => {
@@ -116,13 +145,78 @@ describe('api/pro routes', () => {
 
     it('answers 400 to a body that is not JSON', async () => {
       const res = await login(
-        new Request('https://pro.chronika.me/api/pro/login', {
-          method: 'POST',
-          headers: { host: 'pro.chronika.me' },
-          body: 'nope',
-        }),
+        raw('login', { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' }, 'no'),
       );
       expect(res.status).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('does not leak the jobs path in a 400 without a body', async () => {
+      fetchMock.mockResolvedValue(reply(400));
+      const res = await login(post('login', { email: 'a@b.co' }));
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({ error: 'invalid' });
+    });
+  });
+
+  describe('only the cabinet own pages may post', () => {
+    const body = JSON.stringify({ token: 't-1' });
+
+    it('refuses a cross-site request with 403', async () => {
+      const res = await session(
+        post('session', { token: 't-1' }, undefined, { 'sec-fetch-site': 'cross-site' }),
+      );
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ error: 'origin' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a same-site (sibling subdomain) request with 403', async () => {
+      const res = await login(
+        post('login', { email: 'a@b.co' }, undefined, { 'sec-fetch-site': 'same-site' }),
+      );
+      expect(res.status).toBe(403);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a text/plain body (a cross-site form) with 415', async () => {
+      const res = await session(
+        raw('session', { 'content-type': 'text/plain', 'sec-fetch-site': 'same-origin' }, body),
+      );
+      expect(res.status).toBe(415);
+      expect(await res.json()).toEqual({ error: 'content-type' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('accepts a matching Origin when Sec-Fetch-Site is absent', async () => {
+      fetchMock.mockResolvedValue(
+        reply(200, { session: 's-1', account: { email: 'a', tone: 'vy' } }),
+      );
+      const res = await session(
+        raw(
+          'session',
+          { 'content-type': 'application/json', origin: 'https://pro.chronika.me' },
+          body,
+        ),
+      );
+      expect(res.status).toBe(200);
+    });
+
+    it('refuses a foreign Origin when Sec-Fetch-Site is absent', async () => {
+      const res = await session(
+        raw(
+          'session',
+          { 'content-type': 'application/json', origin: 'https://evil.example' },
+          body,
+        ),
+      );
+      expect(res.status).toBe(403);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a request with neither header', async () => {
+      const res = await signup(raw('signup', { 'content-type': 'application/json' }, body));
+      expect(res.status).toBe(403);
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

@@ -61,7 +61,8 @@ export type Accepted = { ok: true } | { ok: false; status: number; error: string
 const accepted = async (path: string, body: unknown): Promise<Accepted> => {
   const { status, data } = await proCall<{ error?: string } | null>(path, { method: 'POST', body });
   if (status === 202) return { ok: true };
-  return { ok: false, status, error: data?.error ?? `${path} → ${status}` };
+  // A fixed fallback: the jobs path must not reach the browser.
+  return { ok: false, status, error: data?.error ?? 'invalid' };
 };
 
 /** Asks for a sign-in letter. The answer is the same whoever the address belongs to. */
