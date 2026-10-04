@@ -50,7 +50,10 @@ export async function fakeApi(request: Request): Promise<Response> {
     return json(lastSeen.get(new URL(request.url).searchParams.get('key') ?? '') ?? null);
   }
   if (path === '/v1/sections') {
-    lastSeen.set('/v1/sections|last', Object.fromEntries(new URL(request.url).searchParams));
+    // The plan request carries no name, so it is kept by its form of address: test files run side
+    // by side, and a single "last" slot is overwritten by whichever file asked most recently.
+    const params = Object.fromEntries(new URL(request.url).searchParams);
+    lastSeen.set(`/v1/sections|address=${params.address ?? 'vy'}`, params);
     return json({ sections: FAKE_PLAN });
   }
   if (path === '/v1/section') {

@@ -12,7 +12,7 @@ describe('seller readings', () => {
     await testEnv.DB.prepare("UPDATE pro_readings SET address = 'ty' WHERE order_id = ?").bind(r.id).run();
     await runJob(r.jobId);
     expect((await lastRequest('/v1/section|Тыкает'))?.address).toBe('ty');
-    expect((await lastRequest('/v1/sections|last'))?.address).toBe('ty');
+    expect((await lastRequest('/v1/sections|address=ty'))?.address).toBe('ty');
 
     await testEnv.DB.prepare("UPDATE pro_accounts SET tone = 'vy' WHERE id = ?").bind(r.account.id).run();
     await regenerateSection(testEnv, r.account.id, r.id, 'a');
