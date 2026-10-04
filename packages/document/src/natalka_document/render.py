@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Any
 from xml.sax.saxutils import escape
 
+from PIL import Image as PILImage
+from PIL import ImageOps
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.colors import Color, HexColor
 from reportlab.lib.enums import TA_RIGHT
@@ -136,8 +138,29 @@ def _paragraphs(text: str) -> list[str]:
     return [escape(p).replace("\r\n", "\n").replace("\n", "<br/>") for p in parts if p]
 
 
+#: EXIF tag that tells how a camera held the picture; 1 means it is already upright.
+_ORIENTATION = 0x0112
+
+
+def _upright(b64: str) -> bytes:
+    """A brand image as it was seen: a phone photo stored sideways is turned by its EXIF tag.
+
+    An image that needs no turn is returned as it came, so a JPEG is not re-encoded for nothing.
+    """
+    raw = base64.b64decode(b64)
+    with PILImage.open(io.BytesIO(raw)) as img:
+        if img.getexif().get(_ORIENTATION, 1) == 1:
+            return raw
+        turned = ImageOps.exif_transpose(img)
+    if turned.mode not in {"1", "L", "LA", "P", "RGB", "RGBA"}:
+        turned = turned.convert("RGB")
+    out = io.BytesIO()
+    turned.save(out, format="PNG")
+    return out.getvalue()
+
+
 def _image_reader(b64: str) -> ImageReader:
-    return ImageReader(io.BytesIO(base64.b64decode(b64)))
+    return ImageReader(io.BytesIO(_upright(b64)))
 
 
 def _tight(*extra: tuple[Any, ...]) -> TableStyle:
@@ -271,7 +294,7 @@ class Renderer:
             Spacer(1, 10),
         ]
         if brand.photo:
-            raw = base64.b64decode(brand.photo)
+            raw = _upright(brand.photo)
             iw, ih = ImageReader(io.BytesIO(raw)).getSize()
             width, height = 4.5 * cm, 4.5 * cm * ih / iw
             if height > 7 * cm:  # a tall photo would not fit the frame; bound it by height

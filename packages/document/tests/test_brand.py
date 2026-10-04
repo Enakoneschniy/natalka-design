@@ -8,7 +8,7 @@ from pathlib import Path
 import pypdfium2 as pdfium
 import pytest
 from natalka_document.build import skeleton
-from natalka_document.render import render_pdf
+from natalka_document.render import _upright, render_pdf
 from natalka_document.schema import Brand, Document, Person
 from PIL import Image
 from pydantic import ValidationError
@@ -213,3 +213,29 @@ def test_the_chart_page_is_titled_in_the_reading_s_form_of_address(facts: dict, 
     assert title("natal", "vy") == "Ваша карта"
     # A synastry speaks to two people: the plural stays.
     assert title("synastry", "ty") == "Ваша карта"
+
+
+def _rotated_jpeg(w: int = 40, h: int = 20) -> bytes:
+    """A JPEG stored sideways, as phones write them: EXIF Orientation 6 says «turn 90° clockwise»."""
+    exif = Image.Exif()
+    exif[0x0112] = 6
+    buf = io.BytesIO()
+    Image.new("RGB", (w, h), (90, 140, 200)).save(buf, "JPEG", exif=exif)
+    return buf.getvalue()
+
+
+def test_a_rotated_phone_photo_is_drawn_upright() -> None:
+    upright = _upright(base64.b64encode(_rotated_jpeg(40, 20)).decode())
+    with Image.open(io.BytesIO(upright)) as img:
+        assert img.size == (20, 40)
+
+
+def test_an_image_without_rotation_is_passed_through_untouched() -> None:
+    raw = base64.b64decode(_png(5, 3))
+    assert _upright(base64.b64encode(raw).decode()) == raw
+
+
+def test_a_branded_document_with_rotated_images_renders() -> None:
+    rotated = base64.b64encode(_rotated_jpeg()).decode()
+    texts, _ = _render(_doc(BRAND.model_copy(update={"photo": rotated, "logo": rotated})))
+    assert texts
