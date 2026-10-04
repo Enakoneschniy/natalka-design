@@ -34,10 +34,14 @@ const text = (value: unknown, max: number): string | null => {
   return trimmed.length > 0 && trimmed.length <= max ? trimmed : null;
 };
 
+const EARLIEST_BIRTH = '1900-01-01';
+
 const realDate = (value: unknown): string | null => {
   if (typeof value !== 'string' || !DATE.test(value)) return null;
   const parsed = new Date(`${value}T00:00:00Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null;
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) return null;
+  // Dates compare as strings: both are zero-padded ISO. Sane means 1900 up to today, UTC.
+  return value >= EARLIEST_BIRTH && value <= new Date().toISOString().slice(0, 10) ? value : null;
 };
 
 const within = (value: unknown, limit: number): number | null =>

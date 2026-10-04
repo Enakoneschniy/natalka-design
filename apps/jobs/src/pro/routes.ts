@@ -35,6 +35,7 @@ import { PACKS, attachSession, createPurchase, isPack, listPurchases, markFailed
 import { createPackCheckout } from '../stripe';
 import { hasRedeemed, redeemInvite } from './invites';
 import { assemblePdf, readingPdf, regenerateSection } from './lifecycle';
+import { fileReport } from './reports';
 import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from './readings';
 
 const json = (body: unknown, status = 200): Response =>
@@ -235,7 +236,24 @@ async function purchaseRoutes(request: Request, env: Env, url: URL, account: Pro
 const CLIENT = /^\/v1\/pro\/clients\/([^/]+)$/;
 const READING = /^\/v1\/pro\/readings\/([^/]+)$/;
 const REGENERATE = /^\/v1\/pro\/readings\/([^/]+)\/sections\/([^/]+)\/regenerate$/;
+const REPORT = /^\/v1\/pro\/readings\/([^/]+)\/sections\/([^/]+)\/report$/;
 const PDF = /^\/v1\/pro\/readings\/([^/]+)\/pdf$/;
+
+async function reportSection(
+  request: Request,
+  env: Env,
+  account: ProAccount,
+  orderId: string,
+  sectionId: string,
+): Promise<Response> {
+  const row = await readingRow(env.DB, orderId, account.id);
+  const plan = row?.payload ? ((JSON.parse(row.payload) as { plan?: { id: string }[] }).plan ?? []) : [];
+  if (!row || !plan.some((p) => p.id === sectionId)) return json({ error: 'not found' }, 404);
+  const result = await fileReport(env, account.id, orderId, sectionId, (await readBody(request))?.comment);
+  if (result === 'comment') return json({ error: 'comment' }, 400);
+  if (result === 'too_many') return json({ error: 'too many' }, 429);
+  return json({ ok: true }, 201);
+}
 
 async function readingRoutes(request: Request, env: Env, url: URL, account: ProAccount): Promise<Response | null> {
   const { method } = request;
@@ -273,6 +291,8 @@ async function readingRoutes(request: Request, env: Env, url: URL, account: ProA
     if (result.status === 'failed') return json({ error: 'failed' }, 503);
     return json({ error: result.status }, 409);
   }
+  const flag = path.match(REPORT);
+  if (flag?.[1] && flag[2] && method === 'POST') return reportSection(request, env, account, flag[1], flag[2]);
   const pdf = path.match(PDF);
   if (pdf?.[1]) {
     if (method === 'POST') {
