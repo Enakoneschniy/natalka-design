@@ -10,6 +10,7 @@ export const FAKE_PLAN = [
 ];
 
 const armed = new Map<string, number>();
+const lastSeen = new Map<string, unknown>();
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -44,9 +45,16 @@ export async function fakeApi(request: Request): Promise<Response> {
     armed.set(key, times);
     return json({ ok: true });
   }
-  if (path === '/v1/sections') return json({ sections: FAKE_PLAN });
+  if (path === '/__last') {
+    return json(lastSeen.get(new URL(request.url).searchParams.get('key') ?? '') ?? null);
+  }
+  if (path === '/v1/sections') {
+    lastSeen.set('/v1/sections|last', Object.fromEntries(new URL(request.url).searchParams));
+    return json({ sections: FAKE_PLAN });
+  }
   if (path === '/v1/section') {
     const body = (await request.json()) as { section_id: string; name: string };
+    lastSeen.set(`/v1/section|${body.name}`, body);
     if (trips(`${body.name}|${body.section_id}`, `${body.name}|*`)) {
       return new Response('model down', { status: 503 });
     }
@@ -65,6 +73,7 @@ export async function fakeApi(request: Request): Promise<Response> {
   }
   if (path === '/v1/skeleton') {
     const body = (await request.json()) as { name: string };
+    lastSeen.set(`/v1/skeleton|${body.name}`, body);
     if (trips(`${body.name}|pdf`)) return new Response('render down', { status: 500 });
     return json({ document: true });
   }

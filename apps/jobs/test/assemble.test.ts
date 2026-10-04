@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { getJob } from '../src/db';
+import { saveBrand } from '../src/pro/brand';
 import { assemblePdf, readingPdf, regenerateSection, settleFailedJob } from '../src/pro/lifecycle';
 import { armFailure, runJob, testEnv } from './env';
 import { readingFor } from './seed';
+
+const BRAND = { name: 'Тест', contacts: [], accent: '#E7B75C', intro: '', outro: '', signature: '' };
 
 describe('assemblePdf', () => {
   it('queues the assembly once, and the PDF can be fetched after', async () => {
     const { account, id, jobId } = await readingFor('Сборщица');
     await runJob(jobId);
+    await saveBrand(testEnv, account.id, BRAND);
     expect(await assemblePdf(testEnv, account.id, id)).toBe('queued');
     expect(await assemblePdf(testEnv, account.id, id)).toBe('building');
     expect((await getJob(testEnv.DB, jobId))?.step).toBe('pdf');
@@ -33,6 +37,7 @@ describe('assemblePdf', () => {
   it('serves no PDF after a rewrite until it is assembled again', async () => {
     const { account, id, jobId } = await readingFor('Свежесть');
     await runJob(jobId);
+    await saveBrand(testEnv, account.id, BRAND);
     await assemblePdf(testEnv, account.id, id);
     await runJob(jobId);
     await regenerateSection(testEnv, account.id, id, 'a');
@@ -42,6 +47,7 @@ describe('assemblePdf', () => {
   it("does not hand one seller another's PDF", async () => {
     const { account, id, jobId } = await readingFor('Владелица');
     await runJob(jobId);
+    await saveBrand(testEnv, account.id, BRAND);
     await assemblePdf(testEnv, account.id, id);
     await runJob(jobId);
     const stranger = await readingFor('Посторонняя');

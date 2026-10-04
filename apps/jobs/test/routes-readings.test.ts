@@ -58,6 +58,12 @@ describe('clients and readings over HTTP', () => {
     expect(rewrite.status).toBe(200);
     expect(((await rewrite.json()) as { regenerations_left: number }).regenerations_left).toBe(9);
 
+    const noBrand = await call('POST', `/v1/pro/readings/${id}/pdf`, session);
+    expect(noBrand.status).toBe(409);
+    expect(await noBrand.json()).toEqual({ error: 'no_brand' });
+    expect(
+      (await call('PUT', '/v1/pro/brand', session, { name: 'Тест', contacts: [], accent: '#E7B75C' })).status,
+    ).toBe(200);
     expect((await call('POST', `/v1/pro/readings/${id}/pdf`, session)).status).toBe(202);
     expect((await call('POST', `/v1/pro/readings/${id}/pdf`, session)).status).toBe(409);
     await runJob(await jobOf(id));

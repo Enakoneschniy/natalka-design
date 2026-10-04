@@ -17,6 +17,7 @@ import {
 } from './db';
 import type { Env } from './env';
 import { sendReady } from './mail';
+import { brandForDocument } from './pro/brand';
 
 export interface BirthData {
   date: string;
@@ -137,7 +138,16 @@ const TRANSIT_YEARS: Record<string, number> = {
   bundle: 3,
 };
 
-async function calculate(env: Env, job: JobRow, people: People): Promise<JobPayload> {
+/** `&address=ty` for a seller's reading in the informal form; nothing for the default, so a
+ * shopper's requests are exactly what they were. */
+const addressParam = (address: 'vy' | 'ty') => (address === 'ty' ? `&address=${address}` : '');
+
+async function calculate(
+  env: Env,
+  job: JobRow,
+  people: People,
+  address: 'vy' | 'ty',
+): Promise<JobPayload> {
   const { first: birth, second } = people;
   if (job.kind === 'synastry' && second) {
     // Two charts and the contacts between them; no transits, a synastry has no calendar.
@@ -148,7 +158,7 @@ async function calculate(env: Env, job: JobRow, people: People): Promise<JobPayl
     const unknownTime = birth.time === null || second.time === null;
     const plan = await api<{ sections: SectionPlan[] }>(
       env,
-      `/v1/sections?product=synastry&lang=${birth.lang}&unknown_time=${unknownTime}`,
+      `/v1/sections?product=synastry&lang=${birth.lang}&unknown_time=${unknownTime}${addressParam(address)}`,
     );
     return { facts, transits: [], plan: plan.sections, sections: [] };
   }
@@ -164,7 +174,7 @@ async function calculate(env: Env, job: JobRow, people: People): Promise<JobPayl
   const unknownTime = Boolean((facts.birth as { unknown_time?: boolean }).unknown_time);
   const plan = await api<{ sections: SectionPlan[] }>(
     env,
-    `/v1/sections?product=${job.kind}&lang=${birth.lang}&unknown_time=${unknownTime}`,
+    `/v1/sections?product=${job.kind}&lang=${birth.lang}&unknown_time=${unknownTime}${addressParam(address)}`,
   );
   return { facts, transits, plan: plan.sections, sections: [] };
 }
@@ -177,6 +187,7 @@ export async function writeSection(
   payload: JobPayload,
   sectionId: string,
   others: WrittenSection[],
+  address: 'vy' | 'ty' = 'vy',
 ): Promise<WrittenSection> {
   const { first: birth, second } = people;
   return api<WrittenSection>(env, '/v1/section', {
@@ -192,6 +203,7 @@ export async function writeSection(
       gender: birth.gender,
       second_name: second?.name ?? '',
       written_so_far: others.map((s) => `${s.title}: ${s.text.slice(0, 160)}…`),
+      ...(address === 'vy' ? {} : { address }),
     }),
   });
 }
@@ -207,6 +219,7 @@ async function writeSections(
   people: People,
   payload: JobPayload,
   deadline: number,
+  address: 'vy' | 'ty',
 ): Promise<{ payload: JobPayload; done: boolean }> {
   const plan = payload.plan ?? [];
   const sections = payload.sections ?? [];
@@ -222,7 +235,7 @@ async function writeSections(
 
     let section: WrittenSection;
     try {
-      section = await writeSection(env, job.kind, people, payload, entry.id, sections);
+      section = await writeSection(env, job.kind, people, payload, entry.id, sections, address);
     } catch (error) {
       // A deploy can land between the plan and the writing, and the chapter this job was told
       // to write may no longer exist. Skipping it finishes the document; failing the job would
@@ -248,7 +261,13 @@ async function writeSections(
   return { payload: current(), done: true };
 }
 
-async function render(env: Env, job: JobRow, people: People, payload: JobPayload): Promise<void> {
+async function render(
+  env: Env,
+  job: JobRow,
+  people: People,
+  payload: JobPayload,
+  seller: { accountId: string; address: 'vy' | 'ty' } | null,
+): Promise<void> {
   const { first: birth, second } = people;
   // The sections were written from the whole synastry payload; the skeleton draws one chart per
   // slot, so the pair is split here, and the cover carries both names.
@@ -257,6 +276,8 @@ async function render(env: Env, job: JobRow, people: People, payload: JobPayload
       ? (payload.facts as { first: Record<string, unknown>; second: Record<string, unknown> })
       : null;
   const name = pair && second ? `${birth.name} ${AND[birth.lang] ?? '&'} ${second.name}` : birth.name;
+  const brand = seller ? await brandForDocument(env, seller.accountId) : null;
+  if (seller && !brand) throw new Error(`no brand for seller of order ${job.order_id}`);
   const document = await api<Record<string, unknown>>(env, '/v1/skeleton', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -270,6 +291,7 @@ async function render(env: Env, job: JobRow, people: People, payload: JobPayload
       gender: birth.gender,
       place: birth.place,
       order_ref: job.order_id,
+      ...(seller ? { brand, address: seller.address } : {}),
       sections: (payload.sections ?? []).map((s) => ({
         id: s.id,
         title: s.title,
@@ -309,19 +331,20 @@ async function render(env: Env, job: JobRow, people: People, payload: JobPayload
  * reading nobody paid for. */
 export async function advance(env: Env, job: JobRow, deadline: number): Promise<boolean> {
   const order = await env.DB.prepare(
-    `SELECT o.pro_account_id, r.refunded_at
+    `SELECT o.pro_account_id, r.refunded_at, r.address
      FROM orders o LEFT JOIN pro_readings r ON r.order_id = o.id
      WHERE o.id = ?`,
   )
     .bind(job.order_id)
-    .first<{ pro_account_id: string | null; refunded_at: string | null }>();
+    .first<{ pro_account_id: string | null; refunded_at: string | null; address: 'vy' | 'ty' | null }>();
   const seller = order?.pro_account_id ?? null;
+  const address = order?.address ?? 'vy';
   if (seller && order?.refunded_at) return true;
   const people = await loadPeople(env, job);
   let payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
 
   if (job.step === 'calc') {
-    payload = await calculate(env, job, people);
+    payload = await calculate(env, job, people, address);
     await updateJob(env.DB, job.id, {
       step: 'texts',
       status: 'running',
@@ -331,7 +354,7 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
   }
 
   if (job.step === 'texts') {
-    const result = await writeSections(env, job, people, payload, deadline);
+    const result = await writeSections(env, job, people, payload, deadline, address);
     payload = result.payload;
     if (!result.done) {
       await updateJob(env.DB, job.id, { payload: JSON.stringify(payload) });
@@ -349,12 +372,12 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
   if (job.step === 'pdf') {
     if (seller) {
       await dropDocuments(env, job.order_id);
-      await render(env, job, people, payload);
+      await render(env, job, people, payload, { accountId: seller, address });
       // The seller delivers the reading themselves: no letter, no bot.
       await updateJob(env.DB, job.id, { step: 'done', status: 'done' });
       return true;
     }
-    await render(env, job, people, payload);
+    await render(env, job, people, payload, null);
     await updateJob(env.DB, job.id, { step: 'email' });
     job = { ...job, step: 'email' };
   }

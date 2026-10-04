@@ -1,3 +1,4 @@
+import { saveBrand } from '../src/pro/brand';
 import { describe, expect, it } from 'vitest';
 import { getJob } from '../src/db';
 import { dropDocuments } from '../src/pipeline';
@@ -29,8 +30,9 @@ describe('pipeline', () => {
   });
 
   it("assembles a seller's PDF on request, replacing the previous one, without a letter", async () => {
-    const { orderId, jobId } = await seedOrder({ pro: true, name: 'Сборка' });
+    const { orderId, jobId, accountId } = await seedOrder({ pro: true, name: 'Сборка' });
     await runJob(jobId);
+    await saveBrand(testEnv, accountId as string, { name: 'Тест', contacts: [], accent: '#E7B75C', intro: '', outro: '', signature: '' });
     for (let round = 0; round < 2; round++) {
       await testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
       expect(await runJob(jobId)).toBe(true);
@@ -69,9 +71,10 @@ describe('pipeline', () => {
   });
 
   it('drops every document of an order, objects first', async () => {
-    const { orderId, jobId } = await seedOrder({ pro: true, name: 'Удаление' });
+    const { orderId, jobId, accountId } = await seedOrder({ pro: true, name: 'Удаление' });
     await runJob(jobId);
-    await testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
+    await saveBrand(testEnv, accountId as string, { name: 'Тест', contacts: [], accent: '#E7B75C', intro: '', outro: '', signature: '' });
+        await testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
     await runJob(jobId);
     const key = (
       await testEnv.DB.prepare('SELECT storage_key FROM documents WHERE order_id = ?')

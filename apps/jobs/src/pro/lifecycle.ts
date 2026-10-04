@@ -91,7 +91,7 @@ export async function regenerateSection(
     try {
       const people = await loadPeople(env, { order_id: orderId, kind: row.product });
       const others = sections.filter((s) => s.id !== sectionId);
-      written = await writeSection(env, row.product, people, payload, sectionId, others);
+      written = await writeSection(env, row.product, people, payload, sectionId, others, row.address);
     } catch (error) {
       console.error('regenerating a section', orderId, sectionId, error instanceof Error ? error.message : error);
       return { status: 'failed' };
@@ -142,7 +142,7 @@ export async function regenerateSection(
   };
 }
 
-export type AssembleResult = 'queued' | 'not_found' | 'not_ready' | 'incomplete' | 'building';
+export type AssembleResult = 'queued' | 'not_found' | 'not_ready' | 'incomplete' | 'building' | 'no_brand';
 
 /** Puts a finished reading back on the queue to have its PDF made. Every planned section must be
  * there: a PDF with a hole in it is not something to hand a client. */
@@ -154,6 +154,11 @@ export async function assemblePdf(env: Env, accountId: string, orderId: string):
   const payload: JobPayload = row.payload ? (JSON.parse(row.payload) as JobPayload) : {};
   const written = new Set((payload.sections ?? []).map((s) => s.id));
   if ((payload.plan ?? []).some((p) => !written.has(p.id))) return 'incomplete';
+
+  const brand = await env.DB.prepare('SELECT 1 AS one FROM pro_brands WHERE account_id = ?')
+    .bind(accountId)
+    .first();
+  if (!brand) return 'no_brand';
 
   const moved = await env.DB.prepare(
     "UPDATE jobs SET step = 'pdf', status = 'queued', updated_at = ? WHERE id = ? AND step = 'done'",

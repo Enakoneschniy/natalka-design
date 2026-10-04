@@ -1,3 +1,4 @@
+import { saveBrand } from '../src/pro/brand';
 import { describe, expect, it } from 'vitest';
 import { getJob } from '../src/db';
 import { regenerateSection, settleFailedJob } from '../src/pro/lifecycle';
@@ -12,7 +13,8 @@ describe('regenerateSection', () => {
   it('rewrites a section, counts it, adds its cost and drops the stale PDF', async () => {
     const { account, id, jobId } = await readingFor('Переписать');
     await runJob(jobId);
-    await testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
+    await saveBrand(testEnv, account.id, { name: 'Тест', contacts: [], accent: '#E7B75C', intro: '', outro: '', signature: '' });
+        await testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
     await runJob(jobId);
     const before = await view(id, account.id);
     const costBefore = (await getJob(testEnv.DB, jobId))?.cost_micros ?? 0;

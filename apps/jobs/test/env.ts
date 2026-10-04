@@ -31,3 +31,9 @@ export async function runJob(jobId: string): Promise<boolean> {
   if (!job) throw new Error(`no job ${jobId}`);
   return advance(testEnv, job, Date.now() + 60_000);
 }
+
+/** The last request the fake text API saw under `key` ("<path>|<name>"), or null. */
+export async function lastRequest(key: string): Promise<Record<string, unknown> | null> {
+  const response = await testEnv.API.fetch(`https://api.test/__last?key=${encodeURIComponent(key)}`);
+  return (await response.json()) as Record<string, unknown> | null;
+}
