@@ -122,7 +122,7 @@ ADDRESS_RULE: dict[str, str] = {
     ),
     "ty": (
         "In Russian and Ukrainian this is the\ninformal «ты» / «ти» throughout — warm and direct, "
-        "never «вы» / «ви» to this one person. In a synastry the two of them together may be «вы»."
+        "never «вы» / «ви» to this one person. In a synastry the two of them together may be «вы» / «ви»."
     ),
 }
 SYSTEM = _SYSTEM_TEMPLATE.replace("{address_rule}", ADDRESS_RULE["vy"])

@@ -62,10 +62,28 @@ def test_validator_follows_the_address_form() -> None:
     )
 
 
-def test_informal_reading_may_speak_to_a_pair_in_plural() -> None:
-    pair = TY_TEXT + "\n\nВы оба цените честность, и вам легко договориться. " * 1
-    report = check(pair, lang="ru", min_paragraphs=3, max_paragraphs=4, address="ty")
+PAIR_TEXT = "\n\n".join(["Вы оба цените честность, и вам легко договориться. " * 3] * 3)
+
+
+def test_informal_synastry_may_speak_to_the_pair_in_plural() -> None:
+    report = check(
+        PAIR_TEXT, lang="ru", min_paragraphs=3, max_paragraphs=3, address="ty", pair=True
+    )
     assert not _addr(report.problems)
+
+
+def test_plural_only_section_is_flagged_without_pair() -> None:
+    report = check(PAIR_TEXT, lang="ru", min_paragraphs=3, max_paragraphs=3, address="ty")
+    assert _addr(report.problems)
+
+
+def test_pair_flag_changes_nothing_in_formal_mode() -> None:
+    plain = check(TY_TEXT, lang="ru", min_paragraphs=3, max_paragraphs=3)
+    paired = check(TY_TEXT, lang="ru", min_paragraphs=3, max_paragraphs=3, pair=True)
+    assert plain == paired
+    assert not _addr(
+        check(PAIR_TEXT, lang="ru", min_paragraphs=3, max_paragraphs=3, pair=True).problems
+    )
 
 
 def test_ty_reading_still_bans_implied_knowledge() -> None:

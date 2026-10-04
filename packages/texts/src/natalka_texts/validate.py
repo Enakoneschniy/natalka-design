@@ -29,14 +29,10 @@ IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
         "вы упомянули",
         "из вашего письма",
         "ты писал",
-        "ты писала",
         "ты говорил",
-        "ты говорила",
         "как ты знаешь",
         "как ты сам",
-        "как ты сама",
         "ты упомянул",
-        "ты упомянула",
         "из твоего письма",
     ),
     "uk": (
@@ -54,7 +50,6 @@ IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
         "ти казала",
         "як ти знаєш",
         "як ти сам",
-        "як ти сама",
         "з твого листа",
     ),
     "en": (
@@ -171,7 +166,9 @@ def _found(text: str, needles: tuple[str, ...]) -> list[str]:
     return [n for n in needles if n in low]
 
 
-def _address_problems(text: str, lang: str, *, impersonal_ok: bool, address: Address) -> list[str]:
+def _address_problems(
+    text: str, lang: str, *, impersonal_ok: bool, address: Address, pair: bool
+) -> list[str]:
     """The form of address: «вы» by default, «ты» when the seller asked for it."""
     problems: list[str] = []
     informal_re = INFORMAL.get(lang)
@@ -183,7 +180,8 @@ def _address_problems(text: str, lang: str, *, impersonal_ok: bool, address: Add
 
     if not impersonal_ok and len(text) > ADDRESS_MIN_CHARS:
         if address == "ty" and informal_re:
-            if not informal:
+            plural = SECOND_PERSON.get(lang)
+            if not informal and not (pair and plural and plural.search(text)):
                 problems.append(
                     "the section talks about the reader instead of addressing them as «ты»"
                 )
@@ -195,7 +193,12 @@ def _address_problems(text: str, lang: str, *, impersonal_ok: bool, address: Add
 
 
 def _language_problems(
-    text: str, lang: str, *, impersonal_ok: bool = False, address: Address = "vy"
+    text: str,
+    lang: str,
+    *,
+    impersonal_ok: bool = False,
+    address: Address = "vy",
+    pair: bool = False,
 ) -> list[str]:
     """Checks that only make sense for a given language: banned phrases, stray Latin, address."""
     problems: list[str] = []
@@ -218,7 +221,9 @@ def _language_problems(
         if words:
             problems.append(f"words from the other language: {', '.join(sorted(words)[:3])}")
 
-    problems.extend(_address_problems(text, lang, impersonal_ok=impersonal_ok, address=address))
+    problems.extend(
+        _address_problems(text, lang, impersonal_ok=impersonal_ok, address=address, pair=pair)
+    )
     return problems
 
 
@@ -230,6 +235,7 @@ def check(
     max_paragraphs: int,
     impersonal_ok: bool = False,
     address: Address = "vy",
+    pair: bool = False,
 ) -> Report:
     problems: list[str] = []
 
@@ -247,7 +253,7 @@ def check(
         problems.append(f"{len(paragraphs)} paragraphs, at most {max_paragraphs} were asked for")
 
     problems.extend(
-        _language_problems(stripped, lang, impersonal_ok=impersonal_ok, address=address)
+        _language_problems(stripped, lang, impersonal_ok=impersonal_ok, address=address, pair=pair)
     )
 
     if "!" in stripped:
