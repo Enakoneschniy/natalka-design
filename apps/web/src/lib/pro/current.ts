@@ -19,3 +19,16 @@ export const currentSeller = cache(async (): Promise<ProMe> => {
   }
   return account;
 });
+
+/** True when the visitor holds a session the jobs worker still accepts: the sign-in and sign-up
+ * pages send such a visitor straight to the cabinet. Any failure counts as signed out. */
+export async function hasLiveSession(): Promise<boolean> {
+  const session = await readSession();
+  if (!session) return false;
+  try {
+    await me(session);
+    return true;
+  } catch {
+    return false;
+  }
+}

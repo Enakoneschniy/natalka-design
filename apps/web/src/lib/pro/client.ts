@@ -55,21 +55,23 @@ export interface SignupInput {
   terms: boolean;
 }
 
+/** `ok` when the API accepted the request; otherwise its status and the reason it gave. */
+export type Accepted = { ok: true } | { ok: false; status: number; error: string };
+
+const accepted = async (path: string, body: unknown): Promise<Accepted> => {
+  const { status, data } = await proCall<{ error?: string } | null>(path, { method: 'POST', body });
+  if (status === 202) return { ok: true };
+  return { ok: false, status, error: data?.error ?? `${path} → ${status}` };
+};
+
 /** Asks for a sign-in letter. The answer is the same whoever the address belongs to. */
-export async function requestLogin(email: string): Promise<void> {
-  await proCall('/v1/pro/login', { method: 'POST', body: { email } });
+export function requestLogin(email: string): Promise<Accepted> {
+  return accepted('/v1/pro/login', { email });
 }
 
-/** `ok` when the letter is on its way; otherwise the reason the API gave. */
-export async function requestSignup(
-  input: SignupInput,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { status, data } = await proCall<{ error?: string } | null>('/v1/pro/signup', {
-    method: 'POST',
-    body: input,
-  });
-  if (status === 202) return { ok: true };
-  return { ok: false, error: data?.error ?? `signup → ${status}` };
+/** Asks for a confirmation letter (or a sign-in letter, when the address already has a cabinet). */
+export function requestSignup(input: SignupInput): Promise<Accepted> {
+  return accepted('/v1/pro/signup', input);
 }
 
 /** Trades the emailed token for a session, or null when the link is not good. */
