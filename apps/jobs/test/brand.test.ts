@@ -7,9 +7,10 @@ import { testEnv } from './env';
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const u32 = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
 const u16 = (n: number) => [(n >> 8) & 255, n & 255];
+const IEND = [0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82];
 /** PNG magic + an IHDR chunk declaring the given size. */
 const png = (w: number, h: number) =>
-  new Uint8Array([...PNG_MAGIC, ...u32(13), 0x49, 0x48, 0x44, 0x52, ...u32(w), ...u32(h), 8, 2, 0, 0, 0, 0, 0, 0, 0]);
+  new Uint8Array([...PNG_MAGIC, ...u32(13), 0x49, 0x48, 0x44, 0x52, ...u32(w), ...u32(h), 8, 2, 0, 0, 0, 0, 0, 0, 0, ...IEND]);
 /** JPEG: SOI, an APP0 segment, an SOF0 segment declaring the given size, EOI. */
 const jpeg = (w: number, h: number) =>
   new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0, 0, 0xff, 0xc0, 0, 11, 8, ...u16(h), ...u16(w), 1, 1, 0x11, 0, 0xff, 0xd9]);
@@ -59,6 +60,7 @@ describe('/v1/pro/brand', () => {
     expect(got).toMatchObject({ tone: 'ty', brand: { name: 'Мария Звёздная', has_logo: true, has_photo: true } });
     const logo = await call('GET', '/v1/pro/brand/logo', s);
     expect(logo.headers.get('content-type')).toBe('image/png');
+    expect(logo.headers.get('x-content-type-options')).toBe('nosniff');
     expect(new Uint8Array(await logo.arrayBuffer())).toEqual(PNG);
 
     const account = await testEnv.DB.prepare("SELECT id FROM pro_accounts WHERE email = 'maria@brand.test'").first<{ id: string }>();
@@ -96,6 +98,27 @@ describe('/v1/pro/brand', () => {
     expect((await call('PUT', '/v1/pro/brand/photo', s, jpeg(10, 5000), 'image/jpeg')).status).toBe(400);
     expect((await call('PUT', '/v1/pro/brand/photo', s, new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0, 0, 0xff, 0xd9]), 'image/jpeg')).status).toBe(400);
     expect((await call('PUT', '/v1/pro/brand/logo', s, png(4000, 4000), 'image/png')).status).toBe(200);
+  });
+
+  it('refuses an image that is not whole', async () => {
+    const s = await session('whole');
+    await call('PUT', '/v1/pro/brand', s, JSON.stringify(BRAND));
+    expect((await call('PUT', '/v1/pro/brand/logo', s, PNG.slice(0, PNG.length - 12), 'image/png')).status).toBe(400);
+    const wrongFirst = PNG.slice();
+    wrongFirst.set([0x74, 0x45, 0x58, 0x74], 12);
+    expect((await call('PUT', '/v1/pro/brand/logo', s, wrongFirst, 'image/png')).status).toBe(400);
+    expect((await call('PUT', '/v1/pro/brand/photo', s, JPEG.slice(0, JPEG.length - 2), 'image/jpeg')).status).toBe(400);
+  });
+
+  it('refuses an oversize content-length before reading the body', async () => {
+    const s = await session('declared');
+    await call('PUT', '/v1/pro/brand', s, JSON.stringify(BRAND));
+    const r = await SELF.fetch('https://jobs.test/v1/pro/brand/logo', {
+      method: 'PUT',
+      headers: { 'x-pro-key': 'test-pro-key', authorization: `Bearer ${s}`, 'content-length': '2000000' },
+      body: PNG,
+    });
+    expect(r.status).toBe(400);
   });
 
   it('refuses a bad brand and a bad tone', async () => {

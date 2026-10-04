@@ -29,6 +29,7 @@ const DEFAULT_ACCENT = '#E7B75C';
 const ACCENT = /^#[0-9A-Fa-f]{6}$/;
 const MAX_IMAGE_BYTES = 1_048_576;
 const MAX_SIDE = 4000;
+export const MAX_IMAGE = MAX_IMAGE_BYTES;
 
 const trimmed = (value: unknown, max: number, required = false): string | null => {
   if (value === undefined && !required) return '';
@@ -66,8 +67,8 @@ export function parseBrand(raw: unknown): BrandInput | null {
   return { name, contacts, accent, intro, outro, signature };
 }
 
-export async function saveBrand(env: Env, accountId: string, input: BrandInput): Promise<void> {
-  await env.DB.prepare(
+const brandStatement = (env: Env, accountId: string, input: BrandInput): D1PreparedStatement =>
+  env.DB.prepare(
     `INSERT INTO pro_brands (account_id, name, contacts, accent, intro, outro, signature, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(account_id) DO UPDATE SET
@@ -75,8 +76,10 @@ export async function saveBrand(env: Env, accountId: string, input: BrandInput):
        intro = excluded.intro, outro = excluded.outro, signature = excluded.signature,
        updated_at = excluded.updated_at`,
   )
-    .bind(accountId, input.name, JSON.stringify(input.contacts), input.accent, input.intro, input.outro, input.signature, now())
-    .run();
+    .bind(accountId, input.name, JSON.stringify(input.contacts), input.accent, input.intro, input.outro, input.signature, now());
+
+export async function saveBrand(env: Env, accountId: string, input: BrandInput): Promise<void> {
+  await brandStatement(env, accountId, input).run();
 }
 
 interface BrandRow {
@@ -120,9 +123,12 @@ function inspectImage(bytes: Uint8Array): { type: string; width: number; height:
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
   if (bytes.length >= 24 && PNG_MAGIC.every((b, i) => bytes[i] === b)) {
+    const at = (i: number, text: string) => [...text].every((c, k) => bytes[i + k] === c.charCodeAt(0));
+    if (!at(12, 'IHDR') || bytes.length < 45 || !at(bytes.length - 8, 'IEND')) return null;
     return { type: 'image/png', width: view.getUint32(16), height: view.getUint32(20) };
   }
-  if (bytes.length >= 4 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+  if (bytes.length >= 4 && bytes[0] === 0xff && bytes[bytes.length - 2] === 0xff && bytes[bytes.length - 1] === 0xd9
+    && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     let at = 2;
     while (at + 4 <= bytes.length) {
       if (bytes[at] !== 0xff) return null;
@@ -218,6 +224,11 @@ export async function brandForDocument(env: Env, accountId: string): Promise<Doc
     logo: await encodedImage(env, row.logo_key),
     photo: await encodedImage(env, row.photo_key),
   };
+}
+
+/** The brand and the tone in one batch: both land, or neither. */
+export async function saveBrandAndTone(env: Env, accountId: string, input: BrandInput, tone: 'vy' | 'ty'): Promise<void> {
+  await env.DB.batch([brandStatement(env, accountId, input), env.DB.prepare('UPDATE pro_accounts SET tone = ? WHERE id = ?').bind(tone, accountId)]);
 }
 
 export async function setTone(env: Env, accountId: string, tone: 'vy' | 'ty'): Promise<void> {

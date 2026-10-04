@@ -23,8 +23,9 @@ import {
   type ImageKind,
   parseBrand,
   putBrandImage,
+  MAX_IMAGE,
+  saveBrandAndTone,
   saveBrand,
-  setTone,
 } from './brand';
 import { createClient, getClient, listClients, parseClientBirth } from './clients';
 import { balance } from './credits';
@@ -117,8 +118,8 @@ async function putBrand(request: Request, env: Env, account: ProAccount): Promis
   if (!brand) return json({ error: 'brand' }, 400);
   const tone = body?.tone;
   if (tone !== undefined && tone !== 'vy' && tone !== 'ty') return json({ error: 'tone' }, 400);
-  await saveBrand(env, account.id, brand);
-  if (tone !== undefined) await setTone(env, account.id, tone);
+  if (tone === undefined) await saveBrand(env, account.id, brand);
+  else await saveBrandAndTone(env, account.id, brand, tone);
   return json({ ok: true });
 }
 
@@ -136,6 +137,7 @@ async function brandRoutes(request: Request, env: Env, url: URL, account: ProAcc
   if (image?.[1]) {
     const kind = image[1] as ImageKind;
     if (method === 'PUT') {
+      if (Number(request.headers.get('content-length')) > MAX_IMAGE) return json({ error: 'image' }, 400);
       const result = await putBrandImage(env, account.id, kind, await request.arrayBuffer());
       if (result === 'ok') return json({ ok: true });
       return result === 'no_brand' ? json({ error: 'no_brand' }, 409) : json({ error: 'image' }, 400);
@@ -144,7 +146,7 @@ async function brandRoutes(request: Request, env: Env, url: URL, account: ProAcc
       const found = await brandImage(env, account.id, kind);
       if (!found) return json({ error: 'not found' }, 404);
       return new Response(found.body, {
-        headers: { 'content-type': found.contentType, 'cache-control': 'private, no-store' },
+        headers: { 'content-type': found.contentType, 'cache-control': 'private, no-store', 'x-content-type-options': 'nosniff' },
       });
     }
     if (method === 'DELETE') {
