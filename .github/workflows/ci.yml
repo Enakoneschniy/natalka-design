@@ -30,7 +30,7 @@ jobs:
         run: uv run pytest -q
 
   web:
-    name: web (biome · types · build)
+    name: web (biome · types · tests · build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -46,6 +46,8 @@ jobs:
         run: pnpm exec biome ci .
       - name: typecheck
         run: pnpm --filter @natalka/web exec tsc --noEmit
+      - name: tests
+        run: pnpm --filter @natalka/web test
       - name: next build
         run: pnpm --filter @natalka/web build
 
