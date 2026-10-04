@@ -41,7 +41,16 @@ describe('POST /v1/pro/purchases', () => {
     expect(row?.status).toBe('pending');
     expect(checkout_url.endsWith(row!.stripe_session_id)).toBe(true);
 
-    const sent = (await lastRequest('stripe|checkout')) as Record<string, string>;
+    const recorded = (await lastRequest(`stripe|checkout|${id}`)) as {
+      fields: Record<string, string>;
+      headers: Record<string, string>;
+    };
+    const sent = recorded.fields;
+    expect(recorded.headers['idempotency-key']).toBe(`pack-${id}`);
+    expect(sent['metadata[pack]']).toBe('p30');
+    expect(sent['metadata[account_id]']).toBe(
+      (await testEnv.DB.prepare('SELECT id FROM pro_accounts WHERE email = ?').bind(email).first<{ id: string }>())!.id,
+    );
     expect(sent['line_items[0][price_data][unit_amount]']).toBe('24900');
     expect(sent['line_items[0][price_data][currency]']).toBe('eur');
     expect(sent['metadata[kind]']).toBe('pro_pack');
@@ -50,6 +59,21 @@ describe('POST /v1/pro/purchases', () => {
     expect(sent.customer_email).toBe(email);
     expect(sent.success_url).toBe(`https://pro.chronika.test/credits?purchase=${id}`);
     expect(sent.cancel_url).toBe('https://pro.chronika.test/credits');
+  });
+
+  it('marks the purchase failed and hides the Stripe error when Checkout fails', async () => {
+    const { session, email } = await seller('fail-checkout');
+    const response = await call('POST', '/v1/pro/purchases', session, { pack: 'p10' });
+    expect(response.status).toBe(502);
+    const text = await response.text();
+    expect(JSON.parse(text)).toEqual({ error: 'checkout' });
+    expect(text).not.toContain('stripe-secret-detail');
+    const row = await testEnv.DB.prepare(
+      'SELECT p.status FROM pro_purchases p JOIN pro_accounts a ON a.id = p.account_id WHERE a.email = ?',
+    )
+      .bind(email)
+      .first<{ status: string }>();
+    expect(row?.status).toBe('failed');
   });
 
   it('refuses an unknown pack', async () => {

@@ -164,8 +164,9 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
   const pack = (await readBody(request))?.pack;
   if (!isPack(pack)) return json({ error: 'pack' }, 400);
   const purchase = await createPurchase(env.DB, account.id, pack);
+  let session;
   try {
-    const session = await createPackCheckout(env, {
+    session = await createPackCheckout(env, {
       purchaseId: purchase.id,
       accountId: account.id,
       email: account.email,
@@ -174,12 +175,19 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
       amountMinor: purchase.amount_minor,
       currency: purchase.currency,
     });
-    await attachSession(env.DB, purchase.id, session.id);
-    return json({ id: purchase.id, checkout_url: session.url }, 201);
-  } catch {
+  } catch (error) {
+    console.error('pack checkout failed', purchase.id, error);
     await markFailed(env.DB, purchase.id, account.id);
     return json({ error: 'checkout' }, 502);
   }
+  // A session exists now and the seller may pay. Whatever happens here the purchase stays
+  // pending: the webhook settles it by metadata.purchase_id, and a 'failed' row would refuse it.
+  try {
+    await attachSession(env.DB, purchase.id, session.id);
+  } catch (error) {
+    console.error('pack attachSession failed', purchase.id, error);
+  }
+  return json({ id: purchase.id, checkout_url: session.url }, 201);
 }
 
 async function purchaseRoutes(request: Request, env: Env, url: URL, account: ProAccount): Promise<Response | null> {

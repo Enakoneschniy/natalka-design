@@ -93,12 +93,20 @@ export async function fakeApi(request: Request): Promise<Response> {
 }
 
 /** Stand-in for api.stripe.com, bound as the worker's outbound fetch. Checkout creation answers
- * with a fake session and records the form it was sent under "stripe|checkout" (read it through
+ * with a fake session and records the form it was sent under "stripe|checkout|<purchase id>" with its headers (read it through
  * the API binding's /__last). Anything else is a 404. */
 export async function fakeOutbound(request: Request): Promise<Response> {
   const url = new URL(request.url);
   if (request.method === 'POST' && url.origin === 'https://api.stripe.com' && url.pathname === '/v1/checkout/sessions') {
-    lastSeen.set('stripe|checkout', Object.fromEntries(new URLSearchParams(await request.text())));
+    const fields = Object.fromEntries(new URLSearchParams(await request.text()));
+    // A seller with this address makes Checkout fail, with an error body that must never leak.
+    if (fields.customer_email?.startsWith('fail-checkout@')) {
+      return new Response('stripe-secret-detail: card_declined_internal', { status: 500 });
+    }
+    lastSeen.set(`stripe|checkout|${fields['metadata[purchase_id]']}`, {
+      fields,
+      headers: Object.fromEntries(request.headers),
+    });
     const id = `cs_test_${crypto.randomUUID().replaceAll('-', '')}`;
     return json({ id, url: `https://checkout.stripe.test/${id}` });
   }
