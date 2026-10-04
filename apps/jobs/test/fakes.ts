@@ -91,3 +91,16 @@ export async function fakeApi(request: Request): Promise<Response> {
   }
   return new Response('not found', { status: 404 });
 }
+
+/** Stand-in for api.stripe.com, bound as the worker's outbound fetch. Checkout creation answers
+ * with a fake session and records the form it was sent under "stripe|checkout" (read it through
+ * the API binding's /__last). Anything else is a 404. */
+export async function fakeOutbound(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  if (request.method === 'POST' && url.origin === 'https://api.stripe.com' && url.pathname === '/v1/checkout/sessions') {
+    lastSeen.set('stripe|checkout', Object.fromEntries(new URLSearchParams(await request.text())));
+    const id = `cs_test_${crypto.randomUUID().replaceAll('-', '')}`;
+    return json({ id, url: `https://checkout.stripe.test/${id}` });
+  }
+  return new Response('not found', { status: 404 });
+}

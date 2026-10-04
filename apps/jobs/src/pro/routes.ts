@@ -29,6 +29,8 @@ import {
 } from './brand';
 import { createClient, getClient, listClients, parseClientBirth } from './clients';
 import { balance } from './credits';
+import { PACKS, attachSession, createPurchase, isPack, listPurchases, markFailed } from './purchases';
+import { createPackCheckout } from '../stripe';
 import { hasRedeemed, redeemInvite } from './invites';
 import { assemblePdf, readingPdf, regenerateSection } from './lifecycle';
 import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from './readings';
@@ -157,6 +159,36 @@ async function brandRoutes(request: Request, env: Env, url: URL, account: ProAcc
   return null;
 }
 
+async function createPackPurchase(request: Request, env: Env, account: ProAccount): Promise<Response> {
+  if (!env.STRIPE_SECRET_KEY) return json({ error: 'payments unavailable' }, 503);
+  const pack = (await readBody(request))?.pack;
+  if (!isPack(pack)) return json({ error: 'pack' }, 400);
+  const purchase = await createPurchase(env.DB, account.id, pack);
+  try {
+    const session = await createPackCheckout(env, {
+      purchaseId: purchase.id,
+      accountId: account.id,
+      email: account.email,
+      pack,
+      credits: PACKS[pack].credits,
+      amountMinor: purchase.amount_minor,
+      currency: purchase.currency,
+    });
+    await attachSession(env.DB, purchase.id, session.id);
+    return json({ id: purchase.id, checkout_url: session.url }, 201);
+  } catch {
+    await markFailed(env.DB, purchase.id, account.id);
+    return json({ error: 'checkout' }, 502);
+  }
+}
+
+async function purchaseRoutes(request: Request, env: Env, url: URL, account: ProAccount): Promise<Response | null> {
+  if (url.pathname !== '/v1/pro/purchases') return null;
+  if (request.method === 'POST') return createPackPurchase(request, env, account);
+  if (request.method === 'GET') return json({ purchases: await listPurchases(env.DB, account.id) });
+  return null;
+}
+
 const CLIENT = /^\/v1\/pro\/clients\/([^/]+)$/;
 const READING = /^\/v1\/pro\/readings\/([^/]+)$/;
 const REGENERATE = /^\/v1\/pro\/readings\/([^/]+)\/sections\/([^/]+)\/regenerate$/;
@@ -253,6 +285,8 @@ export async function handlePro(request: Request, env: Env, url: URL): Promise<R
   }
   const branded = await brandRoutes(request, env, url, account);
   if (branded) return branded;
+  const bought = await purchaseRoutes(request, env, url, account);
+  if (bought) return bought;
   const handled = await readingRoutes(request, env, url, account);
   if (handled) return handled;
   return json({ error: 'not found' }, 404);

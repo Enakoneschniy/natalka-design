@@ -84,6 +84,59 @@ export async function createCheckoutSession(env: Env, input: CheckoutInput): Pro
   return { id: session.id, url: session.url };
 }
 
+export interface PackCheckoutInput {
+  purchaseId: string;
+  accountId: string;
+  email: string;
+  pack: string;
+  credits: number;
+  amountMinor: number;
+  currency: string;
+}
+
+/** Checkout for a credit pack. The seller pays us, so our name is on their receipt. */
+export async function createPackCheckout(env: Env, input: PackCheckoutInput): Promise<CheckoutSession> {
+  if (!env.STRIPE_SECRET_KEY) throw new Error('Stripe is not configured');
+  const fields: Record<string, string | number | boolean> = {
+    mode: 'payment',
+    'line_items[0][quantity]': 1,
+    'line_items[0][price_data][currency]': input.currency.toLowerCase(),
+    'line_items[0][price_data][unit_amount]': input.amountMinor,
+    'line_items[0][price_data][product_data][name]': `Chronika Pro · ${input.credits} кредитов`,
+    customer_email: input.email,
+    client_reference_id: input.purchaseId,
+    'metadata[kind]': 'pro_pack',
+    'metadata[purchase_id]': input.purchaseId,
+    'metadata[account_id]': input.accountId,
+    'metadata[pack]': input.pack,
+    success_url: `${env.PRO_SITE_URL}/credits?purchase=${input.purchaseId}`,
+    cancel_url: `${env.PRO_SITE_URL}/credits`,
+    locale: 'ru',
+    'tax_id_collection[enabled]': true,
+    'consent_collection[terms_of_service]': 'required',
+    'custom_text[terms_of_service_acceptance][message]':
+      'Кредиты зачисляются сразу после оплаты и не сгорают. Деньги можно вернуть в течение 14 дней, если ни один кредит пакета не потрачен.',
+  };
+  if (env.STRIPE_TAX === '1') fields['automatic_tax[enabled]'] = true;
+
+  const response = await fetch(`${API}/checkout/sessions`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      'content-type': 'application/x-www-form-urlencoded',
+      'idempotency-key': `pack-${input.purchaseId}`,
+    },
+    body: form(fields),
+  });
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 400);
+    console.error('stripe pack checkout', response.status, detail);
+    throw new Error(`stripe answered ${response.status}`);
+  }
+  const session = (await response.json()) as { id: string; url: string };
+  return { id: session.id, url: session.url };
+}
+
 export interface StripeEvent {
   id: string;
   type: string;
