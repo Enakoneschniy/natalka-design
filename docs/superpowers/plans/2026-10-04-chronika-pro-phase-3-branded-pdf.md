@@ -785,6 +785,7 @@ describe('/v1/pro/brand', () => {
 
 - [ ] **Step 2: Implement `brand.ts`**, following the interfaces and the style of `clients.ts`. Notes:
   - Magic bytes: PNG starts `89 50 4E 47 0D 0A 1A 0A` (content type `image/png`); JPEG starts `FF D8 FF` (`image/jpeg`). The request's content-type header is ignored; the bytes decide.
+  - Dimensions: reject images wider or taller than 4000 px (the renderer refuses them too). PNG: width and height are big-endian uint32 at byte offsets 16 and 20 (IHDR). JPEG: walk the segments from offset 2 (each `FF xx` + 2-byte big-endian length) until a SOF marker (`C0`–`CF` except `C4`, `C8`, `CC`); height is the uint16 at segment offset +5, width at +7. A JPEG with no SOF counts as invalid. Add tests: a PNG header declaring 5000×10 → 400; a minimal JPEG with a SOF declaring 10×5000 → 400.
   - base64 for `brandForDocument`: encode in chunks (e.g. 32 KB slices through `String.fromCharCode(...slice)` then `btoa`), never a whole-MB spread.
   - `putBrandImage` reads the old key, `put`s the new object, updates the row, then deletes the old object. A crash leaves at worst an orphan, never a row pointing at nothing.
   - `PUT /v1/pro/brand` with `tone` present calls `setTone` only for `'vy'`/`'ty'`, else 400 `tone`. Without `tone`, the tone is left alone.
