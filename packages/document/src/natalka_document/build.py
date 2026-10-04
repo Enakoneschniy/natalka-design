@@ -15,6 +15,7 @@ from .schema import (
     AspectGrid,
     Birth,
     Block,
+    Brand,
     Cover,
     DatesTable,
     Document,
@@ -224,6 +225,11 @@ CLOSING = {
     "de": "✦  Ende der Deutung  ✦",
 }
 
+#: The cover subtitle in the informal «ты» form, where it differs from the formal one above.
+COVER_SUBTITLE_TY: dict[str, dict[str, str]] = {
+    "forecast": {"ru": "по транзитам твоей карты", "uk": "за транзитами твоєї карти"},
+}
+
 
 def _t(table: dict[str, str], lang: str) -> str:
     return table.get(lang, table["en"])
@@ -250,6 +256,8 @@ def skeleton(
     order_ref: str | None = None,
     transits: list[dict[str, Any]] | None = None,
     engine_version: str = "",
+    brand: Brand | None = None,
+    address: Literal["vy", "ty"] = "vy",
 ) -> Document:
     b = facts["birth"]
     birth = Birth(
@@ -304,13 +312,16 @@ def skeleton(
             )
         )
 
+    subtitle = (COVER_SUBTITLE_TY.get(product, {}).get(lang) if address == "ty" else None) or _t(
+        COVER_SUBTITLE[product], lang
+    )
+
     return Document(
         meta=Meta(product=product, lang=lang, order_ref=order_ref, engine_version=engine_version),
         person=person,
         birth=birth,
-        cover=Cover(
-            title=_t(COVER_TITLE[product], lang), subtitle=_t(COVER_SUBTITLE[product], lang)
-        ),
+        cover=Cover(title=_t(COVER_TITLE[product], lang), subtitle=subtitle),
+        brand=brand,
         facts=facts,
         facts_second=facts_second,
         transits=transits or [],

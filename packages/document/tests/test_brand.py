@@ -7,8 +7,9 @@ from pathlib import Path
 
 import pypdfium2 as pdfium
 import pytest
+from natalka_document.build import skeleton
 from natalka_document.render import render_pdf
-from natalka_document.schema import Brand, Document
+from natalka_document.schema import Brand, Document, Person
 from PIL import Image
 from pydantic import ValidationError
 
@@ -160,3 +161,20 @@ def test_an_image_that_stops_halfway_is_refused(fmt: str) -> None:
     Brand(name="X", photo=base64.b64encode(whole).decode())  # the whole image is fine
     with pytest.raises(ValidationError):
         Brand(name="X", photo=base64.b64encode(whole[: len(whole) // 2]).decode())
+
+
+def test_skeleton_carries_the_brand_and_the_address(facts: dict) -> None:
+    doc = skeleton(
+        facts,
+        product="forecast",
+        person=Person(name="Аня"),
+        place="Київ",
+        lang="ru",
+        brand=BRAND,
+        address="ty",
+    )
+    assert doc.brand == BRAND
+    assert doc.cover.subtitle == "по транзитам твоей карты"
+    plain = skeleton(facts, product="forecast", person=Person(name="Аня"), place="Київ", lang="ru")
+    assert plain.brand is None
+    assert plain.cover.subtitle == "по транзитам вашей карты"
