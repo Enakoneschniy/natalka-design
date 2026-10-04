@@ -36,6 +36,26 @@ export async function sendJson<T>(
   }
 }
 
+/** Uploads a picture through the cabinet's proxy as raw bytes. The file itself is the body, so the
+ * browser sets its length, and the content type is the file's own (PNG or JPEG): the proxy
+ * refuses anything else. The status is 0 when offline. */
+export async function putImage(
+  path: string,
+  file: File,
+): Promise<{ status: number; error?: string }> {
+  try {
+    const response = await fetch(path, {
+      method: 'PUT',
+      headers: { 'content-type': file.type },
+      body: file,
+    });
+    const data = (await response.json().catch(() => null)) as { error?: string } | null;
+    return { status: response.status, error: data?.error };
+  } catch {
+    return { status: 0 };
+  }
+}
+
 /** Where a page goes when the proxy says the session is gone (401). */
 export function signInAgain(): void {
   window.location.assign('/login?expired=1');

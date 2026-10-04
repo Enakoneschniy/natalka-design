@@ -942,3 +942,205 @@ dialog.sheet {
 dialog.sheet::backdrop {
   background: rgba(6, 9, 26, 0.7);
 }
+
+/* ---- the brand tab ---- */
+
+/* The PDF cover in miniature: A4 proportions, the night sky, the text block at the bottom. */
+.cover {
+  --brand: var(--accent);
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 240px);
+  aspect-ratio: 210 / 297;
+  margin: 0 auto;
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: 4px;
+  padding: 12px 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: radial-gradient(80% 50% at 50% 38%, #182252, #06091a 70%);
+  text-align: center;
+}
+
+.cover canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cover > :not(canvas) {
+  position: relative;
+  z-index: 1;
+}
+
+.cover .bname {
+  max-width: 100%;
+  font: 500 7.5px var(--font-text);
+  letter-spacing: 0.18em;
+  color: var(--brand);
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cover .logo {
+  max-width: 60%;
+  max-height: 22px;
+  object-fit: contain;
+}
+
+.cover .rule {
+  width: 60%;
+  height: 1px;
+  margin-bottom: 4px;
+  background: var(--brand);
+}
+
+.cover .rule::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  background: var(--brand);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.cover .ttl {
+  font: 500 17px var(--font-display);
+}
+
+.cover .who {
+  font: 400 12px var(--font-display);
+}
+
+.cover .ft {
+  max-width: 100%;
+  font: 400 7.5px var(--font-text);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.swatches button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 2px var(--bg);
+  cursor: pointer;
+}
+
+.swatches button[aria-pressed="true"] {
+  border-color: var(--text);
+}
+
+.accent-row {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.accent-row .chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+}
+
+.accent-row .chip.own {
+  border: 2px solid var(--text);
+}
+
+.warn {
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.sample {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-field);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 13.5px;
+}
+
+.contacts {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.contact {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.hint {
+  font-size: 12px;
+}
+
+.image-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.image-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-field);
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.thumb.photo {
+  border-radius: 50%;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thumb.photo img {
+  object-fit: cover;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
