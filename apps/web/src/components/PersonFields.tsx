@@ -9,6 +9,9 @@
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { City } from '@/app/api/cities/route';
+import { cityLabel, maskDate, maskTime } from '@/lib/birth-input';
+
+export { cityLabel, maskDate, maskTime };
 
 export type Gender = 'female' | 'male' | 'neutral';
 
@@ -33,20 +36,6 @@ export const emptyPerson = (): PersonState => ({
   city: null,
   cityQuery: '',
 });
-
-/** Keep the digits the user typed and insert the separators for them. */
-export function maskDate(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
-  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)].filter(Boolean).join('.');
-}
-
-export function maskTime(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 4);
-  return digits.length <= 2 ? digits : `${digits.slice(0, 2)}:${digits.slice(2)}`;
-}
-
-export const cityLabel = (city: City): string =>
-  [city.name, city.region, city.country].filter(Boolean).join(', ');
 
 function formatCoordinate(value: number, axis: 'lat' | 'lon', t: (key: string) => string): string {
   const degrees = Math.floor(Math.abs(value));

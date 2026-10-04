@@ -7,7 +7,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import type { City } from '@/app/api/cities/route';
-import { cityLabel } from '@/components/PersonFields';
+import { cityLabel } from '@/lib/birth-input';
 import { coordinatesLine } from '@/lib/pro/birth';
 
 /** The birth city, from the site's own city search: picking one gives the coordinates and the

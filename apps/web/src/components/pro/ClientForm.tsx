@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { maskDate, maskTime } from '@/components/PersonFields';
+import { useRef, useState } from 'react';
+import { maskDate, maskTime } from '@/lib/birth-input';
 import {
   type ClientDraft,
   type ClientField,
@@ -34,16 +34,20 @@ export function ClientForm() {
   });
   const [errors, setErrors] = useState<Errors>({});
   const [sending, setSending] = useState(false);
+  // State lands on the next render; two taps in one frame both see `sending` false.
+  const inFlight = useRef(false);
 
   const patch = (fields: Partial<ClientDraft>) =>
     setDraft((current) => ({ ...current, ...fields }));
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (inFlight.current) return;
     const local = checkClient(draft);
     const body = clientBody(draft);
     setErrors(local);
     if (!body) return;
+    inFlight.current = true;
     setSending(true);
     const { status, data } = await sendJson<{ id?: string; error?: string }>(
       '/api/pro/x/clients',
@@ -51,9 +55,11 @@ export function ClientForm() {
       body,
     );
     if (status === 201 && data?.id) {
+      // The page is left; the button stays held until it is.
       router.push(`/clients/${data.id}`);
       return;
     }
+    inFlight.current = false;
     setSending(false);
     if (status === 401) return signInAgain();
     if (status === 400 && data?.error === 'consent')

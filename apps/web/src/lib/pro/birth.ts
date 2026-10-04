@@ -3,6 +3,7 @@
  * and the card share it, and the tests pin the rules. */
 
 import type { City } from '@/app/api/cities/route';
+import { cityLabel } from '@/lib/birth-input';
 
 export type Gender = 'female' | 'male' | 'neutral';
 
@@ -107,9 +108,6 @@ export function checkClient(
   return errors;
 }
 
-export const placeOf = (city: City): string =>
-  [city.name, city.region, city.country].filter(Boolean).join(', ');
-
 /** The `POST clients` body for a form that passes `checkClient`, else null. */
 export function clientBody(draft: ClientDraft, today: Date = new Date()): ClientBody | null {
   const date = parseBirthDate(draft.date, today);
@@ -123,7 +121,7 @@ export function clientBody(draft: ClientDraft, today: Date = new Date()): Client
     latitude: city.latitude,
     longitude: city.longitude,
     zone: city.zone,
-    place: placeOf(city),
+    place: cityLabel(city),
     gender: GENDER_CODE[draft.gender],
     consent: true,
   };

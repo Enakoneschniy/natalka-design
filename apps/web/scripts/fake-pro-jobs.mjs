@@ -2,8 +2,8 @@
 // A stand-in for the jobs worker's seller-cabinet API (`/v1/pro/*`), for looking at the cabinet
 // locally. Dependency-free, in-memory, reset on restart. Never deploy it; it checks nothing.
 //
-//   node apps/web/scripts/fake-pro-jobs.mjs            # listens on :8799 (PORT to change)
-//   NATALKA_JOBS_URL=http://localhost:8799 PRO_API_KEY=dev PRO_HOSTS=localhost:3000 \
+//   node apps/web/scripts/fake-pro-jobs.mjs            # listens on 127.0.0.1:8799 (PORT to change)
+//   NATALKA_JOBS_URL=http://127.0.0.1:8799 PRO_API_KEY=dev PRO_HOSTS=localhost:3000 \
 //     corepack pnpm --filter @natalka/web dev
 //
 // Any `x-pro-key` and any bearer are accepted; `POST /v1/pro/session` takes any token. Sign in
@@ -599,6 +599,7 @@ createServer((req, res) => {
     console.error(error);
     if (!res.headersSent) send(res, 500, { error: 'fake server error' });
   });
-}).listen(PORT, () => {
-  console.log(`fake pro jobs on http://localhost:${PORT}/v1/pro/ — visual checks only`);
+  // Loopback only: the fake answers anyone as a signed-in seller.
+}).listen(PORT, '127.0.0.1', () => {
+  console.log(`fake pro jobs on http://127.0.0.1:${PORT}/v1/pro/ — visual checks only`);
 });
