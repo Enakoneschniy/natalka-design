@@ -101,3 +101,48 @@ def test_images_must_be_png_or_jpeg_within_a_megabyte() -> None:
         Brand(name="X", accent="purple")
     with pytest.raises(ValidationError):
         Brand(name="X", contacts=["a", "b", "c", "d", "e"])
+
+
+def _garbage(header: bytes) -> str:
+    return base64.b64encode(header + b"\x00not really an image" * 20).decode()
+
+
+@pytest.mark.parametrize("header", [b"\x89PNG\r\n\x1a\n", b"\xff\xd8\xff"])
+def test_an_image_with_a_valid_header_but_garbage_is_refused(header: bytes) -> None:
+    with pytest.raises(ValidationError):
+        Brand(name="X", photo=_garbage(header))
+
+
+def test_an_image_too_large_to_draw_is_refused() -> None:
+    with pytest.raises(ValidationError):
+        Brand(name="X", logo=_png(5000, 1))
+
+
+def test_a_tall_narrow_photo_still_renders() -> None:
+    texts, _ = _render(_doc(BRAND.model_copy(update={"photo": _png(2, 40)})))
+    assert "ВІД АВТОРА" in texts[1].upper()
+
+
+def test_seller_line_breaks_survive() -> None:
+    brand = BRAND.model_copy(
+        update={"intro": "Рядок один\r\nрядок два\r\n\r\nДругий абзац", "photo": None}
+    )
+    texts, _ = _render(_doc(brand))
+    lines = [line.strip() for line in texts[1].splitlines()]
+    assert "Рядок один" in lines
+    assert "рядок два" in lines
+    assert "Другий абзац" in lines
+
+
+def test_the_contents_start_on_their_own_page() -> None:
+    texts, _ = _render(_doc(BRAND))
+    assert "ЗМІСТ" not in texts[1]
+    assert "ЗМІСТ" in texts[2] and "ВІД АВТОРА" not in texts[2].upper()
+
+
+def test_an_outro_alone_adds_no_page_from_the_author() -> None:
+    brand = BRAND.model_copy(update={"intro": "", "photo": None})
+    texts, _ = _render(_doc(brand))
+    assert all("ВІД АВТОРА" not in t.upper() for t in texts)
+    assert "ЗМІСТ" in texts[1]
+    assert any("Спасибо, что доверились" in t for t in texts[-3:])

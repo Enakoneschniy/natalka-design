@@ -12,6 +12,7 @@ import base64
 import io
 import math
 import random
+import re
 from pathlib import Path
 from typing import Any
 from xml.sax.saxutils import escape
@@ -130,8 +131,9 @@ def _glyph_drawing(path: str, size: float, color: str) -> Drawing:
 
 
 def _paragraphs(text: str) -> list[str]:
-    """Split seller text into paragraphs on blank lines; drop the empty ones."""
-    return [p.strip() for p in text.split("\n\n") if p.strip()]
+    """Seller text as Paragraph markup: escaped, split on blank lines, single newlines kept."""
+    parts = (p.strip() for p in re.split(r"\r?\n\s*\n", text))
+    return [escape(p).replace("\r\n", "\n").replace("\n", "<br/>") for p in parts if p]
 
 
 def _image_reader(b64: str) -> ImageReader:
@@ -271,17 +273,19 @@ class Renderer:
         if brand.photo:
             raw = base64.b64decode(brand.photo)
             iw, ih = ImageReader(io.BytesIO(raw)).getSize()
-            width = 4.5 * cm
-            photo = Image(io.BytesIO(raw), width=width, height=width * ih / iw)
+            width, height = 4.5 * cm, 4.5 * cm * ih / iw
+            if height > 7 * cm:  # a tall photo would not fit the frame; bound it by height
+                width, height = width * 7 * cm / height, 7 * cm
+            photo = Image(io.BytesIO(raw), width=width, height=height)
             photo.hAlign = "LEFT"
             out += [photo, Spacer(1, 12)]
-        out += [Paragraph(escape(p), st.s_body) for p in _paragraphs(brand.intro)]
+        out += [Paragraph(p, st.s_body) for p in _paragraphs(brand.intro)]
         out += self._signature(brand)
         return out
 
     def _outro(self, brand: Brand) -> list[Flowable]:
         out: list[Flowable] = [Spacer(1, 18), st.HRule(), Spacer(1, 8)]
-        out += [Paragraph(escape(p), st.s_body) for p in _paragraphs(brand.outro)]
+        out += [Paragraph(p, st.s_body) for p in _paragraphs(brand.outro)]
         out += self._signature(brand)
         if brand.contacts:
             out.append(Spacer(1, 6))

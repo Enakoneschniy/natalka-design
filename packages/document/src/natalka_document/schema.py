@@ -8,10 +8,12 @@ engine JSON, so the numbers in the PDF can never drift from the calculation.
 from __future__ import annotations
 
 import base64
+import io
 import re
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
+from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Product = Literal["natal", "forecast", "synastry", "child", "bundle"]
@@ -179,6 +181,25 @@ class Section(_Strict):
     blocks: list[Block] = Field(default_factory=list)
 
 
+#: Bounds a brand image must fit so the renderer can always draw it.
+MAX_IMAGE_SIDE = 4000
+MAX_IMAGE_PIXELS = 16_000_000
+
+
+def _check_drawable(raw: bytes) -> None:
+    """Refuse anything Pillow cannot read as a sane PNG or JPEG: a header alone is not enough."""
+    message = "image must be a valid PNG or JPEG up to 4000 px per side"
+    try:
+        with Image.open(io.BytesIO(raw)) as img:
+            img.verify()
+        with Image.open(io.BytesIO(raw)) as img:
+            fmt, (w, h) = img.format, img.size
+    except Exception as exc:  # Pillow raises many types for broken or hostile input
+        raise ValueError(message) from exc
+    if fmt not in {"PNG", "JPEG"} or max(w, h) > MAX_IMAGE_SIDE or w * h > MAX_IMAGE_PIXELS:
+        raise ValueError(message)
+
+
 class Brand(_Strict):
     """A seller's brand. When present, the document is the seller's: nothing of ours is drawn."""
 
@@ -204,6 +225,7 @@ class Brand(_Strict):
             raise ValueError("image larger than 1 MB")
         if not (raw.startswith(b"\x89PNG\r\n\x1a\n") or raw.startswith(b"\xff\xd8\xff")):
             raise ValueError("image must be PNG or JPEG")
+        _check_drawable(raw)
         return value
 
 

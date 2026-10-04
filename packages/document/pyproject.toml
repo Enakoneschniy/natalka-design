@@ -3,7 +3,7 @@ name = "natalka-document"
 version = "0.1.0"
 description = "Document schema and PDF rendering"
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.9", "reportlab>=4.2", "svglib>=1.5"]
+dependencies = ["pillow>=10", "pydantic>=2.9", "reportlab>=4.2", "svglib>=1.5"]
 
 [project.scripts]
 natalka-document = "natalka_document.cli:main"
