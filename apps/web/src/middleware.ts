@@ -10,6 +10,7 @@ import {
   readVariant,
 } from '@/lib/experiment';
 import { cleanSource, SOURCE_COOKIE } from '@/lib/marketing';
+import { isProHost } from '@/lib/pro/host';
 import { INDEXABLE, isPrivatePath } from '@/lib/seo';
 
 const intl = createMiddleware(routing);
@@ -21,6 +22,20 @@ export async function middleware(request: NextRequest) {
   // Russia is not a market: payments are impossible there, so the service is not offered.
   if (country === 'RU') {
     return NextResponse.rewrite(new URL('/unavailable', request.url));
+  }
+
+  // The seller cabinet answers on its own host, from its own tree under `app/pro`. None of the
+  // shop's machinery runs there: no locale routing, no price experiment, no ad source.
+  const { pathname, search } = request.nextUrl;
+  if (isProHost(request.headers.get('host'))) {
+    const inner = pathname === '/' ? '/pro' : `/pro${pathname}`;
+    const response = NextResponse.rewrite(new URL(`${inner}${search}`, request.url));
+    response.headers.set('x-robots-tag', 'noindex, nofollow');
+    return response;
+  }
+  // …and that tree does not exist anywhere else.
+  if (pathname === '/pro' || pathname.startsWith('/pro/')) {
+    return NextResponse.rewrite(new URL('/_not-found', request.url), { status: 404 });
   }
 
   // The site used to be in three languages. Anyone holding one of those links — a bookmark, a
