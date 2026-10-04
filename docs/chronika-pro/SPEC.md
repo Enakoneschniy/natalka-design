@@ -147,3 +147,12 @@ the jobs worker. In the Stripe dashboard, enable these webhook endpoint events: 
 `checkout.session.expired`, `charge.refunded`. A pack whose amount does not match is marked failed
 and logged ("pro pack amount mismatch"); the owner refunds it in Stripe.
 Stripe Tax requires `STRIPE_TAX=1`. Packs are priced inline in EUR minor units.
+
+Phase 5a: apply migration `0012_pro_signup.sql` (a production write), and deploy the jobs worker
+before the web app. Set the web secret `PRO_API_KEY` to the same value as the jobs worker's
+(`pnpm --filter @natalka/web exec wrangler secret put PRO_API_KEY`). Deploying the web app creates
+the `pro.chronika.me` custom domain; the jobs var `PRO_SITE_URL` is already
+`https://pro.chronika.me`, which is where the letters' `/login/<token>` links point. Local
+try-out: run `apps/web` with `PRO_HOSTS=astro:3000` to see the cabinet at that host, and set
+`NATALKA_JOBS_URL` to a jobs dev instance and `PRO_API_KEY` to its key. Without a mail key the
+jobs worker logs the link (dev only).

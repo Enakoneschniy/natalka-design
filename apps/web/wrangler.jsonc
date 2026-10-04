@@ -6,9 +6,11 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   // The site answers on the apex and on www; Cloudflare issues the certificates for both.
+  // pro.chronika.me serves the seller cabinet from this same worker, picked by host.
   "routes": [
     { "pattern": "chronika.me", "custom_domain": true },
-    { "pattern": "www.chronika.me", "custom_domain": true }
+    { "pattern": "www.chronika.me", "custom_domain": true },
+    { "pattern": "pro.chronika.me", "custom_domain": true }
   ],
   "observability": { "enabled": true },
   // City search reads straight from here. Going through the calculation container cost a
@@ -30,6 +32,8 @@
     // The one switch that opens the site to search and answer engines: robots.txt, the sitemap,
     // llms.txt and every page's metadata follow it. Turn it on when payments are live — until
     // then a reading can be had without paying, and that is not a thing to be found by.
-    "SITE_INDEXABLE": "true"
+    "SITE_INDEXABLE": "true",
+    // Hosts (comma-separated) that show the seller cabinet instead of the public site.
+    "PRO_HOSTS": "pro.chronika.me"
   }
 }
