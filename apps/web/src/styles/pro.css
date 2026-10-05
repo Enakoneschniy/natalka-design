@@ -411,22 +411,166 @@ body.pro {
     border-bottom-color: var(--accent);
   }
 
+  .shell > .screen {
+    padding-bottom: 48px;
+  }
+}
+
+/* On a phone and a tablet the aside is no box of its own: the bar and the tabs lay out as if
+   they were the page's own children. */
+.side {
+  display: contents;
+}
+
+/* On a desktop the aside is a left rail: the mark, the tabs as a menu, and who is signed in at
+   the foot. The work area beside it gets the width the phone column never had. */
+@media (min-width: 1024px) {
   .shell {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    min-height: 100dvh;
+  }
+
+  .side {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+    gap: 6px;
+    padding: 26px 16px 20px;
+    border-right: 1px solid var(--line);
+    background: rgba(11, 16, 39, 0.55);
   }
 
-  .shell > .bar {
+  .side .bar {
+    display: contents;
+  }
+
+  .side .logo {
+    padding: 0 12px 22px;
+    font-size: 19px;
+  }
+
+  .side .tabs {
     order: 1;
+    flex-direction: column;
+    gap: 2px;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
   }
 
-  .shell > .tabs {
+  .side .tabs a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    margin: 0;
+    border: 0;
+    border-radius: 10px;
+    font-size: 14.5px;
+    color: var(--text-2);
+  }
+
+  .side .tabs a:hover {
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  .side .tabs a svg {
+    display: block;
+  }
+
+  .side .tabs a[aria-current="page"] {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .side .who {
     order: 2;
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding: 14px 12px 0;
+    border-top: 1px solid var(--line);
+    text-align: left;
+    font-size: 13.5px;
+  }
+
+  .side .credits {
+    order: 3;
+    align-self: flex-start;
+    margin: 4px 12px;
+  }
+
+  .side .signout {
+    order: 4;
+    align-self: flex-start;
+    margin: 4px 12px 0;
   }
 
   .shell > .screen {
-    order: 3;
-    padding-bottom: 48px;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 48px 64px;
+    gap: 18px;
+  }
+
+  .shell .screen h1 {
+    font-size: 32px;
+  }
+
+  /* A reading is prose: its page keeps a book's line length, not the full work area. */
+  .shell > .screen:has(.sections) {
+    max-width: 860px;
+  }
+
+  .shell .text {
+    font-size: 15px;
+  }
+
+  /* Rows of readings, clients and purchases fill the width two by two. */
+  .shell .list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  /* A form of plain fields keeps a comfortable line length. */
+  .shell .form:not(.brand) {
+    max-width: 600px;
+  }
+
+  /* The brand form: fields on the left, the cover beside them, staying in view while they scroll. */
+  .form.brand {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    column-gap: 48px;
+    row-gap: 0;
+    align-items: start;
+  }
+
+  .form.brand > * {
+    grid-column: 1;
+    margin-bottom: 14px;
+  }
+
+  .form.brand > .cover {
+    grid-column: 2;
+    grid-row: 1 / span 40;
+    position: sticky;
+    top: 40px;
+    width: 100%;
+  }
+
+  .packs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .packs > .field-error {
+    grid-column: 1 / -1;
   }
 }
 
