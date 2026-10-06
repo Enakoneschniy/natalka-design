@@ -125,7 +125,7 @@ describe('POST /v1/orders', () => {
       [{ birth: { ...BIRTH, zone: 'Z'.repeat(65) } }, 'birth.zone'],
       [{ birth: { ...BIRTH, place: 'П'.repeat(121) } }, 'birth.place'],
       [{ birth: { ...BIRTH, name: 'И'.repeat(81) } }, 'birth.name'],
-      [{ birth: { ...BIRTH, name: 42 } }, 'birth.name'],
+      [{ birth: { ...BIRTH, name: '   ' } }, 'birth.name'],
       [{ birth: { ...BIRTH, gender: 'x' } }, 'birth.gender'],
       [{ product: 'synastry' }, 'birth_second'],
       [{ product: 'synastry', birth_second: { ...BIRTH, date: 'вчера' } }, 'birth_second.date'],
@@ -142,7 +142,7 @@ describe('POST /v1/orders', () => {
     for (const patch of [
       { amount_minor: 50 },
       { amount_minor: 1_000_000 },
-      { birth: { ...BIRTH, date: '1900-01-01', time: null, latitude: -90, longitude: 180, name: '', place: '' } },
+      { birth: { ...BIRTH, date: '1900-01-01', time: null, latitude: -90, longitude: 180 } },
       { birth: { ...BIRTH, date: today, name: 'И'.repeat(80), place: 'П'.repeat(120), zone: 'Z'.repeat(64) } },
     ]) {
       expect((await post({ ...ORDER, ...patch })).status, JSON.stringify(patch)).toBe(201);
