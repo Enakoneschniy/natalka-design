@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createClient } from '../src/pro/clients';
 import { balance, grant } from '../src/pro/credits';
+import { sealLegacyPayloads } from '../src/pipeline';
 import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from '../src/pro/readings';
 import { ANNA } from './people';
 import { payloadOf, runJob, signIn, testEnv, writePayload } from './env';
@@ -162,6 +163,81 @@ describe('reading view', () => {
 
     await testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
     expect(await summary()).toMatchObject({ status: 'ready', pdf_ready: false });
+  });
+});
+
+describe('the list of readings', () => {
+  /** The worker's database with every statement it prepares written down. */
+  function recordingDatabase(): { db: D1Database; statements: string[] } {
+    const statements: string[] = [];
+    const db = new Proxy(testEnv.DB, {
+      get(target, key) {
+        const value = Reflect.get(target, key, target);
+        if (key === 'prepare') {
+          return (sql: string) => {
+            statements.push(sql);
+            return target.prepare(sql);
+          };
+        }
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    return { db, statements };
+  }
+
+  const counts = (jobId: string) =>
+    testEnv.DB.prepare('SELECT sections_planned, sections_written FROM jobs WHERE id = ?').bind(jobId).first();
+
+  it('reads no payload, and says what is missing from the counts kept beside it', async () => {
+    const { account, clientId } = await seller('no-payloads');
+    const { id } = (await createReading(testEnv, account, { product: 'natal', client_id: clientId })) as { id: string };
+    const jobId = await jobOf(id);
+    await runJob(jobId);
+    expect(await counts(jobId)).toEqual({ sections_planned: 3, sections_written: 3 });
+    const payload = await payloadOf(jobId);
+    await writePayload(jobId, { ...payload, sections: (payload.sections ?? []).filter((s) => s.id === 'a') });
+    expect(await counts(jobId)).toEqual({ sections_planned: 3, sections_written: 1 });
+
+    const { db, statements } = recordingDatabase();
+    const list = await listReadings(Object.assign(Object.create(testEnv), { DB: db }), account.id);
+    expect(list.find((r) => r.id === id)).toMatchObject({ status: 'ready', missing: 2 });
+    expect(statements.join('\n')).not.toMatch(/payload/);
+  });
+
+  it('counts a row from before the counts were kept once its reading is opened', async () => {
+    const { account, clientId } = await seller('old-counts');
+    const { id } = (await createReading(testEnv, account, { product: 'natal', client_id: clientId })) as { id: string };
+    const jobId = await jobOf(id);
+    await runJob(jobId);
+    const payload = await payloadOf(jobId);
+    await writePayload(jobId, { ...payload, sections: (payload.sections ?? []).filter((s) => s.id !== 'c') });
+    await testEnv.DB.prepare('UPDATE jobs SET sections_planned = NULL, sections_written = NULL WHERE id = ?').bind(jobId).run();
+    const summary = async () => (await listReadings(testEnv, account.id)).find((r) => r.id === id);
+    expect(await summary()).toMatchObject({ missing: 0 });
+
+    const view = await readingView(testEnv, (await readingRow(testEnv.DB, id, account.id))!);
+    expect(view.missing.map((m) => m.id)).toEqual(['c']);
+    expect(await counts(jobId)).toEqual({ sections_planned: 3, sections_written: 2 });
+    expect(await summary()).toMatchObject({ missing: 1 });
+  });
+
+  it('gets the counts of a plain payload when the nightly sweep encrypts it', async () => {
+    const { account, clientId } = await seller('plain-counts');
+    const { id } = (await createReading(testEnv, account, { product: 'natal', client_id: clientId })) as { id: string };
+    const jobId = await jobOf(id);
+    await runJob(jobId);
+    const payload = await payloadOf(jobId);
+    await testEnv.DB.prepare(
+      `UPDATE jobs SET payload = ?, payload_ct = NULL, payload_nonce = NULL, sections_planned = NULL, sections_written = NULL
+       WHERE id = ?`,
+    )
+      .bind(JSON.stringify({ ...payload, sections: (payload.sections ?? []).filter((s) => s.id === 'b') }), jobId)
+      .run();
+    while ((await sealLegacyPayloads(testEnv, 200)) > 0) {
+      // until nothing plain is left
+    }
+    expect(await counts(jobId)).toEqual({ sections_planned: 3, sections_written: 1 });
+    expect((await listReadings(testEnv, account.id)).find((r) => r.id === id)).toMatchObject({ missing: 2 });
   });
 });
 

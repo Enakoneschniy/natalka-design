@@ -134,6 +134,10 @@ describe('the migrations of this release', () => {
       closed_at: null,
     });
     expect(await count('pro_attempts')).toBe(0);
+    expect(await db.prepare("SELECT sections_planned, sections_written FROM jobs WHERE id = 'j3'").first()).toEqual({
+      sections_planned: null,
+      sections_written: null,
+    });
   });
 
   it("leave the previous worker's own writes working while it still runs", async () => {

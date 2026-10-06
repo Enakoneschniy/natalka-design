@@ -9,7 +9,7 @@ import { type Blobish, encryptJson } from '../crypto';
 import { documentForOrder, expiryFrom, type JobStatus, type JobStep, now, type Product } from '../db';
 import type { Env } from '../env';
 import { errorCode } from '../errors';
-import { openPayload } from '../pipeline';
+import { type JobPayload, openPayload, sectionCounts } from '../pipeline';
 import { type ClientBirth, getClient } from './clients';
 import { balance, CREDIT_COST, refund, refundStatement, spend } from './credits';
 import { dropFilesThenRows, readingFolder } from './storage';
@@ -160,6 +160,10 @@ export interface ReadingRow {
   product: Product;
   step: JobStep;
   status: JobStatus;
+  /** The plan's sections and how many are written (see sealPayload); NULL in a row from before
+   * the counts were kept. */
+  sections_planned: number | null;
+  sections_written: number | null;
   /** The job's payload as stored; read it with openPayload. */
   payload: string | null;
   payload_ct: Blobish | null;
@@ -167,15 +171,20 @@ export interface ReadingRow {
   updated_at: string;
 }
 
-const READING_COLUMNS = `r.order_id, r.account_id, r.job_id, r.client_id, r.partner_client_id,
+/** Everything about a reading but its payload. */
+const SUMMARY_COLUMNS = `r.order_id, r.account_id, r.job_id, r.client_id, r.partner_client_id,
        r.regenerations, r.editable_until, r.refunded_at, r.address, r.created_at,
-       o.product, j.step, j.status, j.payload, j.payload_ct, j.payload_nonce, j.updated_at`;
+       o.product, j.step, j.status, j.sections_planned, j.sections_written, j.updated_at`;
+const READING_COLUMNS = `${SUMMARY_COLUMNS}, j.payload, j.payload_ct, j.payload_nonce`;
 const READING_FROM = 'FROM pro_readings r JOIN orders o ON o.id = r.order_id JOIN jobs j ON j.id = r.job_id';
 const READING_SELECT = `SELECT ${READING_COLUMNS}\n  ${READING_FROM}`;
-/** The list also says whether a PDF exists, in the same query rather than one per reading. */
-const LIST_SELECT = `SELECT ${READING_COLUMNS},
+/** The list never reads a payload: what is missing comes from the counts beside it, and whether a
+ * PDF exists from the same query rather than one per reading. */
+const LIST_SELECT = `SELECT ${SUMMARY_COLUMNS},
        EXISTS (SELECT 1 FROM documents d WHERE d.order_id = r.order_id) AS has_document
   ${READING_FROM}`;
+
+type SummaryRow = Omit<ReadingRow, 'payload' | 'payload_ct' | 'payload_nonce'> & { has_document: number };
 
 /** A reading, only if it is this seller's. */
 export function readingRow(db: D1Database, orderId: string, accountId: string): Promise<ReadingRow | null> {
@@ -218,6 +227,7 @@ export interface ReadingView {
 
 export async function readingView(env: Env, row: ReadingRow): Promise<ReadingView> {
   const payload = await openPayload(env, row);
+  if (row.sections_planned === null || row.sections_written === null) await keepCounts(env, row.job_id, payload);
   const plan = payload.plan ?? [];
   const byId = new Map((payload.sections ?? []).map((s) => [s.id, s]));
   const status = readingStatus(row);
@@ -257,12 +267,28 @@ export interface ReadingSummary {
   created_at: string;
 }
 
-/** Planned sections that a ready reading lacks, from the payload the row already carries. */
-async function missingCount(env: Env, row: ReadingRow): Promise<number> {
-  if (readingStatus(row) !== 'ready') return 0;
-  const payload = await openPayload(env, row);
-  const written = new Set((payload.sections ?? []).map((s) => s.id));
-  return (payload.plan ?? []).filter((p) => !written.has(p.id)).length;
+/** The counts of a row from before they were kept, from the payload just read for it; a list of
+ * readings shows what is missing from them. Only while the row still has none: a payload written
+ * since came with its own. */
+async function keepCounts(env: Env, jobId: string, payload: JobPayload): Promise<void> {
+  const counts = sectionCounts(payload);
+  try {
+    await env.DB.prepare(
+      'UPDATE jobs SET sections_planned = ?, sections_written = ? WHERE id = ? AND sections_planned IS NULL',
+    )
+      .bind(counts.sections_planned, counts.sections_written, jobId)
+      .run();
+  } catch (error) {
+    console.error('keeping the section counts', jobId, errorCode(error));
+  }
+}
+
+/** Planned sections a ready reading lacks, from the counts kept beside its payload. 0 while it is
+ * being written, and for a row from before the counts were kept until it is opened or its plain
+ * payload is encrypted by the nightly sweep. */
+function missingOf(row: Pick<ReadingRow, 'refunded_at' | 'step' | 'sections_planned' | 'sections_written'>): number {
+  if (readingStatus(row) !== 'ready' || row.sections_planned === null || row.sections_written === null) return 0;
+  return Math.max(0, row.sections_planned - row.sections_written);
 }
 
 export async function listReadings(env: Env, accountId: string, clientId?: string): Promise<ReadingSummary[]> {
@@ -274,19 +300,17 @@ export async function listReadings(env: Env, accountId: string, clientId?: strin
     `${LIST_SELECT} ${where} ORDER BY r.created_at DESC, r.rowid DESC`,
   )
     .bind(...binds)
-    .all<ReadingRow & { has_document: number }>();
-  return Promise.all(
-    results.map(async (row) => ({
-      id: row.order_id,
-      product: row.product,
-      client_id: row.client_id,
-      partner_client_id: row.partner_client_id,
-      status: readingStatus(row),
-      missing: await missingCount(env, row),
-      pdf_ready: row.step === 'done' && row.has_document === 1,
-      created_at: row.created_at,
-    })),
-  );
+    .all<SummaryRow>();
+  return results.map((row) => ({
+    id: row.order_id,
+    product: row.product,
+    client_id: row.client_id,
+    partner_client_id: row.partner_client_id,
+    status: readingStatus(row),
+    missing: missingOf(row),
+    pdf_ready: row.step === 'done' && row.has_document === 1,
+    created_at: row.created_at,
+  }));
 }
 
 /** Forgets a client: every reading they are in, as client or partner, goes with them — orders,

@@ -75,14 +75,27 @@ export async function openPayload(env: Env, row: PayloadColumns): Promise<JobPay
   return {};
 }
 
-/** The columns to write a payload to: encrypted, with the plain column emptied. Every writer of
- * a payload uses this and nothing else. */
-export async function sealPayload(
-  env: Env,
-  payload: JobPayload,
-): Promise<{ payload: null; payload_ct: ArrayBuffer; payload_nonce: ArrayBuffer }> {
+/** How many sections a payload's plan holds, and how many of those are written. */
+export function sectionCounts(payload: JobPayload): { sections_planned: number; sections_written: number } {
+  const plan = payload.plan ?? [];
+  const written = new Set((payload.sections ?? []).map((section) => section.id));
+  return { sections_planned: plan.length, sections_written: plan.filter((entry) => written.has(entry.id)).length };
+}
+
+export interface SealedPayload {
+  payload: null;
+  payload_ct: ArrayBuffer;
+  payload_nonce: ArrayBuffer;
+  sections_planned: number;
+  sections_written: number;
+}
+
+/** The columns to write a payload to: encrypted, with the plain column emptied, and the counts of
+ * its sections beside it, so that a list of readings needs no payload. Every writer of a payload
+ * uses this and nothing else. */
+export async function sealPayload(env: Env, payload: JobPayload): Promise<SealedPayload> {
   const { ciphertext, nonce } = await encryptJson(payload, env.DATA_KEY);
-  return { payload: null, payload_ct: ciphertext, payload_nonce: nonce };
+  return { payload: null, payload_ct: ciphertext, payload_nonce: nonce, ...sectionCounts(payload) };
 }
 
 /** Rows a nightly encryption step lists at a time. Only their ids are listed; each row is then read
@@ -125,9 +138,10 @@ async function sealLegacyPayload(env: Env, id: string): Promise<number> {
   }
   const columns = await sealPayload(env, parsed);
   const result = await env.DB.prepare(
-    'UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ? WHERE id = ? AND payload = ?',
+    `UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ?, sections_planned = ?, sections_written = ?
+     WHERE id = ? AND payload = ?`,
   )
-    .bind(columns.payload_ct, columns.payload_nonce, id, row.payload)
+    .bind(columns.payload_ct, columns.payload_nonce, columns.sections_planned, columns.sections_written, id, row.payload)
     .run();
   return result.meta.changes ?? 0;
 }

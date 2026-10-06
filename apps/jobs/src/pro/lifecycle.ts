@@ -156,13 +156,16 @@ async function rewriteHeld(env: Env, accountId: string, orderId: string, section
     );
     const sealed = await sealPayload(env, { ...payload, sections: next });
     const result = await env.DB.prepare(
-      `UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ?, tokens_in = tokens_in + ?,
-                       tokens_out = tokens_out + ?, cost_micros = cost_micros + ?, model = ?, updated_at = ?
+      `UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ?, sections_planned = ?, sections_written = ?,
+                       tokens_in = tokens_in + ?, tokens_out = tokens_out + ?, cost_micros = cost_micros + ?,
+                       model = ?, updated_at = ?
        WHERE id = ? AND updated_at = ?`,
     )
       .bind(
         sealed.payload_ct,
         sealed.payload_nonce,
+        sealed.sections_planned,
+        sealed.sections_written,
         written.tokens_in,
         written.tokens_out,
         written.cost_micros,
