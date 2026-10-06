@@ -91,11 +91,13 @@ def test_a_name_is_cut_at_80_characters() -> None:
     assert f'"{"Я" * 80}"' in user
 
 
-def test_no_name_means_no_name_line() -> None:
+def test_no_name_is_said_outright_so_none_is_invented() -> None:
     spec = specs("natal", unknown_time=False)[0]
     for name in ("", " \n ", "\x00"):
         user = section_prompt(spec, name=name, sheet="CHART", written_so_far=[])
-        assert "person's name" not in user
+        assert "name is not given" in user
+        assert "never invent one" in user
+        assert "as given" not in user
         assert "\n\n\n" not in user
 
 
