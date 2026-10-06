@@ -3,7 +3,7 @@ import { createClient } from '../src/pro/clients';
 import { balance, grant } from '../src/pro/credits';
 import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from '../src/pro/readings';
 import { ANNA } from './people';
-import { runJob, signIn, testEnv } from './env';
+import { payloadOf, runJob, signIn, testEnv, writePayload } from './env';
 
 async function seller(name: string, credits = 5) {
   const { account } = await signIn(`${name}@readings.test`);
@@ -148,12 +148,8 @@ describe('reading view', () => {
     await runJob(jobId);
     expect(await summary()).toMatchObject({ status: 'ready', missing: 0, pdf_ready: false });
 
-    const { payload } = (await testEnv.DB.prepare('SELECT payload FROM jobs WHERE id = ?')
-      .bind(jobId)
-      .first<{ payload: string }>())!;
-    const parsed = JSON.parse(payload) as { sections: { id: string }[] };
-    parsed.sections = parsed.sections.filter((s) => s.id !== 'b');
-    await testEnv.DB.prepare('UPDATE jobs SET payload = ? WHERE id = ?').bind(JSON.stringify(parsed), jobId).run();
+    const payload = await payloadOf(jobId);
+    await writePayload(jobId, { ...payload, sections: (payload.sections ?? []).filter((s) => s.id !== 'b') });
     expect(await summary()).toMatchObject({ status: 'ready', missing: 1, pdf_ready: false });
 
     await testEnv.DB.prepare(

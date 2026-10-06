@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { scrubExpiredJobPayloads } from '../src/db';
-import { testEnv } from './env';
+import { testEnv, writePayload } from './env';
 import { seedOrder } from './seed';
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
@@ -28,6 +28,19 @@ describe('retention of job payloads', () => {
     expect(await payloadOf(old.jobId)).toBeNull();
     expect(await payloadOf(recent.jobId)).not.toBeNull();
     expect(await payloadOf(seller.jobId)).not.toBeNull();
+  });
+
+  it('clears an encrypted payload, its nonce and a plain one alike', async () => {
+    const old = await seedOrder({ pro: false, name: 'Шифр старый', createdAt: daysAgo(40) });
+    await writePayload(old.jobId, { facts: { birth: { date: '1994-05-15' } } });
+    const seller = await seedOrder({ pro: true, name: 'Шифр продавца', createdAt: daysAgo(400) });
+    await writePayload(seller.jobId, { facts: { birth: { date: '1994-05-15' } } });
+
+    await scrubExpiredJobPayloads(testEnv.DB, 30);
+    const columns = (jobId: string) =>
+      testEnv.DB.prepare('SELECT payload, payload_ct, payload_nonce FROM jobs WHERE id = ?').bind(jobId).first();
+    expect(await columns(old.jobId)).toEqual({ payload: null, payload_ct: null, payload_nonce: null });
+    expect((await columns(seller.jobId))?.payload_ct).toBeTruthy();
   });
 
   it('keeps the order row and the cost of the job', async () => {

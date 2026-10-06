@@ -4,7 +4,7 @@
  * from where it stopped instead of paying the model twice for the same section.
  */
 
-import { type Blobish, decryptJson, LINK_TTL_SECONDS, sha256Hex, signLink } from './crypto';
+import { type Blobish, decryptJson, encryptJson, LINK_TTL_SECONDS, sha256Hex, signLink } from './crypto';
 import {
   expiryFrom,
   insertDocument,
@@ -48,12 +48,67 @@ export interface WrittenSection extends SectionPlan {
   model: string;
 }
 
-/** What survives between steps; stored as JSON in `jobs.payload`. */
+/** What survives between steps: the calculated chart and every text written from it. */
 export interface JobPayload {
   facts?: Record<string, unknown>;
   transits?: unknown[];
   plan?: SectionPlan[];
   sections?: WrittenSection[];
+}
+
+/** The columns a job's payload lives in: AES-GCM ciphertext and nonce under DATA_KEY, like the
+ * birth data, or plain JSON in rows written before the payload was encrypted. */
+export interface PayloadColumns {
+  payload: string | null;
+  payload_ct: Blobish | null;
+  payload_nonce: Blobish | null;
+}
+
+/** A job's payload, whichever way its row holds it. Every write below empties the plain column as
+ * it stores the ciphertext, so a row holding both had its plain text written afterwards, by a
+ * worker from before the encryption: the plain text is the newer of the two. */
+export async function openPayload(env: Env, row: PayloadColumns): Promise<JobPayload> {
+  if (row.payload) return JSON.parse(row.payload) as JobPayload;
+  if (row.payload_ct && row.payload_nonce) {
+    return decryptJson<JobPayload>(row.payload_ct, row.payload_nonce, env.DATA_KEY);
+  }
+  return {};
+}
+
+/** The columns to write a payload to: encrypted, with the plain column emptied. Every writer of
+ * a payload uses this and nothing else. */
+export async function sealPayload(
+  env: Env,
+  payload: JobPayload,
+): Promise<{ payload: null; payload_ct: ArrayBuffer; payload_nonce: ArrayBuffer }> {
+  const { ciphertext, nonce } = await encryptJson(payload, env.DATA_KEY);
+  return { payload: null, payload_ct: ciphertext, payload_nonce: nonce };
+}
+
+/** Encrypts up to `limit` payloads still stored in plain text; the nightly sweep calls it until
+ * none are left. A row rewritten meanwhile is left for the next run. */
+export async function sealLegacyPayloads(env: Env, limit: number): Promise<number> {
+  const { results } = await env.DB.prepare('SELECT id, payload FROM jobs WHERE payload IS NOT NULL LIMIT ?')
+    .bind(limit)
+    .all<{ id: string; payload: string }>();
+  let sealed = 0;
+  for (const row of results) {
+    let parsed: JobPayload;
+    try {
+      parsed = JSON.parse(row.payload) as JobPayload;
+    } catch {
+      console.error('unreadable payload left as it is', row.id);
+      continue;
+    }
+    const columns = await sealPayload(env, parsed);
+    const result = await env.DB.prepare(
+      'UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ? WHERE id = ? AND payload = ?',
+    )
+      .bind(columns.payload_ct, columns.payload_nonce, row.id, row.payload)
+      .run();
+    sealed += result.meta.changes ?? 0;
+  }
+  return sealed;
 }
 
 /** The ephemeris service: charts, synastry, transits, the sky. Public and AGPL, ours by binding. */
@@ -264,7 +319,7 @@ async function writeSections(
 
     // Cost is banked after every section: an order that fails halfway still shows what it spent.
     await updateJob(env.DB, job.id, {
-      payload: JSON.stringify(current()),
+      ...(await sealPayload(env, current())),
       tokens_in: sections.reduce((n, s) => n + s.tokens_in, 0),
       tokens_out: sections.reduce((n, s) => n + s.tokens_out, 0),
       cost_micros: sections.reduce((n, s) => n + s.cost_micros, 0),
@@ -371,14 +426,14 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
   const address = order?.address ?? 'vy';
   if (seller && order?.refunded_at) return true;
   const people = await loadPeople(env, job);
-  let payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
+  let payload = await openPayload(env, job);
 
   if (job.step === 'calc') {
     payload = await calculate(env, job, people, address);
     await updateJob(env.DB, job.id, {
       step: 'texts',
       status: 'running',
-      payload: JSON.stringify(payload),
+      ...(await sealPayload(env, payload)),
     });
     job = { ...job, step: 'texts' };
   }
@@ -387,15 +442,15 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
     const result = await writeSections(env, job, people, payload, deadline, address);
     payload = result.payload;
     if (!result.done) {
-      await updateJob(env.DB, job.id, { payload: JSON.stringify(payload) });
+      await updateJob(env.DB, job.id, await sealPayload(env, payload));
       return false;
     }
     if (seller) {
       // A seller reads the texts first and asks for the PDF when they are happy with them.
-      await updateJob(env.DB, job.id, { step: 'done', status: 'done', payload: JSON.stringify(payload) });
+      await updateJob(env.DB, job.id, { step: 'done', status: 'done', ...(await sealPayload(env, payload)) });
       return true;
     }
-    await updateJob(env.DB, job.id, { step: 'pdf', payload: JSON.stringify(payload) });
+    await updateJob(env.DB, job.id, { step: 'pdf', ...(await sealPayload(env, payload)) });
     job = { ...job, step: 'pdf' };
   }
 

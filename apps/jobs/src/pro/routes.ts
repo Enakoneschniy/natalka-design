@@ -33,6 +33,7 @@ import { createClient, getClient, listClients, parseClientBirth } from './client
 import { balance } from './credits';
 import { PACKS, attachSession, createPurchase, isPack, listPurchases, markFailed } from './purchases';
 import { createPackCheckout } from '../stripe';
+import { openPayload } from '../pipeline';
 import { hasRedeemed, redeemInvite } from './invites';
 import { assemblePdf, readingPdf, regenerateSection } from './lifecycle';
 import { fileReport } from './reports';
@@ -247,7 +248,7 @@ async function reportSection(
   sectionId: string,
 ): Promise<Response> {
   const row = await readingRow(env.DB, orderId, account.id);
-  const plan = row?.payload ? ((JSON.parse(row.payload) as { plan?: { id: string }[] }).plan ?? []) : [];
+  const plan = row ? ((await openPayload(env, row)).plan ?? []) : [];
   if (!row || !plan.some((p) => p.id === sectionId)) return json({ error: 'not found' }, 404);
   const result = await fileReport(env, account.id, orderId, sectionId, (await readBody(request))?.comment);
   if (result === 'comment') return json({ error: 'comment' }, 400);

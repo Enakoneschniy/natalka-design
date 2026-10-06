@@ -55,7 +55,7 @@ import { type CheckoutSession, createCheckoutSession, expireCheckoutSession } fr
 import { json, readJson } from './http';
 import { InvalidField, type OrderInput, parseOrder, parsePreview, type PreviewInput } from './validate';
 import { errorCode } from './errors';
-import { advance, apiFetch, type JobPayload, loadBirth } from './pipeline';
+import { advance, apiFetch, loadBirth, openPayload, sealLegacyPayloads } from './pipeline';
 import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
 import { handlePro } from './pro/routes';
 import { stripeWebhook } from './webhook';
@@ -182,8 +182,6 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
       nonce,
       unknown_time: person.time === null,
       gender: person.gender,
-      display_name: person.name,
-      place_label: person.place,
       expires_at: expiryFrom(retention),
     });
   }
@@ -282,7 +280,7 @@ async function jobStatus(env: Env, token: string): Promise<Response> {
   const order = await orderState(env.DB, job.order_id);
   if (!order || order.pro_account_id) return json({ error: 'not found' }, 404);
 
-  const payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
+  const payload = await openPayload(env, job);
   const total = payload.plan?.length ?? 0;
   const written = payload.sections?.length ?? 0;
   const status = orderStatusOf(order);
@@ -622,6 +620,8 @@ export default {
     }
     await dropExpiredBirths(env.DB);
     const scrubbed = await scrubExpiredJobPayloads(env.DB, Number(env.RETENTION_DAYS ?? '30'));
+    // Payloads written before they were encrypted, a batch a night until none are left.
+    await sealLegacyPayloads(env, 200);
     const stale = await expired(env.DB);
     for (const row of stale.results ?? []) {
       await env.DOCS.delete(row.storage_key);

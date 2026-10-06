@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
-import { getJob } from '../src/db';
-import { advance } from '../src/pipeline';
+import { getJob, updateJob } from '../src/db';
+import { advance, type JobPayload, openPayload, sealPayload } from '../src/pipeline';
 import type { Env } from '../src/env';
 import {
   accountExists,
@@ -38,6 +38,18 @@ export async function armFailure(key: string, times = 1000): Promise<void> {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ key, times }),
   });
+}
+
+/** A job's payload, decrypted the way the worker reads it. */
+export async function payloadOf(jobId: string): Promise<JobPayload> {
+  const job = await getJob(testEnv.DB, jobId);
+  if (!job) throw new Error(`no job ${jobId}`);
+  return openPayload(testEnv, job);
+}
+
+/** Stores a payload the way the worker writes it. */
+export async function writePayload(jobId: string, payload: JobPayload): Promise<void> {
+  await updateJob(testEnv.DB, jobId, await sealPayload(testEnv, payload));
 }
 
 /** One pipeline pass over a job, with a generous budget. */

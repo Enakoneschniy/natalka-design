@@ -1,5 +1,7 @@
 /** D1 access. Plain SQL: the schema is five tables and an ORM would only hide the retention rules. */
 
+import type { Blobish } from './crypto';
+
 export type Product = 'natal' | 'forecast' | 'synastry' | 'child' | 'bundle';
 export type JobStep = 'calc' | 'texts' | 'pdf' | 'email' | 'done';
 export type JobStatus = 'queued' | 'running' | 'failed' | 'done';
@@ -30,7 +32,10 @@ export interface JobRow {
   status: JobStatus;
   attempts: number;
   last_error: string | null;
+  /** Plain JSON, only in rows written before the payload was encrypted (see openPayload). */
   payload: string | null;
+  payload_ct: Blobish | null;
+  payload_nonce: Blobish | null;
   tokens_in: number;
   tokens_out: number;
   cost_micros: number;
@@ -77,16 +82,15 @@ export async function insertChart(
     nonce: ArrayBuffer;
     unknown_time: boolean;
     gender: string;
-    display_name: string;
-    place_label: string;
     expires_at: string;
   },
 ): Promise<void> {
+  // The name and the place live in the ciphertext only; display_name and place_label stay empty.
   await db
     .prepare(
       `INSERT INTO charts (id, order_id, person_no, birth_ciphertext, birth_nonce, key_version,
-                           unknown_time, gender, display_name, place_label, expires_at, created_at)
-       VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
+                           unknown_time, gender, expires_at, created_at)
+       VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
     )
     .bind(
       chart.id,
@@ -96,8 +100,6 @@ export async function insertChart(
       chart.nonce,
       chart.unknown_time ? 1 : 0,
       chart.gender,
-      chart.display_name,
-      chart.place_label,
       chart.expires_at,
       now(),
     )
@@ -124,7 +126,22 @@ export const getJob = (db: D1Database, id: string): Promise<JobRow | null> =>
 export async function updateJob(
   db: D1Database,
   id: string,
-  patch: Partial<Pick<JobRow, 'step' | 'status' | 'attempts' | 'last_error' | 'payload' | 'tokens_in' | 'tokens_out' | 'cost_micros' | 'model'>>,
+  patch: Partial<
+    Pick<
+      JobRow,
+      | 'step'
+      | 'status'
+      | 'attempts'
+      | 'last_error'
+      | 'payload'
+      | 'payload_ct'
+      | 'payload_nonce'
+      | 'tokens_in'
+      | 'tokens_out'
+      | 'cost_micros'
+      | 'model'
+    >
+  >,
 ): Promise<void> {
   const columns = Object.keys(patch);
   if (columns.length === 0) return;
@@ -186,8 +203,8 @@ export const expired = (db: D1Database) =>
 export async function scrubExpiredJobPayloads(db: D1Database, days: number): Promise<number> {
   const result = await db
     .prepare(
-      `UPDATE jobs SET payload = NULL
-       WHERE payload IS NOT NULL
+      `UPDATE jobs SET payload = NULL, payload_ct = NULL, payload_nonce = NULL
+       WHERE (payload IS NOT NULL OR payload_ct IS NOT NULL)
          AND order_id IN (SELECT id FROM orders WHERE pro_account_id IS NULL AND created_at < ?)`,
     )
     .bind(expiryFrom(-days))

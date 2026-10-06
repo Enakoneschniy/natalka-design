@@ -45,8 +45,6 @@ export async function seedOrder(opts: {
     nonce,
     unknown_time: false,
     gender: 'f',
-    display_name: opts.name,
-    place_label: 'Евпатория',
     expires_at: '9999-12-31T23:59:59.999Z',
   });
   await insertJob(testEnv.DB, { id: jobId, order_id: orderId, kind: product });

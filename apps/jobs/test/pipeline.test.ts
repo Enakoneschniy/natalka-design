@@ -2,7 +2,7 @@ import { saveBrand } from '../src/pro/brand';
 import { describe, expect, it } from 'vitest';
 import { documentForOrder, getJob } from '../src/db';
 import { dropDocuments } from '../src/pipeline';
-import { armFailure, runJob, testEnv } from './env';
+import { armFailure, payloadOf, runJob, testEnv } from './env';
 import { FAKE_PLAN } from './fakes';
 import { seedOrder } from './seed';
 
@@ -24,7 +24,7 @@ describe('pipeline', () => {
     expect(await runJob(jobId)).toBe(true);
     const job = await getJob(testEnv.DB, jobId);
     expect(job).toMatchObject({ step: 'done', status: 'done' });
-    expect(JSON.parse(job?.payload ?? '{}').sections.map((s: { id: string }) => s.id)).toEqual(['a', 'b', 'c']);
+    expect((await payloadOf(jobId)).sections?.map((s) => s.id)).toEqual(['a', 'b', 'c']);
     expect(await count('SELECT COUNT(*) AS n FROM documents WHERE order_id = ?', orderId)).toBe(0);
     expect(await count('SELECT COUNT(*) AS n FROM email_events WHERE order_id = ?', orderId)).toBe(0);
   });
@@ -76,14 +76,14 @@ describe('pipeline', () => {
     const { jobId } = await seedOrder({ pro: true, name: 'Сбой' });
     await armFailure('Сбой|b', 1);
     await expect(runJob(jobId)).rejects.toThrow(/503/);
-    const written = JSON.parse((await getJob(testEnv.DB, jobId))?.payload ?? '{}').sections;
-    expect(written.map((s: { id: string }) => s.id)).toEqual(['a']);
+    expect((await payloadOf(jobId)).sections?.map((s) => s.id)).toEqual(['a']);
     expect(await runJob(jobId)).toBe(true);
   });
 
   it("drops a section the text API no longer knows from a seller's plan", async () => {
     const { jobId } = await seedOrder({ pro: true, name: 'Ушла' });
     const plan = [...FAKE_PLAN, { id: 'gone', title: 'Ушла', quote: false }];
+    // Written as a worker from before the encryption would have: plain JSON, still readable.
     await testEnv.DB.prepare("UPDATE jobs SET step = 'texts', payload = ? WHERE id = ?")
       .bind(JSON.stringify({ facts: { birth: {} }, transits: [], plan, sections: [] }), jobId)
       .run();
@@ -91,8 +91,8 @@ describe('pipeline', () => {
     expect(await runJob(jobId)).toBe(true);
     const job = await getJob(testEnv.DB, jobId);
     expect(job?.step).toBe('done');
-    const payload = JSON.parse(job?.payload ?? '{}');
-    expect(payload.plan.map((p: { id: string }) => p.id)).toEqual(['a', 'b', 'c']);
+    const payload = await payloadOf(jobId);
+    expect(payload.plan?.map((p) => p.id)).toEqual(['a', 'b', 'c']);
     expect(payload.sections).toHaveLength(3);
   });
 
