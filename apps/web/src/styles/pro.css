@@ -733,7 +733,7 @@ input[type="checkbox"]:disabled {
   color: var(--danger);
 }
 
-/* Worth a look before going on, not an error: the confirm page's «you are signed in elsewhere». */
+/* Worth a look before going on, not an error: the confirm page's «Вы уже вошли как …». */
 .card.notice.warn {
   background: var(--accent-soft);
 }
