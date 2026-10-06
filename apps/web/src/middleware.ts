@@ -11,6 +11,7 @@ import {
 } from '@/lib/experiment';
 import { cleanSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { isProHost } from '@/lib/pro/host';
+import { isClosedCountry } from '@/lib/region';
 import { INDEXABLE, isPrivatePath } from '@/lib/seo';
 
 const intl = createMiddleware(routing);
@@ -20,7 +21,7 @@ export async function middleware(request: NextRequest) {
   const country = request.headers.get('cf-ipcountry');
 
   // Russia is not a market: payments are impossible there, so the service is not offered.
-  if (country === 'RU') {
+  if (isClosedCountry(country)) {
     return NextResponse.rewrite(new URL('/unavailable', request.url));
   }
 
