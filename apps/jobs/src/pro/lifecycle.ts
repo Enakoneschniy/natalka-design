@@ -3,6 +3,7 @@
 
 import { documentForOrder, getJob, now, updateJob } from '../db';
 import type { Env } from '../env';
+import { errorCode } from '../errors';
 import { documentFilename } from '../filename';
 import {
   dropDocuments,
@@ -13,6 +14,7 @@ import {
   type WrittenSection,
   writeSection,
 } from '../pipeline';
+import { giveAttemptBack, takeAttempt } from './attempts';
 import { refundStatement } from './credits';
 import { readingRow, readingStatus, REGENERATIONS_PER_READING } from './readings';
 
@@ -64,15 +66,57 @@ const giveBack = (db: D1Database, orderId: string) =>
     .bind(orderId)
     .run();
 
+/** The longest a rewrite holds its reading. A section takes about half a minute to write; a hold
+ * whose worker stopped before letting go runs out after this. */
+export const REWRITE_HOLD_MS = 5 * 60 * 1000;
+
+/** Takes the reading for one rewrite: the seller's own reading, when nobody holds it or the last
+ * hold has run out. One statement, so two requests cannot both take it. Returns the hold's end,
+ * which is also what lets it go, or null. */
+async function holdReading(db: D1Database, orderId: string, accountId: string): Promise<string | null> {
+  const until = new Date(Date.now() + REWRITE_HOLD_MS).toISOString();
+  const taken = await db
+    .prepare(
+      `UPDATE pro_readings SET busy_until = ?
+       WHERE order_id = ? AND account_id = ? AND (busy_until IS NULL OR busy_until < ?)`,
+    )
+    .bind(until, orderId, accountId, now())
+    .run();
+  return taken.meta.changes ? until : null;
+}
+
+/** Lets the reading go, unless the hold ran out and somebody else has taken it since. */
+async function releaseReading(db: D1Database, orderId: string, until: string): Promise<void> {
+  try {
+    await db.prepare('UPDATE pro_readings SET busy_until = NULL WHERE order_id = ? AND busy_until = ?').bind(orderId, until).run();
+  } catch (error) {
+    // The hold runs out on its own.
+    console.error('releasing a reading', orderId, errorCode(error));
+  }
+}
+
 /** Rewrites one section of a finished reading. A section that was never written is filled free;
  * rewriting a written one uses one of the reading's paid rewrites, and only within the edit
- * window. The rewrite is reserved before the model is called and given back if nothing is saved. */
+ * window. The reading is held first, before anything is charged or sent to the model, and let go
+ * however the rewrite ends: a request for the same reading meanwhile is told it is busy. The
+ * rewrite is reserved before the model is called and given back if nothing is saved. */
 export async function regenerateSection(
   env: Env,
   accountId: string,
   orderId: string,
   sectionId: string,
 ): Promise<RegenerateResult> {
+  const hold = await holdReading(env.DB, orderId, accountId);
+  if (!hold) return (await readingRow(env.DB, orderId, accountId)) ? { status: 'busy' } : { status: 'not_found' };
+  try {
+    return await rewriteHeld(env, accountId, orderId, sectionId);
+  } finally {
+    await releaseReading(env.DB, orderId, hold);
+  }
+}
+
+/** The rewrite itself, read and written while the reading is held. */
+async function rewriteHeld(env: Env, accountId: string, orderId: string, sectionId: string): Promise<RegenerateResult> {
   const row = await readingRow(env.DB, orderId, accountId);
   if (!row) return { status: 'not_found' };
   if (row.refunded_at || row.step !== 'done') return { status: 'not_ready' };
@@ -101,7 +145,7 @@ export async function regenerateSection(
       const others = sections.filter((s) => s.id !== sectionId);
       written = await writeSection(env, row.product, people, payload, sectionId, others, row.address);
     } catch (error) {
-      console.error('regenerating a section', orderId, sectionId, error instanceof Error ? error.message : error);
+      console.error('regenerating a section', orderId, sectionId, errorCode(error));
       return { status: 'failed' };
     }
 
@@ -112,13 +156,16 @@ export async function regenerateSection(
     );
     const sealed = await sealPayload(env, { ...payload, sections: next });
     const result = await env.DB.prepare(
-      `UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ?, tokens_in = tokens_in + ?,
-                       tokens_out = tokens_out + ?, cost_micros = cost_micros + ?, model = ?, updated_at = ?
+      `UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ?, sections_planned = ?, sections_written = ?,
+                       tokens_in = tokens_in + ?, tokens_out = tokens_out + ?, cost_micros = cost_micros + ?,
+                       model = ?, updated_at = ?
        WHERE id = ? AND updated_at = ?`,
     )
       .bind(
         sealed.payload_ct,
         sealed.payload_nonce,
+        sealed.sections_planned,
+        sealed.sections_written,
         written.tokens_in,
         written.tokens_out,
         written.cost_micros,
@@ -128,7 +175,8 @@ export async function regenerateSection(
         row.updated_at,
       )
       .run();
-    // Another rewrite of this reading landing first means saving now would undo it.
+    // The job changed meanwhile (a PDF was asked for, or a rewrite took over a hold that ran out):
+    // saving now would undo that.
     if (!result.meta.changes) return { status: 'busy' };
     saved = true;
   } finally {
@@ -139,7 +187,7 @@ export async function regenerateSection(
     await dropDocuments(env, orderId);
   } catch (error) {
     // The text is saved and the rewrite spent; a stale PDF is rebuilt on the next request.
-    console.error('dropping stale documents', orderId, error instanceof Error ? error.message : error);
+    console.error('dropping stale documents', orderId, errorCode(error));
   }
 
   const used = await env.DB.prepare('SELECT regenerations FROM pro_readings WHERE order_id = ?')
@@ -152,10 +200,21 @@ export async function regenerateSection(
   };
 }
 
-export type AssembleResult = 'queued' | 'not_found' | 'not_ready' | 'incomplete' | 'building' | 'no_brand';
+export type AssembleResult =
+  | 'queued'
+  | 'not_found'
+  | 'not_ready'
+  | 'incomplete'
+  | 'building'
+  | 'no_brand'
+  | 'too_many';
+
+/** PDFs one reading may be assembled into per hour. */
+export const ASSEMBLIES_PER_HOUR = 10;
 
 /** Puts a finished reading back on the queue to have its PDF made. Every planned section must be
- * there: a PDF with a hole in it is not something to hand a client. */
+ * there: a PDF with a hole in it is not something to hand a client. An assembly that is queued
+ * counts towards the reading's hour; one refused or never queued does not. */
 export async function assemblePdf(env: Env, accountId: string, orderId: string): Promise<AssembleResult> {
   const row = await readingRow(env.DB, orderId, accountId);
   if (!row) return 'not_found';
@@ -170,24 +229,30 @@ export async function assemblePdf(env: Env, accountId: string, orderId: string):
     .first();
   if (!brand) return 'no_brand';
 
+  const attempt = await takeAttempt(env.DB, 'pdf', orderId, ASSEMBLIES_PER_HOUR);
+  if (!attempt) return 'too_many';
   const moved = await env.DB.prepare(
     "UPDATE jobs SET step = 'pdf', status = 'queued', updated_at = ? WHERE id = ? AND step = 'done'",
   )
     .bind(now(), row.job_id)
     .run();
-  if (!moved.meta.changes) return 'building';
+  if (!moved.meta.changes) {
+    await giveAttemptBack(env.DB, attempt);
+    return 'building';
+  }
   try {
     await env.JOBS.send({ jobId: row.job_id });
   } catch (error) {
-    console.error('PDF assembly could not be queued', row.job_id, error);
+    console.error('PDF assembly could not be queued', row.job_id, errorCode(error));
     try {
       await env.DB.prepare(
         "UPDATE jobs SET step = 'done', status = 'done', updated_at = ? WHERE id = ? AND step = 'pdf'",
       )
         .bind(now(), row.job_id)
         .run();
+      await giveAttemptBack(env.DB, attempt);
     } catch (cleanupError) {
-      console.error('undoing the PDF request failed', row.job_id, cleanupError);
+      console.error('undoing the PDF request failed', row.job_id, errorCode(cleanupError));
     }
     throw error;
   }

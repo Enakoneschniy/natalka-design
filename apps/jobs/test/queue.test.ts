@@ -119,7 +119,24 @@ describe('a dead letter', () => {
     const [alert] = (await letters('owner@alerts.test')).filter((l) => l.text.includes(jobId));
     expect(alert?.subject).toBe('[Chronika] A document could not be made');
     expect(alert?.text).toContain(`order ${orderId}`);
+    expect(alert?.text).toContain('code gave_up_at_calc');
     expect(alert?.text).not.toContain('Мёртвое письмо');
+  });
+
+  it('keeps what the job last recorded out of the alert and the log', async () => {
+    const logged: string[] = [];
+    for (const method of ['warn', 'error', 'log'] as const) {
+      vi.spyOn(console, method).mockImplementation((...args: unknown[]) => void logged.push(args.map(String).join(' ')));
+    }
+    const { jobId } = await seedOrder({ pro: false, name: 'Без подробностей' });
+    await testEnv.DB.prepare("UPDATE jobs SET status = 'failed', last_error = 'no chart 1 for order x-recorded', updated_at = ? WHERE id = ?")
+      .bind(new Date(Date.now() - 3600_000).toISOString(), jobId)
+      .run();
+    await deliver({ jobId }, { queue: DEAD_LETTER_QUEUE });
+    const [alert] = (await letters('owner@alerts.test')).filter((l) => l.text.includes(jobId));
+    expect(alert?.text).not.toContain('x-recorded');
+    expect(alert?.html).not.toContain('x-recorded');
+    expect(logged.join('\n')).not.toContain('x-recorded');
   });
 
   it("settles a seller's reading by the usual rule: nothing written gives the credits back", async () => {

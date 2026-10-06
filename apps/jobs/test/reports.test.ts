@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseClientBirth } from '../src/pro/clients';
 import { issueSession } from '../src/pro/auth';
 import { deleteClient } from '../src/pro/readings';
+import { fileReport, REPORTS_PER_HOUR } from '../src/pro/reports';
 import { runJob, testEnv } from './env';
 import { ANNA } from './people';
 import { readingFor } from './seed';
@@ -59,6 +60,16 @@ describe('report a problem', () => {
     const res = await report(r.session, r.id, 'a', { comment: 'one more' });
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: 'too many' });
+  });
+
+  it('lets no more than the hour allows through when they are sent at once', async () => {
+    const r = await written('Rep8');
+    const results = await Promise.all(
+      Array.from({ length: REPORTS_PER_HOUR + 6 }, (_, i) => fileReport(testEnv, r.account.id, r.id, 'a', `n${i}`)),
+    );
+    expect(results.filter((result) => result === 'ok')).toHaveLength(REPORTS_PER_HOUR);
+    expect(results.filter((result) => result === 'too_many')).toHaveLength(6);
+    expect(await count(r.account.id)).toBe(REPORTS_PER_HOUR);
   });
 
   it('does not count reports older than an hour', async () => {

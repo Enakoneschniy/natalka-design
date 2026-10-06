@@ -9,12 +9,16 @@
 import { sha256Hex, signToken, verifyToken } from '../crypto';
 import { now } from '../db';
 import type { Env } from '../env';
+import { errorCode } from '../errors';
 import { redeemInvite } from './invites';
 
 export const LOGIN_TTL_SECONDS = 15 * 60;
 export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
-/** Links one address may be sent per hour; past this a request is accepted and quietly dropped. */
-export const LOGIN_REQUESTS_PER_HOUR = 5;
+/** Links one address may be sent per hour at the request of one requester, and in all. Past
+ * either, a request is accepted and quietly dropped. The first keeps somebody else from using up
+ * an address's hour; the second bounds what reaches a mailbox from many requesters. */
+export const LINKS_PER_REQUESTER_HOUR = 5;
+export const LINKS_PER_ADDRESS_HOUR = 20;
 
 export interface ProAccount {
   id: string;
@@ -46,8 +50,12 @@ function randomToken(): string {
     .replace(/=+$/, '');
 }
 
+/** Whether an address has an open account. A closed one never counts: it gets no sign-in letter. */
 export async function accountExists(db: D1Database, email: string): Promise<boolean> {
-  const row = await db.prepare('SELECT 1 AS yes FROM pro_accounts WHERE email = ?').bind(email).first();
+  const row = await db
+    .prepare('SELECT 1 AS yes FROM pro_accounts WHERE email = ? AND closed_at IS NULL')
+    .bind(email)
+    .first();
   return Boolean(row);
 }
 
@@ -57,21 +65,25 @@ interface TokenInput {
   invite: string | null;
 }
 
-/** Stores a single-use token for an address, or returns null when it has asked too often this
- * hour. The throttle counts login and sign-up tokens together. */
-async function createToken(db: D1Database, email: string, input: TokenInput): Promise<string | null> {
+/** Stores a single-use token for an address, or returns null when the address has had its links
+ * for this hour: LINKS_PER_REQUESTER_HOUR at this requester's request (see requester.ts), or
+ * LINKS_PER_ADDRESS_HOUR in all, whoever asked ('unknown' and rows without a requester included).
+ * Login and sign-up tokens count together. Both counts and the insert are one statement, so
+ * requests racing each other cannot pass either limit. */
+async function createToken(
+  db: D1Database,
+  email: string,
+  requester: string,
+  input: TokenInput,
+): Promise<string | null> {
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const recent = await db
-    .prepare('SELECT COUNT(*) AS n FROM pro_login_tokens WHERE email = ? AND created_at > ?')
-    .bind(email, hourAgo)
-    .first<{ n: number }>();
-  if ((recent?.n ?? 0) >= LOGIN_REQUESTS_PER_HOUR) return null;
-
   const raw = randomToken();
-  await db
+  const stored = await db
     .prepare(
-      `INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at, purpose, signup_name, signup_invite)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at, purpose, signup_name, signup_invite, requester)
+       SELECT ?, ?, ?, ?, ?, ?, ?, ?
+       WHERE (SELECT COUNT(*) FROM pro_login_tokens WHERE email = ? AND created_at > ?) < ?
+         AND (SELECT COUNT(*) FROM pro_login_tokens WHERE email = ? AND requester = ? AND created_at > ?) < ?`,
     )
     .bind(
       await hashToken(raw),
@@ -81,30 +93,66 @@ async function createToken(db: D1Database, email: string, input: TokenInput): Pr
       input.purpose,
       input.name,
       input.invite,
+      requester,
+      email,
+      hourAgo,
+      LINKS_PER_ADDRESS_HOUR,
+      email,
+      requester,
+      hourAgo,
+      LINKS_PER_REQUESTER_HOUR,
     )
     .run();
-  return raw;
+  return (stored.meta.changes ?? 0) > 0 ? raw : null;
 }
 
-/** A single-use sign-in token for an address, or null when it has asked too often this hour. */
-export const createLoginToken = (db: D1Database, email: string): Promise<string | null> =>
-  createToken(db, email, { purpose: 'login', name: null, invite: null });
+/** A single-use sign-in token for an address, or null when it is over its limits this hour. */
+export const createLoginToken = (db: D1Database, email: string, requester: string): Promise<string | null> =>
+  createToken(db, email, requester, { purpose: 'login', name: null, invite: null });
 
 /** A single-use token that, once spent, creates the account for an address. */
 export const createSignupToken = (
   db: D1Database,
   email: string,
+  requester: string,
   { name, invite }: { name: string | null; invite?: string | null },
 ): Promise<string | null> =>
-  createToken(db, email, {
+  createToken(db, email, requester, {
     purpose: 'signup',
     name,
     invite: invite?.trim().toUpperCase() || null,
   });
 
+/** An address as the sign-in confirm page shows it: the first two characters of the local part, or
+ * one when it has two or fewer, then `***@` and the whole domain (`ab@x.com` → `a***@x.com`,
+ * `abc@x.com` → `ab***@x.com`). The site masks the signed-in seller's address the same way and
+ * compares the two. */
+export function maskEmail(email: string): string {
+  const at = email.lastIndexOf('@');
+  const keep = at <= 2 ? 1 : 2;
+  return `${email.slice(0, keep)}***@${email.slice(at + 1)}`;
+}
+
+/** The address a sign-in or sign-up link would open, without spending it: only while the link is
+ * unused and unexpired, and for a sign-in link only while its account exists and is open. */
+export async function peekLoginToken(db: D1Database, raw: string): Promise<string | null> {
+  if (!raw) return null;
+  const row = await db
+    .prepare(
+      `SELECT t.email FROM pro_login_tokens t
+       WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ?
+         AND (t.purpose = 'signup'
+              OR EXISTS (SELECT 1 FROM pro_accounts a WHERE a.email = t.email AND a.closed_at IS NULL))`,
+    )
+    .bind(await hashToken(raw), now())
+    .first<{ email: string }>();
+  return row?.email ?? null;
+}
+
 /** Spends a token and returns the account behind it. A sign-up token creates the account (an
- * existing one is left as it is); a login token needs the account to exist already.
- * The UPDATE is the whole check: of two requests racing with one token, only one gets a row. */
+ * existing one is left as it is); a login token needs the account to exist already. A closed
+ * account is never returned. The UPDATE is the whole check: of two requests racing with one
+ * token, only one gets a row. */
 export async function consumeLoginToken(db: D1Database, raw: string): Promise<ProAccount | null> {
   if (!raw) return null;
   const ts = now();
@@ -131,12 +179,12 @@ export async function consumeLoginToken(db: D1Database, raw: string): Promise<Pr
       try {
         await redeemInvite(db, created.id, used.signup_invite);
       } catch (error) {
-        console.error('sign-up invite failed', created.id, error);
+        console.error('sign-up invite failed', created.id, errorCode(error));
       }
     }
   }
   return db
-    .prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE email = ?`)
+    .prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE email = ? AND closed_at IS NULL`)
     .bind(used.email)
     .first<ProAccount>();
 }
@@ -148,8 +196,8 @@ export const issueSession = (env: Env, account: ProAccount): Promise<string> =>
     SESSION_TTL_SECONDS,
   );
 
-/** The account behind a request's bearer session, or null. Never throws on a malformed token:
- * whatever arrives in the header is somebody else's input. */
+/** The open account behind a request's bearer session, or null. Never throws on a malformed
+ * token: whatever arrives in the header is somebody else's input. */
 export async function authenticate(request: Request, env: Env): Promise<ProAccount | null> {
   const header = request.headers.get('authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : '';
@@ -162,7 +210,9 @@ export async function authenticate(request: Request, env: Env): Promise<ProAccou
   }
   if (!claims || claims.typ !== 'pro' || typeof claims.sub !== 'string') return null;
   if (typeof claims.epoch !== 'number') return null;
-  return env.DB.prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE id = ? AND session_epoch = ?`)
+  return env.DB.prepare(
+    `SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE id = ? AND session_epoch = ? AND closed_at IS NULL`,
+  )
     .bind(claims.sub, claims.epoch)
     .first<ProAccount>();
 }

@@ -49,6 +49,29 @@ async function seedProduction(): Promise<void> {
        VALUES ('h1', 's1', 'week', '2026-09-20', '2026-09-27', 'Неделя', 'Текст', ?)`,
     ).bind(ts),
     db.prepare("INSERT INTO telegram_subscriptions (code, subscription_id, chat_id, created_at) VALUES ('tg1', 's1', 7, ?)").bind(ts),
+    // A seller with a client, a reading and a sign-in link.
+    db.prepare("INSERT INTO pro_accounts (id, email, name, created_at) VALUES ('a1', 'seller@replay.test', 'Продавец', ?)").bind(ts),
+    db.prepare(
+      "INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at, purpose) VALUES ('t1', 'seller@replay.test', ?, ?, 'login')",
+    ).bind(ts, ts),
+    db.prepare(
+      "INSERT INTO pro_clients (id, account_id, birth_ciphertext, birth_nonce, consent_at, created_at) VALUES ('pc1', 'a1', ?, ?, ?, ?)",
+    ).bind(blob, blob, ts, ts),
+    db.prepare(
+      `INSERT INTO orders (id, email, product, locale, amount_minor, currency, status, pro_account_id, created_at, paid_at)
+       VALUES ('o3', 'seller@replay.test', 'natal', 'ru', 1, 'credit', 'paid', 'a1', ?, ?)`,
+    ).bind(ts, ts),
+    db.prepare(
+      "INSERT INTO jobs (id, order_id, kind, step, status, created_at, updated_at) VALUES ('j3', 'o3', 'natal', 'done', 'done', ?, ?)",
+    ).bind(ts, ts),
+    db.prepare(
+      `INSERT INTO pro_readings (order_id, account_id, job_id, client_id, editable_until, created_at)
+       VALUES ('o3', 'a1', 'j3', 'pc1', ?, ?)`,
+    ).bind(ts, ts),
+    db.prepare(
+      `INSERT INTO pro_purchases (id, account_id, pack, credits, amount_minor, currency, status, stripe_payment_intent, created_at, paid_at)
+       VALUES ('pp1', 'a1', 'p10', 10, 9900, 'EUR', 'paid', 'pi_pp1', ?, ?)`,
+    ).bind(ts, ts),
   ]);
 }
 
@@ -58,7 +81,22 @@ describe('the migrations of this release', () => {
     expect(all.some((m) => m.name.startsWith('0014'))).toBe(true);
     await applyD1Migrations(db, all.filter((m) => m.name < '0014'));
     await seedProduction();
-    const tables = ['orders', 'charts', 'jobs', 'documents', 'email_events', 'telegram_links', 'subscriptions', 'horoscopes', 'telegram_subscriptions'];
+    const tables = [
+      'orders',
+      'charts',
+      'jobs',
+      'documents',
+      'email_events',
+      'telegram_links',
+      'subscriptions',
+      'horoscopes',
+      'telegram_subscriptions',
+      'pro_accounts',
+      'pro_login_tokens',
+      'pro_clients',
+      'pro_readings',
+      'pro_purchases',
+    ];
     const before = Object.fromEntries(await Promise.all(tables.map(async (t) => [t, await count(t)] as const)));
 
     await applyD1Migrations(db, all);
@@ -85,6 +123,29 @@ describe('the migrations of this release', () => {
     expect(await db.prepare("SELECT confirmed_at, trial_ends_at FROM subscriptions WHERE id = 's2'").first()).toEqual({
       confirmed_at: ts,
       trial_ends_at: '2026-10-01T00:00:00.000Z',
+    });
+    expect(await db.prepare("SELECT email, purpose, requester FROM pro_login_tokens WHERE token_hash = 't1'").first()).toEqual({
+      email: 'seller@replay.test',
+      purpose: 'login',
+      requester: null,
+    });
+    expect(await db.prepare("SELECT regenerations, busy_until FROM pro_readings WHERE order_id = 'o3'").first()).toEqual({
+      regenerations: 0,
+      busy_until: null,
+    });
+    expect(await db.prepare("SELECT email, name, closed_at FROM pro_accounts WHERE id = 'a1'").first()).toEqual({
+      email: 'seller@replay.test',
+      name: 'Продавец',
+      closed_at: null,
+    });
+    expect(await count('pro_attempts')).toBe(0);
+    expect(await db.prepare("SELECT sections_planned, sections_written FROM jobs WHERE id = 'j3'").first()).toEqual({
+      sections_planned: null,
+      sections_written: null,
+    });
+    expect(await db.prepare("SELECT status, credits_taken FROM pro_purchases WHERE id = 'pp1'").first()).toEqual({
+      status: 'paid',
+      credits_taken: null,
     });
   });
 
@@ -114,5 +175,24 @@ describe('the migrations of this release', () => {
     ]);
     expect(await db.prepare("SELECT status FROM orders WHERE id = 'o2'").first()).toEqual({ status: 'paid' });
     expect(await count('subscriptions')).toBe(3);
+
+    // The cabinet's own writes, as the worker before this release makes them.
+    await db.batch([
+      db.prepare(
+        `INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at, purpose, signup_name, signup_invite)
+         VALUES ('t2', 'new@replay.test', ?, ?, 'signup', 'Новая', NULL)`,
+      ).bind(now, now),
+      db.prepare("UPDATE pro_login_tokens SET used_at = ? WHERE token_hash = 't2' AND used_at IS NULL AND expires_at > ?").bind(now, ts),
+      db.prepare(
+        "INSERT INTO pro_accounts (id, email, name, terms_accepted_at, created_at) VALUES ('a2', 'new@replay.test', 'Новая', ?, ?) ON CONFLICT (email) DO NOTHING",
+      ).bind(now, now),
+      db.prepare("UPDATE pro_accounts SET session_epoch = session_epoch + 1 WHERE id = 'a2'"),
+      db.prepare("UPDATE pro_readings SET regenerations = regenerations + 1 WHERE order_id = 'o3' AND regenerations < 10"),
+    ]);
+    expect(await db.prepare("SELECT COUNT(*) AS n FROM pro_login_tokens WHERE email = 'new@replay.test' AND created_at > ?").bind(ts).first()).toEqual({
+      n: 1,
+    });
+    expect(await db.prepare("SELECT session_epoch FROM pro_accounts WHERE id = 'a2'").first()).toEqual({ session_epoch: 1 });
+    expect(await db.prepare("SELECT regenerations FROM pro_readings WHERE order_id = 'o3'").first()).toEqual({ regenerations: 1 });
   });
 });

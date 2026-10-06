@@ -3,7 +3,7 @@ import { expiryFrom, now } from './db';
 import type { Env } from './env';
 import { errorCode, UpstreamError } from './errors';
 import { sendHoroscope, sendSubscriptionConfirm, sendTrialEnded } from './mail';
-import { apiFetch, ephemeris } from './pipeline';
+import { apiFetch, clampName, ephemeris, SEAL_ROUND } from './pipeline';
 import type { Birth, SubscriptionInput } from './validate';
 
 /* The horoscope subscription: a chart kept on file, a cadence, and a channel or two.
@@ -376,7 +376,7 @@ export async function deliverHoroscope(env: Env, id: string): Promise<void> {
     end: endDate,
     lang: sub.locale,
     gender: sub.gender,
-    name: chart.name,
+    name: clampName(chart.name),
   });
 
   const horoscopeId = crypto.randomUUID();
@@ -435,35 +435,53 @@ export async function subscriptionBirth(env: Env, sub: SubscriptionRow): Promise
 
 /** Encrypts up to `limit` charts still stored in the clear, the name moving into the ciphertext
  * with them, and marks the subscriptions the worker before this one made during its deploy as
- * confirmed. Part of the nightly sweep. */
+ * confirmed. Part of the nightly sweep. Like the payloads (pipeline.ts), charts are never read
+ * together: ids are listed SEAL_ROUND at a time, and each chart is read, sealed and written in
+ * turn. */
 export async function sealLegacyCharts(env: Env, limit: number): Promise<number> {
   await env.DB.prepare(
     'UPDATE subscriptions SET confirmed_at = created_at WHERE confirmed_at IS NULL AND trial_ends_at IS NOT NULL',
   ).run();
-  const { results } = await env.DB.prepare(
-    "SELECT id, chart_json, display_name FROM subscriptions WHERE chart_ciphertext IS NULL AND chart_json != '' LIMIT ?",
-  )
-    .bind(limit)
-    .all<{ id: string; chart_json: string; display_name: string | null }>();
   let sealed = 0;
-  for (const row of results) {
-    let chart: Omit<StoredChart, 'name'>;
-    try {
-      chart = JSON.parse(row.chart_json) as Omit<StoredChart, 'name'>;
-    } catch {
-      console.error('unreadable chart left as it is', row.id);
-      continue;
-    }
-    const { ciphertext, nonce } = await encryptJson({ ...chart, name: row.display_name ?? '' }, env.DATA_KEY);
-    const result = await env.DB.prepare(
-      `UPDATE subscriptions SET chart_ciphertext = ?, chart_nonce = ?, chart_json = '', display_name = NULL
-       WHERE id = ? AND chart_json = ?`,
+  let after = 0;
+  for (let seen = 0; seen < limit; ) {
+    const { results } = await env.DB.prepare(
+      `SELECT rowid AS at, id FROM subscriptions
+       WHERE chart_ciphertext IS NULL AND chart_json != '' AND rowid > ? ORDER BY rowid LIMIT ?`,
     )
-      .bind(ciphertext, nonce, row.id, row.chart_json)
-      .run();
-    sealed += result.meta.changes ?? 0;
+      .bind(after, Math.min(SEAL_ROUND, limit - seen))
+      .all<{ at: number; id: string }>();
+    if (results.length === 0) break;
+    for (const row of results) {
+      after = row.at;
+      seen += 1;
+      sealed += await sealLegacyChart(env, row.id);
+    }
   }
   return sealed;
+}
+
+/** One plain chart encrypted: 1 when it was, 0 when it is gone, unreadable or was rewritten. */
+async function sealLegacyChart(env: Env, id: string): Promise<number> {
+  const row = await env.DB.prepare('SELECT chart_json, display_name FROM subscriptions WHERE id = ?')
+    .bind(id)
+    .first<{ chart_json: string; display_name: string | null }>();
+  if (!row?.chart_json) return 0;
+  let chart: Omit<StoredChart, 'name'>;
+  try {
+    chart = JSON.parse(row.chart_json) as Omit<StoredChart, 'name'>;
+  } catch {
+    console.error('unreadable chart left as it is', id);
+    return 0;
+  }
+  const { ciphertext, nonce } = await encryptJson({ ...chart, name: row.display_name ?? '' }, env.DATA_KEY);
+  const result = await env.DB.prepare(
+    `UPDATE subscriptions SET chart_ciphertext = ?, chart_nonce = ?, chart_json = '', display_name = NULL
+     WHERE id = ? AND chart_ciphertext IS NULL AND chart_json = ?`,
+  )
+    .bind(ciphertext, nonce, id, row.chart_json)
+    .run();
+  return result.meta.changes ?? 0;
 }
 
 /** The sweep's part for subscriptions: an unconfirmed request goes after a week, a cancelled or

@@ -1,5 +1,7 @@
+import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { getJob, updateJob } from '../src/db';
+import worker from '../src/index';
 import { advance, type JobPayload, openPayload, sealPayload } from '../src/pipeline';
 import type { Env, QueueMessage } from '../src/env';
 import {
@@ -14,12 +16,15 @@ import {
 /** The worker's bindings as the tests see them. */
 export const testEnv = env as unknown as Env;
 
+/** Who the tests' own sign-ins are requested by (a stand-in for the hashed address). */
+export const TEST_REQUESTER = 'test-requester';
+
 /** A token that signs `email` in: a login token for a registered address, a sign-up token (which
  * creates the account) for a new one. */
 export async function tokenFor(email: string): Promise<string | null> {
   return (await accountExists(testEnv.DB, email))
-    ? createLoginToken(testEnv.DB, email)
-    : createSignupToken(testEnv.DB, email, { name: 'Test' });
+    ? createLoginToken(testEnv.DB, email, TEST_REQUESTER)
+    : createSignupToken(testEnv.DB, email, TEST_REQUESTER, { name: 'Test' });
 }
 
 /** A signed-in seller with a fresh session, for tests that need one. */
@@ -93,6 +98,15 @@ export function recordingQueue(base: Env = testEnv): { env: Env; sent: QueueMess
   const env = Object.create(base);
   Object.defineProperty(env, 'JOBS', { value: { send: async (message: QueueMessage) => void sent.push(message) } });
   return { env, sent };
+}
+
+/** A request to the worker's fetch handler, answered, and with everything it left running after the
+ * answer (ctx.waitUntil) finished too: what a sign-in request does happens after its 202. */
+export async function fetchSettled(request: Request, base: Env = testEnv): Promise<Response> {
+  const ctx = createExecutionContext();
+  const response = await worker.fetch(request, base, ctx);
+  await waitOnExecutionContext(ctx);
+  return response;
 }
 
 /** The worker's bindings with one of them replaced. defineProperty, not assignment: assigning

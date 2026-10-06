@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../src/pro/credits';
-import { hasRedeemed, redeemInvite } from '../src/pro/invites';
+import { FAILED_INVITES_PER_HOUR, hasRedeemed, redeemInvite } from '../src/pro/invites';
 import { signIn, testEnv } from './env';
 
 const db = () => testEnv.DB;
@@ -79,5 +79,60 @@ describe('invite codes', () => {
     expect(results.filter((r) => r.status === 'granted')).toHaveLength(1);
     expect(await balance(db(), id)).toBe(3);
     expect(await uses('DOUBLETAP')).toBe(1);
+  });
+});
+
+describe('codes that do not work', () => {
+  const failures = async (accountId: string) =>
+    (
+      await db()
+        .prepare("SELECT COUNT(*) AS n FROM pro_attempts WHERE kind = 'invite' AND subject = ?")
+        .bind(accountId)
+        .first<{ n: number }>()
+    )?.n ?? 0;
+
+  it(`are looked up no more after ${FAILED_INVITES_PER_HOUR} in an hour, until the hour has passed`, async () => {
+    await code('LATECOMER');
+    const id = await seller('guesser');
+    for (let i = 0; i < FAILED_INVITES_PER_HOUR; i++) {
+      expect(await redeemInvite(db(), id, `GUESS${i}`)).toEqual({ status: 'invalid' });
+    }
+    expect(await redeemInvite(db(), id, 'LATECOMER')).toEqual({ status: 'too_many' });
+    expect(await balance(db(), id)).toBe(0);
+    expect(await uses('LATECOMER')).toBe(0);
+
+    await db()
+      .prepare('UPDATE pro_attempts SET created_at = ? WHERE subject = ?')
+      .bind(new Date(Date.now() - 61 * 60 * 1000).toISOString(), id)
+      .run();
+    expect(await redeemInvite(db(), id, 'LATECOMER')).toEqual({ status: 'granted', credits: 3 });
+  });
+
+  it('count alone: a code that works, or a try after it, is no failure', async () => {
+    await code('GOODONE');
+    const id = await seller('counted');
+    for (let i = 0; i < FAILED_INVITES_PER_HOUR - 1; i++) await redeemInvite(db(), id, `NOPE${i}`);
+    expect((await redeemInvite(db(), id, 'GOODONE')).status).toBe('granted');
+    expect(await redeemInvite(db(), id, 'GOODONE')).toEqual({ status: 'already' });
+    expect(await failures(id)).toBe(FAILED_INVITES_PER_HOUR - 1);
+  });
+
+  it('are held to the limit when they are sent at once', async () => {
+    const id = await seller('burst');
+    const results = await Promise.all(
+      Array.from({ length: FAILED_INVITES_PER_HOUR + 4 }, (_, i) => redeemInvite(db(), id, `BURST${i}`)),
+    );
+    expect(results.filter((r) => r.status === 'invalid')).toHaveLength(FAILED_INVITES_PER_HOUR);
+    expect(results.filter((r) => r.status === 'too_many')).toHaveLength(4);
+    expect(await failures(id)).toBe(FAILED_INVITES_PER_HOUR);
+  });
+
+  it('count against one seller and not another', async () => {
+    await code('OTHERS');
+    const one = await seller('one-guesser');
+    const other = await seller('other-guesser');
+    for (let i = 0; i < FAILED_INVITES_PER_HOUR; i++) await redeemInvite(db(), one, `WRONG${i}`);
+    expect((await redeemInvite(db(), one, 'OTHERS')).status).toBe('too_many');
+    expect((await redeemInvite(db(), other, 'OTHERS')).status).toBe('granted');
   });
 });

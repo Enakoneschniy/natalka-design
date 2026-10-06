@@ -36,6 +36,10 @@ export interface JobRow {
   payload: string | null;
   payload_ct: Blobish | null;
   payload_nonce: Blobish | null;
+  /** The plan's sections and how many of them are written, kept with the payload (sealPayload);
+   * NULL in rows from before the counts were kept. */
+  sections_planned: number | null;
+  sections_written: number | null;
   tokens_in: number;
   tokens_out: number;
   cost_micros: number;
@@ -140,6 +144,8 @@ export async function updateJob(
       | 'payload'
       | 'payload_ct'
       | 'payload_nonce'
+      | 'sections_planned'
+      | 'sections_written'
       | 'tokens_in'
       | 'tokens_out'
       | 'cost_micros'

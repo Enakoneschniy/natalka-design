@@ -7,6 +7,8 @@
 
 import { now } from '../db';
 import type { Env } from '../env';
+import { errorCode } from '../errors';
+import { dropOlderPictures } from './storage';
 
 export interface BrandInput {
   name: string;
@@ -171,11 +173,25 @@ export async function putBrandImage(
 
   const previous = row[column(kind)];
   const key = `brand/${accountId}/${kind}-${crypto.randomUUID()}`;
-  await env.DOCS.put(key, bytes, { httpMetadata: { contentType: image.type } });
-  await env.DB.prepare(`UPDATE pro_brands SET ${column(kind)} = ?, updated_at = ? WHERE account_id = ?`)
-    .bind(key, now(), accountId)
+  const stored = await env.DOCS.put(key, bytes, { httpMetadata: { contentType: image.type } });
+  // Only while the row still points where it did: of two uploads at once, the one that finds it
+  // changed takes its own picture away again, and the other's stays.
+  const moved = await env.DB.prepare(
+    `UPDATE pro_brands SET ${column(kind)} = ?, updated_at = ? WHERE account_id = ? AND ${column(kind)} IS ?`,
+  )
+    .bind(key, now(), accountId, previous)
     .run();
-  if (previous) await env.DOCS.delete(previous);
+  if (!moved.meta.changes) {
+    await env.DOCS.delete(key);
+    return 'ok';
+  }
+  // The row points at the new picture: every older one of this kind can go, the one it replaced
+  // and any an upload stored without getting its row.
+  try {
+    await dropOlderPictures(env, accountId, kind, stored?.uploaded ?? new Date());
+  } catch (error) {
+    console.error('old brand pictures left in storage', accountId, errorCode(error));
+  }
   return 'ok';
 }
 

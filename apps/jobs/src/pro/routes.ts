@@ -1,10 +1,12 @@
 /** /v1/pro/* — the seller cabinet's API.
  *
  * Called only by the pro site's server, which proves itself with PRO_API_KEY (x-pro-key); the
- * browser never has the key. Past that, every route but the two sign-in steps needs a session.
+ * browser never has the key. Past that, every route but the sign-in steps (asking for a link,
+ * looking at one, spending one) needs a session.
  */
 
 import type { Env } from '../env';
+import { errorCode } from '../errors';
 import { contentDisposition } from '../filename';
 import { sendLoginLink, sendSignupLink } from '../mail';
 import {
@@ -15,7 +17,9 @@ import {
   createSignupToken,
   endSessions,
   issueSession,
+  maskEmail,
   normalizeEmail,
+  peekLoginToken,
   type ProAccount,
 } from './auth';
 import {
@@ -30,6 +34,7 @@ import {
   saveBrand,
 } from './brand';
 import { createClient, getClient, listClients, parseClientBirth } from './clients';
+import { closeAccount } from './closing';
 import { balance } from './credits';
 import { PACKS, attachSession, createPurchase, isPack, listPurchases, markFailed } from './purchases';
 import { createPackCheckout } from '../stripe';
@@ -37,6 +42,7 @@ import { openPayload } from '../pipeline';
 import { hasRedeemed, redeemInvite } from './invites';
 import { assemblePdf, readingPdf, regenerateSection } from './lifecycle';
 import { fileReport } from './reports';
+import { requesterOf } from './requester';
 import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from './readings';
 
 const json = (body: unknown, status = 200): Response =>
@@ -51,19 +57,34 @@ const readBody = async (request: Request): Promise<Record<string, unknown> | nul
   }
 };
 
-/** Lets a letter leave after the answer: the response must not take longer for an address that
- * gets one. Without a context (direct callers, tests) the send is awaited, so it is deterministic.
- * A failed send is logged and never shown: it would tell whether a letter was attempted. */
-async function dispatch(ctx: ExecutionContext | undefined, send: Promise<unknown>): Promise<void> {
-  const logged = send.catch((error) => console.error('pro letter failed', error));
+/** Runs the work behind a sign-in or sign-up request after the answer has gone: looking the
+ * address up, storing a token and sending the letter. The answer is the same 202 at the same
+ * moment whether the address has an account, gets a letter or is over its limit. Without a
+ * context (direct callers, tests) the work is awaited, so it is deterministic. A failure is logged
+ * by its code and never shown: it would tell whether a letter was attempted. */
+async function afterAnswer(ctx: ExecutionContext | undefined, work: Promise<void>): Promise<void> {
+  const logged = work.catch((error) => console.error('pro sign-in letter failed', errorCode(error)));
   if (ctx) ctx.waitUntil(logged);
   else await logged;
 }
 
-/** Stores a sign-in token for a registered address and sends the letter. */
-async function mailLoginLink(env: Env, ctx: ExecutionContext | undefined, email: string): Promise<void> {
-  const token = await createLoginToken(env.DB, email);
-  if (token) await dispatch(ctx, sendLoginLink(env, email, `${env.PRO_SITE_URL}/login/${token}`));
+const loginLink = (env: Env, token: string): string => `${env.PRO_SITE_URL}/login/${token}`;
+
+/** The letter an address gets: a sign-in link when it has an account; when it has none, a link
+ * that creates one for a sign-up, and nothing for a sign-in. */
+async function sendSignInLetter(
+  env: Env,
+  email: string,
+  requester: string,
+  signup: { name: string; invite: string | null } | null,
+): Promise<void> {
+  if (await accountExists(env.DB, email)) {
+    const token = await createLoginToken(env.DB, email, requester);
+    if (token) await sendLoginLink(env, email, loginLink(env, token));
+  } else if (signup) {
+    const token = await createSignupToken(env.DB, email, requester, signup);
+    if (token) await sendSignupLink(env, email, loginLink(env, token));
+  }
 }
 
 /** Always 202 for a well-formed address: the answer must not tell whether an account exists.
@@ -71,7 +92,7 @@ async function mailLoginLink(env: Env, ctx: ExecutionContext | undefined, email:
 async function requestLogin(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
   const email = normalizeEmail((await readBody(request))?.email);
   if (!email) return json({ error: 'email' }, 400);
-  if (await accountExists(env.DB, email)) await mailLoginLink(env, ctx, email);
+  await afterAnswer(ctx, sendSignInLetter(env, email, await requesterOf(request, env), null));
   return json({ ok: true }, 202);
 }
 
@@ -88,14 +109,16 @@ async function requestSignup(request: Request, env: Env, ctx?: ExecutionContext)
   if (body?.terms !== true) return json({ error: 'terms' }, 400);
   const code = typeof body.invite === 'string' ? body.invite.trim() : '';
   const invite = code && code.length <= MAX_INVITE ? code : null;
-
-  if (await accountExists(env.DB, email)) {
-    await mailLoginLink(env, ctx, email);
-  } else {
-    const token = await createSignupToken(env.DB, email, { name, invite });
-    if (token) await dispatch(ctx, sendSignupLink(env, email, `${env.PRO_SITE_URL}/login/${token}`));
-  }
+  await afterAnswer(ctx, sendSignInLetter(env, email, await requesterOf(request, env), { name, invite }));
   return json({ ok: true }, 202);
+}
+
+/** Whose cabinet a link opens, masked, for the confirm page: 404 for a link that is used, expired
+ * or unknown. Nothing is spent. */
+async function peekLogin(request: Request, env: Env): Promise<Response> {
+  const token = (await readBody(request))?.token;
+  const email = typeof token === 'string' ? await peekLoginToken(env.DB, token) : null;
+  return email ? json({ email: maskEmail(email) }) : json({ error: 'not found' }, 404);
 }
 
 async function startSession(request: Request, env: Env): Promise<Response> {
@@ -118,10 +141,20 @@ async function me(env: Env, account: ProAccount): Promise<Response> {
   });
 }
 
+/** Closes the cabinet for good (closing.ts), once the seller has typed its address: 204, or 400
+ * when the address is not the cabinet's. */
+async function closeCabinet(request: Request, env: Env, account: ProAccount): Promise<Response> {
+  const typed = normalizeEmail((await readBody(request))?.confirm_email);
+  if (typed === null || typed !== account.email) return json({ error: 'confirm' }, 400);
+  await closeAccount(env, account);
+  return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } });
+}
+
 async function invite(request: Request, env: Env, account: ProAccount): Promise<Response> {
   const result = await redeemInvite(env.DB, account.id, (await readBody(request))?.code);
   if (result.status === 'already') return json({ error: 'already redeemed' }, 409);
   if (result.status === 'invalid') return json({ error: 'invalid code' }, 404);
+  if (result.status === 'too_many') return json({ error: 'too_many' }, 429);
   return json({ credits: result.credits, balance: await balance(env.DB, account.id) });
 }
 
@@ -201,6 +234,8 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
   const pack = (await readBody(request))?.pack;
   if (!isPack(pack)) return json({ error: 'pack' }, 400);
   const purchase = await createPurchase(env.DB, account.id, pack);
+  // Checkouts opened and left unpaid this hour: no more until they are paid, expire or age.
+  if (!purchase) return json({ error: 'too_many' }, 429);
   let session;
   try {
     session = await createPackCheckout(env, {
@@ -213,7 +248,7 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
       currency: purchase.currency,
     });
   } catch (error) {
-    console.error('pack checkout failed', purchase.id, error);
+    console.error('pack checkout failed', purchase.id, errorCode(error));
     await markFailed(env.DB, purchase.id, account.id);
     return json({ error: 'checkout' }, 502);
   }
@@ -222,7 +257,7 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
   try {
     await attachSession(env.DB, purchase.id, session.id);
   } catch (error) {
-    console.error('pack attachSession failed', purchase.id, error);
+    console.error('pack attachSession failed', purchase.id, errorCode(error));
   }
   return json({ id: purchase.id, checkout_url: session.url }, 201);
 }
@@ -300,6 +335,7 @@ async function readingRoutes(request: Request, env: Env, url: URL, account: ProA
       const result = await assemblePdf(env, account.id, pdf[1]);
       if (result === 'queued') return json({ ok: true }, 202);
       if (result === 'not_found') return json({ error: 'not found' }, 404);
+      if (result === 'too_many') return json({ error: 'too_many' }, 429);
       return json({ error: result }, 409);
     }
     if (method === 'GET') {
@@ -342,12 +378,14 @@ export async function handlePro(
   // Only POST spends a sign-in token: mail scanners open links with GET.
   if (route === 'POST /v1/pro/login') return requestLogin(request, env, ctx);
   if (route === 'POST /v1/pro/signup') return requestSignup(request, env, ctx);
+  if (route === 'POST /v1/pro/login/peek') return peekLogin(request, env);
   if (route === 'POST /v1/pro/session') return startSession(request, env);
 
   const account = await authenticate(request, env);
   if (!account) return json({ error: 'unauthorized' }, 401);
 
   if (route === 'GET /v1/pro/me') return me(env, account);
+  if (route === 'DELETE /v1/pro/me') return closeCabinet(request, env, account);
   if (route === 'POST /v1/pro/invite') return invite(request, env, account);
   if (route === 'POST /v1/pro/logout') {
     await endSessions(env.DB, account.id);

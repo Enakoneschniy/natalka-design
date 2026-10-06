@@ -1,17 +1,19 @@
 import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { testEnv, tokenFor } from './env';
+import { fetchSettled, testEnv, tokenFor } from './env';
 
 const call = (method: string, path: string, body?: unknown, session?: string, key: string | null = 'test-pro-key') =>
-  SELF.fetch(`https://jobs.test${path}`, {
-    method,
-    headers: {
-      'content-type': 'application/json',
-      ...(key === null ? {} : { 'x-pro-key': key }),
-      ...(session ? { authorization: `Bearer ${session}` } : {}),
-    },
-    body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
-  });
+  fetchSettled(
+    new Request(`https://jobs.test${path}`, {
+      method,
+      headers: {
+        'content-type': 'application/json',
+        ...(key === null ? {} : { 'x-pro-key': key }),
+        ...(session ? { authorization: `Bearer ${session}` } : {}),
+      },
+      body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
+    }),
+  );
 
 async function sessionFor(email: string): Promise<string> {
   const token = await tokenFor(email);
@@ -80,6 +82,19 @@ describe('/v1/pro', () => {
   it('answers an unknown code with 404 for a seller who has none yet', async () => {
     const session = await sessionFor('wrongcode@routes.test');
     expect((await call('POST', '/v1/pro/invite', { code: 'NOSUCH' }, session)).status).toBe(404);
+  });
+
+  it('answers 429 once a seller has tried five codes that did not work this hour', async () => {
+    await testEnv.DB.prepare(
+      "INSERT INTO pro_invite_codes (code, credits, max_uses, created_at) VALUES ('CHR-ROUT-ES29', 3, 1, '2026-10-03T00:00:00.000Z')",
+    ).run();
+    const session = await sessionFor('guessing@routes.test');
+    for (let i = 0; i < 5; i++) {
+      expect((await call('POST', '/v1/pro/invite', { code: `CHR-GUES-S00${i}` }, session)).status).toBe(404);
+    }
+    const refused = await call('POST', '/v1/pro/invite', { code: 'CHR-ROUT-ES29' }, session);
+    expect(refused.status).toBe(429);
+    expect(await refused.json()).toEqual({ error: 'too_many' });
   });
 
   it('signs out everywhere', async () => {

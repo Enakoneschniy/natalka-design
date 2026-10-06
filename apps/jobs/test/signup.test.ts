@@ -1,18 +1,21 @@
-import { SELF } from 'cloudflare:test';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { consumeLoginToken, createLoginToken } from '../src/pro/auth';
-import { signIn, testEnv } from './env';
+import { fetchSettled, signIn, TEST_REQUESTER, testEnv } from './env';
 
-const call = (path: string, body?: unknown, session?: string) =>
-  SELF.fetch(`https://jobs.test${path}`, {
-    method: path === '/v1/pro/me' ? 'GET' : 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-pro-key': 'test-pro-key',
-      ...(session ? { authorization: `Bearer ${session}` } : {}),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+/** A call, and the work it leaves for after the answer (the letter) done. */
+const call = (path: string, body?: unknown, session?: string, headers: Record<string, string> = {}) =>
+  fetchSettled(
+    new Request(`https://jobs.test${path}`, {
+      method: path === '/v1/pro/me' ? 'GET' : 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-pro-key': 'test-pro-key',
+        ...(session ? { authorization: `Bearer ${session}` } : {}),
+        ...headers,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+  );
 
 interface TokenRow {
   purpose: string;
@@ -172,28 +175,34 @@ describe('POST /v1/pro/signup', () => {
 });
 
 describe('the answer and the throttle', () => {
-  it('shares one throttle between sign-up and login, and still answers 202', async () => {
+  it('shares one limit between sign-up and login per requester, and still answers 202', async () => {
     const email = 'busy@signup.test';
-    await signIn(email); // registers the address; its token is the 1st this hour
+    await signIn(email); // registers the address, asked for by the tests' own requester
+    const from = { 'x-client-ip': '203.0.113.7' };
     const body = { email, name: 'Катя', terms: true };
-    for (let i = 0; i < 2; i++) expect((await call('/v1/pro/signup', body)).status).toBe(202);
-    for (let i = 0; i < 2; i++) expect((await call('/v1/pro/login', { email })).status).toBe(202);
-    expect(await tokens(email)).toHaveLength(5);
+    for (let i = 0; i < 3; i++) expect((await call('/v1/pro/signup', body, undefined, from)).status).toBe(202);
+    for (let i = 0; i < 2; i++) expect((await call('/v1/pro/login', { email }, undefined, from)).status).toBe(202);
+    expect(await tokens(email)).toHaveLength(6);
 
     logged = [];
-    const sixth = await call('/v1/pro/signup', body);
+    const sixth = await call('/v1/pro/signup', body, undefined, from);
     expect(sixth.status).toBe(202);
     expect(await sixth.json()).toEqual({ ok: true });
-    expect(await tokens(email)).toHaveLength(5);
+    expect(await tokens(email)).toHaveLength(6);
     expect(logged).toHaveLength(0);
+
+    // Another visitor is not held back by this one.
+    expect((await call('/v1/pro/login', { email }, undefined, { 'x-client-ip': '198.51.100.4' })).status).toBe(202);
+    expect(await tokens(email)).toHaveLength(7);
+    expect(logged).toHaveLength(1);
   });
 });
 
 describe('a login token with no account behind it', () => {
   it('is refused and creates nothing', async () => {
-    const raw = (await createLoginToken(testEnv.DB, 'deleted@signup.test')) as string;
+    const raw = (await createLoginToken(testEnv.DB, 'deleted@signup.test', TEST_REQUESTER)) as string;
     expect(await consumeLoginToken(testEnv.DB, raw)).toBeNull();
-    const raw2 = (await createLoginToken(testEnv.DB, 'deleted2@signup.test')) as string;
+    const raw2 = (await createLoginToken(testEnv.DB, 'deleted2@signup.test', TEST_REQUESTER)) as string;
     expect((await call('/v1/pro/session', { token: raw2 })).status).toBe(400);
     expect(await accounts('deleted@signup.test')).toHaveLength(0);
     expect(await accounts('deleted2@signup.test')).toHaveLength(0);

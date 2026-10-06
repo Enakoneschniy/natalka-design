@@ -35,8 +35,6 @@ export async function sweep(env: Env, options: SweepOptions = {}): Promise<Recor
     ['subscription births', async () => (await dropExpiredBirths(env.DB), 0)],
     ['subscriptions', () => sweepSubscriptions(env.DB)],
     ['job payloads', () => scrubExpiredJobPayloads(env.DB, days)],
-    ['plain payloads encrypted', () => sealLegacyPayloads(env, SEAL_PER_NIGHT)],
-    ['plain charts encrypted', () => sealLegacyCharts(env, SEAL_PER_NIGHT)],
     ['documents', () => expiredDocuments(env, batch)],
     ['charts', () => run(env, 'DELETE FROM charts WHERE expires_at < ?', now())],
     ['chart labels', () => run(env, 'UPDATE charts SET display_name = NULL, place_label = NULL WHERE display_name IS NOT NULL OR place_label IS NOT NULL')],
@@ -48,8 +46,14 @@ export async function sweep(env: Env, options: SweepOptions = {}): Promise<Recor
     // Sign-in links are worth nothing a day after they expire; the hour of history the throttle
     // needs is long past by then.
     ['sign-in links', () => run(env, 'DELETE FROM pro_login_tokens WHERE expires_at < ?', expiryFrom(-1))],
+    // The cabinet's hourly limits look back an hour; a day of history is more than they need.
+    ['cabinet attempts', () => run(env, 'DELETE FROM pro_attempts WHERE created_at < ?', expiryFrom(-1))],
     ['stripe tombstones', () => run(env, 'DELETE FROM stripe_tombstones WHERE created_at < ?', expiryFrom(-30))],
     ['letter log', () => run(env, 'DELETE FROM mail_log WHERE created_at < ?', expiryFrom(-2))],
+    // Last: encrypting old rows is the heaviest work of the night, and if the invocation dies in
+    // it, every deletion above has already run.
+    ['plain payloads encrypted', () => sealLegacyPayloads(env, SEAL_PER_NIGHT)],
+    ['plain charts encrypted', () => sealLegacyCharts(env, SEAL_PER_NIGHT)],
   ];
   const report: Record<string, number | 'failed'> = {};
   for (const [name, step] of steps) {
@@ -106,11 +110,12 @@ async function expiredDocuments(env: Env, batch: number): Promise<number> {
   });
 }
 
-/** A shopper's order never paid for (still pending, or held for a payment of the wrong amount)
- * goes a week after its last payment page was opened, with everything that hangs off it. */
+/** A shopper's order never paid for goes a week after its last payment page was opened, with
+ * everything that hangs off it. One held for a payment of the wrong amount stays: money was taken,
+ * and the order is what the refund is made against. */
 async function unpaidOrders(env: Env, batch: number): Promise<number> {
   const unpaid = `SELECT id FROM orders
-    WHERE pro_account_id IS NULL AND (status = 'pending' OR hold = 'amount_mismatch')
+    WHERE pro_account_id IS NULL AND status = 'pending' AND hold IS NULL
       AND COALESCE(checkout_at, created_at) < ?`;
   const cutoff = expiryFrom(-UNPAID_DAYS);
   // An unpaid order has no document; any there is goes first all the same.

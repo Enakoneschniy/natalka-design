@@ -529,11 +529,14 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
 /** The site's server proves itself with SITE_KEY (x-site-key) on every call; the browser never has
  * the key. Without the secret configured nothing is served: a missing key must not open the door. */
 async function siteGate(request: Request, env: Env): Promise<Response | null> {
-  if (!env.SITE_KEY) {
+  // A header value arrives trimmed; a secret typed or piped in may end in a newline, and one of
+  // nothing but whitespace is no secret.
+  const expected = env.SITE_KEY?.trim();
+  if (!expected) {
     console.error('SITE_KEY is not configured; refusing site routes');
     return json({ error: 'unavailable' }, 503);
   }
-  if (!(await sameSecret(request.headers.get('x-site-key'), env.SITE_KEY))) {
+  if (!(await sameSecret(request.headers.get('x-site-key'), expected))) {
     return json({ error: 'unauthorized' }, 401);
   }
   return null;

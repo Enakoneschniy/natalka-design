@@ -7,10 +7,11 @@ import {
   createSignupToken,
   endSessions,
   issueSession,
-  LOGIN_REQUESTS_PER_HOUR,
+  LINKS_PER_ADDRESS_HOUR,
+  LINKS_PER_REQUESTER_HOUR,
   normalizeEmail,
 } from '../src/pro/auth';
-import { signIn, testEnv } from './env';
+import { signIn, TEST_REQUESTER, testEnv } from './env';
 
 const bearer = (token: string) =>
   new Request('https://jobs.test/v1/pro/me', { headers: { authorization: `Bearer ${token}` } });
@@ -29,7 +30,7 @@ describe('normalizeEmail', () => {
 
 describe('login tokens', () => {
   it('creates the account on first use of a sign-up token and works only once', async () => {
-    const raw = await createSignupToken(testEnv.DB, 'first@auth.test', { name: 'Первая' });
+    const raw = await createSignupToken(testEnv.DB, 'first@auth.test', TEST_REQUESTER, { name: 'Первая' });
     expect(raw).toBeTruthy();
     const account = await consumeLoginToken(testEnv.DB, raw as string);
     expect(account?.email).toBe('first@auth.test');
@@ -44,7 +45,7 @@ describe('login tokens', () => {
   });
 
   it('refuses an expired token', async () => {
-    const raw = (await createSignupToken(testEnv.DB, 'late@auth.test', { name: 'Поздняя' })) as string;
+    const raw = (await createSignupToken(testEnv.DB, 'late@auth.test', TEST_REQUESTER, { name: 'Поздняя' })) as string;
     await testEnv.DB.prepare(
       "UPDATE pro_login_tokens SET expires_at = '2000-01-01T00:00:00.000Z' WHERE email = ?",
     )
@@ -59,7 +60,7 @@ describe('login tokens', () => {
   });
 
   it('keeps only a hash of the token', async () => {
-    const raw = (await createLoginToken(testEnv.DB, 'hash@auth.test')) as string;
+    const raw = (await createLoginToken(testEnv.DB, 'hash@auth.test', TEST_REQUESTER)) as string;
     const row = await testEnv.DB.prepare('SELECT token_hash FROM pro_login_tokens WHERE email = ?')
       .bind('hash@auth.test')
       .first<{ token_hash: string }>();
@@ -67,11 +68,49 @@ describe('login tokens', () => {
     expect(row?.token_hash).not.toBe(raw);
   });
 
-  it(`stops issuing after ${LOGIN_REQUESTS_PER_HOUR} links an hour`, async () => {
-    for (let i = 0; i < LOGIN_REQUESTS_PER_HOUR; i++) {
-      expect(await createLoginToken(testEnv.DB, 'busy@auth.test')).toBeTruthy();
+  it(`stops issuing after ${LINKS_PER_REQUESTER_HOUR} links an hour to one requester`, async () => {
+    for (let i = 0; i < LINKS_PER_REQUESTER_HOUR; i++) {
+      expect(await createLoginToken(testEnv.DB, 'busy@auth.test', 'one')).toBeTruthy();
     }
-    expect(await createLoginToken(testEnv.DB, 'busy@auth.test')).toBeNull();
+    expect(await createLoginToken(testEnv.DB, 'busy@auth.test', 'one')).toBeNull();
+    expect(await createSignupToken(testEnv.DB, 'busy@auth.test', 'one', { name: 'Ещё' })).toBeNull();
+    expect(await createLoginToken(testEnv.DB, 'busy@auth.test', 'two')).toBeTruthy();
+  });
+
+  it(`stops issuing after ${LINKS_PER_ADDRESS_HOUR} links an hour to an address, whoever asks`, async () => {
+    const email = 'crowd@auth.test';
+    for (let i = 0; i < LINKS_PER_ADDRESS_HOUR; i++) {
+      expect(await createLoginToken(testEnv.DB, email, `requester-${i}`)).toBeTruthy();
+    }
+    expect(await createLoginToken(testEnv.DB, email, 'requester-new')).toBeNull();
+    expect(await createLoginToken(testEnv.DB, 'other@auth.test', 'requester-new')).toBeTruthy();
+  });
+
+  it('counts no link older than an hour, and an older row without a requester only in the total', async () => {
+    const email = 'aged@auth.test';
+    for (let i = 0; i < LINKS_PER_REQUESTER_HOUR; i++) await createLoginToken(testEnv.DB, email, 'aged');
+    await testEnv.DB.prepare('UPDATE pro_login_tokens SET created_at = ? WHERE email = ?')
+      .bind(new Date(Date.now() - 61 * 60 * 1000).toISOString(), email)
+      .run();
+    expect(await createLoginToken(testEnv.DB, email, 'aged')).toBeTruthy();
+
+    // Rows the worker before this one wrote carry no requester.
+    const legacy = 'legacy@auth.test';
+    const ts = new Date().toISOString();
+    for (let i = 0; i < LINKS_PER_ADDRESS_HOUR - 1; i++) {
+      await testEnv.DB.prepare('INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
+        .bind(crypto.randomUUID(), legacy, ts, ts)
+        .run();
+    }
+    expect(await createLoginToken(testEnv.DB, legacy, 'fresh')).toBeTruthy();
+    expect(await createLoginToken(testEnv.DB, legacy, 'fresh')).toBeNull();
+  });
+
+  it('never lets racing requests past the limits', async () => {
+    const issued = await Promise.all(
+      Array.from({ length: LINKS_PER_REQUESTER_HOUR + 7 }, () => createLoginToken(testEnv.DB, 'race@auth.test', 'racer')),
+    );
+    expect(issued.filter(Boolean)).toHaveLength(LINKS_PER_REQUESTER_HOUR);
   });
 });
 

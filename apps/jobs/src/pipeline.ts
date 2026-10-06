@@ -75,40 +75,75 @@ export async function openPayload(env: Env, row: PayloadColumns): Promise<JobPay
   return {};
 }
 
-/** The columns to write a payload to: encrypted, with the plain column emptied. Every writer of
- * a payload uses this and nothing else. */
-export async function sealPayload(
-  env: Env,
-  payload: JobPayload,
-): Promise<{ payload: null; payload_ct: ArrayBuffer; payload_nonce: ArrayBuffer }> {
-  const { ciphertext, nonce } = await encryptJson(payload, env.DATA_KEY);
-  return { payload: null, payload_ct: ciphertext, payload_nonce: nonce };
+/** How many sections a payload's plan holds, and how many of those are written. */
+export function sectionCounts(payload: JobPayload): { sections_planned: number; sections_written: number } {
+  const plan = payload.plan ?? [];
+  const written = new Set((payload.sections ?? []).map((section) => section.id));
+  return { sections_planned: plan.length, sections_written: plan.filter((entry) => written.has(entry.id)).length };
 }
 
+export interface SealedPayload {
+  payload: null;
+  payload_ct: ArrayBuffer;
+  payload_nonce: ArrayBuffer;
+  sections_planned: number;
+  sections_written: number;
+}
+
+/** The columns to write a payload to: encrypted, with the plain column emptied, and the counts of
+ * its sections beside it, so that a list of readings needs no payload. Every writer of a payload
+ * uses this and nothing else. */
+export async function sealPayload(env: Env, payload: JobPayload): Promise<SealedPayload> {
+  const { ciphertext, nonce } = await encryptJson(payload, env.DATA_KEY);
+  return { payload: null, payload_ct: ciphertext, payload_nonce: nonce, ...sectionCounts(payload) };
+}
+
+/** Rows a nightly encryption step lists at a time. Only their ids are listed; each row is then read
+ * on its own. */
+export const SEAL_ROUND = 50;
+
 /** Encrypts up to `limit` payloads still stored in plain text; the nightly sweep calls it until
- * none are left. A row rewritten meanwhile is left for the next run. */
+ * none are left. A payload can be large, so they are never read together: ids are listed
+ * SEAL_ROUND at a time, and each payload is read, sealed and written in turn. A row rewritten
+ * meanwhile, or one that cannot be read, is left for the next run. */
 export async function sealLegacyPayloads(env: Env, limit: number): Promise<number> {
-  const { results } = await env.DB.prepare('SELECT id, payload FROM jobs WHERE payload IS NOT NULL LIMIT ?')
-    .bind(limit)
-    .all<{ id: string; payload: string }>();
   let sealed = 0;
-  for (const row of results) {
-    let parsed: JobPayload;
-    try {
-      parsed = JSON.parse(row.payload) as JobPayload;
-    } catch {
-      console.error('unreadable payload left as it is', row.id);
-      continue;
-    }
-    const columns = await sealPayload(env, parsed);
-    const result = await env.DB.prepare(
-      'UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ? WHERE id = ? AND payload = ?',
+  let after = 0;
+  for (let seen = 0; seen < limit; ) {
+    const { results } = await env.DB.prepare(
+      'SELECT rowid AS at, id FROM jobs WHERE payload IS NOT NULL AND rowid > ? ORDER BY rowid LIMIT ?',
     )
-      .bind(columns.payload_ct, columns.payload_nonce, row.id, row.payload)
-      .run();
-    sealed += result.meta.changes ?? 0;
+      .bind(after, Math.min(SEAL_ROUND, limit - seen))
+      .all<{ at: number; id: string }>();
+    if (results.length === 0) break;
+    for (const row of results) {
+      after = row.at;
+      seen += 1;
+      sealed += await sealLegacyPayload(env, row.id);
+    }
   }
   return sealed;
+}
+
+/** One plain payload encrypted: 1 when it was, 0 when it is gone, unreadable or was rewritten. */
+async function sealLegacyPayload(env: Env, id: string): Promise<number> {
+  const row = await env.DB.prepare('SELECT payload FROM jobs WHERE id = ?').bind(id).first<{ payload: string | null }>();
+  if (!row?.payload) return 0;
+  let parsed: JobPayload;
+  try {
+    parsed = JSON.parse(row.payload) as JobPayload;
+  } catch {
+    console.error('unreadable payload left as it is', id);
+    return 0;
+  }
+  const columns = await sealPayload(env, parsed);
+  const result = await env.DB.prepare(
+    `UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ?, sections_planned = ?, sections_written = ?
+     WHERE id = ? AND payload = ?`,
+  )
+    .bind(columns.payload_ct, columns.payload_nonce, columns.sections_planned, columns.sections_written, id, row.payload)
+    .run();
+  return result.meta.changes ?? 0;
 }
 
 /** The ephemeris service: charts, synastry, transits, the sky. Public and AGPL, ours by binding. */
@@ -183,8 +218,8 @@ export async function dropDocuments(env: Env, orderId: string, keep?: string): P
 const AND: Record<string, string> = { uk: 'і', ru: 'и', en: 'and', pl: 'i', de: 'und' };
 
 /** The text API takes a name of at most 80 characters, the two names of a synastry cover
- * included; an order from before names were limited may carry a longer one. */
-const clampName = (name: string): string => [...name].slice(0, 80).join('').trim();
+ * included; an order or a subscription from before names were limited may carry a longer one. */
+export const clampName = (name: string): string => [...name].slice(0, 80).join('').trim();
 
 /** The people a job is about: one, or two for a synastry. */
 export interface People {
