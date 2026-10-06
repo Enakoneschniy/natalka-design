@@ -182,6 +182,10 @@ export async function dropDocuments(env: Env, orderId: string, keep?: string): P
 /** "Оксана і Ігор" on the cover of a synastry. */
 const AND: Record<string, string> = { uk: 'і', ru: 'и', en: 'and', pl: 'i', de: 'und' };
 
+/** The text API takes a name of at most 80 characters, the two names of a synastry cover
+ * included; an order from before names were limited may carry a longer one. */
+const clampName = (name: string): string => [...name].slice(0, 80).join('').trim();
+
 /** The people a job is about: one, or two for a synastry. */
 export interface People {
   first: BirthData;
@@ -267,9 +271,9 @@ export async function writeSection(
       section_id: sectionId,
       product: kind,
       lang: birth.lang,
-      name: birth.name,
+      name: clampName(birth.name),
       gender: birth.gender,
-      second_name: second?.name ?? '',
+      second_name: clampName(second?.name ?? ''),
       written_so_far: others.map((s) => `${s.title}: ${s.text.slice(0, 160)}…`),
       ...(address === 'vy' ? {} : { address }),
     }),
@@ -343,7 +347,7 @@ async function render(
     job.kind === 'synastry'
       ? (payload.facts as { first: Record<string, unknown>; second: Record<string, unknown> })
       : null;
-  const name = pair && second ? `${birth.name} ${AND[birth.lang] ?? '&'} ${second.name}` : birth.name;
+  const name = clampName(pair && second ? `${birth.name} ${AND[birth.lang] ?? '&'} ${second.name}` : birth.name);
   const brand = seller ? await brandForDocument(env, seller.accountId) : null;
   if (seller && !brand) throw new JobError(`no brand for seller of order ${job.order_id}`);
   const document = await api<Record<string, unknown>>(env, '/v1/skeleton', {
@@ -396,16 +400,26 @@ async function render(
     : `${job.order_id}/${job.kind}-${birth.lang}.pdf`;
   const id = crypto.randomUUID();
   await env.DOCS.put(key, bytes, { httpMetadata: { contentType: 'application/pdf' } });
-  await insertDocument(env.DB, {
-    id,
-    order_id: job.order_id,
-    storage_key: key,
-    sha256: await sha256Hex(bytes),
-    pages,
-    bytes: bytes.byteLength,
-    lang: birth.lang,
-    expires_at: expiryFrom(Number(env.RETENTION_DAYS ?? '30')),
-  });
+  try {
+    await insertDocument(env.DB, {
+      id,
+      order_id: job.order_id,
+      storage_key: key,
+      sha256: await sha256Hex(bytes),
+      pages,
+      bytes: bytes.byteLength,
+      lang: birth.lang,
+      expires_at: expiryFrom(Number(env.RETENTION_DAYS ?? '30')),
+    });
+  } catch (error) {
+    // A PDF no row points at would never be swept: take it out again before the retry.
+    try {
+      await env.DOCS.delete(key);
+    } catch (deleteError) {
+      console.error('removing a PDF that has no row', job.id, errorCode(deleteError));
+    }
+    throw error;
+  }
   if (seller) await dropDocuments(env, job.order_id, id);
 }
 
