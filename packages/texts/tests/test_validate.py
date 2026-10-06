@@ -1,3 +1,5 @@
+import re
+
 from natalka_texts import check
 
 CLEAN = (
@@ -114,6 +116,24 @@ def test_russian_words_in_a_ukrainian_reading_are_caught() -> None:
     text = "Ваше Сонце у Тельці.\n\nЭто предложение на русском языке попало не туда."
     report = check(text, lang="uk", min_paragraphs=2, max_paragraphs=2)
     assert any("other language" in p for p in report.problems)
+
+
+def test_every_problem_has_a_code_that_quotes_nothing() -> None:
+    text = "## Заголовок\n\nВ современном мире ты писал, Оксана!\n\n<div>чужой тег</div>"
+    report = check(text, lang="ru", min_paragraphs=5, max_paragraphs=6)
+    assert len(report.codes) == len(report.problems)
+    assert {
+        "too_few_paragraphs",
+        "implies_knowledge",
+        "cliche",
+        "informal_address",
+        "exclamation",
+        "markdown",
+        "markup",
+    } <= set(report.codes)
+    assert all(re.fullmatch(r"[a-z_]+", code) for code in report.codes)
+    assert check("", lang="ru", min_paragraphs=1, max_paragraphs=1).codes == ("empty",)
+    assert check(CLEAN, lang="uk", min_paragraphs=2, max_paragraphs=4).codes == ()
 
 
 def test_a_clean_russian_section_passes_the_language_check() -> None:
