@@ -108,11 +108,12 @@ async function expiredDocuments(env: Env, batch: number): Promise<number> {
   });
 }
 
-/** A shopper's order never paid for (still pending, or held for a payment of the wrong amount)
- * goes a week after its last payment page was opened, with everything that hangs off it. */
+/** A shopper's order never paid for goes a week after its last payment page was opened, with
+ * everything that hangs off it. One held for a payment of the wrong amount stays: money was taken,
+ * and the order is what the refund is made against. */
 async function unpaidOrders(env: Env, batch: number): Promise<number> {
   const unpaid = `SELECT id FROM orders
-    WHERE pro_account_id IS NULL AND (status = 'pending' OR hold = 'amount_mismatch')
+    WHERE pro_account_id IS NULL AND status = 'pending' AND hold IS NULL
       AND COALESCE(checkout_at, created_at) < ?`;
   const cutoff = expiryFrom(-UNPAID_DAYS);
   // An unpaid order has no document; any there is goes first all the same.

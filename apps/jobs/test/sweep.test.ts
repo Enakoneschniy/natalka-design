@@ -1,5 +1,6 @@
 import { createScheduledController } from 'cloudflare:test';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { refundOrder } from '../src/db';
 import worker from '../src/index';
 import { sweep } from '../src/retention';
 import { envWith, testEnv } from './env';
@@ -94,7 +95,7 @@ describe('the nightly sweep', () => {
     const seller = await seedOrder({ pro: true, name: 'Продавец', createdAt: daysAgo(9) });
 
     await sweep(testEnv);
-    for (const id of [abandoned, wrongAmount]) {
+    for (const id of [abandoned]) {
       expect(await exists('SELECT 1 FROM orders WHERE id = ?', id)).toBe(false);
       expect(await exists('SELECT 1 FROM charts WHERE order_id = ?', id)).toBe(false);
       expect(await exists('SELECT 1 FROM jobs WHERE order_id = ?', id)).toBe(false);
@@ -102,6 +103,23 @@ describe('the nightly sweep', () => {
     for (const id of [reopened, fresh, paid, seller.orderId]) {
       expect(await exists('SELECT 1 FROM orders WHERE id = ?', id), id).toBe(true);
     }
+    // Money was taken for the wrong amount: the order waits for its refund, however old.
+    expect(await exists("SELECT 1 FROM orders WHERE id = ? AND hold = 'amount_mismatch'", wrongAmount)).toBe(true);
+  });
+
+  it('keeps an order held for the wrong amount until it is refunded', async () => {
+    quiet();
+    const seeded = await seedOrder({ pro: false, name: 'Ждёт возврата', createdAt: daysAgo(60) });
+    await testEnv.DB.prepare(
+      "UPDATE orders SET status = 'pending', hold = 'amount_mismatch', stripe_payment_intent = 'pi_wait', checkout_at = ? WHERE id = ?",
+    )
+      .bind(daysAgo(60), seeded.orderId)
+      .run();
+    await sweep(testEnv);
+    expect(await exists('SELECT 1 FROM orders WHERE id = ?', seeded.orderId)).toBe(true);
+    expect(await refundOrder(testEnv.DB, 'pi_wait')).toBe('refunded');
+    await sweep(testEnv);
+    expect(await exists("SELECT 1 FROM orders WHERE id = ? AND status = 'refunded'", seeded.orderId)).toBe(true);
   });
 
   it("erases a paid order's address after half a year, and keeps the order", async () => {
