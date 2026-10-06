@@ -233,6 +233,64 @@ describe('api/pro/x proxy', () => {
     expect(res.status).toBe(503);
   });
 
+  describe('closing the cabinet (DELETE me)', () => {
+    const close = (body = '{"confirm_email":"maria@example.com"}', headers = {}) =>
+      DELETE(req('DELETE', 'me', { body, headers }), ctx('me'));
+
+    it('forwards the confirmed address, and on 204 answers 204 and clears both cookies', async () => {
+      fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+      const res = await close();
+      expect(res.status).toBe(204);
+      expect(await res.text()).toBe('');
+      const { url, init, headers } = sent();
+      expect(url).toBe('https://jobs.test/v1/pro/me');
+      expect(init.method).toBe('DELETE');
+      expect(init.body).toBe('{"confirm_email":"maria@example.com"}');
+      expect(headers.get('content-type')).toBe('application/json');
+      expect(headers.get('authorization')).toBe('Bearer s-1');
+      const [current = '', legacy = ''] = res.headers.getSetCookie();
+      expect(current).toMatch(/^__Host-chp_session=;.*Max-Age=0/);
+      expect(legacy).toMatch(/^chp_session=;.*Max-Age=0/);
+      expect(res.headers.get('cache-control')).toBe('private, no-store');
+    });
+
+    it('passes a refusal through and keeps the session', async () => {
+      fetchMock.mockResolvedValue(json(400, { error: 'confirm_email' }));
+      const res = await close('{"confirm_email":"someone@else.com"}');
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({ error: 'confirm_email' });
+      expect(res.headers.get('set-cookie')).toBeNull();
+    });
+
+    it('maps a jobs 401 to 401 signed out', async () => {
+      fetchMock.mockResolvedValue(json(401, { error: 'unauthorized' }));
+      const res = await close();
+      expect(res.status).toBe(401);
+      expect(res.headers.get('set-cookie')).toBeNull();
+    });
+
+    it('refuses a cross-site or non-JSON request without calling jobs', async () => {
+      expect((await close(undefined, { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
+      expect((await close(undefined, { 'content-type': 'text/plain' })).status).toBe(415);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it('sends no body with a DELETE that has none', async () => {
+    fetchMock.mockResolvedValue(json(200, { ok: true }));
+    await DELETE(req('DELETE', 'clients/c-1'), ctx('clients/c-1'));
+    const { init, headers } = sent();
+    expect(init.body).toBeUndefined();
+    expect(headers.get('content-type')).toBeNull();
+  });
+
+  it('passes another 204 through as an empty 204, session untouched', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+    const res = await DELETE(req('DELETE', 'brand/logo'), ctx('brand/logo'));
+    expect(res.status).toBe(204);
+    expect(res.headers.get('set-cookie')).toBeNull();
+  });
+
   describe('a file opened by a link with no live session', () => {
     const files = ['readings/r-1/pdf', 'brand/logo'];
 

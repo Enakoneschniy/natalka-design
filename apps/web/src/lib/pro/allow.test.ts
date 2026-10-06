@@ -29,6 +29,7 @@ describe('matchProxy', () => {
     ['GET', 'purchases', 'json'],
     ['POST', 'purchases', 'json'],
     ['GET', 'me', 'json'],
+    ['DELETE', 'me', 'json'],
     ['POST', 'invite', 'json'],
   ])('allows %s %s as %s', (method, path, kind) => {
     expect(matchProxy(method, path.split('/'))).toEqual({ path, kind });
@@ -37,6 +38,7 @@ describe('matchProxy', () => {
   it.each([
     ['DELETE', ['purchases']],
     ['POST', ['me']],
+    ['PUT', ['me']],
     ['PATCH', ['clients']],
     ['HEAD', ['me']],
     ['GET', ['orders']],

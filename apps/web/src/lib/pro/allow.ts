@@ -25,7 +25,8 @@ const ROUTES: [pattern: string, methods: Methods][] = [
   ['brand/logo', { GET: 'image', PUT: 'image-upload', DELETE: 'json' }],
   ['brand/photo', { GET: 'image', PUT: 'image-upload', DELETE: 'json' }],
   ['purchases', { GET: 'json', POST: 'json' }],
-  ['me', { GET: 'json' }],
+  // DELETE closes the cabinet; its body confirms the address.
+  ['me', { GET: 'json', DELETE: 'json' }],
   ['invite', { POST: 'json' }],
 ];
 

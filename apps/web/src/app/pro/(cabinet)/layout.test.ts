@@ -24,9 +24,9 @@ describe('the cabinet layout', () => {
     expect(html).not.toMatch(/href="\/logout/);
   });
 
-  it('shows who is signed in and the balance', async () => {
+  it('shows who is signed in, as a link to the account page, and the balance', async () => {
     const html = await render();
-    expect(html).toContain('Мария');
+    expect(html).toMatch(/<span class="who"><a href="\/account">Мария<\/a><\/span>/);
     expect(html).toContain('12 кредитов');
   });
 });

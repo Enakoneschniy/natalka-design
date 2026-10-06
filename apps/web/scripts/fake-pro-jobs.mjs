@@ -32,6 +32,8 @@ const seller = {
   invite_redeemed: false,
 };
 const INVITES = { START3: 3 };
+/** Set by closing the cabinet: every session is refused until the next sign-in. */
+let closed = false;
 
 // ---- clients ----
 
@@ -365,6 +367,7 @@ async function route(req, res, path) {
   }
   if (m === 'POST' && path === '/v1/pro/session') {
     await readRaw(req);
+    closed = false;
     return send(res, 200, {
       session: 'dev',
       account: { email: seller.email, tone: seller.tone },
@@ -376,12 +379,21 @@ async function route(req, res, path) {
     if (token === 'dead') return send(res, 404, { error: 'not found' });
     return send(res, 200, { email: mask(token === 'other' ? 'yevhenii@gmail.com' : seller.email) });
   }
-  if (!/^Bearer \S+/.test(req.headers.authorization ?? '')) {
+  if (closed || !/^Bearer \S+/.test(req.headers.authorization ?? '')) {
     return send(res, 401, { error: 'unauthorized' });
   }
   settle();
 
   if (m === 'GET' && path === '/v1/pro/me') return send(res, 200, { ...seller });
+  // Closing answers 204 and refuses every session until the next sign-in. The data stays: restart
+  // the fake to have a fresh cabinet.
+  if (m === 'DELETE' && path === '/v1/pro/me') {
+    const typed = String((await readJson(req)).confirm_email ?? '');
+    if (typed.trim().toLowerCase() !== seller.email) return send(res, 400, { error: 'confirm' });
+    closed = true;
+    res.writeHead(204, { 'cache-control': 'no-store' });
+    return res.end();
+  }
   if (m === 'POST' && path === '/v1/pro/logout') return send(res, 200, { ok: true });
   if (m === 'POST' && path === '/v1/pro/invite') {
     const code = String((await readJson(req)).code ?? '')

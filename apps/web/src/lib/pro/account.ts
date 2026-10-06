@@ -1,5 +1,5 @@
-/** How the cabinet speaks about the seller's own account: whose cabinet a sign-in link opens.
- * Pure; pages and client components share it. */
+/** How the cabinet speaks about the seller's own account: whose cabinet a sign-in link opens, and
+ * closing the cabinet. Pure; pages and client components share it. */
 
 /** An address masked as the jobs worker masks it on the sign-in confirm page: the first two
  * characters of the local part (one, when it is shorter), `***@` and the whole domain. */
@@ -16,4 +16,23 @@ export function maskEmail(email: string): string {
 export function otherCabinet(link: string, signedIn: string): string | null {
   const current = maskEmail(signedIn);
   return current === link.trim().toLowerCase() ? null : current;
+}
+
+/** True when the typed address is the cabinet's, compared as the jobs worker compares them:
+ * trimmed and lower-case. */
+export function sameAddress(typed: string, email: string): boolean {
+  const given = typed.trim().toLowerCase();
+  return given !== '' && given === email.trim().toLowerCase();
+}
+
+export type CloseOutcome = 'closed' | 'mismatch' | 'signed-out' | 'failed';
+
+/** What `DELETE /api/pro/x/me` came to: closed (204, the proxy has cleared the cookies), an
+ * address the jobs worker would not take (400), a session already gone (401), or anything else,
+ * offline included: a plain retry. */
+export function closeOutcome(status: number): CloseOutcome {
+  if (status === 204) return 'closed';
+  if (status === 400) return 'mismatch';
+  if (status === 401) return 'signed-out';
+  return 'failed';
 }
