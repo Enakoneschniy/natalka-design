@@ -53,8 +53,8 @@ class Birth(_Strict):
     place: str
     zone: str
     utc_offset: str
-    latitude: float
-    longitude: float
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
 
 
 class Meta(_Strict):
@@ -67,7 +67,7 @@ class Meta(_Strict):
 
 
 class Cover(_Strict):
-    title: str
+    title: str = Field(max_length=200)
     subtitle: str = ""
     tagline: str = ""
 
@@ -173,7 +173,7 @@ Block = Annotated[
 
 class Section(_Strict):
     id: str = Field(pattern=r"^[a-z0-9_.-]+$")
-    title: str
+    title: str = Field(max_length=200)
     eyebrow: str = ""  # small label above the title, e.g. "01 — загальне враження"
     level: Literal[1, 2] = 1
     toc: bool = True

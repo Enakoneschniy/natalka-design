@@ -64,16 +64,23 @@ def health() -> dict[str, str]:
     return {"status": "ok", "build": os.environ.get("NATALKA_BUILD", "dev")}
 
 
+#: Every body is checked against its model and anything unknown is refused, not dropped: after a
+#: deploy skew an older image would otherwise answer as if nothing were missing.
+_STRICT = ConfigDict(extra="forbid")
+
+
 class PreviewRequest(BaseModel):
     """The free passages shown before payment."""
+
+    model_config = _STRICT
 
     facts: dict[str, Any]
     lang: str = Field(default="uk", pattern=r"^[a-z]{2}$")
     gender: Literal["f", "m", "n"] = "n"
     product: Literal["natal", "forecast", "synastry", "child", "bundle"] = "natal"
     #: Only a synastry has two people; the sheet is written around their names.
-    first_name: str = ""
-    second_name: str = ""
+    first_name: str = Field(default="", max_length=80)
+    second_name: str = Field(default="", max_length=80)
     #: Deliberately absent: the name. The preview is cached by the birth data alone, and leaving
     #: the name out of the prompt is what makes two people born at the same minute share a cache
     #: entry instead of paying for the same three paragraphs twice.
@@ -138,6 +145,8 @@ class HoroscopeRequest(BaseModel):
     all computed by the ephemeris service — and writes the text. Nothing here needs birth data.
     """
 
+    model_config = _STRICT
+
     facts: dict[str, Any]
     transits: list[dict[str, Any]] = Field(default_factory=list)
     sky: list[dict[str, Any]] = Field(default_factory=list)
@@ -146,7 +155,7 @@ class HoroscopeRequest(BaseModel):
     end: dt.date
     lang: str = Field(default="uk", pattern=r"^[a-z]{2}$")
     gender: Literal["f", "m", "n"] = "n"
-    name: str = ""
+    name: str = Field(default="", max_length=80)
 
 
 @app.post("/v1/horoscope")
@@ -195,9 +204,7 @@ class SectionRequest(BaseModel):
     something honest to show ("12 of 27 written").
     """
 
-    #: A field this image does not know is refused, not dropped: after a deploy skew an older image
-    #: would otherwise ignore a seller's brand and answer as if nothing were missing.
-    model_config = ConfigDict(extra="forbid")
+    model_config = _STRICT
 
     facts: dict[str, Any]
     transits: list[dict[str, Any]] = Field(default_factory=list)
@@ -209,7 +216,7 @@ class SectionRequest(BaseModel):
     #: Titles and openings of the sections already written, so the document does not repeat itself.
     written_so_far: list[str] = Field(default_factory=list)
     #: The partner's name; only a synastry has one, and the sheet is written around the two names.
-    second_name: str = ""
+    second_name: str = Field(default="", max_length=80)
     #: «вы» or «ты»: the seller's choice, applied to the prompt, the check and the titles.
     address: Address = "vy"
 
@@ -309,8 +316,10 @@ def section(req: SectionRequest) -> dict[str, Any]:
 
 
 class WrittenSection(BaseModel):
+    model_config = _STRICT
+
     id: str
-    title: str
+    title: str = Field(max_length=200)
     text: str
     quote: bool = False
 
@@ -318,9 +327,7 @@ class WrittenSection(BaseModel):
 class SkeletonRequest(BaseModel):
     """Assemble a document: the fixed structure plus the sections that were written."""
 
-    #: A field this image does not know is refused, not dropped: after a deploy skew an older image
-    #: would otherwise ignore a seller's brand and answer as if nothing were missing.
-    model_config = ConfigDict(extra="forbid")
+    model_config = _STRICT
 
     facts: dict[str, Any]
     #: The partner's chart. For a synastry, `facts` is the payload from /v1/synastry and this is

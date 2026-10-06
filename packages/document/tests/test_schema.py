@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 from natalka_document.build import NO_TIME_SKIPPED, natal_skeleton
-from natalka_document.schema import Document, Paragraph, Person, clean_markup
+from natalka_document.schema import Birth, Document, Paragraph, Person, clean_markup
 from pydantic import ValidationError
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "natal-uk.json"
@@ -31,6 +31,16 @@ def test_skeleton_unknown_time_drops_house_sections(facts_no_time: dict) -> None
     ids = {s.id for s in doc.sections}
     assert doc.unknown_time and not ids & NO_TIME_SKIPPED
     assert doc.facts["houses"] is None
+
+
+def test_coordinates_stay_on_the_globe() -> None:
+    birth = {"date": "1994-05-15", "place": "X", "zone": "UTC", "utc_offset": "UTC+0"}
+    for lat, lon in ((90, 180), (-90, -180), (45.1972, 33.3664)):
+        Birth(**birth, latitude=lat, longitude=lon)
+    nan, inf = float("nan"), float("inf")
+    for lat, lon in ((90.01, 0), (-91, 0), (0, 180.5), (0, -181), (nan, 0), (0, inf)):
+        with pytest.raises(ValidationError):
+            Birth(**birth, latitude=lat, longitude=lon)
 
 
 def test_extra_fields_rejected(facts: dict) -> None:

@@ -4,9 +4,19 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from natalka_texts import ScriptedProvider
+from natalka_worker import api
 from natalka_worker.api import app
 
 client = TestClient(app)
+
+THREE = "Перший абзац.\n\nДругий абзац.\n\nТретій абзац."
+
+
+@pytest.fixture
+def scripted(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No test may reach a real model, whatever the environment holds."""
+    monkeypatch.setattr(api, "OpenRouterProvider", lambda: ScriptedProvider(THREE))
 
 
 def test_health() -> None:
@@ -97,6 +107,60 @@ def test_a_field_this_image_does_not_know_is_refused(facts: dict[str, Any]) -> N
     assert client.post("/v1/skeleton", json={**skeleton_body, "logo_v2": "x"}).status_code == 422
     section_body = {"facts": facts, "section_id": "intro", "name": "Аня", "tone_v2": "warm"}
     assert client.post("/v1/section", json=section_body).status_code == 422
+
+
+def _bodies(facts: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """One valid body per endpoint that takes JSON."""
+    return {
+        "/v1/preview": {"facts": facts, "lang": "uk", "first_name": "", "second_name": ""},
+        "/v1/horoscope": {"facts": facts, "start": "2026-10-06", "end": "2026-10-13"},
+        "/v1/section": {"facts": facts, "section_id": "intro", "name": "Аня", "second_name": ""},
+        "/v1/skeleton": {
+            "facts": facts,
+            "name": "Аня",
+            "sections": [{"id": "intro", "title": "Вступ", "text": "Абзац.", "quote": False}],
+        },
+    }
+
+
+@pytest.mark.usefixtures("scripted")
+def test_every_request_model_refuses_a_field_it_does_not_know(facts: dict[str, Any]) -> None:
+    for path, body in _bodies(facts).items():
+        assert client.post(path, json=body).status_code == 200, path
+        assert client.post(path, json={**body, "sig": "x"}).status_code == 422, path
+    skeleton = _bodies(facts)["/v1/skeleton"]
+    section = {**skeleton["sections"][0], "surprise": 1}
+    assert client.post("/v1/skeleton", json={**skeleton, "sections": [section]}).status_code == 422
+
+
+@pytest.mark.usefixtures("scripted")
+@pytest.mark.parametrize(
+    ("path", "field"),
+    [
+        ("/v1/preview", "first_name"),
+        ("/v1/preview", "second_name"),
+        ("/v1/horoscope", "name"),
+        ("/v1/section", "name"),
+        ("/v1/section", "second_name"),
+        ("/v1/skeleton", "name"),
+    ],
+)
+def test_names_stop_at_80_characters(facts: dict[str, Any], path: str, field: str) -> None:
+    body = _bodies(facts)[path]
+    assert client.post(path, json={**body, field: "Я" * 80}).status_code == 200
+    assert client.post(path, json={**body, field: "Я" * 81}).status_code == 422
+
+
+def test_titles_stop_at_200_characters(facts: dict[str, Any]) -> None:
+    body = _bodies(facts)["/v1/skeleton"]
+    written = body["sections"][0]
+    for length, status in ((200, 200), (201, 422)):
+        titled = {**body, "sections": [{**written, "title": "Т" * length}]}
+        assert client.post("/v1/skeleton", json=titled).status_code == status
+
+    document = client.post("/v1/skeleton", json=body).json()
+    document["sections"][1]["title"] = "Т" * 201
+    assert client.post("/v1/document", json=document).status_code == 422
 
 
 def test_a_refusal_names_the_field_but_never_repeats_the_input(facts: dict[str, Any]) -> None:
