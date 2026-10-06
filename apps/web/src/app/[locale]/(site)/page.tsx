@@ -1,6 +1,7 @@
 import { cookies, headers } from 'next/headers';
 import { setRequestLocale } from 'next-intl/server';
 import { ANGLES, type Angle, Landing } from '@/components/Landing';
+import { Marketing } from '@/components/Marketing';
 import { StructuredData } from '@/components/StructuredData';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
@@ -32,6 +33,7 @@ export default async function LandingPage({
     <>
       <StructuredData locale={locale} />
       <Landing locale={locale as Locale} facts={facts} angle={chosen} />
+      <Marketing />
     </>
   );
 }

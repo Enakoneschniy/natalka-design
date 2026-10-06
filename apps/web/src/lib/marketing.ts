@@ -1,8 +1,9 @@
 /** The advertising tags, and the rule for when they may run.
  *
  * Three platforms, one switch each: nothing loads unless its id is set in the worker's
- * environment, and nothing loads at all until the visitor has said yes. Both conditions are
- * checked on the server, so a tag that must not run is not in the page to begin with.
+ * environment, nothing loads at all until the visitor has said yes, and nothing loads on a page
+ * that carries anything about them. All of it is decided on the server, so a tag that must not run
+ * is not in the page to begin with.
  */
 
 export interface Tags {
@@ -43,3 +44,8 @@ export const cleanSource = (value: string | null | undefined): string =>
     .toLowerCase()
     .replace(/[^a-z0-9_.-]/g, '')
     .slice(0, 24);
+
+/** The source cookie as it is read back: cleaned again, since a cookie is whatever the browser
+ * sends; null when nothing usable is left. */
+export const readSource = (value: string | null | undefined): string | null =>
+  cleanSource(value) || null;

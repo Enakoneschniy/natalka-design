@@ -5,16 +5,21 @@ import { terms } from './terms';
 export const LEGAL = { privacy, terms, refunds } as const;
 export type LegalDoc = keyof typeof LEGAL;
 
+/** A link leads within the site or to another site over https; anything else — another scheme, a
+ * protocol-relative address — is shown as its text alone. */
+const LINKABLE = /^(\/(?![/\\])|https:\/\/)/;
+
 /** Heading, paragraph, list and inline marks — the four things a policy is made of. A markdown
- * library would be a dependency for a page nobody reads twice. */
+ * library would be a dependency for a page nobody reads twice. Everything is escaped first,
+ * quotes included, so the only markup is what this function writes. */
 export function renderLegal(source: string, locale: string): string {
   const inline = (text: string) =>
     escapeHtml(text)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/(^|\s)_(.+?)_(?=\s|$)/g, '$1<em>$2</em>')
       .replace(/\[(.+?)\]\((.+?)\)/g, (_, label: string, href: string) => {
-        const target = href.replace('[locale]', locale);
-        return `<a href="${target}">${label}</a>`;
+        const target = href.replace('[locale]', encodeURIComponent(locale));
+        return LINKABLE.test(target) ? `<a href="${target}">${label}</a>` : label;
       });
 
   const out: string[] = [];
@@ -51,4 +56,9 @@ export const isDraft = (source: string): boolean =>
   /\[[^\]]+\]/.test(source.replace(/\[(.+?)\]\(.+?\)/g, ''));
 
 const escapeHtml = (text: string) =>
-  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');

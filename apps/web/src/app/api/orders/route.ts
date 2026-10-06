@@ -1,64 +1,69 @@
-import { cookies, headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
-import { createOrder, type OrderRequest } from '@/lib/jobs';
-import { CONSENT_COOKIE, readConsent, SOURCE_COOKIE } from '@/lib/marketing';
-import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
+import { createOrder, isStripeCheckout } from '@/lib/jobs';
+import { CONSENT_COOKIE, readConsent, readSource, SOURCE_COOKIE } from '@/lib/marketing';
+import { bundlePrice, priceFor } from '@/lib/pricing';
+import { invalid, notSameOrigin, readJson, relayFailure, unavailable } from '@/lib/route';
+import { checkOrder } from '@/lib/validate';
 
 /** Where the payment provider forbids what we sell (psychic services and fortune tellers are on
  * Stripe's list for these three), the order is not started at all. */
 const NOT_SOLD_TO = new Set(['JP', 'MX', 'TH']);
 
-/** Starts a generation. The price is taken from our own table, never from the request body. */
+/** The jobs worker's own limit for an order. */
+const MAX_ORDER_BYTES = 16 * 1024;
+
+/** Starts a generation. The price is taken from our own table, never from the request body, and
+ * the body is checked against the jobs worker's limits before it is passed on. */
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as Partial<OrderRequest> & { product?: string };
-  const product = (PRODUCTS as readonly string[]).includes(body.product ?? '')
-    ? (body.product as ProductKey)
-    : 'natal';
+  const refused = notSameOrigin(request);
+  if (refused) return refused;
+  const read = await readJson(request, MAX_ORDER_BYTES);
+  if (!read.ok) return read.response;
+  const checked = checkOrder(read.value);
+  if (!checked.ok) return invalid(checked.field);
+  const { product } = checked.value;
 
-  if (!body.email || !body.birth?.date || !body.birth?.zone) {
-    return NextResponse.json({ error: 'email and birth data are required' }, { status: 400 });
-  }
-  if (product === 'synastry' && !(body.birth_second?.date && body.birth_second?.zone)) {
-    return NextResponse.json({ error: 'a synastry needs two people' }, { status: 400 });
-  }
-
-  const country = (await headers()).get('cf-ipcountry');
+  const country = request.headers.get('cf-ipcountry');
   if (country && NOT_SOLD_TO.has(country.toUpperCase())) {
     return NextResponse.json({ error: 'region' }, { status: 403 });
   }
   // The bundle runs the price experiment, and the figure the paywall showed is the figure that
   // must be charged. It is taken from the signed cookie here, on the server: a price that
   // arrived in the request body would be a price the buyer chose.
-  const jar = await cookies();
-  const variant = await readVariant(jar.get(EXPERIMENT_COOKIE)?.value);
+  const variant = await readVariant(request.cookies.get(EXPERIMENT_COOKIE)?.value);
   // Kept with the order because the payment webhook arrives later, without a browser: this is
   // the only moment at which either of these is knowable.
-  const consent = readConsent(jar.get(CONSENT_COOKIE)?.value);
-  const source = jar.get(SOURCE_COOKIE)?.value ?? null;
+  const consent = readConsent(request.cookies.get(CONSENT_COOKIE)?.value);
+  const source = readSource(request.cookies.get(SOURCE_COOKIE)?.value);
   const price = product === 'bundle' ? bundlePrice(country, variant) : priceFor(product, country);
 
+  let result: Awaited<ReturnType<typeof createOrder>>;
   try {
-    const created = await createOrder({
-      email: body.email,
-      product,
-      locale: body.locale ?? 'ru',
+    result = await createOrder({
+      ...checked.value,
       country: country ?? undefined,
       amount_minor: price.amount,
       currency: price.currency,
       variant,
       consent,
       source,
-      birth: body.birth as OrderRequest['birth'],
-      birth_second: product === 'synastry' ? body.birth_second : undefined,
-      cancel_url: body.cancel_url,
-      product_name: body.product_name,
     });
-    return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    // The upstream message names internal hosts and can quote the request back; it belongs in the
-    // log, not in a response a visitor can read.
-    console.error('order failed', error instanceof Error ? error.message : String(error));
-    return NextResponse.json({ error: 'could not start the reading' }, { status: 502 });
+    return unavailable('order failed', error);
   }
+  if (!result.ok) return relayFailure('order refused', result);
+  const { order_id, job_id, token, checkout_url } = result.data;
+  if (typeof token !== 'string' || token.length === 0) {
+    return unavailable('order failed', new Error('no order token'));
+  }
+  // Payment happens on Stripe's page and nowhere else.
+  if (checkout_url !== undefined && !isStripeCheckout(checkout_url)) {
+    return unavailable('order failed', new Error('checkout is not on Stripe'));
+  }
+  const created = { order_id, job_id, token };
+  return NextResponse.json(checkout_url ? { ...created, checkout_url } : created, {
+    status: 201,
+    headers: { 'cache-control': 'no-store' },
+  });
 }

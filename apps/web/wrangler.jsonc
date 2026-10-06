@@ -1,10 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "natalka-web",
-  "main": ".open-next/worker.js",
+  // Our own entry: body limits, the host boundary, rate limits and security headers, then the
+  // worker OpenNext builds into .open-next/worker.js.
+  "main": "worker.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+    // Every request but the hashed build files passes the entry first, so the host boundary and
+    // the headers cover the files in public/ too; OpenNext serves those from ASSETS itself.
+    "run_worker_first": ["/*", "!/_next/static/*"]
+  },
+  "preview_urls": false,
   // The site answers on the apex and on www; Cloudflare issues the certificates for both.
   // pro.chronika.me serves the seller cabinet from this same worker, picked by host.
   "routes": [
@@ -12,7 +21,22 @@
     { "pattern": "www.chronika.me", "custom_domain": true },
     { "pattern": "pro.chronika.me", "custom_domain": true }
   ],
-  "observability": { "enabled": true },
+  // Logs keep what the code prints, without the per-request lines and without query strings
+  // (the preview's birth data, the waiting page's token).
+  "observability": {
+    "enabled": true,
+    "redact_query_string": true,
+    "logs": { "invocation_logs": false }
+  },
+  // Per client address, per minute; `src/lib/edge.ts` says which routes count against which.
+  "ratelimits": [
+    { "name": "RL_AUTH", "namespace_id": "4201", "simple": { "limit": 10, "period": 60 } },
+    { "name": "RL_ORDERS", "namespace_id": "4202", "simple": { "limit": 10, "period": 60 } },
+    { "name": "RL_PREVIEW", "namespace_id": "4203", "simple": { "limit": 20, "period": 60 } },
+    { "name": "RL_SUBSCRIPTIONS", "namespace_id": "4204", "simple": { "limit": 5, "period": 60 } },
+    { "name": "RL_CITIES", "namespace_id": "4205", "simple": { "limit": 120, "period": 60 } },
+    { "name": "RL_PRO", "namespace_id": "4206", "simple": { "limit": 60, "period": 60 } }
+  ],
   // City search reads straight from here. Going through the calculation container cost a
   // worker-to-worker hop and, when it had gone to sleep, several seconds of cold start — on the
   // first field of the first screen.

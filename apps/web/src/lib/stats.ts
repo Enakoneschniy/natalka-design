@@ -1,6 +1,6 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { cookies, headers } from 'next/headers';
-import { SOURCE_COOKIE } from '@/lib/marketing';
+import { readSource, SOURCE_COOKIE } from '@/lib/marketing';
 
 /** Our own counters.
  *
@@ -30,7 +30,7 @@ export async function count(
     const db = (env as unknown as { DB?: D1Database }).DB;
     if (!db) return;
     const country = (list.get('cf-ipcountry') ?? '').toUpperCase();
-    const source = (await cookies()).get(SOURCE_COOKIE)?.value ?? '';
+    const source = readSource((await cookies()).get(SOURCE_COOKIE)?.value) ?? '';
     const day = new Date().toISOString().slice(0, 10);
     const write = db
       .prepare(

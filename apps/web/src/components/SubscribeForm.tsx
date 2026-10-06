@@ -1,11 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { BirthInput } from '@/lib/jobs';
+import { checkEmail } from '@/lib/validate';
 
-/** Cadence, email, consent — then the subscription exists and the first horoscope is on its way. */
+/** Cadence, email, consent — then a letter goes to the address, and the subscription starts only
+ * once its link is confirmed. The page says so and shows nothing more. */
 export function SubscribeForm({
   locale,
   birth,
@@ -16,32 +17,56 @@ export function SubscribeForm({
   price: string;
 }) {
   const t = useTranslations('subscription');
-  const router = useRouter();
   const [cadence, setCadence] = useState<'week' | 'month'>('week');
   const [email, setEmail] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !agreed) return;
+    const address = checkEmail(email);
+    if (!agreed) return;
+    if (!address.ok) {
+      setError(t('emailInvalid'));
+      return;
+    }
     setPending(true);
     setError('');
     try {
       const response = await fetch('/api/subscriptions', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, locale, cadence, birth }),
+        body: JSON.stringify({ email: address.value, locale, cadence, birth }),
       });
-      if (!response.ok) throw new Error(String(response.status));
-      const { token } = (await response.json()) as { token: string };
-      router.push(`/${locale}/subscription?t=${encodeURIComponent(token)}`);
+      if (response.status === 202) {
+        setSentTo(address.value);
+        return;
+      }
+      const data = (await response.json().catch(() => null)) as { field?: string } | null;
+      setError(
+        response.status === 429
+          ? t('tooMany')
+          : data?.field === 'email'
+            ? t('emailInvalid')
+            : t('failed'),
+      );
     } catch {
       setError(t('failed'));
-      setPending(false);
     }
+    setPending(false);
   };
+
+  if (sentTo) {
+    return (
+      <div className="card checkout-soon" role="status">
+        <h2>{t('checkMailTitle')}</h2>
+        <p className="muted">{t('checkMailBody', { email: sentTo })}</p>
+        <p className="caption">{t('checkMailNote')}</p>
+      </div>
+    );
+  }
 
   return (
     <form className="form" onSubmit={submit} noValidate>

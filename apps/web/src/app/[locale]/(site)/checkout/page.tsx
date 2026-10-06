@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { StartGeneration } from '@/components/StartGeneration';
 import { Stepper } from '@/components/Stepper';
-import { TrackEvent } from '@/components/TrackEvent';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 import { count } from '@/lib/stats';
+import { cleanText, MAX_NAME, MAX_PLACE } from '@/lib/validate';
 
 /** One visitor's own page: never indexed, open shop or not. */
 export const metadata = { robots: { index: false, follow: false } };
@@ -51,7 +51,8 @@ export default async function CheckoutPage({
   ].filter(Boolean);
 
   // Enough to start a generation; the same values the preview was drawn from. The partner's
-  // fields carry a "2", the way the form wrote them.
+  // fields carry a "2", the way the form wrote them. The name and the place are cut to what an
+  // order may carry.
   const person = (suffix: '' | '2', fallbackName: string) => {
     const date = one(search[`d${suffix}`]);
     const zone = one(search[`tz${suffix}`]);
@@ -59,14 +60,15 @@ export default async function CheckoutPage({
     const longitude = Number(one(search[`lon${suffix}`]));
     if (!date || !zone || Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
     const gender = one(search[`g${suffix}`]);
+    const time = one(search[`t${suffix}`]);
     return {
       date,
-      time: one(search[`t${suffix}`]) ?? null,
+      time: time && /^\d{2}:\d{2}$/.test(time) ? time : null,
       latitude,
       longitude,
       zone,
-      place: one(search[`c${suffix}`]) ?? '',
-      name: one(search[`n${suffix}`]) ?? fallbackName,
+      place: (one(search[`c${suffix}`]) ?? '').slice(0, MAX_PLACE),
+      name: cleanText(one(search[`n${suffix}`]) ?? fallbackName).slice(0, MAX_NAME),
       gender: (gender === 'f' || gender === 'female'
         ? 'f'
         : gender === 'm' || gender === 'male'
@@ -86,7 +88,6 @@ export default async function CheckoutPage({
 
   return (
     <div className="flow">
-      <TrackEvent step="checkout" value={price.amount} currency={price.currency} />
       <div className="container-page narrow">
         <div className="flow-head">
           <Stepper current="payment" />
@@ -124,7 +125,6 @@ export default async function CheckoutPage({
           <StartGeneration
             locale={locale}
             product={product}
-            productName={tp(`${product}.title`)}
             birth={first}
             birthSecond={second ?? undefined}
             blocked={Boolean(country && NOT_SOLD_TO.has(country.toUpperCase()))}

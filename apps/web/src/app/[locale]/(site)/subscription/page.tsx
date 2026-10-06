@@ -1,8 +1,13 @@
+import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { SubscriptionPanel } from '@/components/SubscriptionPanel';
 
-/** One visitor's own page: never indexed, open shop or not. */
-export const metadata = { robots: { index: false, follow: false } };
+/** One visitor's own page, behind a token: never indexed, open shop or not, and the address is
+ * not passed on to anything it links to. */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  referrer: 'no-referrer',
+};
 
 export const dynamic = 'force-dynamic';
 

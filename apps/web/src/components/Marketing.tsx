@@ -20,12 +20,12 @@ function Beacon() {
 
 /** What the advertising platforms are allowed to see.
  *
- * Until the visitor answers, the only thing on the page is Google's consent-mode default, which
- * says "denied" — that has to be present *before* any Google tag, even one that never loads. The
- * tags themselves go in only after a yes, and only the ones that are configured.
- *
- * Every purchase carries the order id as its event id, so that the same sale reported twice —
- * from the browser and, later, from the server — is counted once.
+ * Rendered by the pages that carry nothing about a visitor — the landing, the documents and the
+ * empty form — and by no other: not the preview, the checkout, the waiting page or anything
+ * behind a link from a letter. Until the visitor answers, the only thing on the page is Google's
+ * consent-mode default, which says "denied" — that has to be present *before* any Google tag,
+ * even one that never loads. The tags themselves go in only after a yes, and only the ones that
+ * are configured.
  */
 export async function Marketing() {
   const t = tags();

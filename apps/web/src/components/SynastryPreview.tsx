@@ -4,6 +4,7 @@ import { PreviewReading } from '@/components/PreviewReading';
 import { Wheel } from '@/components/Wheel';
 import type { SynastryFacts } from '@/lib/api';
 import { formatDegree } from '@/lib/chart';
+import type { SignedPreview } from '@/lib/preview';
 
 /** How many contacts the free preview shows. Enough to see the shape of the pair, not the whole
  * reading — there are usually seventy or eighty of them. */
@@ -12,11 +13,12 @@ const SHOWN = 8;
 export function SynastryPreview({
   facts,
   names,
-  locale,
+  preview,
 }: {
   facts: SynastryFacts;
   names: [string, string];
-  locale: string;
+  /** The passages' request, signed by the page for these charts and these names. */
+  preview: SignedPreview | null;
 }) {
   const t = useTranslations('preview');
   const tc = useTranslations('chart');
@@ -87,13 +89,7 @@ export function SynastryPreview({
           <h2 className="block-title">{t('readingTitle')}</h2>
           <p className="muted">{t('readingLead')}</p>
         </div>
-        <PreviewReading
-          facts={facts}
-          lang={locale}
-          product="synastry"
-          firstName={first}
-          secondName={second}
-        />
+        <PreviewReading request={preview} />
       </section>
     </>
   );

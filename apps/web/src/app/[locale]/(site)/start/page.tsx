@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BirthForm } from '@/components/BirthForm';
+import { Marketing } from '@/components/Marketing';
 import { Stepper } from '@/components/Stepper';
 import { PRODUCTS } from '@/lib/pricing';
 import { count } from '@/lib/stats';
@@ -44,6 +45,9 @@ export default async function StartPage({
         </p>
         <BirthForm locale={locale} product={product} />
       </div>
+      {/* The form is empty until it is sent, and sending it leaves this page by a full load: the
+          tags never see what is typed. */}
+      <Marketing />
     </div>
   );
 }

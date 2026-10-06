@@ -71,8 +71,13 @@ export function SubscriptionPanel({ token, bot }: { token: string; bot: string }
       ? 'statusActive'
       : view.status === 'paused'
         ? 'statusPaused'
-        : 'statusCancelled',
+        : view.status === 'ended'
+          ? 'statusEnded'
+          : 'statusCancelled',
   );
+  // The free month is over (or the address was never confirmed): there is nothing to change,
+  // pause or resume.
+  const ended = view.status === 'ended' || view.status === 'pending';
 
   return (
     <div className="subscription">
@@ -90,7 +95,7 @@ export function SubscriptionPanel({ token, bot }: { token: string; bot: string }
               <dd className="mono">{dmy(view.next_send_at)}</dd>
             </div>
           ) : null}
-          {view.trial_ends_at ? (
+          {view.trial_ends_at && !ended ? (
             <div>
               <dt>{t('trialLabel')}</dt>
               <dd className="mono">{dmy(view.trial_ends_at)}</dd>
@@ -98,54 +103,60 @@ export function SubscriptionPanel({ token, bot }: { token: string; bot: string }
           ) : null}
         </dl>
 
-        <div className="field">
-          <span className="label">{t('cadence')}</span>
-          <div className="segmented block">
-            {(['week', 'month'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={view.cadence === option}
-                disabled={busy}
-                onClick={() => change({ cadence: option })}
-              >
-                {t(option)}
-              </button>
-            ))}
-          </div>
-        </div>
+        {ended ? (
+          <p className="muted">{t('endedBody')}</p>
+        ) : (
+          <>
+            <div className="field">
+              <span className="label">{t('cadence')}</span>
+              <div className="segmented block">
+                {(['week', 'month'] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={view.cadence === option}
+                    disabled={busy}
+                    onClick={() => change({ cadence: option })}
+                  >
+                    {t(option)}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div className="subscription-actions">
-          {view.status === 'active' ? (
-            <button
-              className="btn btn-secondary"
-              type="button"
-              disabled={busy}
-              onClick={() => change({ status: 'paused' })}
-            >
-              {t('pause')}
-            </button>
-          ) : (
-            <button
-              className="btn btn-primary"
-              type="button"
-              disabled={busy}
-              onClick={() => change({ status: 'active' })}
-            >
-              {t('resume')}
-            </button>
-          )}
-          {view.status !== 'cancelled' ? (
-            <button
-              className="btn btn-secondary"
-              type="button"
-              disabled={busy}
-              onClick={() => change({ status: 'cancelled' })}
-            >
-              {t('cancel')}
-            </button>
-          ) : null}
-        </div>
+            <div className="subscription-actions">
+              {view.status === 'active' ? (
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => change({ status: 'paused' })}
+                >
+                  {t('pause')}
+                </button>
+              ) : (
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => change({ status: 'active' })}
+                >
+                  {t('resume')}
+                </button>
+              )}
+              {view.status !== 'cancelled' ? (
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => change({ status: 'cancelled' })}
+                >
+                  {t('cancel')}
+                </button>
+              ) : null}
+            </div>
+          </>
+        )}
       </div>
 
       {view.latest ? (
@@ -165,7 +176,7 @@ export function SubscriptionPanel({ token, bot }: { token: string; bot: string }
         </div>
       ) : null}
 
-      {bot ? (
+      {bot && !ended ? (
         <a
           className="card subscription-telegram"
           href={`https://t.me/${bot}?start=${view.telegram_code}`}

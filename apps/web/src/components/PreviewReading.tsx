@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import type { SignedPreview } from '@/lib/preview';
 
 interface Block {
   title: string;
@@ -12,42 +13,35 @@ interface Block {
  *
  * Fetched from the browser rather than rendered on the server: the chart, the tables and the
  * aspects are ready immediately, and waiting on the model would hold all of that back for twenty
- * seconds. The passages drop in underneath when they arrive.
+ * seconds. The passages drop in underneath when they arrive. What is asked about comes from the
+ * page, signed, and is sent back as it came.
  */
 export function PreviewReading({
-  facts,
-  lang,
+  request,
   rails,
-  product = 'natal',
-  firstName,
-  secondName,
 }: {
-  facts: unknown;
-  lang: string;
+  /** The facts, language, product and names, with the page's signature; null when the site
+   * cannot sign, and then there are no passages. */
+  request: SignedPreview | null;
   /** The chart facts each passage is written from, rendered on the server. */
   rails?: React.ReactNode[];
-  product?: string;
-  firstName?: string;
-  secondName?: string;
 }) {
   const t = useTranslations('preview');
   const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (!request) {
+      setFailed(true);
+      return;
+    }
     let active = true;
     (async () => {
       try {
         const response = await fetch('/api/preview', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            facts,
-            lang,
-            product,
-            first_name: firstName,
-            second_name: secondName,
-          }),
+          body: JSON.stringify(request),
         });
         if (!response.ok) throw new Error(String(response.status));
         const data = (await response.json()) as { blocks: Block[] };
@@ -59,7 +53,7 @@ export function PreviewReading({
     return () => {
       active = false;
     };
-  }, [facts, lang, product, firstName, secondName]);
+  }, [request]);
 
   if (failed) return null;
 
