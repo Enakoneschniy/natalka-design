@@ -16,12 +16,15 @@ import {
 /** The worker's bindings as the tests see them. */
 export const testEnv = env as unknown as Env;
 
+/** Who the tests' own sign-ins are requested by (a stand-in for the hashed address). */
+export const TEST_REQUESTER = 'test-requester';
+
 /** A token that signs `email` in: a login token for a registered address, a sign-up token (which
  * creates the account) for a new one. */
 export async function tokenFor(email: string): Promise<string | null> {
   return (await accountExists(testEnv.DB, email))
-    ? createLoginToken(testEnv.DB, email)
-    : createSignupToken(testEnv.DB, email, { name: 'Test' });
+    ? createLoginToken(testEnv.DB, email, TEST_REQUESTER)
+    : createSignupToken(testEnv.DB, email, TEST_REQUESTER, { name: 'Test' });
 }
 
 /** A signed-in seller with a fresh session, for tests that need one. */

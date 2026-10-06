@@ -18,6 +18,7 @@ import {
   issueSession,
   normalizeEmail,
   type ProAccount,
+  requesterOf,
 } from './auth';
 import {
   brandImage,
@@ -70,13 +71,14 @@ const loginLink = (env: Env, token: string): string => `${env.PRO_SITE_URL}/logi
 async function sendSignInLetter(
   env: Env,
   email: string,
+  requester: string,
   signup: { name: string; invite: string | null } | null,
 ): Promise<void> {
   if (await accountExists(env.DB, email)) {
-    const token = await createLoginToken(env.DB, email);
+    const token = await createLoginToken(env.DB, email, requester);
     if (token) await sendLoginLink(env, email, loginLink(env, token));
   } else if (signup) {
-    const token = await createSignupToken(env.DB, email, signup);
+    const token = await createSignupToken(env.DB, email, requester, signup);
     if (token) await sendSignupLink(env, email, loginLink(env, token));
   }
 }
@@ -86,7 +88,7 @@ async function sendSignInLetter(
 async function requestLogin(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
   const email = normalizeEmail((await readBody(request))?.email);
   if (!email) return json({ error: 'email' }, 400);
-  await afterAnswer(ctx, sendSignInLetter(env, email, null));
+  await afterAnswer(ctx, sendSignInLetter(env, email, await requesterOf(request, env), null));
   return json({ ok: true }, 202);
 }
 
@@ -103,7 +105,7 @@ async function requestSignup(request: Request, env: Env, ctx?: ExecutionContext)
   if (body?.terms !== true) return json({ error: 'terms' }, 400);
   const code = typeof body.invite === 'string' ? body.invite.trim() : '';
   const invite = code && code.length <= MAX_INVITE ? code : null;
-  await afterAnswer(ctx, sendSignInLetter(env, email, { name, invite }));
+  await afterAnswer(ctx, sendSignInLetter(env, email, await requesterOf(request, env), { name, invite }));
   return json({ ok: true }, 202);
 }
 

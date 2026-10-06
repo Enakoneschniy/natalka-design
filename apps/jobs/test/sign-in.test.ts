@@ -103,6 +103,39 @@ describe('a sign-in or sign-up request', () => {
     expect((await letters('registered@sign-in.test')).at(-1)?.subject).toBe('Вход в Chronika Pro');
   });
 
+  it('keeps who asked as a short hash of their address, never the address', async () => {
+    const email = 'hashed@sign-in.test';
+    await signIn(email);
+    const ask = (headers: Record<string, string>) =>
+      handlePro(
+        new Request('https://jobs.test/v1/pro/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-pro-key': 'test-pro-key', ...headers },
+          body: JSON.stringify({ email }),
+        }),
+        testEnv,
+        new URL('https://jobs.test/v1/pro/login'),
+      );
+    await ask({ 'x-client-ip': '203.0.113.9' });
+    await ask({ 'x-client-ip': ' 203.0.113.9 ' });
+    await ask({ 'x-client-ip': '2001:db8::1' });
+    await ask({});
+    await ask({ 'x-client-ip': 'x'.repeat(65) });
+    const { results } = await testEnv.DB.prepare(
+      "SELECT requester FROM pro_login_tokens WHERE email = ? AND requester != 'test-requester' ORDER BY rowid",
+    )
+      .bind(email)
+      .all<{ requester: string }>();
+    const [first, again, other, none, overlong] = results.map((r) => r.requester);
+    expect(results).toHaveLength(5);
+    for (const requester of [first, other, none]) expect(requester).toMatch(/^[0-9a-f]{16}$/);
+    expect(again).toBe(first);
+    expect(other).not.toBe(first);
+    expect(none).not.toBe(first);
+    expect(overlong).toBe(none);
+    expect(JSON.stringify(results)).not.toContain('203.0.113.9');
+  });
+
   it('still refuses a malformed request at once, with nothing left to run', async () => {
     const ctx = createExecutionContext();
     const response = await handlePro(

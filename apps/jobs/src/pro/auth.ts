@@ -14,8 +14,11 @@ import { redeemInvite } from './invites';
 
 export const LOGIN_TTL_SECONDS = 15 * 60;
 export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
-/** Links one address may be sent per hour; past this a request is accepted and quietly dropped. */
-export const LOGIN_REQUESTS_PER_HOUR = 5;
+/** Links one address may be sent per hour at the request of one requester, and in all. Past
+ * either, a request is accepted and quietly dropped. The first keeps somebody else from using up
+ * an address's hour; the second bounds what reaches a mailbox from many requesters. */
+export const LINKS_PER_REQUESTER_HOUR = 5;
+export const LINKS_PER_ADDRESS_HOUR = 20;
 
 export interface ProAccount {
   id: string;
@@ -52,27 +55,42 @@ export async function accountExists(db: D1Database, email: string): Promise<bool
   return Boolean(row);
 }
 
+/** The longest text address the requester is read from (an IPv6 address is at most 45). */
+const MAX_CLIENT_IP = 64;
+
+/** Who asked for a link: the visitor's address as the pro site saw it (x-client-ip, sent only by
+ * the site's server, behind the key), hashed with SESSION_KEY and cut to 16 hex characters, so the
+ * table holds neither the address nor anything it can be guessed from. Without the header every
+ * request is the one requester 'unknown'. */
+export async function requesterOf(request: Request, env: Env): Promise<string> {
+  const ip = request.headers.get('x-client-ip')?.trim() ?? '';
+  const seen = ip && ip.length <= MAX_CLIENT_IP ? ip : 'unknown';
+  return (await sha256Hex(new TextEncoder().encode(seen + env.SESSION_KEY).buffer as ArrayBuffer)).slice(0, 16);
+}
+
 interface TokenInput {
   purpose: 'login' | 'signup';
   name: string | null;
   invite: string | null;
 }
 
-/** Stores a single-use token for an address, or returns null when it has asked too often this
- * hour. The throttle counts login and sign-up tokens together. */
-async function createToken(db: D1Database, email: string, input: TokenInput): Promise<string | null> {
+/** Stores a single-use token for an address, or returns null when the address has had its links
+ * for this hour, from this requester or in all. Login and sign-up tokens count together. The
+ * counts and the insert are one statement, so requests racing each other cannot pass the limits. */
+async function createToken(
+  db: D1Database,
+  email: string,
+  requester: string,
+  input: TokenInput,
+): Promise<string | null> {
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const recent = await db
-    .prepare('SELECT COUNT(*) AS n FROM pro_login_tokens WHERE email = ? AND created_at > ?')
-    .bind(email, hourAgo)
-    .first<{ n: number }>();
-  if ((recent?.n ?? 0) >= LOGIN_REQUESTS_PER_HOUR) return null;
-
   const raw = randomToken();
-  await db
+  const stored = await db
     .prepare(
-      `INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at, purpose, signup_name, signup_invite)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at, purpose, signup_name, signup_invite, requester)
+       SELECT ?, ?, ?, ?, ?, ?, ?, ?
+       WHERE (SELECT COUNT(*) FROM pro_login_tokens WHERE email = ? AND created_at > ?) < ?
+         AND (SELECT COUNT(*) FROM pro_login_tokens WHERE email = ? AND requester = ? AND created_at > ?) < ?`,
     )
     .bind(
       await hashToken(raw),
@@ -82,22 +100,31 @@ async function createToken(db: D1Database, email: string, input: TokenInput): Pr
       input.purpose,
       input.name,
       input.invite,
+      requester,
+      email,
+      hourAgo,
+      LINKS_PER_ADDRESS_HOUR,
+      email,
+      requester,
+      hourAgo,
+      LINKS_PER_REQUESTER_HOUR,
     )
     .run();
-  return raw;
+  return (stored.meta.changes ?? 0) > 0 ? raw : null;
 }
 
-/** A single-use sign-in token for an address, or null when it has asked too often this hour. */
-export const createLoginToken = (db: D1Database, email: string): Promise<string | null> =>
-  createToken(db, email, { purpose: 'login', name: null, invite: null });
+/** A single-use sign-in token for an address, or null when it is over its limits this hour. */
+export const createLoginToken = (db: D1Database, email: string, requester: string): Promise<string | null> =>
+  createToken(db, email, requester, { purpose: 'login', name: null, invite: null });
 
 /** A single-use token that, once spent, creates the account for an address. */
 export const createSignupToken = (
   db: D1Database,
   email: string,
+  requester: string,
   { name, invite }: { name: string | null; invite?: string | null },
 ): Promise<string | null> =>
-  createToken(db, email, {
+  createToken(db, email, requester, {
     purpose: 'signup',
     name,
     invite: invite?.trim().toUpperCase() || null,
