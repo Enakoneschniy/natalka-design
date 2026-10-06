@@ -166,6 +166,16 @@ export const sha256Hex = async (data: ArrayBuffer): Promise<string> => {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 };
 
+/** HMAC-SHA256 of a message, hex. A keyed hash: unlike a plain one, it cannot be matched against a
+ * list of guesses by anyone without the key. */
+export async function hmacHex(secret: string, message: string): Promise<string> {
+  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, [
+    'sign',
+  ]);
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  return [...new Uint8Array(signature)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 /** JSON with every object's keys in sorted order and no spacing, so the same value always gives the
  * same text, and so the same hash. */
 export function canonicalJson(value: unknown): string {

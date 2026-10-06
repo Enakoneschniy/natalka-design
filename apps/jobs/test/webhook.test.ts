@@ -1,11 +1,10 @@
 import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { signLink } from '../src/crypto';
-import type { Env, QueueMessage } from '../src/env';
 import { balance } from '../src/pro/credits';
 import { attachSession, createPurchase } from '../src/pro/purchases';
 import { stripeWebhook } from '../src/webhook';
-import { envWith, letters, signIn, testEnv } from './env';
+import { letters, recordingQueue, signIn, testEnv } from './env';
 import { seedOrder } from './seed';
 
 const SECRET = 'whsec_test_fake';
@@ -27,12 +26,6 @@ async function signed(event: unknown, opts: { signatures?: string[]; age?: numbe
 }
 
 const send = async (event: unknown) => SELF.fetch(await signed(event));
-
-/** The worker with its queue replaced by a list, to see what a webhook queues. */
-function recordingQueue(): { env: Env; sent: QueueMessage[] } {
-  const sent: QueueMessage[] = [];
-  return { env: envWith('JOBS', { send: async (message: QueueMessage) => void sent.push(message) }), sent };
-}
 
 const event = (type: string, object: Record<string, unknown>) => ({ id: `evt_${crypto.randomUUID()}`, type, data: { object } });
 

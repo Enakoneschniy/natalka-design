@@ -152,6 +152,22 @@ export function parseOrder(body: Record<string, unknown>): OrderInput {
   };
 }
 
+export interface SubscriptionInput {
+  email: string;
+  locale: Locale;
+  cadence: 'week' | 'month';
+  birth: Birth;
+}
+
+/** A horoscope subscription as the site sends it. The name may be empty: a horoscope can be
+ * written without one. */
+export function parseSubscription(body: Record<string, unknown>): SubscriptionInput {
+  const email = parseEmail(body.email);
+  if (!isLocale(body.locale)) throw new InvalidField('locale');
+  if (body.cadence !== 'week' && body.cadence !== 'month') throw new InvalidField('cadence');
+  return { email, locale: body.locale, cadence: body.cadence, birth: parseBirth(body.birth, 'birth') };
+}
+
 /** The free preview: exactly the fields the text API's preview takes, and nothing else. A field
  * that was not sent is null, and is not forwarded. */
 export interface PreviewInput {

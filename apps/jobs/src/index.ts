@@ -37,23 +37,36 @@ import { WorkerEntrypoint } from 'cloudflare:workers';
 import {
   type Cadence,
   claimTelegramSubscription,
-  createSubscription,
+  confirmSubscription,
   deleteSubscription,
   deliverHoroscope,
   dropExpiredBirths,
   dueSubscriptions,
+  endTrial,
   forgetTelegramSubscriptions,
   latestHoroscope,
-  manageToken,
+  requestSubscription,
+  sealLegacyCharts,
   subscriptionBirth,
+  subscriptionChart,
   subscriptionFromToken,
+  subscriptionStatus,
+  sweepSubscriptions,
   telegramCodeForSubscription,
   updateSubscription,
 } from './subscriptions';
 import { contentDisposition, documentFilename } from './filename';
 import { type CheckoutSession, createCheckoutSession, expireCheckoutSession } from './stripe';
 import { json, readJson } from './http';
-import { InvalidField, type OrderInput, parseOrder, parsePreview, type PreviewInput } from './validate';
+import {
+  InvalidField,
+  type OrderInput,
+  parseOrder,
+  parsePreview,
+  parseSubscription,
+  type PreviewInput,
+  type SubscriptionInput,
+} from './validate';
 import { errorCode } from './errors';
 import { advance, apiFetch, loadBirth, openPayload, sealLegacyPayloads } from './pipeline';
 import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
@@ -371,28 +384,42 @@ async function telegramCode(env: Env, token: string): Promise<Response> {
 // ---- subscriptions ------------------------------------------------------------------------
 
 const CADENCES = new Set<string>(['week', 'month']);
+/** A subscription request is a birth and an address; a management change is two words. */
+const SUBSCRIPTION_LIMIT = 16 * 1024;
+const SMALL_LIMIT = 4 * 1024;
 
+/** Always the same 202, whatever became of the request: the answer must not tell whether the
+ * address has subscriptions, and it never carries a management link — that comes only by
+ * confirming from the letter. */
 async function subscribe(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as {
-    email?: string;
-    locale?: string;
-    cadence?: string;
-    birth?: Parameters<typeof createSubscription>[1]['birth'];
-  };
-  if (!body.birth?.date || !body.birth?.zone) return json({ error: 'birth data is required' }, 400);
-  if (!body.email) return json({ error: 'email is required' }, 400);
-  if (!body.cadence || !CADENCES.has(body.cadence)) return json({ error: 'cadence' }, 400);
-  const id = await createSubscription(env, {
-    email: body.email,
-    locale: body.locale ?? 'uk',
-    cadence: body.cadence as Cadence,
-    birth: body.birth,
-  });
-  // The first horoscope is written right away — a subscription that says "see you next week"
-  // gives nothing to judge it by.
-  await env.JOBS.send({ subscriptionId: id });
-  const token = await manageToken(env, id);
-  return json({ token }, 201);
+  const read = await readJson(request, SUBSCRIPTION_LIMIT);
+  if (!read.ok) return read.response;
+  let input: SubscriptionInput;
+  try {
+    input = parseSubscription(read.body);
+  } catch (error) {
+    if (error instanceof InvalidField) return json({ error: 'invalid', field: error.field }, 400);
+    throw error;
+  }
+  await requestSubscription(env, input);
+  return json({ status: 'pending' }, 202);
+}
+
+/** Confirms from the letter's link, by POST only: mail scanners open links with GET. */
+async function subscriptionConfirm(request: Request, env: Env): Promise<Response> {
+  const read = await readJson(request, SMALL_LIMIT);
+  if (!read.ok) return read.response;
+  const token = read.body.token;
+  if (typeof token !== 'string') return json({ error: 'not found' }, 404);
+  let manage: string | null;
+  try {
+    manage = await confirmSubscription(env, token);
+  } catch (error) {
+    // The chart could not be computed; the link still works, so the subscriber can try again.
+    console.error('confirming a subscription', errorCode(error));
+    return json({ error: 'unavailable' }, 503);
+  }
+  return manage ? json({ token: manage }) : json({ error: 'not found' }, 404);
 }
 
 async function subscriptionView(env: Env, token: string): Promise<Response> {
@@ -400,12 +427,13 @@ async function subscriptionView(env: Env, token: string): Promise<Response> {
   if (!sub) return json({ error: 'link expired' }, 404);
   const latest = await latestHoroscope(env.DB, sub.id);
   const birth = await subscriptionBirth(env, sub);
+  const chart = await subscriptionChart(env, sub);
   return json({
-    status: sub.status,
+    status: subscriptionStatus(sub),
     cadence: sub.cadence,
     email: sub.email,
     locale: sub.locale,
-    name: sub.display_name,
+    name: chart?.name || birth?.name || null,
     next_send_at: sub.next_send_at,
     trial_ends_at: sub.trial_ends_at,
     // The birth data is shown only while it is still on file; after that the chart alone remains.
@@ -427,11 +455,18 @@ async function subscriptionView(env: Env, token: string): Promise<Response> {
 async function subscriptionUpdate(request: Request, env: Env, token: string): Promise<Response> {
   const sub = await subscriptionFromToken(env, token);
   if (!sub) return json({ error: 'link expired' }, 404);
-  const body = (await request.json()) as { cadence?: string; status?: string };
+  const read = await readJson(request, SMALL_LIMIT);
+  if (!read.ok) return read.response;
+  const body = read.body as { cadence?: unknown; status?: unknown };
   const patch: { cadence?: Cadence; status?: 'active' | 'paused' | 'cancelled' } = {};
-  if (body.cadence && CADENCES.has(body.cadence)) patch.cadence = body.cadence as Cadence;
+  if (typeof body.cadence === 'string' && CADENCES.has(body.cadence)) patch.cadence = body.cadence as Cadence;
   if (body.status === 'active' || body.status === 'paused' || body.status === 'cancelled') {
     patch.status = body.status;
+  }
+  // A subscription not yet confirmed, or whose free month is over, cannot be started from here.
+  const current = subscriptionStatus(sub);
+  if (patch.status === 'active' && (current === 'pending' || current === 'ended')) {
+    return json({ error: 'closed' }, 409);
   }
   await updateSubscription(env.DB, sub.id, patch);
   return json({ ok: true });
@@ -542,7 +577,10 @@ export default {
     if (url.pathname === '/v1/subscriptions' && request.method === 'POST') {
       return subscribe(request, env);
     }
-    const subscription = url.pathname.match(/^\/v1\/subscriptions\/(.+)$/);
+    if (url.pathname === '/v1/subscriptions/confirm' && request.method === 'POST') {
+      return subscriptionConfirm(request, env);
+    }
+    const subscription = url.pathname.match(/^\/v1\/subscriptions\/([^/]+)$/);
     if (subscription?.[1]) {
       if (request.method === 'GET') return subscriptionView(env, subscription[1]);
       if (request.method === 'PATCH') return subscriptionUpdate(request, env, subscription[1]);
@@ -614,11 +652,21 @@ export default {
   async scheduled(event: ScheduledController, env: Env): Promise<void> {
     if (event.cron === '5 * * * *') {
       const due = await dueSubscriptions(env.DB);
-      for (const { id } of due) await env.JOBS.send({ subscriptionId: id });
-      console.log(`horoscopes: ${due.length} due`);
+      let ended = 0;
+      for (const sub of due) {
+        // A free month that is over ends the subscription instead of writing one more.
+        if (sub.trial_ends_at && sub.trial_ends_at <= now()) {
+          if (await endTrial(env, sub.id)) ended++;
+        } else {
+          await env.JOBS.send({ subscriptionId: sub.id });
+        }
+      }
+      console.log(`horoscopes: ${due.length - ended} due, ${ended} free months ended`);
       return;
     }
     await dropExpiredBirths(env.DB);
+    await sweepSubscriptions(env.DB);
+    await sealLegacyCharts(env, 200);
     const scrubbed = await scrubExpiredJobPayloads(env.DB, Number(env.RETENTION_DAYS ?? '30'));
     // Payloads written before they were encrypted, a batch a night until none are left.
     await sealLegacyPayloads(env, 200);

@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { getJob, updateJob } from '../src/db';
 import { advance, type JobPayload, openPayload, sealPayload } from '../src/pipeline';
-import type { Env } from '../src/env';
+import type { Env, QueueMessage } from '../src/env';
 import {
   accountExists,
   consumeLoginToken,
@@ -85,6 +85,14 @@ export async function completeCheckout(sessionId: string): Promise<void> {
 /** Every letter the fake Resend took for `to`, oldest first. */
 export async function letters(to: string): Promise<Letter[]> {
   return ((await lastRequest(`mail|${to}`)) as Letter[] | null) ?? [];
+}
+
+/** The worker with its queue replaced by a list, to see what a call queues. */
+export function recordingQueue(base: Env = testEnv): { env: Env; sent: QueueMessage[] } {
+  const sent: QueueMessage[] = [];
+  const env = Object.create(base);
+  Object.defineProperty(env, 'JOBS', { value: { send: async (message: QueueMessage) => void sent.push(message) } });
+  return { env, sent };
 }
 
 /** The worker's bindings with one of them replaced. defineProperty, not assignment: assigning

@@ -31,12 +31,20 @@ function trips(...keys: string[]): boolean {
 export async function fakeEphemeris(request: Request): Promise<Response> {
   const path = new URL(request.url).pathname;
   const body = (await request.json()) as { date?: string; first?: { date: string } };
+  if (path === '/v1/transits') return json({ events: [] });
+  if (path === '/v1/sky') return json({ positions: [] });
   const date = body.date ?? body.first?.date;
   if (date === '1900-01-01') return new Response('engine down', { status: 500 });
   if (path === '/v1/synastry') {
     return json({ first: { birth: { date } }, second: { birth: {} }, aspects: [] });
   }
-  return json({ birth: { date, unknown_time: false }, planets: [], transits: [] });
+  return json({
+    birth: { date, unknown_time: false },
+    planets: [],
+    transits: [],
+    positions: [{ body: 'Sun', longitude: 347.5 }],
+    houses: { cusps: [{ longitude: 12 }] },
+  });
 }
 
 /** What the worker under test sends as x-api-key (vitest.config.ts). The fake refuses anything
@@ -58,6 +66,21 @@ export async function fakeApi(request: Request): Promise<Response> {
     return json({ ok: true });
   }
   if (request.headers.get('x-api-key') !== API_KEY) return json({ error: 'unauthorized' }, 401);
+  if (path === '/v1/horoscope') {
+    const body = (await request.json()) as { name: string; period: string; start: string; end: string };
+    lastSeen.set(`/v1/horoscope|${body.name}`, body);
+    return json({
+      title: `Неделя для ${body.name || 'вас'}`,
+      text: 'Первый абзац.\n\nВторой абзац.',
+      period: body.period,
+      start: body.start,
+      end: body.end,
+      events: 0,
+      problems: [],
+      cost_micros: 300,
+      model: 'fake/model',
+    });
+  }
   if (path === '/v1/preview') {
     // Kept with a call count under the first name, so a test can see what was forwarded and
     // whether the cache answered instead.
