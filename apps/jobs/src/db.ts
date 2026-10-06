@@ -462,44 +462,79 @@ export async function refundOrder(db: D1Database, paymentIntent: string): Promis
   return seen ? 'already' : 'unknown';
 }
 
-/** Holds a shopper's order while its payment is disputed, or lets it go when the dispute is won.
- * An order held for the wrong amount keeps that hold. The id of the shopper's order with this
- * payment, or null when there is none. */
-export async function setDisputeHold(db: D1Database, paymentIntent: string, disputed: boolean): Promise<string | null> {
-  await db
-    .prepare(
-      disputed
-        ? `UPDATE orders SET hold = 'disputed'
-           WHERE stripe_payment_intent = ? AND pro_account_id IS NULL AND hold IS NULL`
-        : `UPDATE orders SET hold = NULL
-           WHERE stripe_payment_intent = ? AND pro_account_id IS NULL AND hold = 'disputed'`,
-    )
+/** Holds a shopper's order while its payment is disputed, or lets it go once no dispute of the
+ * payment is listed any more (see recordDispute). An order held for the wrong amount keeps that
+ * hold. The shopper's order with this payment and its hold after, or null when there is none. */
+export async function setDisputeHold(
+  db: D1Database,
+  paymentIntent: string,
+  disputed: boolean,
+): Promise<{ id: string; hold: OrderState['hold'] } | null> {
+  await (
+    disputed
+      ? db
+          .prepare(
+            `UPDATE orders SET hold = 'disputed'
+             WHERE stripe_payment_intent = ? AND pro_account_id IS NULL AND hold IS NULL`,
+          )
+          .bind(paymentIntent)
+      : db
+          .prepare(
+            `UPDATE orders SET hold = NULL
+             WHERE stripe_payment_intent = ? AND pro_account_id IS NULL AND hold = 'disputed'
+               AND NOT EXISTS (SELECT 1 FROM stripe_tombstones WHERE payment_intent = ? AND kind = 'dispute')`,
+          )
+          .bind(paymentIntent, paymentIntent)
+  ).run();
+  return db
+    .prepare('SELECT id, hold FROM orders WHERE stripe_payment_intent = ? AND pro_account_id IS NULL')
     .bind(paymentIntent)
-    .run();
-  const order = await db
-    .prepare('SELECT id FROM orders WHERE stripe_payment_intent = ? AND pro_account_id IS NULL')
-    .bind(paymentIntent)
-    .first<{ id: string }>();
-  return order?.id ?? null;
+    .first<{ id: string; hold: OrderState['hold'] }>();
 }
 
-/** Remembers that Stripe refunded or disputed a payment, whether or not it is known here yet: a
- * completion delivered after it then books nothing. */
-export async function recordTombstone(
-  db: D1Database,
-  entry: { paymentIntent: string; kind: 'refund' | 'dispute'; ref: string },
-): Promise<void> {
+/** Remembers that Stripe refunded a payment, whether or not it is known here yet: a completion
+ * delivered after it then books nothing. */
+export async function recordRefund(db: D1Database, paymentIntent: string, chargeId: string): Promise<void> {
   await db
     .prepare(
-      `INSERT INTO stripe_tombstones (payment_intent, kind, ref, created_at) VALUES (?, ?, ?, ?)
+      `INSERT INTO stripe_tombstones (payment_intent, kind, ref, created_at) VALUES (?, 'refund', ?, ?)
        ON CONFLICT (payment_intent, kind) DO NOTHING`,
     )
-    .bind(entry.paymentIntent, entry.kind, entry.ref, now())
+    .bind(paymentIntent, chargeId, now())
     .run();
 }
 
-export async function dropTombstone(db: D1Database, paymentIntent: string, kind: 'refund' | 'dispute'): Promise<void> {
-  await db.prepare('DELETE FROM stripe_tombstones WHERE payment_intent = ? AND kind = ?').bind(paymentIntent, kind).run();
+/** Remembers a dispute of a payment, whether or not the payment is known here yet. The payment's
+ * dispute tombstone lists, space-separated, its disputes that have not been won: a completion
+ * delivered after them books the payment as disputed, and a shopper's order stays held while any
+ * is listed. A dispute lost stays listed. Returns the list, this dispute included. */
+export async function recordDispute(db: D1Database, paymentIntent: string, disputeId: string): Promise<string[]> {
+  const [, listed] = await db.batch([
+    db
+      .prepare(
+        `INSERT INTO stripe_tombstones (payment_intent, kind, ref, created_at) VALUES (?, 'dispute', ?, ?)
+         ON CONFLICT (payment_intent, kind) DO UPDATE SET ref = ref || ' ' || excluded.ref
+           WHERE instr(' ' || ref || ' ', ' ' || excluded.ref || ' ') = 0`,
+      )
+      .bind(paymentIntent, disputeId, now()),
+    db.prepare("SELECT ref FROM stripe_tombstones WHERE payment_intent = ? AND kind = 'dispute'").bind(paymentIntent),
+  ]);
+  const ref = (listed?.results[0] as { ref?: string } | undefined)?.ref ?? '';
+  return ref.split(' ').filter(Boolean);
+}
+
+/** A dispute won, or an inquiry closed, leaves its payment's list; the tombstone goes with the
+ * last one. */
+export async function dropDispute(db: D1Database, paymentIntent: string, disputeId: string): Promise<void> {
+  await db.batch([
+    db
+      .prepare(
+        `UPDATE stripe_tombstones SET ref = trim(replace(' ' || ref || ' ', ' ' || ? || ' ', ' '))
+         WHERE payment_intent = ? AND kind = 'dispute'`,
+      )
+      .bind(disputeId, paymentIntent),
+    db.prepare("DELETE FROM stripe_tombstones WHERE payment_intent = ? AND kind = 'dispute' AND ref = ''").bind(paymentIntent),
+  ]);
 }
 
 /** Records the order's current Checkout Session and when it was opened; an unpaid order is swept a

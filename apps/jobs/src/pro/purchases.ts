@@ -175,17 +175,22 @@ export async function markPaid(
   return changes(closed) > 0 ? 'refunded' : 'already';
 }
 
+/** What credits_taken says once two disputes of one payment have met: the credits stay taken
+ * whichever is won, and the owner settles them by hand. */
+export const TAKEN_BY_DISPUTES = 'dispute:multiple';
+
 /** A disputed payment for a pack takes the pack's credits back, once per payment: not when a
  * refund or another dispute has already taken them. The purchase keeps its status (the dispute may
  * still be won) and records what took the credits. One batch: the debit, then the record, which is
  * written only for a debit this dispute holds and that nothing has given back (an event Stripe
- * repeats after the dispute was won takes nothing). */
+ * repeats after the dispute was won takes nothing), then — when another dispute holds the credits
+ * already — the mark that two disputes have met ('multiple'). */
 export async function disputePurchase(
   db: D1Database,
   entry: { paymentIntent: string; disputeId: string },
-): Promise<'debited' | 'already' | 'unknown'> {
+): Promise<'debited' | 'multiple' | 'already' | 'unknown'> {
   const taken = `dispute:${entry.disputeId}`;
-  const [, recorded] = await db.batch([
+  const [, recorded, met] = await db.batch([
     db
       .prepare(
         `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
@@ -202,17 +207,25 @@ export async function disputePurchase(
            AND NOT EXISTS (SELECT 1 FROM credit_ledger WHERE reason = 'adjust' AND ref = ?)`,
       )
       .bind(taken, entry.paymentIntent, taken, `dispute_won:${entry.disputeId}`),
+    db
+      .prepare(
+        `UPDATE pro_purchases SET credits_taken = ?
+         WHERE stripe_payment_intent = ? AND status = 'paid' AND credits_taken LIKE 'dispute:%' AND credits_taken <> ?`,
+      )
+      .bind(TAKEN_BY_DISPUTES, entry.paymentIntent, taken),
   ]);
   if (changes(recorded) > 0) return 'debited';
+  if (changes(met) > 0) return 'multiple';
   return (await purchaseExists(db, entry.paymentIntent)) ? 'already' : 'unknown';
 }
 
 /** A dispute won (or an inquiry closed) gives back what that dispute took, once, and only if it
- * took something and the payment has not been refunded since: the refund keeps the credits. */
+ * took something and the payment has not been refunded since: the refund keeps the credits.
+ * 'manual' when two disputes of the payment have met: nothing comes back by itself. */
 export async function disputeWon(
   db: D1Database,
   entry: { paymentIntent: string; disputeId: string },
-): Promise<'credited' | 'already' | 'unknown'> {
+): Promise<'credited' | 'manual' | 'already' | 'unknown'> {
   const taken = `dispute:${entry.disputeId}`;
   const [, cleared] = await db.batch([
     db
@@ -231,7 +244,12 @@ export async function disputeWon(
       .bind(entry.paymentIntent, taken),
   ]);
   if (changes(cleared) > 0) return 'credited';
-  return (await purchaseExists(db, entry.paymentIntent)) ? 'already' : 'unknown';
+  const row = await db
+    .prepare('SELECT status, credits_taken FROM pro_purchases WHERE stripe_payment_intent = ?')
+    .bind(entry.paymentIntent)
+    .first<{ status: PurchaseStatus; credits_taken: string | null }>();
+  if (!row) return 'unknown';
+  return row.status === 'paid' && row.credits_taken === TAKEN_BY_DISPUTES ? 'manual' : 'already';
 }
 
 const purchaseExists = async (db: D1Database, paymentIntent: string): Promise<boolean> =>

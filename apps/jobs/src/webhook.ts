@@ -7,9 +7,10 @@
 
 import {
   bumpStat,
+  dropDispute,
   orderFacts,
-  recordTombstone,
-  dropTombstone,
+  recordDispute,
+  recordRefund,
   refundOrder,
   setDisputeHold,
   settleOrderPayment,
@@ -150,51 +151,76 @@ async function chargeRefunded(env: Env, charge: StripeObject): Promise<Response>
   const paymentIntent = charge.payment_intent;
   if (!paymentIntent) return json({ received: true, ignored: 'no payment' });
   // First, so that a completion of this payment still on its way finds it.
-  await recordTombstone(env.DB, { paymentIntent, kind: 'refund', ref: charge.id });
+  await recordRefund(env.DB, paymentIntent, charge.id);
   const order = await refundOrder(env.DB, paymentIntent);
   if (order !== 'unknown') return json({ received: true, refund: order });
   return json({ received: true, refund: await markRefunded(env.DB, paymentIntent) });
 }
 
-/** A dispute holds a shopper's document and takes a seller's credits back until it is won. */
+/** A dispute holds a shopper's document and takes a seller's credits back until it is won. A
+ * second dispute of the same payment keeps the document withheld until each is won, and leaves a
+ * pack's credits taken for the owner to settle. */
 async function disputeCreated(env: Env, dispute: StripeObject): Promise<Response> {
   const paymentIntent = dispute.payment_intent;
   if (!paymentIntent) return json({ received: true, ignored: 'no payment' });
-  await recordTombstone(env.DB, { paymentIntent, kind: 'dispute', ref: dispute.id });
-  const ids = `dispute ${dispute.id}\npayment ${paymentIntent}`;
+  const others = (await recordDispute(env.DB, paymentIntent, dispute.id)).filter((id) => id !== dispute.id);
+  const second = others.length > 0;
+  let ids = `dispute ${dispute.id}\npayment ${paymentIntent}`;
+  if (second) ids += `\nnot won yet: ${others.join(' ')}`;
+  const subject = second ? 'A second dispute on one payment' : 'Payment disputed';
 
-  const orderId = await setDisputeHold(env.DB, paymentIntent, true);
-  if (orderId) {
-    await sendAlert(env, 'Payment disputed', `${ids}\norder ${orderId}\nThe document is withheld until the dispute is won.`);
+  const order = await setDisputeHold(env.DB, paymentIntent, true);
+  if (order) {
+    const until = second ? 'every dispute of the payment is won' : 'the dispute is won';
+    await sendAlert(env, subject, `${ids}\norder ${order.id}\nThe document is withheld until ${until}.`);
     return json({ received: true, dispute: 'order' });
   }
   const pack = await disputePurchase(env.DB, { paymentIntent, disputeId: dispute.id });
-  await sendAlert(
-    env,
-    'Payment disputed',
-    pack === 'unknown' ? `${ids}\nNo order or credit pack has this payment yet.` : `${ids}\ncredit pack: ${pack}`,
-  );
+  if (pack === 'multiple') {
+    await sendAlert(
+      env,
+      'A second dispute on one payment: settle the credits by hand',
+      `${ids}\nThe credit pack's credits stay taken whichever dispute is won.`,
+    );
+  } else {
+    await sendAlert(
+      env,
+      subject,
+      pack === 'unknown' ? `${ids}\nNo order or credit pack has this payment yet.` : `${ids}\ncredit pack: ${pack}`,
+    );
+  }
   return json({ received: true, dispute: pack });
 }
 
 /** Won, or an inquiry closed without becoming a dispute ('warning_closed'): what the dispute held
- * or took comes back. Lost: the money is gone and the document and credits stay withheld. */
+ * or took comes back, unless another dispute of the payment still holds it. Lost: the money is gone
+ * and the document and credits stay withheld. */
 async function disputeClosed(env: Env, dispute: StripeObject): Promise<Response> {
   const paymentIntent = dispute.payment_intent;
   if (!paymentIntent) return json({ received: true, ignored: 'no payment' });
   if (dispute.status !== 'won' && dispute.status !== 'warning_closed') {
     return json({ received: true, dispute: dispute.status ?? 'closed' });
   }
-  await dropTombstone(env.DB, paymentIntent, 'dispute');
-  const orderId = await setDisputeHold(env.DB, paymentIntent, false);
-  if (orderId) {
+  await dropDispute(env.DB, paymentIntent, dispute.id);
+  const order = await setDisputeHold(env.DB, paymentIntent, false);
+  if (order) {
+    // Another dispute of the payment, open or lost, keeps the document withheld.
+    if (order.hold === 'disputed') return json({ received: true, dispute: 'held' });
     // A payment disputed before it settled was never written; it is now.
-    const job = await env.DB.prepare('SELECT id FROM jobs WHERE order_id = ?').bind(orderId).first<{ id: string }>();
-    if (job && (await neverStarted(env, orderId, job.id))) {
+    const job = await env.DB.prepare('SELECT id FROM jobs WHERE order_id = ?').bind(order.id).first<{ id: string }>();
+    if (job && (await neverStarted(env, order.id, job.id))) {
       await env.JOBS.send({ jobId: job.id });
       return json({ received: true, dispute: 'won', queued: true });
     }
     return json({ received: true, dispute: 'won' });
   }
-  return json({ received: true, dispute: await disputeWon(env.DB, { paymentIntent, disputeId: dispute.id }) });
+  const pack = await disputeWon(env.DB, { paymentIntent, disputeId: dispute.id });
+  if (pack === 'manual') {
+    await sendAlert(
+      env,
+      'A dispute closed on a payment disputed twice: settle the credits by hand',
+      `dispute ${dispute.id}\npayment ${paymentIntent}\nstatus ${dispute.status}\nThe credit pack's credits stay taken.`,
+    );
+  }
+  return json({ received: true, dispute: pack });
 }

@@ -48,7 +48,7 @@ export async function sweep(env: Env, options: SweepOptions = {}): Promise<Recor
     ['sign-in links', () => run(env, 'DELETE FROM pro_login_tokens WHERE expires_at < ?', expiryFrom(-1))],
     // The cabinet's hourly limits look back an hour; a day of history is more than they need.
     ['cabinet attempts', () => run(env, 'DELETE FROM pro_attempts WHERE created_at < ?', expiryFrom(-1))],
-    ['stripe tombstones', () => run(env, 'DELETE FROM stripe_tombstones WHERE created_at < ?', expiryFrom(-30))],
+    ['stripe tombstones', () => stripeTombstones(env)],
     ['letter log', () => run(env, 'DELETE FROM mail_log WHERE created_at < ?', expiryFrom(-2))],
     // Last: encrypting old rows is the heaviest work of the night, and if the invocation dies in
     // it, every deletion above has already run.
@@ -129,6 +129,21 @@ async function unpaidOrders(env: Env, batch: number): Promise<number> {
   );
   await deleteObjects(env, results.map((row) => row.storage_key));
   return removed;
+}
+
+/** A refund or dispute Stripe reported goes after a month, by when any completion it overtook has
+ * long arrived — except the disputes of a payment whose shopper's order they hold: the list is what
+ * lets the order go once each is won, and a dispute can stay open for months. Payment ids only. */
+function stripeTombstones(env: Env): Promise<number> {
+  return run(
+    env,
+    `DELETE FROM stripe_tombstones WHERE created_at < ?
+       AND NOT (kind = 'dispute' AND EXISTS (
+         SELECT 1 FROM orders o
+         WHERE o.stripe_payment_intent = stripe_tombstones.payment_intent AND o.pro_account_id IS NULL
+           AND o.hold = 'disputed'))`,
+    expiryFrom(-30),
+  );
 }
 
 /** A shopper's address is kept with a paid order for half a year (questions, refunds), then

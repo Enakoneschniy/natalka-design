@@ -169,6 +169,29 @@ describe('the nightly sweep', () => {
     expect(await exists("SELECT 1 FROM mail_log WHERE id = 'm-new'")).toBe(true);
   });
 
+  it("keeps a payment's disputes past a month while a shopper's order is held for them", async () => {
+    quiet();
+    const held = await seedOrder({ pro: false, name: 'Спор держится', createdAt: daysAgo(40) });
+    await testEnv.DB.prepare("UPDATE orders SET status = 'paid', hold = 'disputed', stripe_payment_intent = 'pi_held_40' WHERE id = ?")
+      .bind(held.orderId)
+      .run();
+    const freed = await seedOrder({ pro: false, name: 'Спор выигран', createdAt: daysAgo(40) });
+    await testEnv.DB.prepare("UPDATE orders SET status = 'paid', stripe_payment_intent = 'pi_freed_40' WHERE id = ?")
+      .bind(freed.orderId)
+      .run();
+    await testEnv.DB.prepare(
+      `INSERT INTO stripe_tombstones VALUES ('pi_held_40', 'dispute', 'dp_1 dp_2', ?), ('pi_freed_40', 'dispute', 'dp_3', ?),
+                                            ('pi_nobody_40', 'dispute', 'dp_4', ?)`,
+    )
+      .bind(daysAgo(40), daysAgo(40), daysAgo(40))
+      .run();
+
+    await sweep(testEnv);
+    expect(await exists("SELECT 1 FROM stripe_tombstones WHERE payment_intent = 'pi_held_40' AND ref = 'dp_1 dp_2'")).toBe(true);
+    expect(await exists("SELECT 1 FROM stripe_tombstones WHERE payment_intent = 'pi_freed_40'")).toBe(false);
+    expect(await exists("SELECT 1 FROM stripe_tombstones WHERE payment_intent = 'pi_nobody_40'")).toBe(false);
+  });
+
   it('clears chart names and places a worker from before this one still wrote', async () => {
     quiet();
     const { orderId } = await seedOrder({ pro: false, name: 'Метка' });
