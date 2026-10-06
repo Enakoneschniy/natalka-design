@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
-import { TrackEvent } from '@/components/TrackEvent';
 import { closedOrder, offersPayment, settled } from '@/lib/order-state';
 
 interface Status {
@@ -278,17 +277,6 @@ export function GenerationProgress({
           {done ? t('readyBody', { pages: status?.pages ?? 0 }) : label}
         </p>
       </div>
-
-      {/* The sale, once, when the buyer is back from the payment page and the money is in. A
-          free run reports nothing. */}
-      {status?.paid && !status.test && status.amount_minor ? (
-        <TrackEvent
-          step="purchase"
-          value={status.amount_minor}
-          currency={status.currency}
-          eventId={status.order_id}
-        />
-      ) : null}
 
       {done ? (
         <div className="waiting-actions">

@@ -51,18 +51,13 @@ export default async function SubscribePage({
         }
       : null;
 
-  const back = new URLSearchParams();
-  for (const [key, value] of Object.entries(search)) {
-    const single = one(value);
-    if (single) back.set(key, single);
-  }
-  back.set('p', 'horoscope');
-
   return (
     <div className="flow">
       <div className="container-page narrow">
         <div className="flow-head">
-          <Link className="small" href={`/${locale}/start?${back.toString()}`}>
+          {/* Back to an empty form: the form page carries advertising tags, so the birth data
+              does not go with the link. */}
+          <Link className="small" href={`/${locale}/start?p=horoscope`}>
             {tf('edit')}
           </Link>
         </div>

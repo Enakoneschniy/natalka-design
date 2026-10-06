@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { forecastYears } from '@/components/Landing';
-import { Marketing } from '@/components/Marketing';
 import { Sky } from '@/components/Sky';
 import { routing } from '@/i18n/routing';
 import { alternates, openGraph, robotsFor, SITE_URL, twitter } from '@/lib/seo';
@@ -68,10 +67,11 @@ export default async function LocaleLayout({
         />
       </head>
       <body>
+        {/* No advertising tags here: only the pages that carry nothing about a visitor — the
+            landing, the documents and the empty form — render `Marketing` themselves. */}
         <NextIntlClientProvider>
           <Sky />
           {children}
-          <Marketing />
         </NextIntlClientProvider>
       </body>
     </html>

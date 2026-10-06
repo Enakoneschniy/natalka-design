@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { cityLabel, emptyPerson, PersonFields, type PersonState } from '@/components/PersonFields';
@@ -13,7 +12,6 @@ const PAIRED = new Set(['synastry']);
 
 export function BirthForm({ locale, product = 'natal' }: { locale: string; product?: string }) {
   const t = useTranslations('form');
-  const router = useRouter();
   const paired = PAIRED.has(product);
 
   const [people, setPeople] = useState<PersonState[]>(
@@ -60,7 +58,9 @@ export function BirthForm({ locale, product = 'natal' }: { locale: string; produ
     });
 
     setPending(true);
-    router.push(
+    // A full load, not a client-side step: this page may carry advertising tags, and a tag that
+    // stays loaded reads the next address — which here holds the birth data.
+    window.location.assign(
       `/${locale}/${product === 'horoscope' ? 'subscribe' : 'preview'}?${params.toString()}`,
     );
   };

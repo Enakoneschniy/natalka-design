@@ -7,7 +7,6 @@ import { Paywall, type TransitHint } from '@/components/Paywall';
 import { PreviewReading } from '@/components/PreviewReading';
 import { Stepper } from '@/components/Stepper';
 import { SynastryPreview } from '@/components/SynastryPreview';
-import { TrackEvent } from '@/components/TrackEvent';
 import { Wheel } from '@/components/Wheel';
 import { type BirthInput, calcChart, calcSynastry, calcTransits } from '@/lib/api';
 import { type ChartFacts, MAJOR_ASPECTS, monthLabel } from '@/lib/chart';
@@ -248,7 +247,6 @@ export default async function PreviewPage({
 
   return (
     <div className="flow">
-      <TrackEvent step="view" value={bundle.amount} currency={bundle.currency} />
       <div className="container-page">
         <div className="flow-head">
           <Stepper current="preview" />

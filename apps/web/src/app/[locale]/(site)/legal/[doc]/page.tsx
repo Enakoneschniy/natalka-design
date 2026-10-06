@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Marketing } from '@/components/Marketing';
 import { isDraft, LEGAL, type LegalDoc, legalTitle, renderLegal } from '@/content/legal';
 import { alternates, robotsFor } from '@/lib/seo';
 
@@ -49,6 +50,7 @@ export default async function LegalPage({
           dangerouslySetInnerHTML={{ __html: renderLegal(text, locale) }}
         />
       </div>
+      <Marketing />
     </div>
   );
 }
