@@ -18,7 +18,6 @@ import {
   issueSession,
   normalizeEmail,
   type ProAccount,
-  requesterOf,
 } from './auth';
 import {
   brandImage,
@@ -39,6 +38,7 @@ import { openPayload } from '../pipeline';
 import { hasRedeemed, redeemInvite } from './invites';
 import { assemblePdf, readingPdf, regenerateSection } from './lifecycle';
 import { fileReport } from './reports';
+import { requesterOf } from './requester';
 import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from './readings';
 
 const json = (body: unknown, status = 200): Response =>

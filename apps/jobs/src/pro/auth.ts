@@ -55,19 +55,6 @@ export async function accountExists(db: D1Database, email: string): Promise<bool
   return Boolean(row);
 }
 
-/** The longest text address the requester is read from (an IPv6 address is at most 45). */
-const MAX_CLIENT_IP = 64;
-
-/** Who asked for a link: the visitor's address as the pro site saw it (x-client-ip, sent only by
- * the site's server, behind the key), hashed with SESSION_KEY and cut to 16 hex characters, so the
- * table holds neither the address nor anything it can be guessed from. Without the header every
- * request is the one requester 'unknown'. */
-export async function requesterOf(request: Request, env: Env): Promise<string> {
-  const ip = request.headers.get('x-client-ip')?.trim() ?? '';
-  const seen = ip && ip.length <= MAX_CLIENT_IP ? ip : 'unknown';
-  return (await sha256Hex(new TextEncoder().encode(seen + env.SESSION_KEY).buffer as ArrayBuffer)).slice(0, 16);
-}
-
 interface TokenInput {
   purpose: 'login' | 'signup';
   name: string | null;
@@ -75,8 +62,10 @@ interface TokenInput {
 }
 
 /** Stores a single-use token for an address, or returns null when the address has had its links
- * for this hour, from this requester or in all. Login and sign-up tokens count together. The
- * counts and the insert are one statement, so requests racing each other cannot pass the limits. */
+ * for this hour: LINKS_PER_REQUESTER_HOUR at this requester's request (see requester.ts), or
+ * LINKS_PER_ADDRESS_HOUR in all, whoever asked ('unknown' and rows without a requester included).
+ * Login and sign-up tokens count together. Both counts and the insert are one statement, so
+ * requests racing each other cannot pass either limit. */
 async function createToken(
   db: D1Database,
   email: string,
