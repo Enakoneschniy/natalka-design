@@ -19,7 +19,6 @@ import {
   telegramLink,
   cachedPreview,
   documentForOrder,
-  expired,
   expiryFrom,
   getJob,
   insertChart,
@@ -29,7 +28,6 @@ import {
   orderContact,
   setOrderSession,
   bumpStat,
-  scrubExpiredJobPayloads,
   updateJob,
 } from './db';
 import type { Env, QueueMessage } from './env';
@@ -40,18 +38,15 @@ import {
   confirmSubscription,
   deleteSubscription,
   deliverHoroscope,
-  dropExpiredBirths,
   dueSubscriptions,
   endTrial,
   forgetTelegramSubscriptions,
   latestHoroscope,
   requestSubscription,
-  sealLegacyCharts,
   subscriptionBirth,
   subscriptionChart,
   subscriptionFromToken,
   subscriptionStatus,
-  sweepSubscriptions,
   telegramCodeForSubscription,
   updateSubscription,
 } from './subscriptions';
@@ -68,7 +63,8 @@ import {
   type SubscriptionInput,
 } from './validate';
 import { errorCode } from './errors';
-import { advance, apiFetch, loadBirth, openPayload, sealLegacyPayloads } from './pipeline';
+import { advance, apiFetch, loadBirth, openPayload } from './pipeline';
+import { sweep } from './retention';
 import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
 import { handlePro } from './pro/routes';
 import { stripeWebhook } from './webhook';
@@ -646,9 +642,7 @@ export default {
     }
   },
 
-  /** Hourly: horoscopes that are due go to the queue. Nightly: retention — birth data and
-   * documents are deleted thirty days after the order, subscriptions lose their birth data
-   * after the correction window. Orders and charts stay. */
+  /** Hourly: horoscopes that are due go to the queue. Nightly: the retention sweep (retention.ts). */
   async scheduled(event: ScheduledController, env: Env): Promise<void> {
     if (event.cron === '5 * * * *') {
       const due = await dueSubscriptions(env.DB);
@@ -664,24 +658,6 @@ export default {
       console.log(`horoscopes: ${due.length - ended} due, ${ended} free months ended`);
       return;
     }
-    await dropExpiredBirths(env.DB);
-    await sweepSubscriptions(env.DB);
-    await sealLegacyCharts(env, 200);
-    const scrubbed = await scrubExpiredJobPayloads(env.DB, Number(env.RETENTION_DAYS ?? '30'));
-    // Payloads written before they were encrypted, a batch a night until none are left.
-    await sealLegacyPayloads(env, 200);
-    const stale = await expired(env.DB);
-    for (const row of stale.results ?? []) {
-      await env.DOCS.delete(row.storage_key);
-    }
-    await env.DB.prepare('DELETE FROM documents WHERE expires_at < ?').bind(now()).run();
-    await env.DB.prepare('DELETE FROM charts WHERE expires_at < ?').bind(now()).run();
-    await env.DB.prepare('DELETE FROM previews WHERE expires_at < ?').bind(now()).run();
-    // Sign-in links are worth nothing a day after they expire; the hour of history the throttle
-    // needs is long past by then.
-    await env.DB.prepare('DELETE FROM pro_login_tokens WHERE expires_at < ?')
-      .bind(new Date(Date.now() - 86_400_000).toISOString())
-      .run();
-    console.log(`retention: removed ${stale.results?.length ?? 0} documents, cleared ${scrubbed} job payloads`);
+    await sweep(env);
   },
 };

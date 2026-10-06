@@ -190,13 +190,6 @@ export const documentForOrder = (db: D1Database, orderId: string) =>
     .bind(orderId)
     .first<{ id: string; storage_key: string; expires_at: string; pages: number }>();
 
-/** Everything past its retention date, so the sweep can delete the objects before the rows. */
-export const expired = (db: D1Database) =>
-  db
-    .prepare('SELECT id, order_id, storage_key FROM documents WHERE expires_at < ?')
-    .bind(now())
-    .all<{ id: string; order_id: string; storage_key: string }>();
-
 /** A shopper's job keeps the calculated chart (birth date, time and place) and every text written
  * from it. Past the retention date both go, like the charts and the PDF; the order and the cost
  * stay for accounting. A seller's reading is kept on purpose: it belongs to their client base. */
