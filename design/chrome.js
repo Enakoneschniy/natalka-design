@@ -11,7 +11,7 @@
         <a href="landing.html#faq">Допомога</a>
       </nav>
       <div class="nav-actions">
-        <span class="small muted">oksana@gmail.com</span>
+        <span class="small muted">oksana@example.com</span>
         <a class="btn btn-ghost btn-sm" href="landing.html">Вийти</a>
       </div>` : variant === 'flow' ? `
       <div class="nav-actions"></div>` : `
