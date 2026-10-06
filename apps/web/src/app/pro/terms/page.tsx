@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { renderLegal } from '@/content/legal';
+import { proOffer } from '@/content/legal/pro-offer';
 
-export const metadata = { title: 'Условия работы' };
+export const metadata = { title: 'Оферта' };
 
-/** Public: the sign-up form links here. Phase 6 replaces the placeholder with the offer. */
+/** Public: the sign-up form links here. The offer every seller accepts when opening a cabinet. */
 export default function Terms() {
   return (
     <main className="screen plain">
@@ -11,8 +13,13 @@ export default function Terms() {
           Chronika<small>PRO</small>
         </Link>
       </header>
-      <h1>Условия работы</h1>
-      <p>Оферта готовится. Пока действуют условия, о которых мы договорились при подключении.</p>
+      {/* Our own text from the repository, rendered by our own converter that escapes everything
+          first — the only HTML here is what renderLegal produces. */}
+      <article
+        className="legal"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted, escaped, from the repo
+        dangerouslySetInnerHTML={{ __html: renderLegal(proOffer, 'ru') }}
+      />
     </main>
   );
 }
