@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { requestSignup } from '@/lib/pro/client';
-import { clientIp, jsonBody, notOnProHost, notSameOrigin, relay } from '@/lib/pro/guard';
+import {
+  clientIp,
+  jsonBody,
+  notOnProHost,
+  notSameOrigin,
+  overJsonCap,
+  relay,
+} from '@/lib/pro/guard';
 
 const text = (value: unknown) => (typeof value === 'string' ? value : '');
 
@@ -8,7 +15,7 @@ const text = (value: unknown) => (typeof value === 'string' ? value : '');
 export async function POST(request: Request) {
   const blocked = notOnProHost(request);
   if (blocked) return blocked;
-  const refused = notSameOrigin(request);
+  const refused = notSameOrigin(request) ?? overJsonCap(request);
   if (refused) return refused;
   const body = await jsonBody(request);
   if (!body) return NextResponse.json({ error: 'bad request' }, { status: 400 });

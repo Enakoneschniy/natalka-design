@@ -196,6 +196,28 @@ describe('api/pro routes', () => {
     });
   });
 
+  describe('the JSON cap', () => {
+    it.each([
+      ['login', login],
+      ['signup', signup],
+      ['session', session],
+    ] as const)('%s refuses a body that says it is over 64 KB with 413', async (path, route) => {
+      const res = await route(
+        post(path, { email: 'a@b.co' }, undefined, { 'content-length': '65537' }),
+      );
+      expect(res.status).toBe(413);
+      expect(await res.json()).toEqual({ error: 'too large' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('does not read past the cap when the size is not given', async () => {
+      const big = { email: 'a@b.co', pad: 'x'.repeat(65_536) };
+      expect((await login(post('login', big))).status).toBe(400);
+      expect((await session(post('session', { token: 't', pad: big.pad }))).status).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
   describe('the visitor address for the sign-in throttle', () => {
     const ipSent = () => {
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];

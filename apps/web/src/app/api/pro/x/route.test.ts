@@ -148,6 +148,42 @@ describe('api/pro/x proxy', () => {
     expect(headers.get('content-type')).toBe('application/json');
   });
 
+  describe('the JSON cap', () => {
+    it('refuses a JSON body that says it is over 64 KB with 413, before reading it', async () => {
+      for (const [method, handler, path] of [
+        ['POST', POST, 'readings'],
+        ['PUT', PUT, 'brand'],
+        ['DELETE', DELETE, 'me'],
+      ] as const) {
+        const res = await handler(
+          req(method, path, { body: '{}', headers: { 'content-length': '65537' } }),
+          ctx(path),
+        );
+        expect(res.status, `${method} ${path}`).toBe(413);
+      }
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('stops reading a body that runs past 64 KB whatever it claims', async () => {
+      const big = `{"pad":"${'x'.repeat(65_536)}"}`;
+      const claims: Record<string, string>[] = [{}, { 'content-length': '2' }];
+      for (const headers of claims) {
+        const res = await POST(req('POST', 'readings', { body: big, headers }), ctx('readings'));
+        expect(res.status).toBe(413);
+      }
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('passes a body of exactly 64 KB on', async () => {
+      fetchMock.mockResolvedValue(json(201, { id: 'r-1' }));
+      const body = `{"pad":"${'x'.repeat(65_536 - 10)}"}`;
+      expect(new TextEncoder().encode(body).byteLength).toBe(65_536);
+      const res = await POST(req('POST', 'readings', { body }), ctx('readings'));
+      expect(res.status).toBe(201);
+      expect(sent().init.body).toBe(body);
+    });
+  });
+
   it('does not pass a mutation query string on', async () => {
     fetchMock.mockResolvedValue(json(201, { ok: true }));
     const request = new Request(`https://${HOST}/api/pro/x/clients?evil=1`, {

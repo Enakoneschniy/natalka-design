@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { startSession } from '@/lib/pro/client';
-import { clientIp, jsonBody, notOnProHost, notSameOrigin, unavailable } from '@/lib/pro/guard';
+import {
+  clientIp,
+  jsonBody,
+  notOnProHost,
+  notSameOrigin,
+  overJsonCap,
+  unavailable,
+} from '@/lib/pro/guard';
 import { setSessionCookie } from '@/lib/pro/session';
 
 const expired = () => NextResponse.json({ error: 'link expired' }, { status: 400 });
@@ -11,7 +18,7 @@ const expired = () => NextResponse.json({ error: 'link expired' }, { status: 400
 export async function POST(request: Request) {
   const blocked = notOnProHost(request);
   if (blocked) return blocked;
-  const refused = notSameOrigin(request);
+  const refused = notSameOrigin(request) ?? overJsonCap(request);
   if (refused) return refused;
   const body = await jsonBody(request);
   const token = typeof body?.token === 'string' ? body.token : '';

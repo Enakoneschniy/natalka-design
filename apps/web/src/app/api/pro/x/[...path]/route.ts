@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { matchProxy, type ProxyMatch } from '@/lib/pro/allow';
 import { isRedirect, proForward } from '@/lib/pro/client';
 import {
+  cappedText,
   MAX_IMAGE_BYTES,
   notFromThisOrigin,
   notImageUpload,
   notOnProHost,
   notSameOrigin,
+  overJsonCap,
   tooLarge,
   unavailable,
 } from '@/lib/pro/guard';
@@ -51,7 +53,7 @@ async function proxy(request: Request, { params }: Context): Promise<Response> {
     const refused =
       match.kind === 'image-upload'
         ? (notFromThisOrigin(request) ?? notImageUpload(request))
-        : notSameOrigin(request);
+        : (notSameOrigin(request) ?? overJsonCap(request));
     if (refused) return refused;
   }
 
@@ -81,9 +83,10 @@ async function proxy(request: Request, { params }: Context): Promise<Response> {
   return relayJson(upstream);
 }
 
-/** What to send on: nothing for a GET, the image bytes — read in full and measured, since a
- * `content-length` is only a claim — or the JSON text. A DELETE sends JSON only when it has some:
- * closing the cabinet carries the address it confirms, the others carry nothing. */
+/** What to send on: nothing for a GET, the image bytes (read in full and measured) or the JSON
+ * text (read no further than its cap) — a `content-length` is only a claim. A DELETE sends JSON
+ * only when it has some: closing the cabinet carries the address it confirms, the others carry
+ * nothing. */
 async function bodyOf(
   request: Request,
   match: ProxyMatch,
@@ -95,7 +98,8 @@ async function bodyOf(
     const contentType = request.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
     return { body: bytes, contentType };
   }
-  const text = await request.text();
+  const text = await cappedText(request);
+  if (text === null) return tooLarge();
   if (request.method === 'DELETE' && text === '') return {};
   return { body: text, contentType: 'application/json' };
 }
