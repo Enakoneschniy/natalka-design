@@ -84,6 +84,12 @@ async function orderPaid(env: Env, session: StripeObject): Promise<Response> {
     return json({ received: true, queued: true });
   }
 
+  if (result === 'already' && (await neverStarted(env, orderId, jobId))) {
+    // Stripe sends the event again when our answer failed, and the queue may be why: the order is
+    // paid but its job never ran. Queued again, the job's lease keeps a duplicate harmless.
+    await env.JOBS.send({ jobId });
+    return json({ received: true, queued: true });
+  }
   const ids = `order ${orderId}\ncheckout session ${session.id}\npayment ${paymentIntent ?? '-'}`;
   if (result === 'mismatch') {
     await sendAlert(
@@ -97,6 +103,18 @@ async function orderPaid(env: Env, session: StripeObject): Promise<Response> {
     await sendAlert(env, 'A payment for an order that does not exist: refund it', ids);
   }
   return json({ received: true, queued: false, order: result });
+}
+
+/** A paid order (not held) whose job has not had a single run. */
+async function neverStarted(env: Env, orderId: string, jobId: string): Promise<boolean> {
+  const row = await env.DB.prepare(
+    `SELECT 1 AS yes FROM jobs j JOIN orders o ON o.id = j.order_id
+     WHERE j.id = ? AND o.id = ? AND o.status = 'paid' AND o.hold IS NULL
+       AND j.status = 'queued' AND j.attempts = 0`,
+  )
+    .bind(jobId, orderId)
+    .first();
+  return Boolean(row);
 }
 
 async function packPaid(env: Env, session: StripeObject): Promise<Response> {

@@ -4,7 +4,7 @@ import { signLink } from '../src/crypto';
 import { balance } from '../src/pro/credits';
 import { attachSession, createPurchase } from '../src/pro/purchases';
 import { stripeWebhook } from '../src/webhook';
-import { letters, recordingQueue, signIn, testEnv } from './env';
+import { envWith, letters, recordingQueue, signIn, testEnv } from './env';
 import { seedOrder } from './seed';
 
 const SECRET = 'whsec_test_fake';
@@ -65,15 +65,30 @@ const order = (id: string) =>
 const alerts = async (id: string) => (await letters('owner@alerts.test')).filter((l) => l.text.includes(id));
 
 describe("a shopper's payment", () => {
-  it('queues the document once, however often the event comes', async () => {
+  it('queues the document, and nothing more once the job has run, however often the event comes', async () => {
     const { orderId, jobId } = await pendingOrder('Платит');
     const { env, sent } = recordingQueue();
-    for (let i = 0; i < 2; i++) {
-      const response = await stripeWebhook(await signed(paidSession(orderId, jobId)), env);
-      expect(response.status).toBe(200);
-    }
+    const first = await stripeWebhook(await signed(paidSession(orderId, jobId)), env);
+    expect(await first.json()).toMatchObject({ queued: true });
     expect(sent).toEqual([{ jobId }]);
     expect(await order(orderId)).toMatchObject({ status: 'paid', hold: null, stripe_payment_intent: `pi_${orderId}` });
+
+    await testEnv.DB.prepare("UPDATE jobs SET status = 'running', attempts = 1 WHERE id = ?").bind(jobId).run();
+    const again = await stripeWebhook(await signed(paidSession(orderId, jobId)), env);
+    expect(await again.json()).toMatchObject({ queued: false, order: 'already' });
+    expect(sent).toHaveLength(1);
+  });
+
+  it('queues the job when Stripe repeats the event after the first queuing failed', async () => {
+    const { orderId, jobId } = await pendingOrder('Очередь упала');
+    const broken = envWith('JOBS', { send: async () => Promise.reject(new Error('queue down')) });
+    await expect(stripeWebhook(await signed(paidSession(orderId, jobId)), broken)).rejects.toThrow('queue down');
+    expect(await order(orderId)).toMatchObject({ status: 'paid' });
+
+    const { env, sent } = recordingQueue();
+    const retried = await stripeWebhook(await signed(paidSession(orderId, jobId)), env);
+    expect(await retried.json()).toMatchObject({ queued: true });
+    expect(sent).toEqual([{ jobId }]);
   });
 
   it('holds an order paid with another amount or currency, queues nothing and tells the owner', async () => {
