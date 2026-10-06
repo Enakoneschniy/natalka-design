@@ -108,6 +108,10 @@ describe('POST /v1/jobs/{token}/checkout', () => {
     expect((await resume(sub)).status).toBe(404);
     const missing = await signLink('order', { order: crypto.randomUUID(), job: crypto.randomUUID() }, testEnv.LINK_KEY, 60);
     expect((await resume(missing)).status).toBe(404);
+    const one = await unpaidOrder();
+    const two = await unpaidOrder();
+    const mixed = await signLink('order', { order: one.order_id, job: two.job_id }, testEnv.LINK_KEY, 60);
+    expect((await resume(mixed)).status).toBe(404);
   });
 
   it('answers 503 without Stripe', async () => {

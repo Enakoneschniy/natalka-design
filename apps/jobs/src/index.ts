@@ -238,7 +238,8 @@ async function resumeCheckout(env: Env, token: string): Promise<Response> {
   const claims = await readLink('order', token, env.LINK_KEY);
   if (!claims) return json({ error: 'not found' }, 404);
   const order = await orderState(env.DB, claims.order);
-  if (!order || order.pro_account_id) return json({ error: 'not found' }, 404);
+  const job = await getJob(env.DB, claims.job);
+  if (!order || order.pro_account_id || job?.order_id !== order.id) return json({ error: 'not found' }, 404);
   const status = orderStatusOf(order);
   if (status === 'paid' || status === 'test') return json({ error: 'paid' }, 409);
   if (status !== 'pending') return json({ error: 'closed' }, 409);
