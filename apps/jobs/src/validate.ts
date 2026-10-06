@@ -152,6 +152,40 @@ export function parseOrder(body: Record<string, unknown>): OrderInput {
   };
 }
 
+/** The free preview: exactly the fields the text API's preview takes, and nothing else. A field
+ * that was not sent is null, and is not forwarded. */
+export interface PreviewInput {
+  facts: Record<string, unknown>;
+  lang: Locale | null;
+  gender: 'f' | 'm' | 'n' | null;
+  product: Product | null;
+  first_name: string | null;
+  second_name: string | null;
+}
+
+const absent = (value: unknown): boolean => value === undefined || value === null;
+
+export function parsePreview(body: Record<string, unknown>): PreviewInput {
+  const facts = body.facts;
+  if (!facts || typeof facts !== 'object' || Array.isArray(facts)) throw new InvalidField('facts');
+  // A synastry carries two charts and no `birth` of its own; either way a birth date must be there.
+  const f = facts as { birth?: { date?: unknown }; first?: { birth?: { date?: unknown } } };
+  if (typeof (f.first?.birth?.date ?? f.birth?.date) !== 'string') throw new InvalidField('facts');
+  if (!absent(body.lang) && !isLocale(body.lang)) throw new InvalidField('lang');
+  if (!absent(body.gender) && body.gender !== 'f' && body.gender !== 'm' && body.gender !== 'n') {
+    throw new InvalidField('gender');
+  }
+  if (!absent(body.product) && !isProduct(body.product)) throw new InvalidField('product');
+  return {
+    facts: facts as Record<string, unknown>,
+    lang: (body.lang ?? null) as Locale | null,
+    gender: (body.gender ?? null) as PreviewInput['gender'],
+    product: (body.product ?? null) as Product | null,
+    first_name: absent(body.first_name) ? null : line(body.first_name, 'first_name', 80),
+    second_name: absent(body.second_name) ? null : line(body.second_name, 'second_name', 80),
+  };
+}
+
 /** A campaign label as the site keeps it (lower case, a few safe characters, 24 at most). */
 function cleanSource(value: unknown): string | null {
   if (typeof value !== 'string') return null;

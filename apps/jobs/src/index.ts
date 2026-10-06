@@ -6,7 +6,7 @@
  * the only place with the database, the bucket and the keys.
  */
 
-import { encryptJson, LINK_TTL_SECONDS, readLink, sameSecret, sha256Hex, signLink } from './crypto';
+import { canonicalJson, encryptJson, LINK_TTL_SECONDS, readLink, sameSecret, sha256Hex, signLink } from './crypto';
 import {
   cachePreview,
   claimTelegramLink,
@@ -53,7 +53,7 @@ import {
 import { contentDisposition, documentFilename } from './filename';
 import { type CheckoutSession, createCheckoutSession, expireCheckoutSession } from './stripe';
 import { json, readJson } from './http';
-import { InvalidField, type OrderInput, parseOrder } from './validate';
+import { InvalidField, type OrderInput, parseOrder, parsePreview, type PreviewInput } from './validate';
 import { errorCode } from './errors';
 import { advance, apiFetch, type JobPayload, loadBirth } from './pipeline';
 import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
@@ -64,59 +64,37 @@ import { stripeWebhook } from './webhook';
  * so we stop writing after four minutes and let the message come back for the rest. */
 const PASS_BUDGET_MS = 4 * 60 * 1000;
 
-interface PreviewRequest {
-  facts: Record<string, unknown>;
-  lang: string;
-  gender?: 'f' | 'm' | 'n';
-  product?: string;
-  first_name?: string;
-  second_name?: string;
-}
+/** A chart's facts run to a few kilobytes; a synastry carries two. */
+const PREVIEW_LIMIT = 64 * 1024;
 
 /** The free passages shown before payment.
  *
- * Cached by the chart they describe: a reload, a second tab or a visitor who comes back tomorrow
- * costs nothing, and the wait disappears entirely the second time. Nothing identifying goes into
- * the key — it is a hash of the birth moment, the place and the language. */
+ * Only the fields the text API's preview takes are read and forwarded; anything else in the body
+ * stays here. The passages are cached by those fields, names included: a reload, a second tab or
+ * a visitor who comes back tomorrow costs nothing, and the key is a hash that tells anyone reading
+ * the table nothing about who asked. */
 async function previewText(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as PreviewRequest;
-  // A synastry payload carries two charts and has no `birth` of its own.
-  const facts = body.facts ?? {};
-  const first = ((facts.first as Record<string, unknown>)?.birth ?? facts.birth ?? {}) as Record<
-    string,
-    unknown
-  >;
-  const second = ((facts.second as Record<string, unknown>)?.birth ?? {}) as Record<
-    string,
-    unknown
-  >;
-  if (!first.date) return json({ error: 'facts are required' }, 400);
-
-  const moment = (b: Record<string, unknown>) =>
-    b.date ? [b.date, b.time ?? '', b.zone, b.latitude, b.longitude].join('|') : '';
-  const key = await sha256Hex(
-    new TextEncoder().encode(
-      [
-        body.product ?? 'natal',
-        moment(first),
-        moment(second),
-        body.lang,
-        body.gender ?? 'n',
-      ].join('#'),
-    ).buffer as ArrayBuffer,
-  );
+  const read = await readJson(request, PREVIEW_LIMIT);
+  if (!read.ok) return read.response;
+  let input: PreviewInput;
+  try {
+    input = parsePreview(read.body);
+  } catch (error) {
+    if (error instanceof InvalidField) return json({ error: 'invalid', field: error.field }, 400);
+    throw error;
+  }
+  const key = await sha256Hex(new TextEncoder().encode(canonicalJson(input)).buffer as ArrayBuffer);
 
   const hit = await cachedPreview(env.DB, key);
-  if (hit) {
-    return json({ blocks: JSON.parse(hit.blocks), cached: true });
-  }
+  if (hit) return json({ blocks: JSON.parse(hit.blocks) });
 
   let upstream: Response;
   try {
     upstream = await apiFetch(env, '/v1/preview', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
+      // A field that was not sent stays out, and the API takes its default.
+      body: JSON.stringify(Object.fromEntries(Object.entries(input).filter(([, value]) => value !== null))),
     });
   } catch (error) {
     console.error('preview failed', errorCode(error));
@@ -127,22 +105,23 @@ async function previewText(request: Request, env: Env): Promise<Response> {
     return json({ error: 'preview unavailable' }, 503);
   }
   const result = (await upstream.json()) as {
-    blocks: { title: string; text: string }[];
-    cost_micros: number;
-    model: string;
+    blocks?: { title: string; text: string }[];
+    cost_micros?: number;
+    model?: string;
   };
+  if (!Array.isArray(result.blocks)) return json({ error: 'preview unavailable' }, 503);
   await cachePreview(
     env.DB,
     {
       key,
-      lang: body.lang,
+      lang: input.lang ?? '',
       blocks: JSON.stringify(result.blocks),
-      cost_micros: result.cost_micros,
-      model: result.model,
+      cost_micros: result.cost_micros ?? 0,
+      model: result.model ?? '',
     },
     Number(env.RETENTION_DAYS ?? '30'),
   );
-  return json({ blocks: result.blocks, cached: false });
+  return json({ blocks: result.blocks });
 }
 
 /** An order is a few hundred bytes; this leaves room for long place names and nothing else. */

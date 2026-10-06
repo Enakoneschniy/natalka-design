@@ -58,6 +58,22 @@ export async function fakeApi(request: Request): Promise<Response> {
     return json({ ok: true });
   }
   if (request.headers.get('x-api-key') !== API_KEY) return json({ error: 'unauthorized' }, 401);
+  if (path === '/v1/preview') {
+    // Kept with a call count under the first name, so a test can see what was forwarded and
+    // whether the cache answered instead.
+    const body = (await request.json()) as { first_name?: string };
+    const key = `/v1/preview|${body.first_name ?? ''}`;
+    const calls = ((lastSeen.get(key) as { calls?: number } | undefined)?.calls ?? 0) + 1;
+    lastSeen.set(key, { body, calls });
+    return json({
+      blocks: [{ title: 'Солнце', text: `Превью для ${body.first_name ?? 'всех'}` }],
+      problems: [],
+      tokens_in: 10,
+      tokens_out: 20,
+      cost_micros: 500,
+      model: 'fake/model',
+    });
+  }
   if (path === '/v1/sections') {
     // The plan request carries no name, so it is kept by its form of address: test files run side
     // by side, and a single "last" slot is overwritten by whichever file asked most recently.

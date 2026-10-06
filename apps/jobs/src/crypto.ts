@@ -166,6 +166,19 @@ export const sha256Hex = async (data: ArrayBuffer): Promise<string> => {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 };
 
+/** JSON with every object's keys in sorted order and no spacing, so the same value always gives the
+ * same text, and so the same hash. */
+export function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item ?? null)).join(',')}]`;
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, item]) => item !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(',')}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
 /** Whether a presented secret is the configured one. Both are hashed first and the digests compared
  * in constant time, so the answer takes as long for a near miss as for a stranger and says nothing
  * about the secret's length. False when either side is missing. */
