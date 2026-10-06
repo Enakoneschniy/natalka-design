@@ -1,4 +1,5 @@
-# Local Miniflare state from tests and wrangler dev.
+node_modules
+# Local state from wrangler dev.
 .wrangler/
 # Local secrets for wrangler dev; only the example is committed.
 .dev.vars*

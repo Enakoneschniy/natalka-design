@@ -1,6 +1,9 @@
 node_modules
 .next
 .open-next
-.wrangler
+.wrangler/
 next-env.d.ts
 cloudflare-env.d.ts
+# Local secrets for wrangler dev / next dev; only the example is committed.
+.dev.vars*
+!.dev.vars.example

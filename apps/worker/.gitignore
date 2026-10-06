@@ -1,0 +1,4 @@
+# Local state and secrets from running the container next to a Worker (wrangler dev).
+.wrangler/
+.dev.vars*
+!.dev.vars.example
