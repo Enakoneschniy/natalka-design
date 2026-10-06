@@ -142,6 +142,23 @@ describe('the nightly sweep', () => {
     expect(await email(seller)).toBe('buyer@seed.test');
   });
 
+  it('erases the address of an order held for the wrong amount after half a year, and keeps the order', async () => {
+    quiet();
+    const held = async (name: string, days: number) => {
+      const seeded = await seedOrder({ pro: false, name, createdAt: daysAgo(days) });
+      await testEnv.DB.prepare("UPDATE orders SET status = 'pending', hold = 'amount_mismatch', checkout_at = ? WHERE id = ?")
+        .bind(daysAgo(days), seeded.orderId)
+        .run();
+      return seeded.orderId;
+    };
+    const old = await held('Сумма давно', 181);
+    const recent = await held('Сумма недавно', 179);
+    await sweep(testEnv);
+    const row = (id: string) => testEnv.DB.prepare('SELECT email, status, hold FROM orders WHERE id = ?').bind(id).first();
+    expect(await row(old)).toEqual({ email: '', status: 'pending', hold: 'amount_mismatch' });
+    expect(await row(recent)).toEqual({ email: 'buyer@seed.test', status: 'pending', hold: 'amount_mismatch' });
+  });
+
   it('drops Telegram link codes after thirty days and old job errors, tombstones and letter counts', async () => {
     quiet();
     const { orderId, jobId } = await seedOrder({ pro: false, name: 'Телеграм' });
@@ -167,6 +184,55 @@ describe('the nightly sweep', () => {
     expect(await exists("SELECT 1 FROM stripe_tombstones WHERE payment_intent = 'pi_new'")).toBe(true);
     expect(await exists("SELECT 1 FROM mail_log WHERE id = 'm-old'")).toBe(false);
     expect(await exists("SELECT 1 FROM mail_log WHERE id = 'm-new'")).toBe(true);
+  });
+
+  it("keeps a payment's disputes past a month while a shopper's order is held for them", async () => {
+    quiet();
+    const held = await seedOrder({ pro: false, name: 'Спор держится', createdAt: daysAgo(40) });
+    await testEnv.DB.prepare("UPDATE orders SET status = 'paid', hold = 'disputed', stripe_payment_intent = 'pi_held_40' WHERE id = ?")
+      .bind(held.orderId)
+      .run();
+    const freed = await seedOrder({ pro: false, name: 'Спор выигран', createdAt: daysAgo(40) });
+    await testEnv.DB.prepare("UPDATE orders SET status = 'paid', stripe_payment_intent = 'pi_freed_40' WHERE id = ?")
+      .bind(freed.orderId)
+      .run();
+    await testEnv.DB.prepare(
+      `INSERT INTO stripe_tombstones VALUES ('pi_held_40', 'dispute', 'dp_1 dp_2', ?), ('pi_freed_40', 'dispute', 'dp_3', ?),
+                                            ('pi_nobody_40', 'dispute', 'dp_4', ?)`,
+    )
+      .bind(daysAgo(40), daysAgo(40), daysAgo(40))
+      .run();
+
+    await sweep(testEnv);
+    expect(await exists("SELECT 1 FROM stripe_tombstones WHERE payment_intent = 'pi_held_40' AND ref = 'dp_1 dp_2'")).toBe(true);
+    expect(await exists("SELECT 1 FROM stripe_tombstones WHERE payment_intent = 'pi_freed_40'")).toBe(false);
+    expect(await exists("SELECT 1 FROM stripe_tombstones WHERE payment_intent = 'pi_nobody_40'")).toBe(false);
+  });
+
+  it('keeps a sign-in link opened at a known requester for a month, without what was typed at sign-up', async () => {
+    quiet();
+    const link = (hash: string, requester: string | null, expired: number, used: number | null) =>
+      testEnv.DB.prepare(
+        `INSERT INTO pro_login_tokens (token_hash, email, expires_at, used_at, created_at, purpose, signup_name, signup_invite, requester)
+         VALUES (?, 'kept@sweep.test', ?, ?, ?, 'signup', 'Имя', 'CODE', ?)`,
+      )
+        .bind(hash, daysAgo(expired), used === null ? null : daysAgo(used), daysAgo(expired), requester)
+        .run();
+    await link('opened-2', 'a'.repeat(32), 2, 2);
+    await link('opened-31', 'b'.repeat(32), 31, 31);
+    await link('unopened-2', 'c'.repeat(32), 2, null);
+    await link('opened-unknown', 'unknown', 2, 2);
+    await link('opened-before-requesters', null, 2, 2);
+    await link('live', 'd'.repeat(32), -0.01, null);
+
+    await sweep(testEnv);
+    const left = await testEnv.DB.prepare(
+      "SELECT token_hash, signup_name, signup_invite FROM pro_login_tokens WHERE email = 'kept@sweep.test' ORDER BY token_hash",
+    ).all();
+    expect(left.results).toEqual([
+      { token_hash: 'live', signup_name: 'Имя', signup_invite: 'CODE' },
+      { token_hash: 'opened-2', signup_name: null, signup_invite: null },
+    ]);
   });
 
   it('clears chart names and places a worker from before this one still wrote', async () => {

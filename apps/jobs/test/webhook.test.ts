@@ -220,6 +220,37 @@ describe("a shopper's refund and dispute", () => {
     expect(await order(orderId)).toMatchObject({ hold: 'disputed' });
   });
 
+  it('keeps the document withheld until each of two disputes is won, and tells the owner of the second', async () => {
+    const { orderId, pi } = await paidOrder('Два спора');
+    const [first, second] = [`dp_a_${orderId}`, `dp_b_${orderId}`];
+    await send(dispute('charge.dispute.created', pi, first));
+    await send(dispute('charge.dispute.created', pi, second));
+    expect(await order(orderId)).toMatchObject({ status: 'paid', hold: 'disputed' });
+    const told = (await alerts(orderId)).filter((a) => a.subject === '[Chronika] A second dispute on one payment');
+    expect(told).toHaveLength(1);
+    expect(told[0]?.text).toContain(`dispute ${second}`);
+    expect(told[0]?.text).toContain(first);
+    expect(told[0]?.text).not.toContain('Два спора');
+
+    // Won twice over (Stripe repeats events): the second dispute still holds the document.
+    for (let i = 0; i < 2; i++) {
+      const won = await send(dispute('charge.dispute.closed', pi, first, 'won'));
+      expect(await won.json()).toMatchObject({ dispute: 'held' });
+      expect(await order(orderId)).toMatchObject({ status: 'paid', hold: 'disputed' });
+    }
+    await send(dispute('charge.dispute.closed', pi, second, 'warning_closed'));
+    expect(await order(orderId)).toMatchObject({ status: 'paid', hold: null });
+  });
+
+  it('keeps the document withheld when one of two disputes is lost and the other is won', async () => {
+    const { orderId, pi } = await paidOrder('Один из двух');
+    await send(dispute('charge.dispute.created', pi, `dp_a_${orderId}`));
+    await send(dispute('charge.dispute.created', pi, `dp_b_${orderId}`));
+    await send(dispute('charge.dispute.closed', pi, `dp_a_${orderId}`, 'lost'));
+    await send(dispute('charge.dispute.closed', pi, `dp_b_${orderId}`, 'won'));
+    expect(await order(orderId)).toMatchObject({ hold: 'disputed' });
+  });
+
   it('closes an order whose refund arrived before its payment, and writes nothing', async () => {
     const { orderId, jobId } = await pendingOrder('Наоборот');
     await send(refund(`pi_${orderId}`));
@@ -245,6 +276,12 @@ describe("a seller's pack: disputes and out-of-order events", () => {
   const seller = async (name: string) => (await signIn(`${name}@webhook.test`)).account.id;
   const purchase = (id: string) =>
     testEnv.DB.prepare('SELECT status FROM pro_purchases WHERE id = ?').bind(id).first<{ status: string }>();
+  const taken = async (id: string) =>
+    (
+      await testEnv.DB.prepare('SELECT credits_taken FROM pro_purchases WHERE id = ?')
+        .bind(id)
+        .first<{ credits_taken: string | null }>()
+    )?.credits_taken;
 
   it('takes the credits back once per dispute and gives them back once when it is won', async () => {
     const account = await seller('disputed');
@@ -271,23 +308,62 @@ describe("a seller's pack: disputes and out-of-order events", () => {
     expect(await balance(testEnv.DB, account)).toBe(0);
   });
 
-  for (const [what, early] of [
-    ['a refund', (pi: string) => refund(pi)],
-    ['a dispute', (pi: string) => dispute('charge.dispute.created', pi, `dp_${pi}`)],
-  ] as const) {
-    it(`closes a pack whose payment was overtaken by ${what}, and credits nothing`, async () => {
-      const account = await seller(`early-${what.replace(' ', '-')}`);
-      const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
-      const first = await send(early(`pi_${p.id}`));
-      expect(first.status).toBe(200);
-      const late = await send(packSession(p));
-      expect(await late.json()).toMatchObject({ pack: 'refunded' });
-      expect(await purchase(p.id)).toEqual({ status: 'refunded' });
-      expect(await balance(testEnv.DB, account)).toBe(0);
-      expect(await (await send(packSession(p))).json()).toMatchObject({ pack: 'already' });
-      expect(await balance(testEnv.DB, account)).toBe(0);
-    });
+  it('closes a pack whose payment was overtaken by a refund, and credits nothing', async () => {
+    const account = await seller('early-refund');
+    const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
+    const first = await send(refund(`pi_${p.id}`));
+    expect(first.status).toBe(200);
+    const late = await send(packSession(p));
+    expect(await late.json()).toMatchObject({ pack: 'refunded' });
+    expect(await purchase(p.id)).toEqual({ status: 'refunded' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    expect(await (await send(packSession(p))).json()).toMatchObject({ pack: 'already' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+  });
+
+  /** A pack whose payment Stripe reported disputed (by each of `disputes`) before its completion,
+   * then completed. */
+  async function overtakenPack(name: string, disputes: string[]) {
+    const account = await seller(name);
+    const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
+    const pi = `pi_${p.id}`;
+    for (const id of disputes) await send(dispute('charge.dispute.created', pi, id));
+    const late = await send(packSession(p));
+    expect(await late.json()).toMatchObject({ pack: 'disputed' });
+    expect(await purchase(p.id)).toEqual({ status: 'paid' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    return { account, p, pi };
   }
+
+  it('books a pack whose payment a dispute overtook as paid, its credits taken until the dispute is won', async () => {
+    const dp = 'dp_overtook_won';
+    const { account, p, pi } = await overtakenPack('early-dispute-won', [dp]);
+    expect(await taken(p.id)).toBe(`dispute:${dp}`);
+    expect(await (await send(packSession(p))).json()).toMatchObject({ pack: 'already' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    for (let i = 0; i < 2; i++) await send(dispute('charge.dispute.closed', pi, dp, 'won'));
+    expect(await balance(testEnv.DB, account)).toBe(30);
+    expect(await taken(p.id)).toBeNull();
+  });
+
+  it('keeps the credits of a pack whose payment a dispute overtook taken when the dispute is lost', async () => {
+    const dp = 'dp_overtook_lost';
+    const { account, p, pi } = await overtakenPack('early-dispute-lost', [dp]);
+    await send(dispute('charge.dispute.closed', pi, dp, 'lost'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    // A refund after it takes nothing more.
+    await send(refund(pi));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    expect(await purchase(p.id)).toEqual({ status: 'refunded' });
+  });
+
+  it('leaves the credits of a pack whose payment two disputes overtook to the owner', async () => {
+    const { account, p, pi } = await overtakenPack('early-two-disputes', ['dp_overtook_a', 'dp_overtook_b']);
+    expect(await taken(p.id)).toBe('dispute:multiple');
+    await send(dispute('charge.dispute.closed', pi, 'dp_overtook_a', 'won'));
+    await send(dispute('charge.dispute.closed', pi, 'dp_overtook_b', 'won'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+  });
 
   /** A pack bought and paid for: 30 credits. */
   async function paidPack(name: string) {
@@ -325,6 +401,40 @@ describe("a seller's pack: disputes and out-of-order events", () => {
     await send(dispute('charge.dispute.created', pi, dp));
     await send(dispute('charge.dispute.closed', pi, dp, 'won'));
     expect(await balance(testEnv.DB, account)).toBe(0);
+  });
+
+  it('keeps the credits taken when a second dispute meets the first, whichever is won, and tells the owner', async () => {
+    const { account, p, pi } = await paidPack('two-disputes');
+    const [first, second] = [`dp_a_${p.id}`, `dp_b_${p.id}`];
+    await send(dispute('charge.dispute.created', pi, first));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    const again = await send(dispute('charge.dispute.created', pi, second));
+    expect(await again.json()).toMatchObject({ dispute: 'multiple' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    expect(await taken(p.id)).toBe('dispute:multiple');
+    const told = (await letters('owner@alerts.test')).filter((l) => l.text.includes(`dispute ${second}`));
+    expect(told.map((l) => l.subject)).toContain('[Chronika] A second dispute on one payment: settle the credits by hand');
+
+    const won = await send(dispute('charge.dispute.closed', pi, first, 'won'));
+    expect(await won.json()).toMatchObject({ dispute: 'manual' });
+    await send(dispute('charge.dispute.closed', pi, second, 'warning_closed'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    expect(await taken(p.id)).toBe('dispute:multiple');
+    const closed = (await letters('owner@alerts.test')).filter((l) => l.text.includes(`dispute ${first}`));
+    expect(closed.map((l) => l.subject)).toContain(
+      '[Chronika] A dispute closed on a payment disputed twice: settle the credits by hand',
+    );
+  });
+
+  it('takes the credits again for a dispute that follows one already won', async () => {
+    const { account, p, pi } = await paidPack('one-after-another');
+    await send(dispute('charge.dispute.created', pi, `dp_a_${p.id}`));
+    await send(dispute('charge.dispute.closed', pi, `dp_a_${p.id}`, 'won'));
+    expect(await balance(testEnv.DB, account)).toBe(30);
+    expect(await (await send(dispute('charge.dispute.created', pi, `dp_b_${p.id}`))).json()).toMatchObject({ dispute: 'debited' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    await send(dispute('charge.dispute.closed', pi, `dp_b_${p.id}`, 'won'));
+    expect(await balance(testEnv.DB, account)).toBe(30);
   });
 
   it('takes nothing when Stripe repeats a dispute already won, and a later refund takes the credits once', async () => {

@@ -6,7 +6,7 @@ import type { Env, QueueMessage } from '../src/env';
 import worker from '../src/index';
 import { balance } from '../src/pro/credits';
 import { readingRow } from '../src/pro/readings';
-import { letters, recordingQueue, testEnv } from './env';
+import { armFailure, letters, recordingQueue, runJob, testEnv } from './env';
 import { readingFor, seedOrder } from './seed';
 
 afterEach(() => vi.restoreAllMocks());
@@ -107,20 +107,67 @@ describe('a job delivery', () => {
 });
 
 describe('a dead letter', () => {
-  it("fails a shopper's job and tells the owner, by ids alone", async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { orderId, jobId } = await seedOrder({ pro: false, name: 'Мёртвое письмо' });
-    await testEnv.DB.prepare("UPDATE jobs SET status = 'failed', last_error = 'ephemeris /v1/calc → 500', updated_at = ? WHERE id = ?")
-      .bind(new Date(Date.now() - 3600_000).toISOString(), jobId)
+  /** A shopper's order in `status` (and `hold`) whose job failed an hour ago. */
+  async function failedOrder(name: string, status: string, hold: string | null = null, lastError: string | null = null) {
+    const seeded = await seedOrder({ pro: false, name });
+    await testEnv.DB.prepare('UPDATE orders SET status = ?, hold = ? WHERE id = ?').bind(status, hold, seeded.orderId).run();
+    await testEnv.DB.prepare("UPDATE jobs SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ?")
+      .bind(lastError, new Date(Date.now() - 3600_000).toISOString(), seeded.jobId)
       .run();
+    return seeded;
+  }
+
+  /** The owner's alerts about a job. */
+  const alertsAbout = async (jobId: string) => (await letters('owner@alerts.test')).filter((l) => l.text.includes(jobId));
+
+  it("fails a paid shopper's job and tells the owner, by ids alone, that money was taken", async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { orderId, jobId } = await failedOrder('Мёртвое письмо', 'paid', null, 'ephemeris /v1/calc → 500');
     const result = await deliver({ jobId }, { queue: DEAD_LETTER_QUEUE });
     expect(result.explicitAcks).toHaveLength(1);
     expect((await getJob(testEnv.DB, jobId))?.status).toBe('failed');
-    const [alert] = (await letters('owner@alerts.test')).filter((l) => l.text.includes(jobId));
+    const [alert] = await alertsAbout(jobId);
     expect(alert?.subject).toBe('[Chronika] A document could not be made');
+    expect(alert?.text.split('\n')[0]).toBe('PAID order — refund or rerun');
     expect(alert?.text).toContain(`order ${orderId}`);
     expect(alert?.text).toContain('code gave_up_at_calc');
     expect(alert?.text).not.toContain('Мёртвое письмо');
+  });
+
+  it("says an unpaid shopper's order has nothing to refund", async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { jobId } = await failedOrder('Не оплачен', 'pending');
+    await deliver({ jobId }, { queue: DEAD_LETTER_QUEUE });
+    const [alert] = await alertsAbout(jobId);
+    expect(alert?.text.split('\n')[0]).toBe('unpaid order, nothing to refund');
+  });
+
+  it('says money was taken for an order held for the wrong amount or a dispute', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const wrong = await failedOrder('Не та сумма', 'pending', 'amount_mismatch');
+    const disputed = await failedOrder('Спор', 'paid', 'disputed');
+    await deliver({ jobId: wrong.jobId }, { queue: DEAD_LETTER_QUEUE });
+    await deliver({ jobId: disputed.jobId }, { queue: DEAD_LETTER_QUEUE });
+    expect((await alertsAbout(wrong.jobId))[0]?.text.split('\n')[0]).toBe('PAID the wrong amount — refund it');
+    expect((await alertsAbout(disputed.jobId))[0]?.text.split('\n')[0]).toBe(
+      'PAID order, disputed — rerun once the dispute is won',
+    );
+  });
+
+  it("sends nothing for a test order's job, and logs its ids and code alone", async () => {
+    const logged: string[] = [];
+    for (const method of ['warn', 'error', 'log'] as const) {
+      vi.spyOn(console, method).mockImplementation((...args: unknown[]) => void logged.push(args.map(String).join(' ')));
+    }
+    const { orderId, jobId } = await failedOrder('Тестовый', 'test', null, 'no chart 1 for order x-recorded');
+    expect((await deliver({ jobId }, { queue: DEAD_LETTER_QUEUE })).explicitAcks).toHaveLength(1);
+    expect((await getJob(testEnv.DB, jobId))?.status).toBe('failed');
+    expect(await alertsAbout(jobId)).toEqual([]);
+    const line = logged.find((l) => l.includes(jobId));
+    expect(line).toContain(orderId);
+    expect(line).toContain('gave_up_at_calc');
+    expect(logged.join('\n')).not.toContain('x-recorded');
+    expect(logged.join('\n')).not.toContain('Тестовый');
   });
 
   it('keeps what the job last recorded out of the alert and the log', async () => {
@@ -128,18 +175,17 @@ describe('a dead letter', () => {
     for (const method of ['warn', 'error', 'log'] as const) {
       vi.spyOn(console, method).mockImplementation((...args: unknown[]) => void logged.push(args.map(String).join(' ')));
     }
-    const { jobId } = await seedOrder({ pro: false, name: 'Без подробностей' });
-    await testEnv.DB.prepare("UPDATE jobs SET status = 'failed', last_error = 'no chart 1 for order x-recorded', updated_at = ? WHERE id = ?")
-      .bind(new Date(Date.now() - 3600_000).toISOString(), jobId)
-      .run();
+    const { jobId } = await failedOrder('Без подробностей', 'paid', null, 'no chart 1 for order x-recorded');
     await deliver({ jobId }, { queue: DEAD_LETTER_QUEUE });
-    const [alert] = (await letters('owner@alerts.test')).filter((l) => l.text.includes(jobId));
+    const [alert] = await alertsAbout(jobId);
+    expect(alert).toBeDefined();
     expect(alert?.text).not.toContain('x-recorded');
     expect(alert?.html).not.toContain('x-recorded');
     expect(logged.join('\n')).not.toContain('x-recorded');
   });
 
   it("settles a seller's reading by the usual rule: nothing written gives the credits back", async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { account, id, jobId } = await readingFor('Возврат кредита');
     expect(await balance(testEnv.DB, account.id)).toBe(2);
     await testEnv.DB.prepare("UPDATE jobs SET status = 'failed', updated_at = ? WHERE id = ?")
@@ -148,6 +194,25 @@ describe('a dead letter', () => {
     expect((await deliver({ jobId }, { queue: DEAD_LETTER_QUEUE })).explicitAcks).toHaveLength(1);
     expect(await balance(testEnv.DB, account.id)).toBe(3);
     expect((await readingRow(testEnv.DB, id, account.id))?.refunded_at).toBeTruthy();
+    const [alert] = await alertsAbout(jobId);
+    expect(alert?.text.split('\n')[0]).toBe('pro, credits refunded');
+    expect(alert?.text).not.toContain('Возврат кредита');
+  });
+
+  it("keeps what a seller's reading has written and says so", async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { account, id, jobId } = await readingFor('Половина');
+    await armFailure('Половина|b');
+    await expect(runJob(jobId)).rejects.toThrow();
+    await testEnv.DB.prepare("UPDATE jobs SET status = 'failed', updated_at = ? WHERE id = ?")
+      .bind(new Date(Date.now() - 3600_000).toISOString(), jobId)
+      .run();
+    expect((await deliver({ jobId }, { queue: DEAD_LETTER_QUEUE })).explicitAcks).toHaveLength(1);
+    expect(await balance(testEnv.DB, account.id)).toBe(2);
+    expect((await readingRow(testEnv.DB, id, account.id))?.refunded_at).toBeFalsy();
+    const [alert] = await alertsAbout(jobId);
+    expect(alert?.text.split('\n')[0]).toBe('pro, sections kept');
   });
 
   it('leaves a job another delivery is still working on, and looks again later', async () => {
