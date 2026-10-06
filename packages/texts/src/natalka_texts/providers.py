@@ -119,14 +119,26 @@ class OpenRouterProvider:
                 timeout=self.timeout,
             )
         except httpx.HTTPError as exc:  # network, DNS, timeout
-            raise ModelUnavailableError(str(exc)) from exc
+            raise ModelUnavailableError(
+                f"the provider could not be reached ({type(exc).__name__})"
+            ) from exc
 
+        # A failure is described by its status, never by its text: an error body can quote the
+        # request back — a name, a date — and this message travels on to the caller's logs.
         if response.status_code >= 400:
-            raise ModelUnavailableError(f"{response.status_code}: {response.text[:300]}")
+            raise ModelUnavailableError(f"the provider answered {response.status_code}")
 
-        payload: dict[str, Any] = response.json()
-        if payload.get("error"):
-            raise ModelUnavailableError(str(payload["error"])[:300])
+        try:
+            payload: dict[str, Any] = response.json()
+        except ValueError as exc:
+            raise ModelUnavailableError(
+                "the provider answered with something other than JSON"
+            ) from exc
+        error = payload.get("error")
+        if error:
+            code = error.get("code") if isinstance(error, dict) else None
+            suffix = f" ({code})" if isinstance(code, int) else ""
+            raise ModelUnavailableError(f"the provider reported an error{suffix}")
 
         choices = payload.get("choices") or []
         if not choices:

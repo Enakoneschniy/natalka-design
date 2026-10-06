@@ -4,7 +4,7 @@ from typing import Any
 
 import httpx
 import pytest
-from natalka_texts.providers import OPENROUTER_DIRECT, OpenRouterProvider
+from natalka_texts.providers import OPENROUTER_DIRECT, ModelUnavailableError, OpenRouterProvider
 
 GATEWAY = "https://gateway.ai.cloudflare.com/v1/account/natalka/openrouter"
 ANSWER = {
@@ -58,3 +58,45 @@ def test_the_gateway_token_never_goes_anywhere_else(wire: Wire) -> None:
             "s", "u"
         )
     assert not [r for r in wire.requests if "cf-aig-authorization" in r.headers]
+
+
+def _failure() -> str:
+    with pytest.raises(ModelUnavailableError) as caught:
+        OpenRouterProvider(api_key="k").complete("s", "u")
+    return str(caught.value)
+
+
+#: What a moderation refusal can look like: it quotes the request back.
+QUOTING = {"error": {"code": 403, "metadata": {"flagged_input": "Оксана, 15.05.1994"}}}
+
+
+def test_a_refused_call_is_reported_by_its_status_alone(wire: Wire) -> None:
+    wire.status, wire.body = 403, QUOTING
+    assert _failure() == "the provider answered 403"
+
+
+def test_an_error_inside_an_answer_is_reported_without_its_text(wire: Wire) -> None:
+    wire.body = QUOTING
+    assert _failure() == "the provider reported an error (403)"
+    wire.body = {"error": "Оксана"}
+    assert _failure() == "the provider reported an error"
+
+
+def test_an_answer_that_is_not_json_is_a_failed_call(
+    wire: Wire, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def garbled(url: str, **kw: Any) -> httpx.Response:
+        return httpx.Response(200, text="<html>Оксана</html>", request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(httpx, "post", garbled)
+    assert _failure() == "the provider answered with something other than JSON"
+
+
+def test_a_network_failure_is_named_by_its_kind(
+    wire: Wire, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def unreachable(url: str, **kw: Any) -> httpx.Response:
+        raise httpx.ConnectError(f"cannot reach {url} for Оксана")
+
+    monkeypatch.setattr(httpx, "post", unreachable)
+    assert _failure() == "the provider could not be reached (ConnectError)"
