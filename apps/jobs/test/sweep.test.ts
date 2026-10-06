@@ -142,6 +142,23 @@ describe('the nightly sweep', () => {
     expect(await email(seller)).toBe('buyer@seed.test');
   });
 
+  it('erases the address of an order held for the wrong amount after half a year, and keeps the order', async () => {
+    quiet();
+    const held = async (name: string, days: number) => {
+      const seeded = await seedOrder({ pro: false, name, createdAt: daysAgo(days) });
+      await testEnv.DB.prepare("UPDATE orders SET status = 'pending', hold = 'amount_mismatch', checkout_at = ? WHERE id = ?")
+        .bind(daysAgo(days), seeded.orderId)
+        .run();
+      return seeded.orderId;
+    };
+    const old = await held('Сумма давно', 181);
+    const recent = await held('Сумма недавно', 179);
+    await sweep(testEnv);
+    const row = (id: string) => testEnv.DB.prepare('SELECT email, status, hold FROM orders WHERE id = ?').bind(id).first();
+    expect(await row(old)).toEqual({ email: '', status: 'pending', hold: 'amount_mismatch' });
+    expect(await row(recent)).toEqual({ email: 'buyer@seed.test', status: 'pending', hold: 'amount_mismatch' });
+  });
+
   it('drops Telegram link codes after thirty days and old job errors, tombstones and letter counts', async () => {
     quiet();
     const { orderId, jobId } = await seedOrder({ pro: false, name: 'Телеграм' });

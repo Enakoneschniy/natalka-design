@@ -166,12 +166,15 @@ function stripeTombstones(env: Env): Promise<number> {
 }
 
 /** A shopper's address is kept with a paid order for half a year (questions, refunds), then
- * erased. The column cannot be NULL, so it becomes an empty string, which no letter is sent to. */
+ * erased; so is the address of an order held for a payment of the wrong amount, which is kept
+ * for its refund. The column cannot be NULL, so it becomes an empty string, which no letter is
+ * sent to. */
 function orderAddresses(env: Env): Promise<number> {
   return run(
     env,
     `UPDATE orders SET email = ''
-     WHERE pro_account_id IS NULL AND email != '' AND status IN ('paid', 'refunded', 'test') AND created_at < ?`,
+     WHERE pro_account_id IS NULL AND email != '' AND created_at < ?
+       AND (status IN ('paid', 'refunded', 'test') OR (status = 'pending' AND hold = 'amount_mismatch'))`,
     expiryFrom(-ADDRESS_DAYS),
   );
 }
