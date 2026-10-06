@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { signedPreview } from '@/lib/preview';
 import { GET as document } from './documents/[token]/route';
 import { POST as resume } from './jobs/[token]/checkout/route';
 import { GET as status } from './jobs/[token]/route';
@@ -66,6 +67,7 @@ describe('shop API routes and the jobs worker', () => {
   beforeEach(() => {
     vi.stubEnv('NATALKA_JOBS_URL', 'https://jobs.test');
     vi.stubEnv('SITE_KEY', 'site-key-123');
+    vi.stubEnv('PREVIEW_KEY', 'p'.repeat(32));
     fetchMock.mockReset();
     logged.mockReset();
     logged.mockImplementation(() => undefined);
@@ -80,10 +82,11 @@ describe('shop API routes and the jobs worker', () => {
     beforeEach(() => vi.stubEnv('SITE_KEY', ''));
 
     it('answers 503 from every route, calls nothing and says why in the log', async () => {
+      const signed = await signedPreview({ facts: { birth: {} }, lang: 'ru', product: 'natal' });
       const answers = [
         await status(get('/api/jobs/t'), token('t')),
         await document(get('/api/documents/t'), token('t')),
-        await preview(send('/api/preview', { facts: {}, lang: 'ru' })),
+        await preview(send('/api/preview', signed)),
         await order(send('/api/orders', validOrder)),
         await subscribe(
           send('/api/subscriptions', {
@@ -363,6 +366,88 @@ describe('shop API routes and the jobs worker', () => {
       );
       expect(form.status).toBe(415);
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('preview', () => {
+    const facts = {
+      first: { birth: { date: '1990-05-15' }, positions: [{ body: 'sun', longitude: 54.25 }] },
+      second: { birth: { date: '1992-01-02' }, positions: [{ body: 'sun', longitude: 281.5 }] },
+    };
+    const sign = () =>
+      signedPreview({
+        facts,
+        lang: 'ru',
+        product: 'synastry',
+        first_name: 'Анна',
+        second_name: 'Борис',
+      });
+
+    it('asks the jobs worker about the signed chart only, and returns the passages only', async () => {
+      fetchMock.mockResolvedValueOnce(
+        reply(200, {
+          blocks: [{ title: 'Т', text: 'Текст', extra: 1 }],
+          cached: true,
+          model: 'm',
+        }),
+      );
+      const answer = await preview(send('/api/preview', { ...(await sign()), model: 'other' }));
+      expect(answer.status).toBe(200);
+      expect(await answer.json()).toEqual({ blocks: [{ title: 'Т', text: 'Текст' }] });
+      const call = forwarded();
+      expect(call.url).toBe('https://jobs.test/v1/preview');
+      expect(call.headers.get('x-site-key')).toBe('site-key-123');
+      expect(call.body).toEqual({
+        facts,
+        lang: 'ru',
+        product: 'synastry',
+        first_name: 'Анна',
+        second_name: 'Борис',
+      });
+    });
+
+    it('refuses a request without the signature or with anything changed', async () => {
+      const signed = await sign();
+      if (!signed) throw new Error('not signed');
+      const { sig: _sig, ...unsigned } = signed;
+      for (const body of [
+        unsigned,
+        { ...signed, first_name: 'Мария' },
+        { ...signed, facts: { ...facts, second: facts.first } },
+        { ...signed, sig: '0'.repeat(64) },
+      ]) {
+        const answer = await preview(send('/api/preview', body));
+        expect(answer.status).toBe(400);
+      }
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('asks nothing without a preview key, and says why in the log', async () => {
+      const signed = await sign();
+      vi.stubEnv('PREVIEW_KEY', '');
+      const answer = await preview(send('/api/preview', signed));
+      expect(answer.status).toBe(503);
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(logged.mock.calls.flat().join(' ')).toContain('PREVIEW_KEY is not configured');
+    });
+
+    it('refuses a body over 64 KB and a request from another site', async () => {
+      const large = await preview(
+        send('/api/preview', { ...(await sign()), padding: 'x'.repeat(64 * 1024) }),
+      );
+      expect(large.status).toBe(413);
+      const crossSite = await preview(
+        send('/api/preview', await sign(), 'POST', { 'sec-fetch-site': 'cross-site' }),
+      );
+      expect(crossSite.status).toBe(403);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('says the passages are unavailable when the jobs worker cannot write them', async () => {
+      fetchMock.mockResolvedValueOnce(reply(503, { error: 'preview unavailable' }));
+      expect((await preview(send('/api/preview', await sign()))).status).toBe(503);
+      fetchMock.mockResolvedValueOnce(reply(200, { blocks: [] }));
+      expect((await preview(send('/api/preview', await sign()))).status).toBe(503);
     });
   });
 });

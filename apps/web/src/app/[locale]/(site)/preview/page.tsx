@@ -13,6 +13,7 @@ import { type BirthInput, calcChart, calcSynastry, calcTransits } from '@/lib/ap
 import { type ChartFacts, MAJOR_ASPECTS, monthLabel } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
+import { signedPreview } from '@/lib/preview';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 import { count } from '@/lib/stats';
 
@@ -139,6 +140,15 @@ export default async function PreviewPage({
     if (!you || !partner || !pair) {
       return <PreviewError locale={locale} t={t} />;
     }
+    const names: [string, string] = [you.name ?? t('personOne'), partner.name ?? t('personTwo')];
+    // The passages are asked for by the browser, about exactly these charts and these names.
+    const reading = await signedPreview({
+      facts: pair,
+      lang: locale,
+      product: 'synastry',
+      first_name: names[0],
+      second_name: names[1],
+    });
     const price = priceFor('synastry', country);
     const checkoutHref = `/${locale}/checkout?${new URLSearchParams(
       Object.fromEntries(
@@ -168,11 +178,7 @@ export default async function PreviewPage({
               {tp('cta', { price: price.formatted })}
             </Link>
           </div>
-          <SynastryPreview
-            facts={pair}
-            names={[you.name ?? t('personOne'), partner.name ?? t('personTwo')]}
-            locale={locale}
-          />
+          <SynastryPreview facts={pair} names={names} preview={reading} />
           <div className="card preview-cta">
             <div>
               <h2>{tp('title')}</h2>
@@ -230,6 +236,8 @@ export default async function PreviewPage({
   // Two or three months from this person's own transits, named and not explained: the reader
   // recognises them as theirs, and what they mean is what the reading is for.
   const hints = await transitHints(facts, locale);
+  // The passages are asked for by the browser, about exactly this chart.
+  const reading = await signedPreview({ facts, lang: locale, product: 'natal' });
 
   // The three points every reading starts from; the Ascendant needs a known birth time.
   const core = [
@@ -314,8 +322,7 @@ export default async function PreviewPage({
           {/* The facts each passage is written from are rendered here, on the server, and handed
               to the client component as nodes: it owns the loading state, not the chart data. */}
           <PreviewReading
-            facts={facts}
-            lang={locale}
+            request={reading}
             rails={core.map((point) => <CorePoint key={point.body} point={point} facts={facts} />)}
           />
         </section>
