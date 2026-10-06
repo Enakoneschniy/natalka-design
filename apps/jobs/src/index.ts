@@ -6,7 +6,7 @@
  * the only place with the database, the bucket and the keys.
  */
 
-import { encryptJson, LINK_TTL_SECONDS, sha256Hex, signToken, verifyToken } from './crypto';
+import { encryptJson, LINK_TTL_SECONDS, sameSecret, sha256Hex, signToken, verifyToken } from './crypto';
 import {
   cachePreview,
   claimTelegramLink,
@@ -566,15 +566,39 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
   }
 }
 
+/** The site's server proves itself with SITE_KEY (x-site-key) on every call; the browser never has
+ * the key. Without the secret configured nothing is served: a missing key must not open the door. */
+async function siteGate(request: Request, env: Env): Promise<Response | null> {
+  if (!env.SITE_KEY) {
+    console.error('SITE_KEY is not configured; refusing site routes');
+    return json({ error: 'unavailable' }, 503);
+  }
+  if (!(await sameSecret(request.headers.get('x-site-key'), env.SITE_KEY))) {
+    return json({ error: 'unauthorized' }, 401);
+  }
+  return null;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    // The site asks for the code behind its Telegram link; the token is the authentication.
+    // Open to anyone: the health check, and Stripe, which signs what it sends.
+    if (url.pathname === '/health' && request.method === 'GET') return json({ status: 'ok' });
+    if (url.pathname === '/v1/stripe/webhook' && request.method === 'POST') {
+      return stripeWebhook(request, env);
+    }
+    // The seller cabinet has a key of its own (x-pro-key), checked there.
+    if (url.pathname.startsWith('/v1/pro/')) {
+      return (await handlePro(request, env, url, ctx)) ?? new Response('not found', { status: 404 });
+    }
+    const refused = await siteGate(request, env);
+    if (refused) return refused;
+
+    // The site asks for the code behind its Telegram link; the token names the order.
     const code = url.pathname.match(/^\/v1\/jobs\/(.+)\/telegram$/);
     if (code?.[1] && request.method === 'POST') return telegramCode(env, code[1]);
 
-    if (url.pathname === '/health') return json({ status: 'ok' });
     if (url.pathname === '/v1/subscriptions' && request.method === 'POST') {
       return subscribe(request, env);
     }
@@ -587,9 +611,6 @@ export default {
     if (url.pathname === '/v1/orders' && request.method === 'POST') {
       return createOrder(request, env);
     }
-    if (url.pathname === '/v1/stripe/webhook' && request.method === 'POST') {
-      return stripeWebhook(request, env);
-    }
     if (url.pathname === '/v1/preview' && request.method === 'POST') {
       return previewText(request, env);
     }
@@ -597,9 +618,6 @@ export default {
     if (status?.[1]) return jobStatus(env, status[1]);
     const file = url.pathname.match(/^\/d\/(.+)$/);
     if (file?.[1]) return download(env, file[1]);
-
-    const pro = await handlePro(request, env, url, ctx);
-    if (pro) return pro;
 
     return new Response('not found', { status: 404 });
   },

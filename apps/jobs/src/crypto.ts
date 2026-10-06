@@ -116,5 +116,16 @@ export const sha256Hex = async (data: ArrayBuffer): Promise<string> => {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 };
 
+/** Whether a presented secret is the configured one. Both are hashed first and the digests compared
+ * in constant time, so the answer takes as long for a near miss as for a stranger and says nothing
+ * about the secret's length. False when either side is missing. */
+export async function sameSecret(given: string | null | undefined, expected: string | undefined): Promise<boolean> {
+  if (!given || !expected) return false;
+  const [a, b] = await Promise.all(
+    [given, expected].map((value) => crypto.subtle.digest('SHA-256', encoder.encode(value))),
+  );
+  return crypto.subtle.timingSafeEqual(a as ArrayBuffer, b as ArrayBuffer);
+}
+
 /** How long a download link stays valid: as long as the document itself is kept. */
 export const LINK_TTL_SECONDS = 30 * 24 * 60 * 60;

@@ -43,6 +43,10 @@ export interface Env {
   /** Shared secret for /v1/pro/*. Worker secret: the pro site's server sends it as x-pro-key; the
    * browser never has it. */
   PRO_API_KEY: string;
+  /** Shared secret for every other route but /health and the Stripe webhook. Worker secret, the
+   * same value as the site's SITE_KEY: the site's server sends it as x-site-key. Unset, those
+   * routes answer 503. */
+  SITE_KEY?: string;
   /** Where the seller cabinet lives; sign-in letters link to it. */
   PRO_SITE_URL: string;
   /** The order of the sample reading every seller can open before they have credits. Optional:

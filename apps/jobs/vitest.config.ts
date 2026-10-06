@@ -32,6 +32,7 @@ export default defineConfig({
           LINK_KEY: 'test-link-key',
           SESSION_KEY: 'test-session-key',
           PRO_API_KEY: 'test-pro-key',
+          SITE_KEY: 'test-site-key',
           STRIPE_SECRET_KEY: 'sk_test_fake',
           STRIPE_WEBHOOK_SECRET: 'whsec_test_fake',
         },
