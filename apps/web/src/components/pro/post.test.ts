@@ -1,5 +1,39 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { confirmOutcome, putImage } from './post';
+import { confirmOutcome, putImage, sendJson } from './post';
+
+describe('sendJson', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const call = async (method: 'GET' | 'POST' | 'PUT' | 'DELETE', body?: unknown) => {
+    const fetch = vi.fn(async () => new Response('{"ok":true}', { status: 200 }));
+    vi.stubGlobal('fetch', fetch);
+    const out = await sendJson('/api/pro/x/clients/c-1', method, body);
+    return { out, init: (fetch.mock.calls[0] as unknown as [string, RequestInit])[1] };
+  };
+
+  it('sends a mutation its JSON', async () => {
+    const { out, init } = await call('POST', { name: 'Анна' });
+    expect(out).toEqual({ status: 200, data: { ok: true } });
+    expect(init).toEqual({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{"name":"Анна"}',
+    });
+  });
+
+  it('gives a bodyless DELETE an empty object, so it goes with a length', async () => {
+    const { init } = await call('DELETE');
+    expect(init.body).toBe('{}');
+    expect(init.headers).toEqual({ 'content-type': 'application/json' });
+  });
+
+  it('sends a GET without a body', async () => {
+    const { init } = await call('GET');
+    expect(init.body).toBeUndefined();
+  });
+});
 
 describe('confirmOutcome', () => {
   it('tells a dead link from an outage', () => {

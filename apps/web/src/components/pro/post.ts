@@ -16,19 +16,21 @@ export async function postJson(
   }
 }
 
-/** Calls the cabinet's proxy (`/api/pro/x/*`) with any method. Every call says it carries JSON,
- * a bodyless DELETE included: the proxy refuses a mutation that does not. The status is 0 when
+/** Calls the cabinet's proxy (`/api/pro/x/*`) with any method. Every call says it carries JSON:
+ * the proxy refuses a mutation that does not. A DELETE with nothing to say sends `{}`, so every
+ * mutation goes with a known length; the jobs worker reads no body there. The status is 0 when
  * offline; `data` is null when the answer was not JSON. */
 export async function sendJson<T>(
   path: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   body?: unknown,
 ): Promise<{ status: number; data: T | null }> {
+  const payload = body === undefined && method === 'DELETE' ? {} : body;
   try {
     const response = await fetch(path, {
       method,
       headers: { 'content-type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: payload === undefined ? undefined : JSON.stringify(payload),
     });
     return { status: response.status, data: (await response.json().catch(() => null)) as T | null };
   } catch {
