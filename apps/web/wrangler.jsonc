@@ -29,6 +29,8 @@
     "logs": { "invocation_logs": false }
   },
   // Per client address, per minute; `src/lib/edge.ts` says which routes count against which.
+  // These counters are approximate (cached per machine, synced in the background), so the firm
+  // limit is the zone's rate-limiting rule; see docs/operations.md.
   "ratelimits": [
     { "name": "RL_AUTH", "namespace_id": "4201", "simple": { "limit": 10, "period": 60 } },
     { "name": "RL_ORDERS", "namespace_id": "4202", "simple": { "limit": 10, "period": 60 } },

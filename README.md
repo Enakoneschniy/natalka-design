@@ -42,7 +42,8 @@ uv run python -m natalka_worker api --host 127.0.0.1
 ## Security
 
 This repository is public. To report a vulnerability, write to help@chronika.me — not a public
-issue. What is in scope and how we handle reports: [SECURITY.md](SECURITY.md).
+issue. What is in scope and how we handle reports: [SECURITY.md](SECURITY.md). The settings, secrets
+and release order that live outside the code: [docs/operations.md](docs/operations.md).
 
 ## Licence note
 
