@@ -11,6 +11,7 @@ import { now } from '../db';
 import type { Env } from '../env';
 import { errorCode } from '../errors';
 import { redeemInvite } from './invites';
+import { UNKNOWN_REQUESTER } from './requester';
 
 export const LOGIN_TTL_SECONDS = 15 * 60;
 export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -19,6 +20,10 @@ export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
  * an address's hour; the second bounds what reaches a mailbox from many requesters. */
 export const LINKS_PER_REQUESTER_HOUR = 5;
 export const LINKS_PER_ADDRESS_HOUR = 20;
+/** A requester a link to the address was opened for within this many days is where its owner
+ * signs in: held to its own five only, so that requests from elsewhere cannot use up the twenty
+ * and lock the owner out. The sweep keeps opened links this long (retention.ts). */
+export const KNOWN_REQUESTER_DAYS = 30;
 
 export interface ProAccount {
   id: string;
@@ -67,9 +72,10 @@ interface TokenInput {
 
 /** Stores a single-use token for an address, or returns null when the address has had its links
  * for this hour: LINKS_PER_REQUESTER_HOUR at this requester's request (see requester.ts), or
- * LINKS_PER_ADDRESS_HOUR in all, whoever asked ('unknown' and rows without a requester included).
- * Login and sign-up tokens count together. Both counts and the insert are one statement, so
- * requests racing each other cannot pass either limit. */
+ * LINKS_PER_ADDRESS_HOUR in all, whoever asked ('unknown' and rows without a requester included)
+ * — the second unless a link to the address was opened at this requester's request within
+ * KNOWN_REQUESTER_DAYS ('unknown' never is). Login and sign-up tokens count together. Both counts
+ * and the insert are one statement, so requests racing each other cannot pass either limit. */
 async function createToken(
   db: D1Database,
   email: string,
@@ -77,13 +83,16 @@ async function createToken(
   input: TokenInput,
 ): Promise<string | null> {
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const known = new Date(Date.now() - KNOWN_REQUESTER_DAYS * 86_400_000).toISOString();
   const raw = randomToken();
   const stored = await db
     .prepare(
       `INSERT INTO pro_login_tokens (token_hash, email, expires_at, created_at, purpose, signup_name, signup_invite, requester)
        SELECT ?, ?, ?, ?, ?, ?, ?, ?
-       WHERE (SELECT COUNT(*) FROM pro_login_tokens WHERE email = ? AND created_at > ?) < ?
-         AND (SELECT COUNT(*) FROM pro_login_tokens WHERE email = ? AND requester = ? AND created_at > ?) < ?`,
+       WHERE (SELECT COUNT(*) FROM pro_login_tokens WHERE email = ? AND requester = ? AND created_at > ?) < ?
+         AND ((SELECT COUNT(*) FROM pro_login_tokens WHERE email = ? AND created_at > ?) < ?
+              OR EXISTS (SELECT 1 FROM pro_login_tokens
+                         WHERE email = ? AND requester = ? AND requester <> ? AND used_at > ?))`,
     )
     .bind(
       await hashToken(raw),
@@ -95,12 +104,16 @@ async function createToken(
       input.invite,
       requester,
       email,
+      requester,
+      hourAgo,
+      LINKS_PER_REQUESTER_HOUR,
+      email,
       hourAgo,
       LINKS_PER_ADDRESS_HOUR,
       email,
       requester,
-      hourAgo,
-      LINKS_PER_REQUESTER_HOUR,
+      UNKNOWN_REQUESTER,
+      known,
     )
     .run();
   return (stored.meta.changes ?? 0) > 0 ? raw : null;

@@ -10,6 +10,8 @@ import { expiryFrom, now, scrubExpiredJobPayloads, TELEGRAM_LINK_DAYS } from './
 import type { Env } from './env';
 import { errorCode } from './errors';
 import { sealLegacyPayloads } from './pipeline';
+import { KNOWN_REQUESTER_DAYS } from './pro/auth';
+import { UNKNOWN_REQUESTER } from './pro/requester';
 import { dropExpiredBirths, sealLegacyCharts, sweepSubscriptions } from './subscriptions';
 
 /** How long an unpaid order is kept after its last payment page was opened. */
@@ -43,9 +45,7 @@ export async function sweep(env: Env, options: SweepOptions = {}): Promise<Recor
     ['order addresses', () => orderAddresses(env)],
     ['telegram links', () => run(env, 'DELETE FROM telegram_links WHERE created_at < ?', expiryFrom(-TELEGRAM_LINK_DAYS))],
     ['job errors', () => run(env, 'UPDATE jobs SET last_error = NULL WHERE last_error IS NOT NULL AND updated_at < ?', expiryFrom(-days))],
-    // Sign-in links are worth nothing a day after they expire; the hour of history the throttle
-    // needs is long past by then.
-    ['sign-in links', () => run(env, 'DELETE FROM pro_login_tokens WHERE expires_at < ?', expiryFrom(-1))],
+    ['sign-in links', () => signInLinks(env)],
     // The cabinet's hourly limits look back an hour; a day of history is more than they need.
     ['cabinet attempts', () => run(env, 'DELETE FROM pro_attempts WHERE created_at < ?', expiryFrom(-1))],
     ['stripe tombstones', () => stripeTombstones(env)],
@@ -129,6 +129,25 @@ async function unpaidOrders(env: Env, batch: number): Promise<number> {
   );
   await deleteObjects(env, results.map((row) => row.storage_key));
   return removed;
+}
+
+/** Sign-in links are worth nothing a day after they expire, and the hour of history the limits
+ * look back is long past by then: they go, but for one that was opened at a known requester's
+ * request, which says where the address's owner signs in and is kept for as long as that spares
+ * the requester the address's limit (KNOWN_REQUESTER_DAYS) — without what was typed at sign-up. */
+async function signInLinks(env: Env): Promise<number> {
+  const expired = expiryFrom(-1);
+  const [, removed] = await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE pro_login_tokens SET signup_name = NULL, signup_invite = NULL
+       WHERE expires_at < ? AND (signup_name IS NOT NULL OR signup_invite IS NOT NULL)`,
+    ).bind(expired),
+    env.DB.prepare(
+      `DELETE FROM pro_login_tokens
+       WHERE expires_at < ? AND (used_at IS NULL OR used_at < ? OR requester IS NULL OR requester = ?)`,
+    ).bind(expired, expiryFrom(-KNOWN_REQUESTER_DAYS), UNKNOWN_REQUESTER),
+  ]);
+  return removed?.meta.changes ?? 0;
 }
 
 /** A refund or dispute Stripe reported goes after a month, by when any completion it overtook has

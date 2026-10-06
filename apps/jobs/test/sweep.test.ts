@@ -192,6 +192,32 @@ describe('the nightly sweep', () => {
     expect(await exists("SELECT 1 FROM stripe_tombstones WHERE payment_intent = 'pi_nobody_40'")).toBe(false);
   });
 
+  it('keeps a sign-in link opened at a known requester for a month, without what was typed at sign-up', async () => {
+    quiet();
+    const link = (hash: string, requester: string | null, expired: number, used: number | null) =>
+      testEnv.DB.prepare(
+        `INSERT INTO pro_login_tokens (token_hash, email, expires_at, used_at, created_at, purpose, signup_name, signup_invite, requester)
+         VALUES (?, 'kept@sweep.test', ?, ?, ?, 'signup', 'Имя', 'CODE', ?)`,
+      )
+        .bind(hash, daysAgo(expired), used === null ? null : daysAgo(used), daysAgo(expired), requester)
+        .run();
+    await link('opened-2', 'a'.repeat(32), 2, 2);
+    await link('opened-31', 'b'.repeat(32), 31, 31);
+    await link('unopened-2', 'c'.repeat(32), 2, null);
+    await link('opened-unknown', 'unknown', 2, 2);
+    await link('opened-before-requesters', null, 2, 2);
+    await link('live', 'd'.repeat(32), -0.01, null);
+
+    await sweep(testEnv);
+    const left = await testEnv.DB.prepare(
+      "SELECT token_hash, signup_name, signup_invite FROM pro_login_tokens WHERE email = 'kept@sweep.test' ORDER BY token_hash",
+    ).all();
+    expect(left.results).toEqual([
+      { token_hash: 'live', signup_name: 'Имя', signup_invite: 'CODE' },
+      { token_hash: 'opened-2', signup_name: null, signup_invite: null },
+    ]);
+  });
+
   it('clears chart names and places a worker from before this one still wrote', async () => {
     quiet();
     const { orderId } = await seedOrder({ pro: false, name: 'Метка' });

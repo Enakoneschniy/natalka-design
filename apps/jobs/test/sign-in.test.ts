@@ -149,6 +149,16 @@ const requesters = async (email: string): Promise<string[]> =>
 const perRequester = (list: string[]) =>
   list.reduce((counts, requester) => counts.set(requester, (counts.get(requester) ?? 0) + 1), new Map<string, number>());
 
+/** Marks the links `requester` asked for as opened at `at` — what spending one does. A link opened
+ * in the past was also asked for then. */
+const opened = (email: string, requester: string, at: Date) =>
+  testEnv.DB.prepare(
+    `UPDATE pro_login_tokens SET used_at = ?, created_at = MIN(created_at, ?), expires_at = MIN(expires_at, ?)
+     WHERE email = ? AND requester = ?`,
+  )
+    .bind(at.toISOString(), at.toISOString(), at.toISOString(), email, requester)
+    .run();
+
 describe('the block an address belongs to', () => {
   it('is an IPv4 address itself, written one way', () => {
     expect(addressBlock('203.0.113.7')).toBe('203.0.113.7');
@@ -231,6 +241,43 @@ describe('who asked for a link', () => {
     expect(await requesters(email)).toHaveLength(LINKS_PER_REQUESTER_HOUR);
     await askFrom(email, '2001:db8:aa:bc::1');
     expect(await requesters(email)).toHaveLength(LINKS_PER_REQUESTER_HOUR + 1);
+  });
+
+  it('who opened a link to the address this month is held to their own five only, past the twenty', async () => {
+    const email = 'usual@sign-in.test';
+    await signIn(email);
+    const home = '203.0.113.50';
+    const homeHash = (await hmacHex(testEnv.SESSION_KEY, home)).slice(0, 32);
+    await askFrom(email, home);
+    await opened(email, homeHash, new Date());
+    // Others use up the address's hour, each from an address of their own.
+    for (let i = 1; i <= LINKS_PER_ADDRESS_HOUR; i++) await askFrom(email, `198.51.100.${i}`);
+    expect(await tokenCount(email)).toBe(LINKS_PER_ADDRESS_HOUR);
+
+    for (let i = 0; i < LINKS_PER_REQUESTER_HOUR + 2; i++) await askFrom(email, home);
+    expect(perRequester(await requesters(email)).get(homeHash)).toBe(LINKS_PER_REQUESTER_HOUR);
+    const after = await tokenCount(email);
+    await askFrom(email, '192.0.2.77');
+    expect(await tokenCount(email)).toBe(after);
+  });
+
+  it('who opened a link more than a month ago, or asked without an address, is held to the twenty', async () => {
+    const email = 'stale@sign-in.test';
+    await signIn(email);
+    const home = '203.0.113.60';
+    const homeHash = (await hmacHex(testEnv.SESSION_KEY, home)).slice(0, 32);
+    await askFrom(email, home);
+    await opened(email, homeHash, new Date(Date.now() - 31 * 86_400_000));
+    await askFrom(email);
+    await opened(email, 'unknown', new Date());
+    for (let i = 1; i <= LINKS_PER_ADDRESS_HOUR; i++) await askFrom(email, `198.51.100.${i}`);
+
+    // Each of these would still be within its own five.
+    const full = await tokenCount(email);
+    await askFrom(email, home);
+    await askFrom(email);
+    await askFrom(email, '192.0.2.78');
+    expect(await tokenCount(email)).toBe(full);
   });
 
   it('without an address is still held to the limits of the address it asks for', async () => {
