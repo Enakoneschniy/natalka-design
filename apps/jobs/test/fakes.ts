@@ -39,6 +39,10 @@ export async function fakeEphemeris(request: Request): Promise<Response> {
   return json({ birth: { date, unknown_time: false }, planets: [], transits: [] });
 }
 
+/** What the worker under test sends as x-api-key (vitest.config.ts). The fake refuses anything
+ * else, as the API edge does, so every test that reaches it proves the key was sent. */
+const API_KEY = 'test-api-key';
+
 export async function fakeApi(request: Request): Promise<Response> {
   const path = new URL(request.url).pathname;
   if (path === '/__fail') {
@@ -49,6 +53,7 @@ export async function fakeApi(request: Request): Promise<Response> {
   if (path === '/__last') {
     return json(lastSeen.get(new URL(request.url).searchParams.get('key') ?? '') ?? null);
   }
+  if (request.headers.get('x-api-key') !== API_KEY) return json({ error: 'unauthorized' }, 401);
   if (path === '/v1/sections') {
     // The plan request carries no name, so it is kept by its form of address: test files run side
     // by side, and a single "last" slot is overwritten by whichever file asked most recently.
@@ -60,7 +65,8 @@ export async function fakeApi(request: Request): Promise<Response> {
     const body = (await request.json()) as { section_id: string; name: string };
     lastSeen.set(`/v1/section|${body.name}`, body);
     if (trips(`${body.name}|${body.section_id}`, `${body.name}|*`)) {
-      return new Response('model down', { status: 503 });
+      // Like a real refusal, the body quotes the request: none of it may reach a log or a row.
+      return new Response(`model down while writing for ${body.name}`, { status: 503 });
     }
     const plan = FAKE_PLAN.find((p) => p.id === body.section_id);
     if (!plan) return new Response(`unknown section: ${body.section_id}`, { status: 404 });

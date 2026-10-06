@@ -1,8 +1,9 @@
 import { type Blobish, decryptJson, encryptJson, signToken, verifyToken } from './crypto';
 import { expiryFrom, now } from './db';
 import type { Env } from './env';
+import { errorCode, UpstreamError } from './errors';
 import { sendHoroscope } from './mail';
-import { ephemeris } from './pipeline';
+import { apiFetch, ephemeris } from './pipeline';
 
 /* The horoscope subscription: a chart kept on file, a cadence, and a channel or two.
  *
@@ -67,12 +68,12 @@ const TRIAL_DAYS = 30;
 const MANAGE_TTL_SECONDS = 365 * 24 * 60 * 60;
 
 const texts = async <T>(env: Env, path: string, body: unknown): Promise<T> => {
-  const response = await env.API.fetch(`${env.NATALKA_API_URL}${path}`, {
+  const response = await apiFetch(env, path, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(`${path} → ${response.status}: ${await response.text()}`);
+  if (!response.ok) throw new UpstreamError(path, response.status);
   return response.json() as Promise<T>;
 };
 
@@ -266,7 +267,7 @@ export async function deliverHoroscope(env: Env, id: string): Promise<void> {
       await env.BOT.sendHoroscope({ chatId: chat, locale: sub.locale, title: result.title, text: result.text });
       channels.push('telegram');
     } catch (error) {
-      console.error('telegram horoscope', error instanceof Error ? error.message : String(error));
+      console.error('telegram horoscope', sub.id, errorCode(error));
     }
   }
 

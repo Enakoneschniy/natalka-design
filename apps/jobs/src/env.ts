@@ -20,6 +20,9 @@ export interface Env {
   BOT: BotInternalStub;
   /** Base URL of the Python calculation and text API. */
   NATALKA_API_URL: string;
+  /** Sent as x-api-key on every call to that API. Worker secret, the same value as the API
+   * edge's ACCESS_KEY. Unset, no call is made: jobs fail and previews answer 503. */
+  NATALKA_API_KEY?: string;
   RETENTION_DAYS: string;
   /** Where the site lives; the ready letter links back to it. */
   SITE_URL: string;

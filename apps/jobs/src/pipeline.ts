@@ -16,6 +16,7 @@ import {
   updateJob,
 } from './db';
 import type { Env } from './env';
+import { errorCode, JobError, UpstreamError } from './errors';
 import { sendReady } from './mail';
 import { brandForDocument } from './pro/brand';
 
@@ -62,14 +63,25 @@ export const ephemeris = async <T>(env: Env, path: string, body: unknown): Promi
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(`ephemeris ${path} → ${response.status}`);
+  if (!response.ok) throw new UpstreamError(`ephemeris ${path}`, response.status);
   return response.json() as Promise<T>;
 };
 
+/** Every call to the text-and-document API, which refuses anything without NATALKA_API_KEY in
+ * x-api-key. Without the secret nothing is sent at all. */
+export async function apiFetch(env: Env, path: string, init: RequestInit = {}): Promise<Response> {
+  if (!env.NATALKA_API_KEY) throw new JobError('NATALKA_API_KEY is not configured');
+  const headers = new Headers(init.headers);
+  headers.set('x-api-key', env.NATALKA_API_KEY);
+  return env.API.fetch(`${env.NATALKA_API_URL}${path}`, { ...init, headers });
+}
+
 const api = async <T>(env: Env, path: string, init?: RequestInit): Promise<T> => {
-  const response = await env.API.fetch(`${env.NATALKA_API_URL}${path}`, init);
+  const response = await apiFetch(env, path, init);
   if (!response.ok) {
-    throw new Error(`${path} → ${response.status}: ${(await response.text()).slice(0, 200)}`);
+    // The body is read only to tell a section the API no longer knows from any other refusal.
+    const unknownSection = response.status === 404 && (await response.text()).includes('unknown section');
+    throw new UpstreamError(path.split('?')[0] ?? path, response.status, unknownSection);
   }
   return (await response.json()) as T;
 };
@@ -80,7 +92,7 @@ export async function loadBirth(env: Env, orderId: string, personNo = 1): Promis
   )
     .bind(orderId, personNo)
     .first<{ birth_ciphertext: Blobish; birth_nonce: Blobish }>();
-  if (!row) throw new Error(`no chart ${personNo} for order ${orderId}`);
+  if (!row) throw new JobError(`no chart ${personNo} for order ${orderId}`);
   return decryptJson<BirthData>(row.birth_ciphertext, row.birth_nonce, env.DATA_KEY);
 }
 
@@ -241,7 +253,7 @@ async function writeSections(
       // A deploy can land between the plan and the writing, and the chapter this job was told
       // to write may no longer exist. Skipping it finishes the document; failing the job would
       // throw away everything written so far.
-      if (error instanceof Error && error.message.includes('unknown section')) {
+      if (error instanceof UpstreamError && error.unknownSection) {
         console.warn('section gone since the plan was made', entry.id);
         gone.add(entry.id);
         continue;
@@ -278,7 +290,7 @@ async function render(
       : null;
   const name = pair && second ? `${birth.name} ${AND[birth.lang] ?? '&'} ${second.name}` : birth.name;
   const brand = seller ? await brandForDocument(env, seller.accountId) : null;
-  if (seller && !brand) throw new Error(`no brand for seller of order ${job.order_id}`);
+  if (seller && !brand) throw new JobError(`no brand for seller of order ${job.order_id}`);
   const document = await api<Record<string, unknown>>(env, '/v1/skeleton', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -307,18 +319,18 @@ async function render(
   if (seller) {
     const meta = document.meta as { order_ref?: string | null } | undefined;
     if (!document.brand || meta?.order_ref != null) {
-      throw new Error(
+      throw new JobError(
         `/v1/skeleton returned no seller brand for order ${job.order_id}: the API image is older than the jobs worker`,
       );
     }
   }
 
-  const pdf = await env.API.fetch(`${env.NATALKA_API_URL}/v1/document`, {
+  const pdf = await apiFetch(env, '/v1/document', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(document),
   });
-  if (!pdf.ok) throw new Error(`/v1/document → ${pdf.status}`);
+  if (!pdf.ok) throw new UpstreamError('/v1/document', pdf.status);
   const pages = Number(pdf.headers.get('x-pages') ?? 0);
   const bytes = await pdf.arrayBuffer();
 
@@ -411,7 +423,7 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
  * retry of one POST, not of fifteen minutes of writing. */
 async function notify(env: Env, job: JobRow): Promise<void> {
   const contact = await orderContact(env.DB, job.order_id);
-  if (!contact) throw new Error(`no order for job ${job.id}`);
+  if (!contact) throw new JobError(`no order for job ${job.id}`);
   const token = await signToken({ order: job.order_id, job: job.id }, env.LINK_KEY, LINK_TTL_SECONDS);
   const link = `${env.SITE_URL}/${contact.locale}/generating?t=${token}`;
   const sent = await sendReady(env, contact.email, contact.locale, link);
@@ -435,7 +447,7 @@ async function notify(env: Env, job: JobRow): Promise<void> {
         token,
       });
     } catch (error) {
-      console.error('telegram delivery', error instanceof Error ? error.message : String(error));
+      console.error('telegram delivery', job.id, errorCode(error));
     }
   }
 }

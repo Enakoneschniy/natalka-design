@@ -25,6 +25,7 @@ export default defineConfig({
         bindings: {
           TEST_MIGRATIONS: migrations,
           NATALKA_API_URL: 'https://api.test',
+          NATALKA_API_KEY: 'test-api-key',
           RETENTION_DAYS: '30',
           SITE_URL: 'https://chronika.test',
           PRO_SITE_URL: 'https://pro.chronika.test',

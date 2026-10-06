@@ -1,4 +1,5 @@
 import type { Env } from './env';
+import { UpstreamError } from './errors';
 
 /* Stripe, without the SDK: two calls and a signature check.
  *
@@ -75,13 +76,23 @@ export async function createCheckoutSession(env: Env, input: CheckoutInput): Pro
     },
     body: form(fields),
   });
-  if (!response.ok) {
-    const detail = (await response.text()).slice(0, 400);
-    console.error('stripe checkout', response.status, detail);
-    throw new Error(`stripe answered ${response.status}`);
-  }
+  if (!response.ok) return stripeFailure('checkout', response);
   const session = (await response.json()) as { id: string; url: string };
   return { id: session.id, url: session.url };
+}
+
+/** Logs a refused Stripe call by status and Stripe's error code, then throws. The message is left
+ * out: Stripe quotes the request back in it, the customer's address included. */
+async function stripeFailure(what: string, response: Response): Promise<never> {
+  let code = '';
+  try {
+    const body = (await response.json()) as { error?: { code?: string; type?: string } };
+    code = body.error?.code ?? body.error?.type ?? '';
+  } catch {
+    // Not JSON: the status says enough.
+  }
+  console.error(`stripe ${what}`, response.status, code);
+  throw new UpstreamError(`stripe ${what}`, response.status);
 }
 
 export interface PackCheckoutInput {
@@ -129,11 +140,7 @@ export async function createPackCheckout(env: Env, input: PackCheckoutInput): Pr
     },
     body: form(fields),
   });
-  if (!response.ok) {
-    const detail = (await response.text()).slice(0, 400);
-    console.error('stripe pack checkout', response.status, detail);
-    throw new Error(`stripe answered ${response.status}`);
-  }
+  if (!response.ok) return stripeFailure('pack checkout', response);
   const session = (await response.json()) as { id: string; url: string };
   return { id: session.id, url: session.url };
 }

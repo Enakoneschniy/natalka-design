@@ -1,4 +1,5 @@
 import type { Env } from './env';
+import { UpstreamError } from './errors';
 
 /** The one email the pipeline sends: the document is ready, here is the link.
  *
@@ -103,9 +104,10 @@ async function deliver(env: Env, letter: Letter): Promise<Sent> {
     }),
   });
   if (!response.ok) {
-    // The body names the reason (bad key, unverified domain); the log gets it, the client does not.
-    console.error('resend', response.status, (await response.text()).slice(0, 300));
-    throw new Error(`mail provider answered ${response.status}`);
+    // The status tells a bad key from an outage; the body can quote the recipient back, so it is
+    // neither logged nor passed on.
+    console.error('resend', response.status);
+    throw new UpstreamError('resend', response.status);
   }
   const data = (await response.json()) as { id?: string };
   return { status: 'sent', providerId: data.id ?? null };

@@ -53,7 +53,8 @@ import {
 } from './subscriptions';
 import { contentDisposition, documentFilename } from './filename';
 import { createCheckoutSession, verifyWebhook } from './stripe';
-import { advance, type JobPayload, loadBirth } from './pipeline';
+import { errorCode } from './errors';
+import { advance, apiFetch, type JobPayload, loadBirth } from './pipeline';
 import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
 import { handlePro } from './pro/routes';
 import { markFailed, markPaid, markRefunded } from './pro/purchases';
@@ -144,11 +145,17 @@ async function previewText(request: Request, env: Env): Promise<Response> {
     return json({ blocks: JSON.parse(hit.blocks), cached: true });
   }
 
-  const upstream = await env.API.fetch(`${env.NATALKA_API_URL}/v1/preview`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let upstream: Response;
+  try {
+    upstream = await apiFetch(env, '/v1/preview', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    console.error('preview failed', errorCode(error));
+    return json({ error: 'preview unavailable' }, 503);
+  }
   if (!upstream.ok) {
     console.error('preview failed', upstream.status);
     return json({ error: 'preview unavailable' }, 503);
@@ -629,7 +636,7 @@ export default {
           await deliverHoroscope(env, message.body.subscriptionId);
           message.ack();
         } catch (error) {
-          console.error('horoscope failed', message.body.subscriptionId, error);
+          console.error('horoscope failed', message.body.subscriptionId, errorCode(error));
           message.retry();
         }
         continue;
@@ -652,8 +659,8 @@ export default {
         }
         message.ack();
       } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        await updateJob(env.DB, job.id, { status: 'failed', last_error: reason.slice(0, 500) });
+        const reason = errorCode(error);
+        await updateJob(env.DB, job.id, { status: 'failed', last_error: reason });
         console.error('job failed', job.id, reason);
         // Retry with the queue's backoff; the work already banked in payload is not repeated.
         if (message.attempts >= MAX_DELIVERIES) {
@@ -664,7 +671,7 @@ export default {
               continue;
             }
           } catch (settleError) {
-            console.error('settling a failed reading', job.id, settleError);
+            console.error('settling a failed reading', job.id, errorCode(settleError));
           }
         }
         message.retry();
