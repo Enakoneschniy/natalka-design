@@ -67,14 +67,20 @@ describe('bodies', () => {
     length === undefined ? { 'x-api-key': KEY } : { 'x-api-key': KEY, 'content-length': length };
 
   test('a body of unknown length is refused', async () => {
-    assert.equal(await statusOf(request('POST', '/v1/document', headers())), 411);
-    assert.equal(await statusOf(request('POST', '/v1/document', headers('ten'))), 411);
+    assert.equal(await statusOf(request('POST', '/v1/document', headers(), '{}')), 411);
+    assert.equal(await statusOf(request('POST', '/v1/document', headers('ten'), '{}')), 411);
   });
 
-  test('a body over 8 MB is refused', async () => {
+  test('a request without a body needs no length', async () => {
+    assert.equal(await statusOf(request('POST', '/v1/document', headers())), null);
+    assert.equal(await statusOf(request('GET', '/v1/sections', headers())), null);
+  });
+
+  test('a body over 8 MB is refused, whatever the method', async () => {
     assert.equal(MAX_BODY_BYTES, 8 * 1024 * 1024);
     const over = String(MAX_BODY_BYTES + 1);
     assert.equal(await statusOf(request('POST', '/v1/document', headers(over))), 413);
+    assert.equal(await statusOf(request('GET', '/v1/sections', headers(over))), 413);
     const exact = String(MAX_BODY_BYTES);
     assert.equal(await statusOf(request('POST', '/v1/document', headers(exact))), null);
   });

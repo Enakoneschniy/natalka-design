@@ -56,12 +56,12 @@ export async function refusal(
   const given = request.headers.get(KEY_HEADER);
   if (given === null || !(await sameKey(given, accessKey))) return refuse(401, 'unauthorized');
 
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
-    // A body has to announce its size, so an oversized one is refused before it is read.
-    const length = request.headers.get('content-length');
-    if (length === null || !/^\d+$/.test(length)) return refuse(411, 'length required');
-    if (Number(length) > MAX_BODY_BYTES) return refuse(413, 'too large');
-  }
+  // A body has to announce its size, so an oversized one is refused before it is read; a
+  // request without a body has nothing to announce.
+  const length = request.headers.get('content-length');
+  if (length === null) return request.body === null ? null : refuse(411, 'length required');
+  if (!/^\d+$/.test(length)) return refuse(411, 'length required');
+  if (Number(length) > MAX_BODY_BYTES) return refuse(413, 'too large');
   return null;
 }
 
