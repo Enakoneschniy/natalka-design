@@ -1,20 +1,19 @@
 /**
- * Edge wrapper for the Python calculation API.
+ * Edge wrapper for the Python text-and-document API.
  *
- * The engine depends on pyswisseph (a C extension), which cannot run on the Workers runtime, so it
- * lives in a Cloudflare Container. This Worker is the public entry point: it proxies requests to the
- * container, keeps one warm instance per region and answers health checks without waking it.
+ * The API renders PDFs and calls the model, so it lives in a Cloudflare Container. This Worker is
+ * its only entry point: it lets through the jobs Worker, which sends the shared key, proxies the
+ * request to the container, keeps one warm instance and answers health checks without waking it.
+ * No browser ever calls it, so it sends no CORS headers.
  */
 import { Container, getContainer } from '@cloudflare/containers';
+import { containerEnv, KEY_HEADER, type ModelSecrets, refusal } from './edge';
 
-interface Env {
+interface Env extends ModelSecrets {
   API_CONTAINER: DurableObjectNamespace<ApiContainer>;
-  ALLOWED_ORIGINS: string;
-  /** Set as a Worker secret; never present in the repository. */
-  NATALKA_MODEL_API_KEY?: string;
-  /** The name the key was first stored under; still accepted so it does not have to be re-entered. */
-  NATALKA_ANTHROPIC_API_KEY?: string;
-  NATALKA_AI_GATEWAY_URL?: string;
+  /** Set as a Worker secret, the same value as the jobs Worker's NATALKA_API_KEY. Without it
+   * the edge serves the health checks and nothing else. */
+  ACCESS_KEY?: string;
 }
 
 export class ApiContainer extends Container {
@@ -23,13 +22,7 @@ export class ApiContainer extends Container {
    * steady traffic, so five minutes is the better trade against a ~3 s cold start. */
   sleepAfter = '5m';
 
-  /** The model key reaches the Python process only through here — it is a Worker secret, so it
-   * is encrypted at rest in Cloudflare and never written to the image or the repository. */
-  override envVars: Record<string, string> = {
-    NATALKA_MODEL_API_KEY:
-      (this.env as Env).NATALKA_MODEL_API_KEY ?? (this.env as Env).NATALKA_ANTHROPIC_API_KEY ?? '',
-    NATALKA_AI_GATEWAY_URL: (this.env as Env).NATALKA_AI_GATEWAY_URL ?? '',
-  };
+  override envVars: Record<string, string> = containerEnv(this.env as Env);
 
   override onStart() {
     console.log('container started');
@@ -41,45 +34,28 @@ export class ApiContainer extends Container {
   }
 }
 
-const CORS_METHODS = 'GET,POST,OPTIONS';
-
-function corsHeaders(request: Request, env: Env): Record<string, string> {
-  const origin = request.headers.get('origin') ?? '';
-  const allowed = env.ALLOWED_ORIGINS.split(',').map((o) => o.trim());
-  const ok = allowed.includes('*') || allowed.includes(origin);
-  return ok
-    ? {
-        'access-control-allow-origin': origin || '*',
-        'access-control-allow-methods': CORS_METHODS,
-        'access-control-allow-headers': 'content-type',
-        'access-control-max-age': '86400',
-        vary: 'origin',
-      }
-    : {};
-}
-
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders(request, env) });
-    }
-
     // Edge health check: answers without starting the container.
-    if (url.pathname === '/edge-health') {
+    if (request.method === 'GET' && url.pathname === '/edge-health') {
       return Response.json({ status: 'ok', edge: true });
     }
+
+    const refused = await refusal(request, env.ACCESS_KEY);
+    if (refused) return refused;
+
+    // The key stops here: the container has no use for it.
+    const forwarded = new Request(request);
+    forwarded.headers.delete(KEY_HEADER);
 
     // One shared instance rather than one per colo: warm instances bill while they idle, and a
     // handful of milliseconds of extra latency is invisible next to a calculation.
     const container = getContainer(env.API_CONTAINER, 'main');
 
     try {
-      const response = await container.fetch(request);
-      const headers = new Headers(response.headers);
-      for (const [k, v] of Object.entries(corsHeaders(request, env))) headers.set(k, v);
-      return new Response(response.body, { status: response.status, headers });
+      return await container.fetch(forwarded);
     } catch (error) {
       console.error('proxy failed', error);
       return Response.json({ error: 'calculation service unavailable' }, { status: 503 });
