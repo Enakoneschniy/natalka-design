@@ -42,19 +42,33 @@ export interface OrderCreated {
   checkout_url?: string;
 }
 
+/** Where an order's money stands. `pending` until the payment settles; `test` was never charged;
+ * `refunded`, `disputed` and `failed` close it — its document is not given out. */
+export const ORDER_STATUSES = [
+  'pending',
+  'paid',
+  'test',
+  'refunded',
+  'disputed',
+  'failed',
+] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
 export interface JobStatus {
   paid: boolean;
   /** A run that was never charged for: it must not be reported as a sale. */
-  test?: boolean;
+  test: boolean;
+  order_status: OrderStatus;
   order_id?: string;
-  amount_minor?: number | null;
-  currency?: string | null;
+  amount_minor: number | null;
+  currency: string | null;
   step: 'calc' | 'texts' | 'pdf' | 'email' | 'done';
   status: 'queued' | 'running' | 'failed' | 'done';
   written: number;
   total: number;
   progress: number;
-  error: string | null;
+  /** `failed` when the run failed, never the reason. */
+  error: 'failed' | null;
   pages: number | null;
   download: string | null;
 }
@@ -98,25 +112,74 @@ const withToken = (prefix: string, token: string, suffix = '') =>
 export const isStripeCheckout = (url: unknown): url is string =>
   typeof url === 'string' && url.startsWith('https://checkout.stripe.com/');
 
-/** The jobs worker's answer to a call that changes something: what it made, or its status and,
- * for a 400, the field it named. */
-export type Outcome<T> = { ok: true; data: T } | { ok: false; status: number; field?: string };
+/** The jobs worker's answer to a call that changes something: what it made, or its status with
+ * the field (a 400) or the code (a 409) it named. These are for the route to map; none of them
+ * goes to the browser as it came. */
+export type Outcome<T> =
+  | { ok: true; data: T }
+  | { ok: false; status: number; field?: string; error?: string };
 
 async function outcome<T>(response: Response): Promise<Outcome<T>> {
   if (response.ok) return { ok: true, data: (await response.json()) as T };
-  const data = (await response.json().catch(() => null)) as { field?: unknown } | null;
+  const data = (await response.json().catch(() => null)) as {
+    field?: unknown;
+    error?: unknown;
+  } | null;
   const field = typeof data?.field === 'string' ? data.field : undefined;
-  return { ok: false, status: response.status, ...(field ? { field } : {}) };
+  const error = typeof data?.error === 'string' ? data.error : undefined;
+  return {
+    ok: false,
+    status: response.status,
+    ...(field ? { field } : {}),
+    ...(error ? { error } : {}),
+  };
 }
 
 export async function createOrder(order: OrderRequest): Promise<Outcome<OrderCreated>> {
   return outcome(await jobsFetch('/v1/orders', postJson(order)));
 }
 
+/** A new payment page for an order that is still unpaid: 409 `paid` or `closed` when there is
+ * nothing to pay, 404 for a link that is not good. */
+export async function resumeCheckout(token: string): Promise<Outcome<{ checkout_url?: unknown }>> {
+  return outcome(await jobsFetch(withToken('/v1/jobs', token, '/checkout'), postJson({})));
+}
+
+const number = (value: unknown, fallback: number): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+/** The waiting page's view of a job, built from the fields it knows and nothing else; null for a
+ * link that is not good. */
 export async function jobStatus(token: string): Promise<JobStatus | null> {
   const response = await jobsFetch(withToken('/v1/jobs', token));
-  if (!response.ok) return null;
-  return (await response.json()) as JobStatus;
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`job status → ${response.status}`);
+  const data = (await response.json()) as Record<string, unknown>;
+  const paid = data.paid === true;
+  const test = data.test === true;
+  const known = (ORDER_STATUSES as readonly unknown[]).includes(data.order_status);
+  return {
+    paid,
+    test,
+    order_status: known
+      ? (data.order_status as OrderStatus)
+      : test
+        ? 'test'
+        : paid
+          ? 'paid'
+          : 'pending',
+    ...(typeof data.order_id === 'string' ? { order_id: data.order_id } : {}),
+    amount_minor: typeof data.amount_minor === 'number' ? data.amount_minor : null,
+    currency: typeof data.currency === 'string' ? data.currency : null,
+    step: (typeof data.step === 'string' ? data.step : 'calc') as JobStatus['step'],
+    status: (typeof data.status === 'string' ? data.status : 'queued') as JobStatus['status'],
+    written: number(data.written, 0),
+    total: number(data.total, 0),
+    progress: number(data.progress, 0),
+    error: data.error ? 'failed' : null,
+    pages: typeof data.pages === 'number' ? data.pages : null,
+    download: typeof data.download === 'string' ? data.download : null,
+  };
 }
 
 /** The finished PDF as the jobs worker answers for it. */

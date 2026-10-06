@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as document } from './documents/[token]/route';
+import { POST as resume } from './jobs/[token]/checkout/route';
 import { GET as status } from './jobs/[token]/route';
 import { POST as order } from './orders/route';
 import { POST as preview } from './preview/route';
@@ -265,6 +266,102 @@ describe('shop API routes and the jobs worker', () => {
     it('does not sell where the payment provider forbids it', async () => {
       const answer = await order(send('/api/orders', validOrder, 'POST', { 'cf-ipcountry': 'JP' }));
       expect(answer.status).toBe(403);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('the waiting page', () => {
+    const upstreamStatus = {
+      step: 'texts',
+      status: 'running',
+      paid: true,
+      test: false,
+      order_status: 'paid',
+      order_id: 'o1',
+      amount_minor: 2900,
+      currency: 'EUR',
+      written: 3,
+      total: 12,
+      progress: 25,
+      error: null,
+      pages: null,
+      download: null,
+    };
+
+    it('passes on the status with its order state and only the fields it knows', async () => {
+      fetchMock.mockResolvedValueOnce(
+        reply(200, { ...upstreamStatus, order_status: 'refunded', internal: 'x' }),
+      );
+      const answer = await status(get('/api/jobs/a.b.c'), token('a.b.c'));
+      const body = (await answer.json()) as Record<string, unknown>;
+      expect(body.order_status).toBe('refunded');
+      expect(body).not.toHaveProperty('internal');
+      expect(forwarded().url).toBe('https://jobs.test/v1/jobs/a.b.c');
+    });
+
+    it('turns any error into the code `failed`', async () => {
+      fetchMock.mockResolvedValueOnce(
+        reply(200, { ...upstreamStatus, status: 'failed', error: 'calc → 500 at host x' }),
+      );
+      const body = (await (await status(get('/api/jobs/t'), token('t'))).json()) as {
+        error: unknown;
+      };
+      expect(body.error).toBe('failed');
+    });
+
+    it('tells a dead link from an outage', async () => {
+      fetchMock.mockResolvedValueOnce(reply(404, { error: 'link expired' }));
+      expect((await status(get('/api/jobs/t'), token('t'))).status).toBe(404);
+      fetchMock.mockResolvedValueOnce(reply(500, { error: 'boom' }));
+      expect((await status(get('/api/jobs/t'), token('t'))).status).toBe(503);
+    });
+
+    it('opens a new payment page for an unpaid order, on Stripe only', async () => {
+      fetchMock.mockResolvedValueOnce(
+        reply(200, { checkout_url: 'https://checkout.stripe.com/c/pay/cs_2' }),
+      );
+      const answer = await resume(send('/api/jobs/a.b.c/checkout', {}), token('a.b.c'));
+      expect(answer.status).toBe(200);
+      expect(await answer.json()).toEqual({
+        checkout_url: 'https://checkout.stripe.com/c/pay/cs_2',
+      });
+      const call = forwarded();
+      expect(call.url).toBe('https://jobs.test/v1/jobs/a.b.c/checkout');
+      expect(call.headers.get('x-site-key')).toBe('site-key-123');
+
+      fetchMock.mockResolvedValueOnce(reply(200, { checkout_url: 'https://pay.evil.example/' }));
+      const elsewhere = await resume(send('/api/jobs/t/checkout', {}), token('t'));
+      expect(elsewhere.status).toBe(503);
+    });
+
+    it('says when there is nothing to pay, and nothing more', async () => {
+      fetchMock.mockResolvedValueOnce(reply(409, { error: 'paid' }));
+      const paid = await resume(send('/api/jobs/t/checkout', {}), token('t'));
+      expect(paid.status).toBe(409);
+      expect(await paid.json()).toEqual({ error: 'paid' });
+
+      fetchMock.mockResolvedValueOnce(reply(409, { error: 'closed', detail: 'refunded' }));
+      const closed = await resume(send('/api/jobs/t/checkout', {}), token('t'));
+      expect(await closed.json()).toEqual({ error: 'closed' });
+
+      fetchMock.mockResolvedValueOnce(reply(404, { error: 'link expired' }));
+      expect((await resume(send('/api/jobs/t/checkout', {}), token('t'))).status).toBe(404);
+
+      fetchMock.mockResolvedValueOnce(reply(500, { error: 'boom' }));
+      expect((await resume(send('/api/jobs/t/checkout', {}), token('t'))).status).toBe(502);
+    });
+
+    it('takes the request from our own page only', async () => {
+      const crossSite = await resume(
+        send('/api/jobs/t/checkout', {}, 'POST', { 'sec-fetch-site': 'cross-site' }),
+        token('t'),
+      );
+      expect(crossSite.status).toBe(403);
+      const form = await resume(
+        send('/api/jobs/t/checkout', {}, 'POST', { 'content-type': 'text/plain' }),
+        token('t'),
+      );
+      expect(form.status).toBe(415);
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

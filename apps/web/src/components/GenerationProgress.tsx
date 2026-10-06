@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TrackEvent } from '@/components/TrackEvent';
+import { closedOrder, offersPayment, settled } from '@/lib/order-state';
 
 interface Status {
   paid: boolean;
   /** A run that was never charged for: it must not be reported as a sale. */
   test?: boolean;
+  order_status?: string;
   order_id?: string;
   amount_minor?: number | null;
   currency?: string | null;
@@ -81,6 +83,63 @@ function Dial({ progress, label, done }: { progress: number; label: string; done
   );
 }
 
+/** An order whose payment was not completed: one button back to Stripe, for the same order and
+ * the same amount. The link carries nothing but the order's own token. */
+function ResumePayment({
+  token,
+  onMoved,
+  onGone,
+}: {
+  token: string;
+  /** The order was paid or closed meanwhile: read its status again. */
+  onMoved: () => void;
+  onGone: () => void;
+}) {
+  const t = useTranslations('generating');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+
+  const pay = async () => {
+    setPending(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/jobs/${encodeURIComponent(token)}/checkout`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+      const data = (await response.json().catch(() => null)) as { checkout_url?: string } | null;
+      const url = data?.checkout_url;
+      if (response.ok && url?.startsWith('https://checkout.stripe.com/')) {
+        window.location.assign(url);
+        return;
+      }
+      if (response.status === 409) onMoved();
+      else if (response.status === 404) onGone();
+      else setError(response.status === 429 ? t('tooMany') : t('unpaidFailed'));
+    } catch {
+      setError(t('unpaidFailed'));
+    }
+    setPending(false);
+  };
+
+  return (
+    <div className="waiting">
+      <div className="waiting-text">
+        <h1>{t('unpaidTitle')}</h1>
+        <p className="lead">{t('unpaidBody')}</p>
+      </div>
+      <div className="waiting-actions">
+        <button className="btn btn-primary btn-lg" type="button" disabled={pending} onClick={pay}>
+          {pending ? t('unpaidPending') : t('unpaidPay')}
+        </button>
+      </div>
+      {error ? <p className="hint is-error">{error}</p> : null}
+      <p className="caption waiting-note">{t('unpaidNote')}</p>
+    </div>
+  );
+}
+
 /** Polls until the document exists. A reading takes fifteen minutes, so the page says where it is
  * rather than spinning: people close a tab that looks stuck. */
 export function GenerationProgress({
@@ -93,7 +152,14 @@ export function GenerationProgress({
   const t = useTranslations('generating');
   const [status, setStatus] = useState<Status | null>(null);
   const [gone, setGone] = useState(false);
+  // When this page first saw the order unpaid, and whether it has waited long enough since to
+  // offer the payment page again.
+  const pendingSince = useRef<number | null>(null);
+  const [unpaid, setUnpaid] = useState(false);
+  // Bumped to read the status again at once, after «Перейти к оплате» learns the order moved on.
+  const [round, setRound] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `round` restarts the polling
   useEffect(() => {
     let active = true;
     const tick = async () => {
@@ -105,10 +171,15 @@ export function GenerationProgress({
           if (active) setGone(true);
           return;
         }
+        if (!response.ok) throw new Error(String(response.status));
         const data = (await response.json()) as Status;
         if (!active) return;
         setStatus(data);
-        if (data.step !== 'done' && data.status !== 'failed') setTimeout(tick, 5000);
+        const waiting = data.order_status === 'pending' && !data.paid;
+        if (waiting) pendingSince.current ??= Date.now();
+        else pendingSince.current = null;
+        setUnpaid(offersPayment(data, pendingSince.current, Date.now()));
+        if (!settled(data)) setTimeout(tick, 5000);
       } catch {
         if (active) setTimeout(tick, 10000);
       }
@@ -117,7 +188,7 @@ export function GenerationProgress({
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [token, round]);
 
   if (gone) {
     return (
@@ -128,12 +199,36 @@ export function GenerationProgress({
     );
   }
 
+  const closed = status ? closedOrder(status) : null;
+  if (closed) {
+    return (
+      <div className="waiting-text">
+        <h1>{t(`${closed}Title`)}</h1>
+        <p className="lead">{t(`${closed}Body`)}</p>
+      </div>
+    );
+  }
+
   if (status?.status === 'failed') {
     return (
       <div className="waiting-text">
         <h1>{t('failedTitle')}</h1>
         <p className="lead">{t('failedBody')}</p>
       </div>
+    );
+  }
+
+  if (status && unpaid) {
+    return (
+      <ResumePayment
+        token={token}
+        onMoved={() => {
+          pendingSince.current = null;
+          setUnpaid(false);
+          setRound((value) => value + 1);
+        }}
+        onGone={() => setGone(true)}
+      />
     );
   }
 
