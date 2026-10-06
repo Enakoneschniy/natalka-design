@@ -1,5 +1,6 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { type NextRequest, NextResponse } from 'next/server';
+import { cityQuery } from '@/lib/cities';
 
 export interface City {
   id: number;
@@ -12,26 +13,14 @@ export interface City {
   population: number;
 }
 
-/** Every word a prefix, so "kyi obl" still finds "Kyiv Oblast". */
-const matchExpression = (query: string): string =>
-  query
-    .split(/\s+/)
-    .map((word) => word.replace(/["*]/g, ''))
-    .filter(Boolean)
-    .map((word) => `"${word}"*`)
-    .join(' ');
-
 /** Autocomplete for the birth-place field, straight out of D1.
  *
  * This is the first thing a visitor types, and it has to feel instant: the query is a few
  * milliseconds and the round trip is the only cost left.
  */
 export async function GET(request: NextRequest) {
-  const query = request.nextUrl.searchParams.get('q')?.trim() ?? '';
-  if (query.length < 2) return NextResponse.json({ cities: [] });
-
-  const expression = matchExpression(query);
-  if (!expression) return NextResponse.json({ cities: [] });
+  const query = cityQuery(request.nextUrl.searchParams.get('q'));
+  if (!query) return NextResponse.json({ cities: [] });
 
   const { env } = getCloudflareContext();
   const { results } = await env.DB.prepare(
@@ -42,7 +31,7 @@ export async function GET(request: NextRequest) {
      ORDER BY (lower(c.name) = lower(?)) DESC, c.population DESC
      LIMIT 8`,
   )
-    .bind(expression, query)
+    .bind(query.match, query.name)
     .all<City>();
 
   return NextResponse.json(
