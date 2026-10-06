@@ -53,11 +53,15 @@ export async function POST(request: NextRequest) {
     return unavailable('order failed', error);
   }
   if (!result.ok) return relayFailure('order refused', result);
-  const { checkout_url, ...created } = result.data;
+  const { order_id, job_id, token, checkout_url } = result.data;
+  if (typeof token !== 'string' || token.length === 0) {
+    return unavailable('order failed', new Error('no order token'));
+  }
   // Payment happens on Stripe's page and nowhere else.
   if (checkout_url !== undefined && !isStripeCheckout(checkout_url)) {
     return unavailable('order failed', new Error('checkout is not on Stripe'));
   }
+  const created = { order_id, job_id, token };
   return NextResponse.json(checkout_url ? { ...created, checkout_url } : created, {
     status: 201,
     headers: { 'cache-control': 'no-store' },

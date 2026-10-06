@@ -120,7 +120,9 @@ export type Outcome<T> =
   | { ok: false; status: number; field?: string; error?: string };
 
 async function outcome<T>(response: Response): Promise<Outcome<T>> {
-  if (response.ok) return { ok: true, data: (await response.json()) as T };
+  // An answer without a body (a bare 202) reads as an empty object; the caller checks for
+  // whatever it needs from it.
+  if (response.ok) return { ok: true, data: (await response.json().catch(() => ({}))) as T };
   const data = (await response.json().catch(() => null)) as {
     field?: unknown;
     error?: unknown;

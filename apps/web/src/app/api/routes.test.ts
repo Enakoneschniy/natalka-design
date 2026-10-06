@@ -276,6 +276,13 @@ describe('shop API routes and the jobs worker', () => {
       expect(JSON.stringify(await elsewhere.json())).not.toContain('evil');
     });
 
+    it('passes on only the order, its job and its token, and nothing without a token', async () => {
+      fetchMock.mockResolvedValueOnce(reply(201, { ...created, internal: 'x' }));
+      expect(await (await order(send('/api/orders', validOrder))).json()).toEqual(created);
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+      expect((await order(send('/api/orders', validOrder))).status).toBe(503);
+    });
+
     it('does not sell where the payment provider forbids it', async () => {
       const answer = await order(send('/api/orders', validOrder, 'POST', { 'cf-ipcountry': 'JP' }));
       expect(answer.status).toBe(403);
