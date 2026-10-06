@@ -6,19 +6,19 @@
  * the only place with the database, the bucket and the keys.
  */
 
-import { encryptJson, LINK_TTL_SECONDS, sha256Hex, signToken, verifyToken } from './crypto';
+import { canonicalJson, encryptJson, LINK_TTL_SECONDS, readLink, sameSecret, sha256Hex, signLink } from './crypto';
 import {
   cachePreview,
   claimTelegramLink,
+  deliverable,
   forgetTelegramChat,
-  markOrderPaid,
   markTelegramDelivered,
-  orderStatus,
+  orderState,
+  orderStatusOf,
   telegramCodeFor,
   telegramLink,
   cachedPreview,
   documentForOrder,
-  expired,
   expiryFrom,
   getJob,
   insertChart,
@@ -27,190 +27,157 @@ import {
   now,
   orderContact,
   setOrderSession,
-  orderFacts,
   bumpStat,
-  scrubExpiredJobPayloads,
-  type Product,
-  updateJob,
 } from './db';
 import type { Env, QueueMessage } from './env';
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import {
   type Cadence,
   claimTelegramSubscription,
-  createSubscription,
+  confirmSubscription,
   deleteSubscription,
   deliverHoroscope,
-  dropExpiredBirths,
   dueSubscriptions,
+  endTrial,
   forgetTelegramSubscriptions,
   latestHoroscope,
-  manageToken,
+  requestSubscription,
   subscriptionBirth,
+  subscriptionChart,
   subscriptionFromToken,
+  subscriptionStatus,
   telegramCodeForSubscription,
   updateSubscription,
 } from './subscriptions';
 import { contentDisposition, documentFilename } from './filename';
-import { createCheckoutSession, verifyWebhook } from './stripe';
-import { advance, type JobPayload, loadBirth } from './pipeline';
-import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
+import { type CheckoutSession, createCheckoutSession, expireCheckoutSession } from './stripe';
+import { json, readJson } from './http';
+import {
+  InvalidField,
+  type OrderInput,
+  parseOrder,
+  parsePreview,
+  parseSubscription,
+  type PreviewInput,
+  type SubscriptionInput,
+} from './validate';
+import { consumeJob, DEAD_LETTER_QUEUE, deadLetter } from './consumer';
+import { errorCode } from './errors';
+import { apiFetch, loadBirth, openPayload } from './pipeline';
+import { sweep } from './retention';
 import { handlePro } from './pro/routes';
-import { markFailed, markPaid, markRefunded } from './pro/purchases';
+import { stripeWebhook } from './webhook';
 
-/** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
- * so we stop writing after four minutes and let the message come back for the rest. */
-const PASS_BUDGET_MS = 4 * 60 * 1000;
-
-const json = (body: unknown, status = 200): Response =>
-  Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
-
-interface CreateOrder {
-  email: string;
-  product: Product;
-  locale: string;
-  country?: string;
-  amount_minor: number;
-  currency: string;
-  /** Which side of the price experiment the visitor was shown. */
-  variant?: string | null;
-  /** Their answer to the cookie question, and where they came from. */
-  consent?: string | null;
-  source?: string | null;
-  /** Where Stripe sends the customer back if they abandon the payment page. */
-  cancel_url?: string;
-  /** The product's title in the customer's language, for the payment page. */
-  product_name?: string;
-  birth: BirthInput;
-  /** The partner. Only a synastry has one; anything else ignores it. */
-  birth_second?: BirthInput;
-}
-
-interface BirthInput {
-  date: string;
-  time: string | null;
-  latitude: number;
-  longitude: number;
-  zone: string;
-  place: string;
-  name: string;
-  gender: 'f' | 'm' | 'n';
-}
-
-interface PreviewRequest {
-  facts: Record<string, unknown>;
-  lang: string;
-  gender?: 'f' | 'm' | 'n';
-  product?: string;
-  first_name?: string;
-  second_name?: string;
-}
+/** A chart's facts run to a few kilobytes; a synastry carries two. */
+const PREVIEW_LIMIT = 64 * 1024;
 
 /** The free passages shown before payment.
  *
- * Cached by the chart they describe: a reload, a second tab or a visitor who comes back tomorrow
- * costs nothing, and the wait disappears entirely the second time. Nothing identifying goes into
- * the key — it is a hash of the birth moment, the place and the language. */
+ * Only the fields the text API's preview takes are read and forwarded; anything else in the body
+ * stays here. The passages are cached by those fields, names included: a reload, a second tab or
+ * a visitor who comes back tomorrow costs nothing, and the key is a hash that tells anyone reading
+ * the table nothing about who asked. */
 async function previewText(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as PreviewRequest;
-  // A synastry payload carries two charts and has no `birth` of its own.
-  const facts = body.facts ?? {};
-  const first = ((facts.first as Record<string, unknown>)?.birth ?? facts.birth ?? {}) as Record<
-    string,
-    unknown
-  >;
-  const second = ((facts.second as Record<string, unknown>)?.birth ?? {}) as Record<
-    string,
-    unknown
-  >;
-  if (!first.date) return json({ error: 'facts are required' }, 400);
-
-  const moment = (b: Record<string, unknown>) =>
-    b.date ? [b.date, b.time ?? '', b.zone, b.latitude, b.longitude].join('|') : '';
-  const key = await sha256Hex(
-    new TextEncoder().encode(
-      [
-        body.product ?? 'natal',
-        moment(first),
-        moment(second),
-        body.lang,
-        body.gender ?? 'n',
-      ].join('#'),
-    ).buffer as ArrayBuffer,
-  );
+  const read = await readJson(request, PREVIEW_LIMIT);
+  if (!read.ok) return read.response;
+  let input: PreviewInput;
+  try {
+    input = parsePreview(read.body);
+  } catch (error) {
+    if (error instanceof InvalidField) return json({ error: 'invalid', field: error.field }, 400);
+    throw error;
+  }
+  const key = await sha256Hex(new TextEncoder().encode(canonicalJson(input)).buffer as ArrayBuffer);
 
   const hit = await cachedPreview(env.DB, key);
-  if (hit) {
-    return json({ blocks: JSON.parse(hit.blocks), cached: true });
-  }
+  if (hit) return json({ blocks: JSON.parse(hit.blocks) });
 
-  const upstream = await env.API.fetch(`${env.NATALKA_API_URL}/v1/preview`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let upstream: Response;
+  try {
+    upstream = await apiFetch(env, '/v1/preview', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      // A field that was not sent stays out, and the API takes its default.
+      body: JSON.stringify(Object.fromEntries(Object.entries(input).filter(([, value]) => value !== null))),
+    });
+  } catch (error) {
+    console.error('preview failed', errorCode(error));
+    return json({ error: 'preview unavailable' }, 503);
+  }
   if (!upstream.ok) {
     console.error('preview failed', upstream.status);
     return json({ error: 'preview unavailable' }, 503);
   }
   const result = (await upstream.json()) as {
-    blocks: { title: string; text: string }[];
-    cost_micros: number;
-    model: string;
+    blocks?: { title: string; text: string }[];
+    cost_micros?: number;
+    model?: string;
   };
+  if (!Array.isArray(result.blocks)) return json({ error: 'preview unavailable' }, 503);
   await cachePreview(
     env.DB,
     {
       key,
-      lang: body.lang,
+      lang: input.lang ?? '',
       blocks: JSON.stringify(result.blocks),
-      cost_micros: result.cost_micros,
-      model: result.model,
+      cost_micros: result.cost_micros ?? 0,
+      model: result.model ?? '',
     },
     Number(env.RETENTION_DAYS ?? '30'),
   );
-  return json({ blocks: result.blocks, cached: false });
+  return json({ blocks: result.blocks });
 }
 
+/** An order is a few hundred bytes; this leaves room for long place names and nothing else. */
+const ORDER_LIMIT = 16 * 1024;
+
+/** The order's own page: where the buyer waits for the document, and where Stripe sends them back
+ * whether they paid or not. */
+const orderPage = (env: Env, locale: string, token: string): string =>
+  `${env.SITE_URL}/${locale}/generating?t=${token}`;
+
 async function createOrder(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as CreateOrder;
-  if (!body?.email || !body?.birth?.date || !body?.birth?.zone) {
-    return json({ error: 'email and birth data are required' }, 400);
+  const read = await readJson(request, ORDER_LIMIT);
+  if (!read.ok) return read.response;
+  let order: OrderInput;
+  try {
+    order = parseOrder(read.body);
+  } catch (error) {
+    if (error instanceof InvalidField) return json({ error: 'invalid', field: error.field }, 400);
+    throw error;
   }
-  if (body.product === 'synastry' && !(body.birth_second?.date && body.birth_second?.zone)) {
-    return json({ error: 'a synastry needs two people' }, 400);
-  }
+
+  // Whether an order is free is decided by the worker, never by the request alone: with Stripe
+  // configured only the test key makes one free, and without Stripe nothing is accepted unless
+  // free orders are switched on, which only a developer's machine does.
+  const test =
+    (await sameSecret(request.headers.get('x-test-order'), env.TEST_ORDER_KEY)) ||
+    (!env.STRIPE_SECRET_KEY && env.ALLOW_FREE_ORDERS === '1');
+  if (!test && !env.STRIPE_SECRET_KEY) return json({ error: 'payments unavailable' }, 503);
 
   const orderId = crypto.randomUUID();
   const jobId = crypto.randomUUID();
   const retention = Number(env.RETENTION_DAYS ?? '30');
 
-  // What decides whether this order is a test is the state of the worker, not a flag in the
-  // request: without a Stripe key nothing can be charged, and with one nothing is free unless
-  // it carries the test key. The caller cannot make itself free by asking.
-  const testKey = request.headers.get('x-test-order');
-  const test =
-    !env.STRIPE_SECRET_KEY || Boolean(env.TEST_ORDER_KEY && testKey && testKey === env.TEST_ORDER_KEY);
-
   await insertOrder(env.DB, {
     id: orderId,
-    email: body.email,
-    product: body.product,
-    locale: body.locale,
-    country: body.country ?? null,
-    amount_minor: body.amount_minor,
-    currency: body.currency,
+    email: order.email,
+    product: order.product,
+    locale: order.locale,
+    country: order.country,
+    amount_minor: order.amount_minor,
+    currency: order.currency,
     status: test ? 'test' : 'pending',
-    variant: body.variant ?? null,
-    consent: body.consent ?? null,
-    source: body.source ?? null,
+    variant: order.variant,
+    consent: order.consent,
+    source: order.source,
     created_at: now(),
   });
 
   // One encrypted row per person; the second exists only for a synastry.
-  const people = body.product === 'synastry' && body.birth_second ? [body.birth, body.birth_second] : [body.birth];
+  const people = order.birth_second ? [order.birth, order.birth_second] : [order.birth];
   for (const [index, person] of people.entries()) {
-    const { ciphertext, nonce } = await encryptJson({ ...person, lang: body.locale }, env.DATA_KEY);
+    const { ciphertext, nonce } = await encryptJson({ ...person, lang: order.locale }, env.DATA_KEY);
     await insertChart(env.DB, {
       id: crypto.randomUUID(),
       order_id: orderId,
@@ -219,23 +186,21 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
       nonce,
       unknown_time: person.time === null,
       gender: person.gender,
-      display_name: person.name,
-      place_label: person.place,
       expires_at: expiryFrom(retention),
     });
   }
 
-  await insertJob(env.DB, { id: jobId, order_id: orderId, kind: body.product });
+  await insertJob(env.DB, { id: jobId, order_id: orderId, kind: order.product });
   // Counted here rather than in the browser: an order is a thing that happened, not a click.
   await bumpStat(env.DB, {
     event: 'order',
-    variant: body.variant,
-    source: body.source,
-    country: body.country,
-    currency: body.currency,
+    variant: order.variant,
+    source: order.source,
+    country: order.country,
+    currency: order.currency,
   });
   // The token is the only thing the browser needs afterwards: it names the order and expires.
-  const token = await signToken({ order: orderId, job: jobId }, env.LINK_KEY, LINK_TTL_SECONDS);
+  const token = await signLink('order', { order: orderId, job: jobId }, env.LINK_KEY, LINK_TTL_SECONDS);
 
   // A test order skips the payment and goes straight to the queue.
   if (test) {
@@ -243,140 +208,109 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     return json({ order_id: orderId, job_id: jobId, token }, 201);
   }
 
-  const session = await createCheckoutSession(env, {
-    orderId,
-    jobId,
-    email: body.email,
-    locale: body.locale,
-    currency: body.currency,
-    amountMinor: body.amount_minor,
-    productName: body.product_name ?? body.product,
-    successUrl: `${env.SITE_URL}/${body.locale}/generating?t=${token}`,
-    cancelUrl: body.cancel_url ?? `${env.SITE_URL}/${body.locale}`,
-  });
+  let session: CheckoutSession;
+  try {
+    session = await createCheckoutSession(env, {
+      orderId,
+      jobId,
+      email: order.email,
+      locale: order.locale,
+      currency: order.currency,
+      amountMinor: order.amount_minor,
+      product: order.product,
+      returnUrl: orderPage(env, order.locale, token),
+      idempotencyKey: `checkout-${orderId}`,
+    });
+  } catch (error) {
+    // The order stays pending: the buyer can open the payment page again from the order's page.
+    console.error('checkout failed', orderId, errorCode(error));
+    return json({ error: 'checkout' }, 502);
+  }
   await setOrderSession(env.DB, orderId, session.id);
   // The job waits in the table, not in the queue, until the webhook says the money is in.
   return json({ order_id: orderId, job_id: jobId, token, checkout_url: session.url }, 201);
 }
 
-/** Stripe calls this when a payment settles. The job is queued here and nowhere else once
- * payments are live; a session that never completes leaves a pending order and a job that never
- * runs, which the retention sweep clears with everything else. */
-async function stripeWebhook(request: Request, env: Env): Promise<Response> {
-  const event = await verifyWebhook(env, request);
-  if (!event) return new Response('bad signature', { status: 400 });
+/** A new payment page for an order that was never paid. The previous page is closed first, so one
+ * order cannot be paid twice from two pages; if it turns out to have been paid a moment ago, the
+ * answer says so and nothing new is opened. */
+async function resumeCheckout(env: Env, token: string): Promise<Response> {
+  const claims = await readLink('order', token, env.LINK_KEY);
+  if (!claims) return json({ error: 'not found' }, 404);
+  const order = await orderState(env.DB, claims.order);
+  const job = await getJob(env.DB, claims.job);
+  if (!order || order.pro_account_id || job?.order_id !== order.id) return json({ error: 'not found' }, 404);
+  const status = orderStatusOf(order);
+  if (status === 'paid' || status === 'test') return json({ error: 'paid' }, 409);
+  if (status !== 'pending') return json({ error: 'closed' }, 409);
+  if (!env.STRIPE_SECRET_KEY) return json({ error: 'payments unavailable' }, 503);
 
-  // A seller's credit pack never reaches the B2C order code below.
-  const packMeta = event.data.object.metadata;
-  if (packMeta?.kind === 'pro_pack') {
-    const session = event.data.object;
-    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
-      if (session.payment_status !== 'paid') return json({ received: true });
-      if (!session.payment_intent) console.error('pro pack paid without a payment_intent; a later refund will not be matched to it', packMeta.purchase_id);
-      const pack = await markPaid(env.DB, {
-        purchaseId: packMeta.purchase_id ?? '',
-        accountId: packMeta.account_id ?? '',
-        paymentIntent: session.payment_intent ?? null,
-        amountSubtotal: session.amount_subtotal ?? -1,
-        currency: session.currency ?? '',
-      });
-      if (pack === 'mismatch') {
-        // The seller paid an amount we did not ask for and got no credits: the owner must refund.
-        console.error('pro pack amount mismatch', {
-          purchase_id: packMeta.purchase_id,
-          account_id: packMeta.account_id,
-          amount_subtotal: session.amount_subtotal,
-          currency: session.currency,
-        });
-      }
-      return json({ received: true, pack });
-    }
-    if (event.type === 'checkout.session.async_payment_failed') {
-      await markFailed(env.DB, packMeta.purchase_id ?? '', packMeta.account_id ?? '');
-      return json({ received: true });
-    }
-    if (event.type === 'checkout.session.expired') {
-      // An abandoned checkout; markFailed leaves a purchase that is already paid alone.
-      await markFailed(env.DB, packMeta.purchase_id ?? '', packMeta.account_id ?? '');
-      return json({ received: true, pack: 'expired' });
-    }
+  const previous = order.stripe_session_id;
+  if (previous && (await expireCheckoutSession(env, previous)) === 'complete') {
+    return json({ error: 'paid' }, 409);
   }
-  if (event.type === 'charge.refunded') {
-    const charge = event.data.object;
-    if (charge.refunded === true && charge.payment_intent) {
-      const refund = await markRefunded(env.DB, charge.payment_intent);
-      return json({ received: true, refund });
-    }
-    if (charge.refunded === false) {
-      console.warn('partial refund ignored', charge.id, charge.amount_refunded);
-      return json({ received: true, ignored: 'partial refund' });
-    }
+  let session: CheckoutSession;
+  try {
+    session = await createCheckoutSession(env, {
+      orderId: order.id,
+      jobId: claims.job,
+      email: order.email,
+      locale: order.locale,
+      currency: order.currency,
+      amountMinor: order.amount_minor,
+      product: order.product,
+      returnUrl: orderPage(env, order.locale, token),
+      // Two taps while one page is current open one new page between them, not two.
+      idempotencyKey: `resume-${order.id}-${previous ?? 'none'}`,
+    });
+  } catch (error) {
+    console.error('checkout failed', order.id, errorCode(error));
+    return json({ error: 'checkout' }, 502);
   }
-
-  if (
-    event.type === 'checkout.session.completed' ||
-    event.type === 'checkout.session.async_payment_succeeded'
-  ) {
-    const session = event.data.object;
-    if (session.payment_status && session.payment_status !== 'paid') return json({ received: true });
-    const orderId = session.metadata?.order_id ?? session.client_reference_id;
-    const jobId = session.metadata?.job_id;
-    if (!orderId || !jobId) return json({ received: true, ignored: 'no order' });
-    const flipped = await markOrderPaid(env.DB, orderId, session.payment_intent ?? null);
-    if (flipped) {
-      await env.JOBS.send({ jobId });
-      const facts = await orderFacts(env.DB, orderId);
-      if (facts) {
-        await bumpStat(env.DB, {
-          event: 'paid',
-          variant: facts.variant,
-          source: facts.source,
-          country: facts.country,
-          currency: facts.currency,
-          amountMinor: facts.amount_minor,
-        });
-      }
-    }
-    return json({ received: true, queued: flipped });
-  }
-  if (event.type === 'checkout.session.async_payment_failed') {
-    const jobId = event.data.object.metadata?.job_id;
-    if (jobId) await updateJob(env.DB, jobId, { status: 'failed', last_error: 'payment failed' });
-    return json({ received: true });
-  }
-  return json({ received: true, ignored: event.type });
+  await env.DB.prepare(
+    `UPDATE orders SET stripe_session_id = ?, checkout_at = ?
+     WHERE id = ? AND status = 'pending' AND hold IS NULL`,
+  )
+    .bind(session.id, now(), order.id)
+    .run();
+  return json({ checkout_url: session.url });
 }
 
 async function jobStatus(env: Env, token: string): Promise<Response> {
-  const claims = await verifyToken<{ order: string; job: string }>(token, env.LINK_KEY);
+  const claims = await readLink('order', token, env.LINK_KEY);
   if (!claims) return json({ error: 'link expired' }, 404);
 
   const job = await getJob(env.DB, claims.job);
-  if (!job) return json({ error: 'not found' }, 404);
+  if (!job || job.order_id !== claims.order) return json({ error: 'not found' }, 404);
+  const order = await orderState(env.DB, job.order_id);
+  if (!order || order.pro_account_id) return json({ error: 'not found' }, 404);
 
-  const payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
+  const payload = await openPayload(env, job);
   const total = payload.plan?.length ?? 0;
   const written = payload.sections?.length ?? 0;
-  const document = job.step === 'done' ? await documentForOrder(env.DB, job.order_id) : null;
-  const order = await orderStatus(env.DB, job.order_id);
+  const status = orderStatusOf(order);
+  const document =
+    job.step === 'done' && deliverable(status) ? await documentForOrder(env.DB, job.order_id) : null;
   // The sale, for the conversion the browser reports once the buyer is back from the payment
   // page. A run that was never charged says so, so that a free document is not counted as one.
-  const facts = order === 'paid' ? await orderFacts(env.DB, job.order_id) : null;
+  const sale = order.status === 'paid';
 
   return json({
     step: job.step,
     status: job.status,
     // 'pending' means the payment page was opened and nothing has settled yet.
-    paid: order === 'paid' || order === 'test',
-    test: order === 'test',
+    paid: order.status === 'paid' || order.status === 'test',
+    test: order.status === 'test',
+    order_status: status,
     order_id: job.order_id,
-    amount_minor: facts?.amount_minor ?? null,
-    currency: facts?.currency ?? null,
+    amount_minor: sale ? order.amount_minor : null,
+    currency: sale ? order.currency : null,
     written,
     total,
     // Calculation is quick and rendering is a few seconds; the text is the whole wait.
     progress: total ? Math.round((written / total) * 100) : 0,
-    error: job.last_error,
+    // A code, never the reason: the site shows its own words for it.
+    error: job.status === 'failed' ? 'failed' : null,
     pages: document?.pages ?? null,
     download: document ? `/d/${token}` : null,
   });
@@ -387,8 +321,16 @@ async function finishedDocument(
   env: Env,
   token: string,
 ): Promise<{ body: ReadableStream; filename: string } | Response> {
-  const claims = await verifyToken<{ order: string; job: string }>(token, env.LINK_KEY);
+  const claims = await readLink('order', token, env.LINK_KEY);
   if (!claims) return new Response('link expired', { status: 404 });
+  const order = await orderState(env.DB, claims.order);
+  const job = await getJob(env.DB, claims.job);
+  if (!order || order.pro_account_id || !job || job.order_id !== claims.order) {
+    return new Response('not found', { status: 404 });
+  }
+  // A refunded or disputed payment takes the document with it.
+  const status = orderStatusOf(order);
+  if (status === 'refunded' || status === 'disputed') return new Response('gone', { status: 410 });
 
   const document = await documentForOrder(env.DB, claims.order);
   if (!document) return new Response('not ready', { status: 404 });
@@ -396,8 +338,7 @@ async function finishedDocument(
   const object = await env.DOCS.get(document.storage_key);
   if (!object) return new Response('gone', { status: 410 });
 
-  const job = await getJob(env.DB, claims.job);
-  const product = job?.kind ?? 'natal';
+  const product = job.kind;
   const first = await loadBirth(env, claims.order);
   const second = product === 'synastry' ? await loadBirth(env, claims.order, 2) : null;
   return {
@@ -420,7 +361,7 @@ async function download(env: Env, token: string): Promise<Response> {
 
 /** The code the site puts in its "get it in Telegram" link. */
 async function telegramCode(env: Env, token: string): Promise<Response> {
-  const claims = await verifyToken<{ order: string; job: string }>(token, env.LINK_KEY);
+  const claims = await readLink('order', token, env.LINK_KEY);
   if (!claims) return json({ error: 'link expired' }, 404);
   const contact = await orderContact(env.DB, claims.order);
   if (!contact) return json({ error: 'not found' }, 404);
@@ -435,28 +376,42 @@ async function telegramCode(env: Env, token: string): Promise<Response> {
 // ---- subscriptions ------------------------------------------------------------------------
 
 const CADENCES = new Set<string>(['week', 'month']);
+/** A subscription request is a birth and an address; a management change is two words. */
+const SUBSCRIPTION_LIMIT = 16 * 1024;
+const SMALL_LIMIT = 4 * 1024;
 
+/** Always the same 202, whatever became of the request: the answer must not tell whether the
+ * address has subscriptions, and it never carries a management link — that comes only by
+ * confirming from the letter. */
 async function subscribe(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as {
-    email?: string;
-    locale?: string;
-    cadence?: string;
-    birth?: Parameters<typeof createSubscription>[1]['birth'];
-  };
-  if (!body.birth?.date || !body.birth?.zone) return json({ error: 'birth data is required' }, 400);
-  if (!body.email) return json({ error: 'email is required' }, 400);
-  if (!body.cadence || !CADENCES.has(body.cadence)) return json({ error: 'cadence' }, 400);
-  const id = await createSubscription(env, {
-    email: body.email,
-    locale: body.locale ?? 'uk',
-    cadence: body.cadence as Cadence,
-    birth: body.birth,
-  });
-  // The first horoscope is written right away — a subscription that says "see you next week"
-  // gives nothing to judge it by.
-  await env.JOBS.send({ subscriptionId: id });
-  const token = await manageToken(env, id);
-  return json({ token }, 201);
+  const read = await readJson(request, SUBSCRIPTION_LIMIT);
+  if (!read.ok) return read.response;
+  let input: SubscriptionInput;
+  try {
+    input = parseSubscription(read.body);
+  } catch (error) {
+    if (error instanceof InvalidField) return json({ error: 'invalid', field: error.field }, 400);
+    throw error;
+  }
+  await requestSubscription(env, input);
+  return json({ status: 'pending' }, 202);
+}
+
+/** Confirms from the letter's link, by POST only: mail scanners open links with GET. */
+async function subscriptionConfirm(request: Request, env: Env): Promise<Response> {
+  const read = await readJson(request, SMALL_LIMIT);
+  if (!read.ok) return read.response;
+  const token = read.body.token;
+  if (typeof token !== 'string') return json({ error: 'not found' }, 404);
+  let manage: string | null;
+  try {
+    manage = await confirmSubscription(env, token);
+  } catch (error) {
+    // The chart could not be computed; the link still works, so the subscriber can try again.
+    console.error('confirming a subscription', errorCode(error));
+    return json({ error: 'unavailable' }, 503);
+  }
+  return manage ? json({ token: manage }) : json({ error: 'not found' }, 404);
 }
 
 async function subscriptionView(env: Env, token: string): Promise<Response> {
@@ -464,12 +419,13 @@ async function subscriptionView(env: Env, token: string): Promise<Response> {
   if (!sub) return json({ error: 'link expired' }, 404);
   const latest = await latestHoroscope(env.DB, sub.id);
   const birth = await subscriptionBirth(env, sub);
+  const chart = await subscriptionChart(env, sub);
   return json({
-    status: sub.status,
+    status: subscriptionStatus(sub),
     cadence: sub.cadence,
     email: sub.email,
     locale: sub.locale,
-    name: sub.display_name,
+    name: chart?.name || birth?.name || null,
     next_send_at: sub.next_send_at,
     trial_ends_at: sub.trial_ends_at,
     // The birth data is shown only while it is still on file; after that the chart alone remains.
@@ -491,11 +447,18 @@ async function subscriptionView(env: Env, token: string): Promise<Response> {
 async function subscriptionUpdate(request: Request, env: Env, token: string): Promise<Response> {
   const sub = await subscriptionFromToken(env, token);
   if (!sub) return json({ error: 'link expired' }, 404);
-  const body = (await request.json()) as { cadence?: string; status?: string };
+  const read = await readJson(request, SMALL_LIMIT);
+  if (!read.ok) return read.response;
+  const body = read.body as { cadence?: unknown; status?: unknown };
   const patch: { cadence?: Cadence; status?: 'active' | 'paused' | 'cancelled' } = {};
-  if (body.cadence && CADENCES.has(body.cadence)) patch.cadence = body.cadence as Cadence;
+  if (typeof body.cadence === 'string' && CADENCES.has(body.cadence)) patch.cadence = body.cadence as Cadence;
   if (body.status === 'active' || body.status === 'paused' || body.status === 'cancelled') {
     patch.status = body.status;
+  }
+  // A subscription not yet confirmed, or whose free month is over, cannot be started from here.
+  const current = subscriptionStatus(sub);
+  if (patch.status === 'active' && (current === 'pending' || current === 'ended')) {
+    return json({ error: 'closed' }, 409);
   }
   await updateSubscription(env.DB, sub.id, patch);
   return json({ ok: true });
@@ -529,15 +492,12 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
         horoscope: latest ? { title: latest.title, text: latest.text } : null,
       };
     }
-    await claimTelegramLink(this.env.DB, link.code, chatId);
+    // A code already bound to another chat is not this chat's to use.
+    if (!(await claimTelegramLink(this.env.DB, link.code, chatId))) return null;
     const job = await getJob(this.env.DB, link.job_id);
     const ready = job?.step === 'done';
     const token = ready
-      ? await signToken(
-          { order: link.order_id, job: link.job_id },
-          this.env.LINK_KEY,
-          LINK_TTL_SECONDS,
-        )
+      ? await signLink('order', { order: link.order_id, job: link.job_id }, this.env.LINK_KEY, LINK_TTL_SECONDS)
       : null;
     return {
       kind: 'document' as const,
@@ -566,19 +526,54 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
   }
 }
 
+/** The site's server proves itself with SITE_KEY (x-site-key) on every call; the browser never has
+ * the key. Without the secret configured nothing is served: a missing key must not open the door. */
+async function siteGate(request: Request, env: Env): Promise<Response | null> {
+  if (!env.SITE_KEY) {
+    console.error('SITE_KEY is not configured; refusing site routes');
+    return json({ error: 'unavailable' }, 503);
+  }
+  if (!(await sameSecret(request.headers.get('x-site-key'), env.SITE_KEY))) {
+    return json({ error: 'unauthorized' }, 401);
+  }
+  return null;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    // The site asks for the code behind its Telegram link; the token is the authentication.
-    const code = url.pathname.match(/^\/v1\/jobs\/(.+)\/telegram$/);
-    if (code?.[1] && request.method === 'POST') return telegramCode(env, code[1]);
+    // Open to anyone: the health check, and Stripe, which signs what it sends.
+    if (url.pathname === '/health' && request.method === 'GET') return json({ status: 'ok' });
+    if (url.pathname === '/v1/stripe/webhook' && request.method === 'POST') {
+      return stripeWebhook(request, env);
+    }
+    // The seller cabinet has a key of its own (x-pro-key), checked there.
+    if (url.pathname.startsWith('/v1/pro/')) {
+      return (await handlePro(request, env, url, ctx)) ?? new Response('not found', { status: 404 });
+    }
+    const refused = await siteGate(request, env);
+    if (refused) return refused;
 
-    if (url.pathname === '/health') return json({ status: 'ok' });
+    // An order's routes; the token names the order.
+    const job = url.pathname.match(/^\/v1\/jobs\/([^/]+)(?:\/(telegram|checkout))?$/);
+    if (job?.[1]) {
+      const [, token, action] = job;
+      // The code behind the site's "get it in Telegram" link.
+      if (action === 'telegram' && request.method === 'POST') return telegramCode(env, token);
+      if (action === 'checkout' && request.method === 'POST') return resumeCheckout(env, token);
+      if (!action && request.method === 'GET') return jobStatus(env, token);
+    }
+    const file = url.pathname.match(/^\/d\/([^/]+)$/);
+    if (file?.[1] && request.method === 'GET') return download(env, file[1]);
+
     if (url.pathname === '/v1/subscriptions' && request.method === 'POST') {
       return subscribe(request, env);
     }
-    const subscription = url.pathname.match(/^\/v1\/subscriptions\/(.+)$/);
+    if (url.pathname === '/v1/subscriptions/confirm' && request.method === 'POST') {
+      return subscriptionConfirm(request, env);
+    }
+    const subscription = url.pathname.match(/^\/v1\/subscriptions\/([^/]+)$/);
     if (subscription?.[1]) {
       if (request.method === 'GET') return subscriptionView(env, subscription[1]);
       if (request.method === 'PATCH') return subscriptionUpdate(request, env, subscription[1]);
@@ -587,97 +582,49 @@ export default {
     if (url.pathname === '/v1/orders' && request.method === 'POST') {
       return createOrder(request, env);
     }
-    if (url.pathname === '/v1/stripe/webhook' && request.method === 'POST') {
-      return stripeWebhook(request, env);
-    }
     if (url.pathname === '/v1/preview' && request.method === 'POST') {
       return previewText(request, env);
     }
-    const status = url.pathname.match(/^\/v1\/jobs\/(.+)$/);
-    if (status?.[1]) return jobStatus(env, status[1]);
-    const file = url.pathname.match(/^\/d\/(.+)$/);
-    if (file?.[1]) return download(env, file[1]);
-
-    const pro = await handlePro(request, env, url, ctx);
-    if (pro) return pro;
 
     return new Response('not found', { status: 404 });
   },
 
   async queue(batch: MessageBatch<QueueMessage>, env: Env): Promise<void> {
     for (const message of batch.messages) {
+      if (batch.queue === DEAD_LETTER_QUEUE) {
+        await deadLetter(env, message);
+        continue;
+      }
       if ('subscriptionId' in message.body) {
         try {
           await deliverHoroscope(env, message.body.subscriptionId);
           message.ack();
         } catch (error) {
-          console.error('horoscope failed', message.body.subscriptionId, error);
+          console.error('horoscope failed', message.body.subscriptionId, errorCode(error));
           message.retry();
         }
         continue;
       }
-      const job = await getJob(env.DB, message.body.jobId);
-      if (!job || job.status === 'done') {
-        message.ack();
-        continue;
-      }
-      try {
-        await updateJob(env.DB, job.id, {
-          status: 'running',
-          attempts: job.attempts + 1,
-          last_error: null,
-        });
-        const finished = await advance(env, job, Date.now() + PASS_BUDGET_MS);
-        if (!finished) {
-          // More sections to write: a fresh message rather than a long-running invocation.
-          await env.JOBS.send({ jobId: job.id });
-        }
-        message.ack();
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        await updateJob(env.DB, job.id, { status: 'failed', last_error: reason.slice(0, 500) });
-        console.error('job failed', job.id, reason);
-        // Retry with the queue's backoff; the work already banked in payload is not repeated.
-        if (message.attempts >= MAX_DELIVERIES) {
-          try {
-            if (await settleFailedJob(env, job.id)) {
-              // A seller's reading is settled here rather than left in the dead-letter queue.
-              message.ack();
-              continue;
-            }
-          } catch (settleError) {
-            console.error('settling a failed reading', job.id, settleError);
-          }
-        }
-        message.retry();
-      }
+      await consumeJob(env, message);
     }
   },
 
-  /** Hourly: horoscopes that are due go to the queue. Nightly: retention — birth data and
-   * documents are deleted thirty days after the order, subscriptions lose their birth data
-   * after the correction window. Orders and charts stay. */
+  /** Hourly: horoscopes that are due go to the queue. Nightly: the retention sweep (retention.ts). */
   async scheduled(event: ScheduledController, env: Env): Promise<void> {
     if (event.cron === '5 * * * *') {
       const due = await dueSubscriptions(env.DB);
-      for (const { id } of due) await env.JOBS.send({ subscriptionId: id });
-      console.log(`horoscopes: ${due.length} due`);
+      let ended = 0;
+      for (const sub of due) {
+        // A free month that is over ends the subscription instead of writing one more.
+        if (sub.trial_ends_at && sub.trial_ends_at <= now()) {
+          if (await endTrial(env, sub.id)) ended++;
+        } else {
+          await env.JOBS.send({ subscriptionId: sub.id });
+        }
+      }
+      console.log(`horoscopes: ${due.length - ended} due, ${ended} free months ended`);
       return;
     }
-    await dropExpiredBirths(env.DB);
-    const scrubbed = await scrubExpiredJobPayloads(env.DB, Number(env.RETENTION_DAYS ?? '30'));
-    const stale = await expired(env.DB);
-    for (const row of stale.results ?? []) {
-      await env.DOCS.delete(row.storage_key);
-    }
-    await env.DB.prepare('DELETE FROM documents WHERE expires_at < ?').bind(now()).run();
-    await env.DB.prepare('DELETE FROM charts WHERE expires_at < ?').bind(now()).run();
-    await env.DB.prepare('DELETE FROM previews WHERE expires_at < ?').bind(now()).run();
-    // Sign-in links are worth nothing a day after they expire; the hour of history the throttle
-    // needs is long past by then.
-    await env.DB.prepare('DELETE FROM pro_login_tokens WHERE expires_at < ?')
-      .bind(new Date(Date.now() - 86_400_000).toISOString())
-      .run();
-    console.log(`retention: removed ${stale.results?.length ?? 0} documents, cleared ${scrubbed} job payloads`);
+    await sweep(env);
   },
 };

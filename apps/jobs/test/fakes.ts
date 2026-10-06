@@ -31,13 +31,25 @@ function trips(...keys: string[]): boolean {
 export async function fakeEphemeris(request: Request): Promise<Response> {
   const path = new URL(request.url).pathname;
   const body = (await request.json()) as { date?: string; first?: { date: string } };
+  if (path === '/v1/transits') return json({ events: [] });
+  if (path === '/v1/sky') return json({ positions: [] });
   const date = body.date ?? body.first?.date;
   if (date === '1900-01-01') return new Response('engine down', { status: 500 });
   if (path === '/v1/synastry') {
     return json({ first: { birth: { date } }, second: { birth: {} }, aspects: [] });
   }
-  return json({ birth: { date, unknown_time: false }, planets: [], transits: [] });
+  return json({
+    birth: { date, unknown_time: false },
+    planets: [],
+    transits: [],
+    positions: [{ body: 'Sun', longitude: 347.5 }],
+    houses: { cusps: [{ longitude: 12 }] },
+  });
 }
+
+/** What the worker under test sends as x-api-key (vitest.config.ts). The fake refuses anything
+ * else, as the API edge does, so every test that reaches it proves the key was sent. */
+const API_KEY = 'test-api-key';
 
 export async function fakeApi(request: Request): Promise<Response> {
   const path = new URL(request.url).pathname;
@@ -48,6 +60,42 @@ export async function fakeApi(request: Request): Promise<Response> {
   }
   if (path === '/__last') {
     return json(lastSeen.get(new URL(request.url).searchParams.get('key') ?? '') ?? null);
+  }
+  if (path === '/__stripe') {
+    completeSession(((await request.json()) as { complete: string }).complete);
+    return json({ ok: true });
+  }
+  if (request.headers.get('x-api-key') !== API_KEY) return json({ error: 'unauthorized' }, 401);
+  if (path === '/v1/horoscope') {
+    const body = (await request.json()) as { name: string; period: string; start: string; end: string };
+    lastSeen.set(`/v1/horoscope|${body.name}`, body);
+    return json({
+      title: `Неделя для ${body.name || 'вас'}`,
+      text: 'Первый абзац.\n\nВторой абзац.',
+      period: body.period,
+      start: body.start,
+      end: body.end,
+      events: 0,
+      problems: [],
+      cost_micros: 300,
+      model: 'fake/model',
+    });
+  }
+  if (path === '/v1/preview') {
+    // Kept with a call count under the first name, so a test can see what was forwarded and
+    // whether the cache answered instead.
+    const body = (await request.json()) as { first_name?: string };
+    const key = `/v1/preview|${body.first_name ?? ''}`;
+    const calls = ((lastSeen.get(key) as { calls?: number } | undefined)?.calls ?? 0) + 1;
+    lastSeen.set(key, { body, calls });
+    return json({
+      blocks: [{ title: 'Солнце', text: `Превью для ${body.first_name ?? 'всех'}` }],
+      problems: [],
+      tokens_in: 10,
+      tokens_out: 20,
+      cost_micros: 500,
+      model: 'fake/model',
+    });
   }
   if (path === '/v1/sections') {
     // The plan request carries no name, so it is kept by its form of address: test files run side
@@ -60,7 +108,8 @@ export async function fakeApi(request: Request): Promise<Response> {
     const body = (await request.json()) as { section_id: string; name: string };
     lastSeen.set(`/v1/section|${body.name}`, body);
     if (trips(`${body.name}|${body.section_id}`, `${body.name}|*`)) {
-      return new Response('model down', { status: 503 });
+      // Like a real refusal, the body quotes the request: none of it may reach a log or a row.
+      return new Response(`model down while writing for ${body.name}`, { status: 503 });
     }
     const plan = FAKE_PLAN.find((p) => p.id === body.section_id);
     if (!plan) return new Response(`unknown section: ${body.section_id}`, { status: 404 });
@@ -92,23 +141,62 @@ export async function fakeApi(request: Request): Promise<Response> {
   return new Response('not found', { status: 404 });
 }
 
-/** Stand-in for api.stripe.com, bound as the worker's outbound fetch. Checkout creation answers
- * with a fake session and records the form it was sent under "stripe|checkout|<purchase id>" with its headers (read it through
- * the API binding's /__last). Anything else is a 404. */
+/** Stand-in for api.stripe.com and api.resend.com, bound as the worker's outbound fetch. Checkout
+ * creation answers with a fake session and records the form it was sent under
+ * "stripe|checkout|<purchase id>" with its headers; letters are kept under "mail|<recipient>"
+ * (read either through the API binding's /__last). Anything else is a 404. */
 export async function fakeOutbound(request: Request): Promise<Response> {
   const url = new URL(request.url);
+  if (request.method === 'POST' && url.origin === 'https://api.resend.com' && url.pathname === '/emails') {
+    // Every letter is kept under "mail|<recipient>", oldest first. An address starting with
+    // "fail-mail@" is refused, with a body that quotes it back and must never be logged.
+    const letter = (await request.json()) as { to: string[] };
+    const to = letter.to[0] ?? '';
+    if (to.startsWith('fail-mail@')) return new Response(`{"message":"invalid to: ${to}"}`, { status: 422 });
+    const key = `mail|${to}`;
+    lastSeen.set(key, [...((lastSeen.get(key) as unknown[] | undefined) ?? []), letter]);
+    return json({ id: `re_${crypto.randomUUID()}` });
+  }
   if (request.method === 'POST' && url.origin === 'https://api.stripe.com' && url.pathname === '/v1/checkout/sessions') {
     const fields = Object.fromEntries(new URLSearchParams(await request.text()));
     // A seller with this address makes Checkout fail, with an error body that must never leak.
     if (fields.customer_email?.startsWith('fail-checkout@')) {
       return new Response('stripe-secret-detail: card_declined_internal', { status: 500 });
     }
-    lastSeen.set(`stripe|checkout|${fields['metadata[purchase_id]']}`, {
-      fields,
-      headers: Object.fromEntries(request.headers),
-    });
+    // Like Stripe, the same idempotency key gets the same session back.
+    const idempotency = request.headers.get('idempotency-key') ?? '';
+    const known = idempotent.get(idempotency);
+    if (known) return json(known);
+    const owner = fields['metadata[purchase_id]'] ?? fields['metadata[order_id]'];
+    lastSeen.set(`stripe|checkout|${owner}`, { fields, headers: Object.fromEntries(request.headers) });
     const id = `cs_test_${crypto.randomUUID().replaceAll('-', '')}`;
-    return json({ id, url: `https://checkout.stripe.test/${id}` });
+    const session = { id, url: `https://checkout.stripe.test/${id}` };
+    sessions.set(id, 'open');
+    if (idempotency) idempotent.set(idempotency, session);
+    return json(session);
+  }
+  const session = url.pathname.match(/^\/v1\/checkout\/sessions\/([^/]+)(\/expire)?$/);
+  if (url.origin === 'https://api.stripe.com' && session?.[1]) {
+    const id = session[1];
+    const status = sessions.get(id);
+    if (!status) return json({ error: { code: 'resource_missing' } }, 404);
+    if (session[2] && request.method === 'POST') {
+      if (status !== 'open') return json({ error: { code: 'checkout_session_not_open' } }, 400);
+      sessions.set(id, 'expired');
+      lastSeen.set(`stripe|expired|${id}`, true);
+      return json({ id, status: 'expired' });
+    }
+    if (!session[2] && request.method === 'GET') return json({ id, status });
   }
   return new Response('not found', { status: 404 });
+}
+
+/** Sessions the fake Stripe has opened, and what became of them. */
+const sessions = new Map<string, 'open' | 'complete' | 'expired'>();
+const idempotent = new Map<string, { id: string; url: string }>();
+
+/** Marks a fake Checkout Session paid, as if the buyer had finished on Stripe's page. Reached
+ * through the API binding: POST /__stripe { complete: <session id> }. */
+export function completeSession(id: string): void {
+  if (sessions.has(id)) sessions.set(id, 'complete');
 }

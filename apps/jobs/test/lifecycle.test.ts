@@ -3,7 +3,7 @@ import { getJob } from '../src/db';
 import { balance } from '../src/pro/credits';
 import { settleFailedJob } from '../src/pro/lifecycle';
 import { readingRow, readingView } from '../src/pro/readings';
-import { armFailure, runJob, testEnv } from './env';
+import { armFailure, payloadOf, runJob, testEnv } from './env';
 import { readingFor, seedOrder } from './seed';
 
 describe('settleFailedJob', () => {
@@ -30,7 +30,7 @@ describe('settleFailedJob', () => {
     expect(await balance(testEnv.DB, account.id)).toBe(3);
     const job = await getJob(testEnv.DB, jobId);
     expect(job?.status).toBe('failed');
-    expect(JSON.parse(job?.payload ?? '{}').sections ?? []).toEqual([]);
+    expect((await payloadOf(jobId)).sections ?? []).toEqual([]);
   });
 
   it('does not write a free reading after the sections failed and were refunded', async () => {
@@ -45,7 +45,7 @@ describe('settleFailedJob', () => {
     expect(await balance(testEnv.DB, account.id)).toBe(3);
     const job = await getJob(testEnv.DB, jobId);
     expect(job?.status).toBe('failed');
-    expect(JSON.parse(job?.payload ?? '{}').sections ?? []).toEqual([]);
+    expect((await payloadOf(jobId)).sections ?? []).toEqual([]);
   });
 
   it('books the refund, the reading and the job in one batch', async () => {

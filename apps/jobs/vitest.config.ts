@@ -15,7 +15,8 @@ export default defineConfig({
       miniflare: {
         compatibilityDate: '2026-09-01',
         compatibilityFlags: ['nodejs_compat'],
-        d1Databases: ['DB'],
+        // REPLAY_DB starts empty: test/migrations.test.ts replays the migrations on it.
+        d1Databases: ['DB', 'REPLAY_DB'],
         r2Buckets: ['DOCS'],
         queueProducers: { JOBS: 'natalka-jobs' },
         // The text API and the ephemeris service, faked in Node (see test/fakes.ts).
@@ -25,6 +26,7 @@ export default defineConfig({
         bindings: {
           TEST_MIGRATIONS: migrations,
           NATALKA_API_URL: 'https://api.test',
+          NATALKA_API_KEY: 'test-api-key',
           RETENTION_DAYS: '30',
           SITE_URL: 'https://chronika.test',
           PRO_SITE_URL: 'https://pro.chronika.test',
@@ -32,8 +34,13 @@ export default defineConfig({
           LINK_KEY: 'test-link-key',
           SESSION_KEY: 'test-session-key',
           PRO_API_KEY: 'test-pro-key',
+          SITE_KEY: 'test-site-key',
           STRIPE_SECRET_KEY: 'sk_test_fake',
           STRIPE_WEBHOOK_SECRET: 'whsec_test_fake',
+          // Letters go to the fake Resend in test/fakes.ts; the links are logged as on a laptop.
+          RESEND_API_KEY: 're_test_fake',
+          MAIL_LOG_LINKS: '1',
+          ALERT_EMAIL: 'owner@alerts.test',
         },
       },
     }),

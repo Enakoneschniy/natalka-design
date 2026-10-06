@@ -1,4 +1,5 @@
 import type { Env } from './env';
+import { errorCode, UpstreamError } from './errors';
 
 /** The one email the pipeline sends: the document is ready, here is the link.
  *
@@ -55,7 +56,12 @@ const COPY: Record<string, Copy> = {
 };
 
 const escape = (text: string) =>
-  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 function html(copy: Copy, link: string): string {
   // One column, one button, system fonts: it has to read the same in Gmail, Outlook and a
@@ -85,8 +91,11 @@ interface Letter {
   headers?: Record<string, string>;
 }
 
-/** The one door every letter leaves through. Callers check the provider key first. */
+/** The one door every letter leaves through. Callers check the provider key first. An address
+ * the retention sweep has erased is an empty string: there is nobody to write to, so nothing is
+ * sent. */
 async function deliver(env: Env, letter: Letter): Promise<Sent> {
+  if (!letter.to.includes('@')) return { status: 'skipped', providerId: null };
   const response = await fetch(ENDPOINT, {
     method: 'POST',
     headers: {
@@ -103,9 +112,10 @@ async function deliver(env: Env, letter: Letter): Promise<Sent> {
     }),
   });
   if (!response.ok) {
-    // The body names the reason (bad key, unverified domain); the log gets it, the client does not.
-    console.error('resend', response.status, (await response.text()).slice(0, 300));
-    throw new Error(`mail provider answered ${response.status}`);
+    // The status tells a bad key from an outage; the body can quote the recipient back, so it is
+    // neither logged nor passed on.
+    console.error('resend', response.status);
+    throw new UpstreamError('resend', response.status);
   }
   const data = (await response.json()) as { id?: string };
   return { status: 'sent', providerId: data.id ?? null };
@@ -143,12 +153,16 @@ const LOGIN_COPY: Copy = {
   unsubscribe: '',
 };
 
+/** Local development only: with MAIL_LOG_LINKS=1 the link a letter carries is also written to the
+ * log, so a sign-in can be finished without a mailbox. A link is a key to an account or a
+ * subscription, so this is never on anywhere else. */
+function logLink(env: Env, what: string, link: string): void {
+  if (env.MAIL_LOG_LINKS === '1') console.log(`${what} (MAIL_LOG_LINKS):`, link);
+}
+
 export async function sendLoginLink(env: Env, to: string, link: string): Promise<Sent> {
-  if (!env.RESEND_API_KEY) {
-    // Local development only: production always has the key, and without it nobody could sign in.
-    console.log('pro sign-in link (no mail provider configured):', link);
-    return { status: 'skipped', providerId: null };
-  }
+  logLink(env, 'pro sign-in link', link);
+  if (!env.RESEND_API_KEY) return { status: 'skipped', providerId: null };
   return deliver(env, {
     to,
     subject: LOGIN_COPY.subject,
@@ -170,11 +184,8 @@ const SIGNUP_COPY: Copy = {
 };
 
 export async function sendSignupLink(env: Env, to: string, link: string): Promise<Sent> {
-  if (!env.RESEND_API_KEY) {
-    // Local development only: production always has the key, and without it nobody could register.
-    console.log('pro sign-up link (no mail provider configured):', link);
-    return { status: 'skipped', providerId: null };
-  }
+  logLink(env, 'pro sign-up link', link);
+  if (!env.RESEND_API_KEY) return { status: 'skipped', providerId: null };
   return deliver(env, {
     to,
     subject: SIGNUP_COPY.subject,
@@ -227,4 +238,106 @@ export async function sendHoroscope(
     text: `${letter.title}\n${copy.window} ${dmy(letter.start)} — ${dmy(letter.end)}\n\n${letter.text}\n\n${copy.manage}: ${letter.manage}\n\n${copy.unsubscribe}`,
     headers: { 'List-Unsubscribe': `<${letter.manage}>` },
   });
+}
+
+/** A letter of one button, in the subscriber's language. */
+const simple = (subject: string, ready: string, open: string, keeps: string): Copy => ({
+  subject,
+  ready,
+  open,
+  keeps,
+  sign: 'Chronika · chronika.me',
+  window: '',
+  manage: '',
+  unsubscribe: '',
+});
+
+/** The letter that confirms a horoscope subscription. Nothing is written or sent before it. */
+const CONFIRM_COPY: Record<string, Copy> = {
+  ru: simple(
+    'Подтвердите подписку на гороскопы',
+    'Нажмите кнопку, чтобы подтвердить подписку на гороскопы Chronika. Пока подписка не подтверждена, мы ничего не присылаем.',
+    'Подтвердить подписку',
+    'Ссылка действует 7 дней. Если вы не подписывались, просто не отвечайте на это письмо: данные удалятся сами.',
+  ),
+  uk: simple(
+    'Підтвердіть підписку на гороскопи',
+    'Натисніть кнопку, щоб підтвердити підписку на гороскопи Chronika. Поки підписку не підтверджено, ми нічого не надсилаємо.',
+    'Підтвердити підписку',
+    'Посилання діє 7 днів. Якщо ви не підписувалися, просто не відповідайте на цей лист: дані видаляться самі.',
+  ),
+  en: simple(
+    'Confirm your horoscope subscription',
+    'Press the button to confirm your Chronika horoscope subscription. Nothing is sent until it is confirmed.',
+    'Confirm subscription',
+    'The link works for 7 days. If you did not subscribe, simply ignore this letter: the data is deleted on its own.',
+  ),
+};
+
+export async function sendSubscriptionConfirm(env: Env, to: string, locale: string, link: string): Promise<Sent> {
+  logLink(env, 'subscription confirmation link', link);
+  if (!env.RESEND_API_KEY) return { status: 'skipped', providerId: null };
+  const copy = CONFIRM_COPY[locale] ?? CONFIRM_COPY.en;
+  if (!copy) return { status: 'skipped', providerId: null };
+  return deliver(env, {
+    to,
+    subject: copy.subject,
+    html: html(copy, link),
+    text: `${copy.ready}\n\n${link}\n\n${copy.keeps}\n\n${copy.sign}`,
+  });
+}
+
+/** The one letter when the free month is over. No payment link: there is no paid plan yet. */
+const TRIAL_ENDED_COPY: Record<string, Copy> = {
+  ru: simple(
+    'Бесплатный месяц закончился',
+    'Бесплатный месяц гороскопов Chronika закончился, и новых гороскопов больше не будет. Платить ничего не нужно: подписка просто остановилась.',
+    'Открыть подписку',
+    'Через 30 дней данные подписки удалятся. Удалить их раньше можно на странице подписки.',
+  ),
+  uk: simple(
+    'Безкоштовний місяць закінчився',
+    'Безкоштовний місяць гороскопів Chronika закінчився, і нових гороскопів більше не буде. Платити нічого не потрібно: підписка просто зупинилася.',
+    'Відкрити підписку',
+    'Через 30 днів дані підписки видаляться. Видалити їх раніше можна на сторінці підписки.',
+  ),
+  en: simple(
+    'Your free month has ended',
+    'Your free month of Chronika horoscopes has ended, and no more horoscopes will come. There is nothing to pay: the subscription simply stopped.',
+    'Open subscription',
+    'The subscription data is deleted in 30 days. You can delete it sooner on the subscription page.',
+  ),
+};
+
+export async function sendTrialEnded(env: Env, to: string, locale: string, manage: string): Promise<Sent> {
+  if (!env.RESEND_API_KEY) return { status: 'skipped', providerId: null };
+  const copy = TRIAL_ENDED_COPY[locale] ?? TRIAL_ENDED_COPY.en;
+  if (!copy) return { status: 'skipped', providerId: null };
+  return deliver(env, {
+    to,
+    subject: copy.subject,
+    html: html(copy, manage),
+    text: `${copy.ready}\n\n${copy.open}: ${manage}\n\n${copy.keeps}\n\n${copy.sign}`,
+    headers: { 'List-Unsubscribe': `<${manage}>` },
+  });
+}
+
+const DEFAULT_ALERT_EMAIL = 'help@chronika.me';
+
+/** A note to the owner that something needs a person: a payment to refund, a dispute to answer, a
+ * document that could not be made. Ids and status codes only, never a customer's data. Best
+ * effort: an alert that cannot be sent is logged, and never stops the work that raised it. */
+export async function sendAlert(env: Env, subject: string, text: string): Promise<void> {
+  console.warn('alert', subject, text);
+  if (!env.RESEND_API_KEY) return;
+  try {
+    await deliver(env, {
+      to: env.ALERT_EMAIL || DEFAULT_ALERT_EMAIL,
+      subject: `[Chronika] ${subject}`,
+      html: `<!doctype html><html><body><pre style="white-space:pre-wrap;">${escape(text)}</pre></body></html>`,
+      text,
+    });
+  } catch (error) {
+    console.error('alert not sent', errorCode(error));
+  }
 }

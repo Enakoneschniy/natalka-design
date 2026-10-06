@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
-import { getJob } from '../src/db';
-import { advance } from '../src/pipeline';
-import type { Env } from '../src/env';
+import { getJob, updateJob } from '../src/db';
+import { advance, type JobPayload, openPayload, sealPayload } from '../src/pipeline';
+import type { Env, QueueMessage } from '../src/env';
 import {
   accountExists,
   consumeLoginToken,
@@ -40,6 +40,18 @@ export async function armFailure(key: string, times = 1000): Promise<void> {
   });
 }
 
+/** A job's payload, decrypted the way the worker reads it. */
+export async function payloadOf(jobId: string): Promise<JobPayload> {
+  const job = await getJob(testEnv.DB, jobId);
+  if (!job) throw new Error(`no job ${jobId}`);
+  return openPayload(testEnv, job);
+}
+
+/** Stores a payload the way the worker writes it. */
+export async function writePayload(jobId: string, payload: JobPayload): Promise<void> {
+  await updateJob(testEnv.DB, jobId, await sealPayload(testEnv, payload));
+}
+
 /** One pipeline pass over a job, with a generous budget. */
 export async function runJob(jobId: string): Promise<boolean> {
   const job = await getJob(testEnv.DB, jobId);
@@ -51,4 +63,42 @@ export async function runJob(jobId: string): Promise<boolean> {
 export async function lastRequest(key: string): Promise<Record<string, unknown> | null> {
   const response = await testEnv.API.fetch(`https://api.test/__last?key=${encodeURIComponent(key)}`);
   return (await response.json()) as Record<string, unknown> | null;
+}
+
+export interface Letter {
+  to: string[];
+  subject: string;
+  html: string;
+  text: string;
+  headers?: Record<string, string>;
+}
+
+/** Marks a Checkout Session of the fake Stripe as paid on Stripe's side. */
+export async function completeCheckout(sessionId: string): Promise<void> {
+  await testEnv.API.fetch('https://api.test/__stripe', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ complete: sessionId }),
+  });
+}
+
+/** Every letter the fake Resend took for `to`, oldest first. */
+export async function letters(to: string): Promise<Letter[]> {
+  return ((await lastRequest(`mail|${to}`)) as Letter[] | null) ?? [];
+}
+
+/** The worker with its queue replaced by a list, to see what a call queues. */
+export function recordingQueue(base: Env = testEnv): { env: Env; sent: QueueMessage[] } {
+  const sent: QueueMessage[] = [];
+  const env = Object.create(base);
+  Object.defineProperty(env, 'JOBS', { value: { send: async (message: QueueMessage) => void sent.push(message) } });
+  return { env, sent };
+}
+
+/** The worker's bindings with one of them replaced. defineProperty, not assignment: assigning
+ * through the prototype would reach the shared bindings and change them for every later test. */
+export function envWith(name: string, value: unknown): Env {
+  const env = Object.create(testEnv);
+  Object.defineProperty(env, name, { value });
+  return env;
 }

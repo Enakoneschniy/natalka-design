@@ -4,7 +4,15 @@
 import { documentForOrder, getJob, now, updateJob } from '../db';
 import type { Env } from '../env';
 import { documentFilename } from '../filename';
-import { dropDocuments, type JobPayload, loadBirth, loadPeople, type WrittenSection, writeSection } from '../pipeline';
+import {
+  dropDocuments,
+  loadBirth,
+  loadPeople,
+  openPayload,
+  sealPayload,
+  type WrittenSection,
+  writeSection,
+} from '../pipeline';
 import { refundStatement } from './credits';
 import { readingRow, readingStatus, REGENERATIONS_PER_READING } from './readings';
 
@@ -29,7 +37,7 @@ export async function settleFailedJob(env: Env, jobId: string): Promise<boolean>
     await updateJob(env.DB, jobId, { step: 'done', status: 'done' });
     return true;
   }
-  const payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
+  const payload = await openPayload(env, job);
   if ((payload.sections ?? []).length === 0) {
     // One batch: a refund without the mark would be repeatable, a mark without the refund a loss.
     const ts = now();
@@ -68,7 +76,7 @@ export async function regenerateSection(
   const row = await readingRow(env.DB, orderId, accountId);
   if (!row) return { status: 'not_found' };
   if (row.refunded_at || row.step !== 'done') return { status: 'not_ready' };
-  const payload: JobPayload = row.payload ? (JSON.parse(row.payload) as JobPayload) : {};
+  const payload = await openPayload(env, row);
   const plan = payload.plan ?? [];
   if (!plan.some((p) => p.id === sectionId)) return { status: 'not_found' };
   const sections = payload.sections ?? [];
@@ -102,13 +110,15 @@ export async function regenerateSection(
     const next = [...sections.filter((s) => s.id !== sectionId), written].sort(
       (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
     );
+    const sealed = await sealPayload(env, { ...payload, sections: next });
     const result = await env.DB.prepare(
-      `UPDATE jobs SET payload = ?, tokens_in = tokens_in + ?, tokens_out = tokens_out + ?,
-                       cost_micros = cost_micros + ?, model = ?, updated_at = ?
+      `UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ?, tokens_in = tokens_in + ?,
+                       tokens_out = tokens_out + ?, cost_micros = cost_micros + ?, model = ?, updated_at = ?
        WHERE id = ? AND updated_at = ?`,
     )
       .bind(
-        JSON.stringify({ ...payload, sections: next }),
+        sealed.payload_ct,
+        sealed.payload_nonce,
         written.tokens_in,
         written.tokens_out,
         written.cost_micros,
@@ -151,7 +161,7 @@ export async function assemblePdf(env: Env, accountId: string, orderId: string):
   if (!row) return 'not_found';
   if (row.step === 'pdf') return 'building';
   if (readingStatus(row) !== 'ready') return 'not_ready';
-  const payload: JobPayload = row.payload ? (JSON.parse(row.payload) as JobPayload) : {};
+  const payload = await openPayload(env, row);
   const written = new Set((payload.sections ?? []).map((s) => s.id));
   if ((payload.plan ?? []).some((p) => !written.has(p.id))) return 'incomplete';
 

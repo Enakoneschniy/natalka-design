@@ -5,10 +5,10 @@
  * row exists; if the rows cannot be written, the credits go straight back.
  */
 
-import { encryptJson } from '../crypto';
+import { type Blobish, encryptJson } from '../crypto';
 import { documentForOrder, expiryFrom, type JobStatus, type JobStep, now, type Product } from '../db';
 import type { Env } from '../env';
-import { dropDocuments, type JobPayload } from '../pipeline';
+import { dropDocuments, openPayload } from '../pipeline';
 import { type ClientBirth, getClient } from './clients';
 import { balance, CREDIT_COST, refund, refundStatement, spend } from './credits';
 
@@ -73,10 +73,11 @@ export async function createReading(
           gender: person.gender,
         };
         const { ciphertext, nonce } = await encryptJson({ ...birth, lang: PRO_LANG }, env.DATA_KEY);
+        // The name and the place live in the ciphertext only.
         return env.DB.prepare(
           `INSERT INTO charts (id, order_id, person_no, birth_ciphertext, birth_nonce, key_version,
-                               unknown_time, gender, display_name, place_label, expires_at, created_at)
-           VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
+                               unknown_time, gender, expires_at, created_at)
+           VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
         ).bind(
           crypto.randomUUID(),
           orderId,
@@ -85,8 +86,6 @@ export async function createReading(
           nonce,
           birth.time === null ? 1 : 0,
           birth.gender,
-          birth.name,
-          birth.place,
           KEEP_FOREVER,
           ts,
         );
@@ -159,13 +158,16 @@ export interface ReadingRow {
   product: Product;
   step: JobStep;
   status: JobStatus;
+  /** The job's payload as stored; read it with openPayload. */
   payload: string | null;
+  payload_ct: Blobish | null;
+  payload_nonce: Blobish | null;
   updated_at: string;
 }
 
 const READING_COLUMNS = `r.order_id, r.account_id, r.job_id, r.client_id, r.partner_client_id,
        r.regenerations, r.editable_until, r.refunded_at, r.address, r.created_at,
-       o.product, j.step, j.status, j.payload, j.updated_at`;
+       o.product, j.step, j.status, j.payload, j.payload_ct, j.payload_nonce, j.updated_at`;
 const READING_FROM = 'FROM pro_readings r JOIN orders o ON o.id = r.order_id JOIN jobs j ON j.id = r.job_id';
 const READING_SELECT = `SELECT ${READING_COLUMNS}\n  ${READING_FROM}`;
 /** The list also says whether a PDF exists, in the same query rather than one per reading. */
@@ -213,7 +215,7 @@ export interface ReadingView {
 }
 
 export async function readingView(env: Env, row: ReadingRow): Promise<ReadingView> {
-  const payload: JobPayload = row.payload ? (JSON.parse(row.payload) as JobPayload) : {};
+  const payload = await openPayload(env, row);
   const plan = payload.plan ?? [];
   const byId = new Map((payload.sections ?? []).map((s) => [s.id, s]));
   const status = readingStatus(row);
@@ -254,9 +256,9 @@ export interface ReadingSummary {
 }
 
 /** Planned sections that a ready reading lacks, from the payload the row already carries. */
-function missingCount(row: ReadingRow): number {
-  if (readingStatus(row) !== 'ready' || !row.payload) return 0;
-  const payload = JSON.parse(row.payload) as JobPayload;
+async function missingCount(env: Env, row: ReadingRow): Promise<number> {
+  if (readingStatus(row) !== 'ready') return 0;
+  const payload = await openPayload(env, row);
   const written = new Set((payload.sections ?? []).map((s) => s.id));
   return (payload.plan ?? []).filter((p) => !written.has(p.id)).length;
 }
@@ -271,16 +273,18 @@ export async function listReadings(env: Env, accountId: string, clientId?: strin
   )
     .bind(...binds)
     .all<ReadingRow & { has_document: number }>();
-  return results.map((row) => ({
-    id: row.order_id,
-    product: row.product,
-    client_id: row.client_id,
-    partner_client_id: row.partner_client_id,
-    status: readingStatus(row),
-    missing: missingCount(row),
-    pdf_ready: row.step === 'done' && row.has_document === 1,
-    created_at: row.created_at,
-  }));
+  return Promise.all(
+    results.map(async (row) => ({
+      id: row.order_id,
+      product: row.product,
+      client_id: row.client_id,
+      partner_client_id: row.partner_client_id,
+      status: readingStatus(row),
+      missing: await missingCount(env, row),
+      pdf_ready: row.step === 'done' && row.has_document === 1,
+      created_at: row.created_at,
+    })),
+  );
 }
 
 /** Forgets a client: every reading they are in, as client or partner, goes with them — orders,

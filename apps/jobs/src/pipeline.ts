@@ -4,7 +4,7 @@
  * from where it stopped instead of paying the model twice for the same section.
  */
 
-import { type Blobish, decryptJson, LINK_TTL_SECONDS, sha256Hex, signToken } from './crypto';
+import { type Blobish, decryptJson, encryptJson, LINK_TTL_SECONDS, sha256Hex, signLink } from './crypto';
 import {
   expiryFrom,
   insertDocument,
@@ -16,6 +16,7 @@ import {
   updateJob,
 } from './db';
 import type { Env } from './env';
+import { errorCode, JobError, UpstreamError } from './errors';
 import { sendReady } from './mail';
 import { brandForDocument } from './pro/brand';
 
@@ -47,12 +48,67 @@ export interface WrittenSection extends SectionPlan {
   model: string;
 }
 
-/** What survives between steps; stored as JSON in `jobs.payload`. */
+/** What survives between steps: the calculated chart and every text written from it. */
 export interface JobPayload {
   facts?: Record<string, unknown>;
   transits?: unknown[];
   plan?: SectionPlan[];
   sections?: WrittenSection[];
+}
+
+/** The columns a job's payload lives in: AES-GCM ciphertext and nonce under DATA_KEY, like the
+ * birth data, or plain JSON in rows written before the payload was encrypted. */
+export interface PayloadColumns {
+  payload: string | null;
+  payload_ct: Blobish | null;
+  payload_nonce: Blobish | null;
+}
+
+/** A job's payload, whichever way its row holds it. Every write below empties the plain column as
+ * it stores the ciphertext, so a row holding both had its plain text written afterwards, by a
+ * worker from before the encryption: the plain text is the newer of the two. */
+export async function openPayload(env: Env, row: PayloadColumns): Promise<JobPayload> {
+  if (row.payload) return JSON.parse(row.payload) as JobPayload;
+  if (row.payload_ct && row.payload_nonce) {
+    return decryptJson<JobPayload>(row.payload_ct, row.payload_nonce, env.DATA_KEY);
+  }
+  return {};
+}
+
+/** The columns to write a payload to: encrypted, with the plain column emptied. Every writer of
+ * a payload uses this and nothing else. */
+export async function sealPayload(
+  env: Env,
+  payload: JobPayload,
+): Promise<{ payload: null; payload_ct: ArrayBuffer; payload_nonce: ArrayBuffer }> {
+  const { ciphertext, nonce } = await encryptJson(payload, env.DATA_KEY);
+  return { payload: null, payload_ct: ciphertext, payload_nonce: nonce };
+}
+
+/** Encrypts up to `limit` payloads still stored in plain text; the nightly sweep calls it until
+ * none are left. A row rewritten meanwhile is left for the next run. */
+export async function sealLegacyPayloads(env: Env, limit: number): Promise<number> {
+  const { results } = await env.DB.prepare('SELECT id, payload FROM jobs WHERE payload IS NOT NULL LIMIT ?')
+    .bind(limit)
+    .all<{ id: string; payload: string }>();
+  let sealed = 0;
+  for (const row of results) {
+    let parsed: JobPayload;
+    try {
+      parsed = JSON.parse(row.payload) as JobPayload;
+    } catch {
+      console.error('unreadable payload left as it is', row.id);
+      continue;
+    }
+    const columns = await sealPayload(env, parsed);
+    const result = await env.DB.prepare(
+      'UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ? WHERE id = ? AND payload = ?',
+    )
+      .bind(columns.payload_ct, columns.payload_nonce, row.id, row.payload)
+      .run();
+    sealed += result.meta.changes ?? 0;
+  }
+  return sealed;
 }
 
 /** The ephemeris service: charts, synastry, transits, the sky. Public and AGPL, ours by binding. */
@@ -62,14 +118,25 @@ export const ephemeris = async <T>(env: Env, path: string, body: unknown): Promi
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(`ephemeris ${path} → ${response.status}`);
+  if (!response.ok) throw new UpstreamError(`ephemeris ${path}`, response.status);
   return response.json() as Promise<T>;
 };
 
+/** Every call to the text-and-document API, which refuses anything without NATALKA_API_KEY in
+ * x-api-key. Without the secret nothing is sent at all. */
+export async function apiFetch(env: Env, path: string, init: RequestInit = {}): Promise<Response> {
+  if (!env.NATALKA_API_KEY) throw new JobError('NATALKA_API_KEY is not configured');
+  const headers = new Headers(init.headers);
+  headers.set('x-api-key', env.NATALKA_API_KEY);
+  return env.API.fetch(`${env.NATALKA_API_URL}${path}`, { ...init, headers });
+}
+
 const api = async <T>(env: Env, path: string, init?: RequestInit): Promise<T> => {
-  const response = await env.API.fetch(`${env.NATALKA_API_URL}${path}`, init);
+  const response = await apiFetch(env, path, init);
   if (!response.ok) {
-    throw new Error(`${path} → ${response.status}: ${(await response.text()).slice(0, 200)}`);
+    // The body is read only to tell a section the API no longer knows from any other refusal.
+    const unknownSection = response.status === 404 && (await response.text()).includes('unknown section');
+    throw new UpstreamError(path.split('?')[0] ?? path, response.status, unknownSection);
   }
   return (await response.json()) as T;
 };
@@ -80,7 +147,7 @@ export async function loadBirth(env: Env, orderId: string, personNo = 1): Promis
   )
     .bind(orderId, personNo)
     .first<{ birth_ciphertext: Blobish; birth_nonce: Blobish }>();
-  if (!row) throw new Error(`no chart ${personNo} for order ${orderId}`);
+  if (!row) throw new JobError(`no chart ${personNo} for order ${orderId}`);
   return decryptJson<BirthData>(row.birth_ciphertext, row.birth_nonce, env.DATA_KEY);
 }
 
@@ -114,6 +181,10 @@ export async function dropDocuments(env: Env, orderId: string, keep?: string): P
 
 /** "Оксана і Ігор" on the cover of a synastry. */
 const AND: Record<string, string> = { uk: 'і', ru: 'и', en: 'and', pl: 'i', de: 'und' };
+
+/** The text API takes a name of at most 80 characters, the two names of a synastry cover
+ * included; an order from before names were limited may carry a longer one. */
+const clampName = (name: string): string => [...name].slice(0, 80).join('').trim();
 
 /** The people a job is about: one, or two for a synastry. */
 export interface People {
@@ -200,9 +271,9 @@ export async function writeSection(
       section_id: sectionId,
       product: kind,
       lang: birth.lang,
-      name: birth.name,
+      name: clampName(birth.name),
       gender: birth.gender,
-      second_name: second?.name ?? '',
+      second_name: clampName(second?.name ?? ''),
       written_so_far: others.map((s) => `${s.title}: ${s.text.slice(0, 160)}…`),
       ...(address === 'vy' ? {} : { address }),
     }),
@@ -241,7 +312,7 @@ async function writeSections(
       // A deploy can land between the plan and the writing, and the chapter this job was told
       // to write may no longer exist. Skipping it finishes the document; failing the job would
       // throw away everything written so far.
-      if (error instanceof Error && error.message.includes('unknown section')) {
+      if (error instanceof UpstreamError && error.unknownSection) {
         console.warn('section gone since the plan was made', entry.id);
         gone.add(entry.id);
         continue;
@@ -252,7 +323,7 @@ async function writeSections(
 
     // Cost is banked after every section: an order that fails halfway still shows what it spent.
     await updateJob(env.DB, job.id, {
-      payload: JSON.stringify(current()),
+      ...(await sealPayload(env, current())),
       tokens_in: sections.reduce((n, s) => n + s.tokens_in, 0),
       tokens_out: sections.reduce((n, s) => n + s.tokens_out, 0),
       cost_micros: sections.reduce((n, s) => n + s.cost_micros, 0),
@@ -276,9 +347,9 @@ async function render(
     job.kind === 'synastry'
       ? (payload.facts as { first: Record<string, unknown>; second: Record<string, unknown> })
       : null;
-  const name = pair && second ? `${birth.name} ${AND[birth.lang] ?? '&'} ${second.name}` : birth.name;
+  const name = clampName(pair && second ? `${birth.name} ${AND[birth.lang] ?? '&'} ${second.name}` : birth.name);
   const brand = seller ? await brandForDocument(env, seller.accountId) : null;
-  if (seller && !brand) throw new Error(`no brand for seller of order ${job.order_id}`);
+  if (seller && !brand) throw new JobError(`no brand for seller of order ${job.order_id}`);
   const document = await api<Record<string, unknown>>(env, '/v1/skeleton', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -307,18 +378,18 @@ async function render(
   if (seller) {
     const meta = document.meta as { order_ref?: string | null } | undefined;
     if (!document.brand || meta?.order_ref != null) {
-      throw new Error(
+      throw new JobError(
         `/v1/skeleton returned no seller brand for order ${job.order_id}: the API image is older than the jobs worker`,
       );
     }
   }
 
-  const pdf = await env.API.fetch(`${env.NATALKA_API_URL}/v1/document`, {
+  const pdf = await apiFetch(env, '/v1/document', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(document),
   });
-  if (!pdf.ok) throw new Error(`/v1/document → ${pdf.status}`);
+  if (!pdf.ok) throw new UpstreamError('/v1/document', pdf.status);
   const pages = Number(pdf.headers.get('x-pages') ?? 0);
   const bytes = await pdf.arrayBuffer();
 
@@ -329,16 +400,26 @@ async function render(
     : `${job.order_id}/${job.kind}-${birth.lang}.pdf`;
   const id = crypto.randomUUID();
   await env.DOCS.put(key, bytes, { httpMetadata: { contentType: 'application/pdf' } });
-  await insertDocument(env.DB, {
-    id,
-    order_id: job.order_id,
-    storage_key: key,
-    sha256: await sha256Hex(bytes),
-    pages,
-    bytes: bytes.byteLength,
-    lang: birth.lang,
-    expires_at: expiryFrom(Number(env.RETENTION_DAYS ?? '30')),
-  });
+  try {
+    await insertDocument(env.DB, {
+      id,
+      order_id: job.order_id,
+      storage_key: key,
+      sha256: await sha256Hex(bytes),
+      pages,
+      bytes: bytes.byteLength,
+      lang: birth.lang,
+      expires_at: expiryFrom(Number(env.RETENTION_DAYS ?? '30')),
+    });
+  } catch (error) {
+    // A PDF no row points at would never be swept: take it out again before the retry.
+    try {
+      await env.DOCS.delete(key);
+    } catch (deleteError) {
+      console.error('removing a PDF that has no row', job.id, errorCode(deleteError));
+    }
+    throw error;
+  }
   if (seller) await dropDocuments(env, job.order_id, id);
 }
 
@@ -359,14 +440,14 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
   const address = order?.address ?? 'vy';
   if (seller && order?.refunded_at) return true;
   const people = await loadPeople(env, job);
-  let payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
+  let payload = await openPayload(env, job);
 
   if (job.step === 'calc') {
     payload = await calculate(env, job, people, address);
     await updateJob(env.DB, job.id, {
       step: 'texts',
       status: 'running',
-      payload: JSON.stringify(payload),
+      ...(await sealPayload(env, payload)),
     });
     job = { ...job, step: 'texts' };
   }
@@ -375,15 +456,15 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
     const result = await writeSections(env, job, people, payload, deadline, address);
     payload = result.payload;
     if (!result.done) {
-      await updateJob(env.DB, job.id, { payload: JSON.stringify(payload) });
+      await updateJob(env.DB, job.id, await sealPayload(env, payload));
       return false;
     }
     if (seller) {
       // A seller reads the texts first and asks for the PDF when they are happy with them.
-      await updateJob(env.DB, job.id, { step: 'done', status: 'done', payload: JSON.stringify(payload) });
+      await updateJob(env.DB, job.id, { step: 'done', status: 'done', ...(await sealPayload(env, payload)) });
       return true;
     }
-    await updateJob(env.DB, job.id, { step: 'pdf', payload: JSON.stringify(payload) });
+    await updateJob(env.DB, job.id, { step: 'pdf', ...(await sealPayload(env, payload)) });
     job = { ...job, step: 'pdf' };
   }
 
@@ -411,8 +492,8 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
  * retry of one POST, not of fifteen minutes of writing. */
 async function notify(env: Env, job: JobRow): Promise<void> {
   const contact = await orderContact(env.DB, job.order_id);
-  if (!contact) throw new Error(`no order for job ${job.id}`);
-  const token = await signToken({ order: job.order_id, job: job.id }, env.LINK_KEY, LINK_TTL_SECONDS);
+  if (!contact) throw new JobError(`no order for job ${job.id}`);
+  const token = await signLink('order', { order: job.order_id, job: job.id }, env.LINK_KEY, LINK_TTL_SECONDS);
   const link = `${env.SITE_URL}/${contact.locale}/generating?t=${token}`;
   const sent = await sendReady(env, contact.email, contact.locale, link);
   await insertEmailEvent(env.DB, {
@@ -435,7 +516,7 @@ async function notify(env: Env, job: JobRow): Promise<void> {
         token,
       });
     } catch (error) {
-      console.error('telegram delivery', error instanceof Error ? error.message : String(error));
+      console.error('telegram delivery', job.id, errorCode(error));
     }
   }
 }
