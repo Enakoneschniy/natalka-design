@@ -4,6 +4,18 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { confirmOutcome, postJson, TRY_LATER, UNAVAILABLE } from './post';
 
+/** A link that no longer signs anyone in, and the way to a new one. */
+export function LinkExpired() {
+  return (
+    <div className="card notice bad" role="alert">
+      <strong>Ссылка устарела или уже использована</strong>
+      <span className="muted">
+        <Link href="/login">Запросите новую ссылку для входа</Link>
+      </span>
+    </div>
+  );
+}
+
 /** The one button that spends the emailed token. Opening the link alone spends nothing. */
 export function ConfirmLogin({ token }: { token: string }) {
   const [state, setState] = useState<'idle' | 'sending' | 'expired' | 'unavailable' | 'failed'>(
@@ -18,16 +30,7 @@ export function ConfirmLogin({ token }: { token: string }) {
     setState(outcome);
   }
 
-  if (state === 'expired') {
-    return (
-      <div className="card notice bad" role="alert">
-        <strong>Ссылка устарела или уже использована</strong>
-        <span className="muted">
-          <Link href="/login">Запросите новую ссылку для входа</Link>
-        </span>
-      </div>
-    );
-  }
+  if (state === 'expired') return <LinkExpired />;
 
   return (
     <>

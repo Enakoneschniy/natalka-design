@@ -20,17 +20,23 @@ export const currentSeller = cache(async (): Promise<ProMe> => {
   return account;
 });
 
+/** The seller behind the visitor's session while the jobs worker still accepts it; null for no
+ * session, a dead one or any failure. Unlike `currentSeller` it never redirects: for the pages a
+ * signed-out visitor may see. */
+export async function liveSeller(): Promise<ProMe | null> {
+  const session = await readSession();
+  if (!session) return null;
+  try {
+    return await me(session);
+  } catch {
+    return null;
+  }
+}
+
 /** True when the visitor holds a session the jobs worker still accepts: the sign-in and sign-up
  * pages send such a visitor straight to the cabinet. Any failure counts as signed out. */
 export async function hasLiveSession(): Promise<boolean> {
-  const session = await readSession();
-  if (!session) return false;
-  try {
-    await me(session);
-    return true;
-  } catch {
-    return false;
-  }
+  return (await liveSeller()) !== null;
 }
 
 /** A GET to the jobs worker as the signed-in seller, for the cabinet's server pages. A session

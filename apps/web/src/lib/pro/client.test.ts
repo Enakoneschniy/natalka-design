@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProUnauthorized, proCall, requestLogin, startSession } from './client';
+import { ProUnauthorized, peekLogin, proCall, requestLogin, startSession } from './client';
 
 const headersOf = (init: RequestInit | undefined) =>
   (init?.headers ?? {}) as Record<string, string>;
@@ -70,6 +70,35 @@ describe('pro client', () => {
       await expect(startSession('t-1')).rejects.toThrow('session → 503');
       fetchMock.mockRejectedValue(new TypeError('fetch failed'));
       await expect(startSession('t-1')).rejects.toThrow('fetch failed');
+    });
+  });
+
+  describe('peekLogin', () => {
+    it('asks whose cabinet a link opens, with the key and no session', async () => {
+      fetchMock.mockResolvedValue(reply(200, { email: 'ye***@gmail.com' }));
+      await expect(peekLogin('t-1')).resolves.toBe('ye***@gmail.com');
+      const [url, init] = sent();
+      expect(url).toBe('https://jobs.test/v1/pro/login/peek');
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toEqual({ token: 't-1' });
+      expect(headersOf(init)['x-pro-key']).toBe('k-123');
+      expect(headersOf(init).authorization).toBeUndefined();
+    });
+
+    it('returns null for a dead link (404)', async () => {
+      fetchMock.mockResolvedValue(reply(404, { error: 'not found' }));
+      await expect(peekLogin('used')).resolves.toBeNull();
+    });
+
+    it('throws on anything else, a 200 without an address included', async () => {
+      fetchMock.mockResolvedValue(reply(503));
+      await expect(peekLogin('t-1')).rejects.toThrow('peek → 503');
+      fetchMock.mockResolvedValue(reply(200, { email: '' }));
+      await expect(peekLogin('t-1')).rejects.toThrow('peek → 200');
+      fetchMock.mockResolvedValue(reply(200, { email: 'x'.repeat(300) }));
+      await expect(peekLogin('t-1')).rejects.toThrow('peek → 200');
+      fetchMock.mockRejectedValue(new TypeError('fetch failed'));
+      await expect(peekLogin('t-1')).rejects.toThrow('fetch failed');
     });
   });
 

@@ -714,6 +714,27 @@ input[type="checkbox"]:disabled {
   color: var(--danger);
 }
 
+/* Worth a look before going on, not an error: the confirm page's «you are signed in elsewhere». */
+.card.notice.warn {
+  background: var(--accent-soft);
+}
+
+.card.notice.warn strong {
+  color: var(--accent);
+}
+
+/* An address in running text: brighter than the muted line around it, and free to break on a
+   narrow screen. Inside a notice it keeps the notice's own colour. */
+.addr {
+  color: var(--text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.card.notice .addr {
+  color: inherit;
+}
+
 .alt {
   text-align: center;
 }

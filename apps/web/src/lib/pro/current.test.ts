@@ -11,7 +11,7 @@ vi.mock('./client', async (original) => ({
 }));
 
 const { ProUnauthorized } = await import('./client');
-const { cabinetGet, currentSeller, hasLiveSession } = await import('./current');
+const { cabinetGet, currentSeller, hasLiveSession, liveSeller } = await import('./current');
 
 /** `redirect()` throws; the target is in the error's digest. */
 const redirectedTo = async (run: () => Promise<unknown>) => {
@@ -77,6 +77,33 @@ describe('hasLiveSession', () => {
     readSession.mockResolvedValue('good');
     me.mockResolvedValue({ name: 'Анна', balance: 0 });
     expect(await hasLiveSession()).toBe(true);
+  });
+});
+
+describe('liveSeller', () => {
+  beforeEach(() => {
+    readSession.mockReset();
+    me.mockReset();
+  });
+
+  it('is null without a cookie and does not ask the API', async () => {
+    readSession.mockResolvedValue(null);
+    expect(await liveSeller()).toBeNull();
+    expect(me).not.toHaveBeenCalled();
+  });
+
+  it('is null for a rejected session and for an outage, and never redirects', async () => {
+    readSession.mockResolvedValue('stale');
+    me.mockRejectedValue(new ProUnauthorized());
+    expect(await liveSeller()).toBeNull();
+    me.mockRejectedValue(new Error('me → 503'));
+    expect(await liveSeller()).toBeNull();
+  });
+
+  it('is the seller for a good session', async () => {
+    readSession.mockResolvedValue('good');
+    me.mockResolvedValue({ email: 'maria@example.com', name: 'Мария', balance: 2 });
+    expect(await liveSeller()).toMatchObject({ email: 'maria@example.com' });
   });
 });
 

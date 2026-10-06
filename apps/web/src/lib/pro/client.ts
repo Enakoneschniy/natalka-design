@@ -113,6 +113,25 @@ export async function startSession(
   throw new Error(`session → ${status}`);
 }
 
+/** An address longer than any the jobs worker accepts is not a masked one. */
+const MAX_EMAIL = 254;
+
+/** Whose cabinet a sign-in link opens, without spending it: the address as the jobs worker masks
+ * it (`ye***@gmail.com`), or null when the link is dead (404): used, expired or never sent.
+ * Anything else throws, so the caller can tell a dead link from a service that is down. */
+export async function peekLogin(token: string): Promise<string | null> {
+  const { status, data } = await proCall<{ email?: unknown } | null>('/v1/pro/login/peek', {
+    method: 'POST',
+    body: { token },
+  });
+  if (status === 404) return null;
+  const email = data?.email;
+  if (status === 200 && typeof email === 'string' && email && email.length <= MAX_EMAIL) {
+    return email;
+  }
+  throw new Error(`peek → ${status}`);
+}
+
 export async function me(session: string): Promise<ProMe> {
   const { status, data } = await proCall<ProMe>('/v1/pro/me', { session });
   if (status !== 200) throw new Error(`me → ${status}`);

@@ -348,6 +348,12 @@ const readJson = async (req) => {
 
 const ownReading = (id) => readings.find((r) => r.id === id);
 
+/** `ye***@gmail.com`: two characters of the local part (one if shorter), then the domain. */
+const mask = (email) => {
+  const at = email.lastIndexOf('@');
+  return `${email.slice(0, Math.min(2, at))}***@${email.slice(at + 1)}`;
+};
+
 async function route(req, res, path) {
   const m = req.method;
   const at = (re) => path.match(re);
@@ -363,6 +369,12 @@ async function route(req, res, path) {
       session: 'dev',
       account: { email: seller.email, tone: seller.tone },
     });
+  }
+  // Whose cabinet a link opens: /login/dead is a used link, /login/other one for someone else.
+  if (m === 'POST' && path === '/v1/pro/login/peek') {
+    const token = String((await readJson(req)).token ?? '');
+    if (token === 'dead') return send(res, 404, { error: 'not found' });
+    return send(res, 200, { email: mask(token === 'other' ? 'yevhenii@gmail.com' : seller.email) });
   }
   if (!/^Bearer \S+/.test(req.headers.authorization ?? '')) {
     return send(res, 401, { error: 'unauthorized' });
