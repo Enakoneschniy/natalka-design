@@ -1,17 +1,19 @@
 import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { testEnv, tokenFor } from './env';
+import { fetchSettled, testEnv, tokenFor } from './env';
 
 const call = (method: string, path: string, body?: unknown, session?: string, key: string | null = 'test-pro-key') =>
-  SELF.fetch(`https://jobs.test${path}`, {
-    method,
-    headers: {
-      'content-type': 'application/json',
-      ...(key === null ? {} : { 'x-pro-key': key }),
-      ...(session ? { authorization: `Bearer ${session}` } : {}),
-    },
-    body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
-  });
+  fetchSettled(
+    new Request(`https://jobs.test${path}`, {
+      method,
+      headers: {
+        'content-type': 'application/json',
+        ...(key === null ? {} : { 'x-pro-key': key }),
+        ...(session ? { authorization: `Bearer ${session}` } : {}),
+      },
+      body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
+    }),
+  );
 
 async function sessionFor(email: string): Promise<string> {
   const token = await tokenFor(email);

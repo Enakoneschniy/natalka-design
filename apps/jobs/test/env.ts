@@ -1,5 +1,7 @@
+import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { getJob, updateJob } from '../src/db';
+import worker from '../src/index';
 import { advance, type JobPayload, openPayload, sealPayload } from '../src/pipeline';
 import type { Env, QueueMessage } from '../src/env';
 import {
@@ -93,6 +95,15 @@ export function recordingQueue(base: Env = testEnv): { env: Env; sent: QueueMess
   const env = Object.create(base);
   Object.defineProperty(env, 'JOBS', { value: { send: async (message: QueueMessage) => void sent.push(message) } });
   return { env, sent };
+}
+
+/** A request to the worker's fetch handler, answered, and with everything it left running after the
+ * answer (ctx.waitUntil) finished too: what a sign-in request does happens after its 202. */
+export async function fetchSettled(request: Request, base: Env = testEnv): Promise<Response> {
+  const ctx = createExecutionContext();
+  const response = await worker.fetch(request, base, ctx);
+  await waitOnExecutionContext(ctx);
+  return response;
 }
 
 /** The worker's bindings with one of them replaced. defineProperty, not assignment: assigning

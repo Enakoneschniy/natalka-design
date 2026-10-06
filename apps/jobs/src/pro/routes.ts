@@ -52,19 +52,33 @@ const readBody = async (request: Request): Promise<Record<string, unknown> | nul
   }
 };
 
-/** Lets a letter leave after the answer: the response must not take longer for an address that
- * gets one. Without a context (direct callers, tests) the send is awaited, so it is deterministic.
- * A failed send is logged and never shown: it would tell whether a letter was attempted. */
-async function dispatch(ctx: ExecutionContext | undefined, send: Promise<unknown>): Promise<void> {
-  const logged = send.catch((error) => console.error('pro letter failed', errorCode(error)));
+/** Runs the work behind a sign-in or sign-up request after the answer has gone: looking the
+ * address up, storing a token and sending the letter. The answer is the same 202 at the same
+ * moment whether the address has an account, gets a letter or is over its limit. Without a
+ * context (direct callers, tests) the work is awaited, so it is deterministic. A failure is logged
+ * by its code and never shown: it would tell whether a letter was attempted. */
+async function afterAnswer(ctx: ExecutionContext | undefined, work: Promise<void>): Promise<void> {
+  const logged = work.catch((error) => console.error('pro sign-in letter failed', errorCode(error)));
   if (ctx) ctx.waitUntil(logged);
   else await logged;
 }
 
-/** Stores a sign-in token for a registered address and sends the letter. */
-async function mailLoginLink(env: Env, ctx: ExecutionContext | undefined, email: string): Promise<void> {
-  const token = await createLoginToken(env.DB, email);
-  if (token) await dispatch(ctx, sendLoginLink(env, email, `${env.PRO_SITE_URL}/login/${token}`));
+const loginLink = (env: Env, token: string): string => `${env.PRO_SITE_URL}/login/${token}`;
+
+/** The letter an address gets: a sign-in link when it has an account; when it has none, a link
+ * that creates one for a sign-up, and nothing for a sign-in. */
+async function sendSignInLetter(
+  env: Env,
+  email: string,
+  signup: { name: string; invite: string | null } | null,
+): Promise<void> {
+  if (await accountExists(env.DB, email)) {
+    const token = await createLoginToken(env.DB, email);
+    if (token) await sendLoginLink(env, email, loginLink(env, token));
+  } else if (signup) {
+    const token = await createSignupToken(env.DB, email, signup);
+    if (token) await sendSignupLink(env, email, loginLink(env, token));
+  }
 }
 
 /** Always 202 for a well-formed address: the answer must not tell whether an account exists.
@@ -72,7 +86,7 @@ async function mailLoginLink(env: Env, ctx: ExecutionContext | undefined, email:
 async function requestLogin(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
   const email = normalizeEmail((await readBody(request))?.email);
   if (!email) return json({ error: 'email' }, 400);
-  if (await accountExists(env.DB, email)) await mailLoginLink(env, ctx, email);
+  await afterAnswer(ctx, sendSignInLetter(env, email, null));
   return json({ ok: true }, 202);
 }
 
@@ -89,13 +103,7 @@ async function requestSignup(request: Request, env: Env, ctx?: ExecutionContext)
   if (body?.terms !== true) return json({ error: 'terms' }, 400);
   const code = typeof body.invite === 'string' ? body.invite.trim() : '';
   const invite = code && code.length <= MAX_INVITE ? code : null;
-
-  if (await accountExists(env.DB, email)) {
-    await mailLoginLink(env, ctx, email);
-  } else {
-    const token = await createSignupToken(env.DB, email, { name, invite });
-    if (token) await dispatch(ctx, sendSignupLink(env, email, `${env.PRO_SITE_URL}/login/${token}`));
-  }
+  await afterAnswer(ctx, sendSignInLetter(env, email, { name, invite }));
   return json({ ok: true }, 202);
 }
 

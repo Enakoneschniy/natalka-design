@@ -1,18 +1,20 @@
-import { SELF } from 'cloudflare:test';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { consumeLoginToken, createLoginToken } from '../src/pro/auth';
-import { signIn, testEnv } from './env';
+import { fetchSettled, signIn, testEnv } from './env';
 
+/** A call, and the work it leaves for after the answer (the letter) done. */
 const call = (path: string, body?: unknown, session?: string) =>
-  SELF.fetch(`https://jobs.test${path}`, {
-    method: path === '/v1/pro/me' ? 'GET' : 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-pro-key': 'test-pro-key',
-      ...(session ? { authorization: `Bearer ${session}` } : {}),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  fetchSettled(
+    new Request(`https://jobs.test${path}`, {
+      method: path === '/v1/pro/me' ? 'GET' : 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-pro-key': 'test-pro-key',
+        ...(session ? { authorization: `Bearer ${session}` } : {}),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+  );
 
 interface TokenRow {
   purpose: string;
