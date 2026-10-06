@@ -308,14 +308,17 @@ function randomCode(length: number): string {
   return out;
 }
 
-/** The code for a job's deep link — the same one every time it is asked for. */
+/** A link code lives as long as the order's link token: thirty days from when it was made. */
+export const TELEGRAM_LINK_DAYS = 30;
+
+/** The code for a job's deep link — the same one every time it is asked for, while it lives. */
 export async function telegramCodeFor(
   db: D1Database,
   link: { order_id: string; job_id: string; locale: string },
 ): Promise<string> {
   const existing = await db
-    .prepare('SELECT code FROM telegram_links WHERE job_id = ?')
-    .bind(link.job_id)
+    .prepare('SELECT code FROM telegram_links WHERE job_id = ? AND created_at > ?')
+    .bind(link.job_id, expiryFrom(-TELEGRAM_LINK_DAYS))
     .first<{ code: string }>();
   if (existing) return existing.code;
   const code = randomCode(16);
@@ -329,20 +332,25 @@ export async function telegramCodeFor(
   return code;
 }
 
+/** The link behind a code, while it lives. */
 export async function telegramLink(db: D1Database, code: string): Promise<TelegramLink | null> {
   return db
     .prepare(
-      'SELECT code, order_id, job_id, locale, chat_id, delivered_at FROM telegram_links WHERE code = ?',
+      `SELECT code, order_id, job_id, locale, chat_id, delivered_at FROM telegram_links
+       WHERE code = ? AND created_at > ?`,
     )
-    .bind(code)
+    .bind(code, expiryFrom(-TELEGRAM_LINK_DAYS))
     .first<TelegramLink>();
 }
 
-export async function claimTelegramLink(db: D1Database, code: string, chatId: number) {
-  await db
-    .prepare('UPDATE telegram_links SET chat_id = ? WHERE code = ?')
-    .bind(chatId, code)
+/** Binds a code to the chat that opened it first. A code already bound to another chat stays
+ * with it: whoever else has the code gets nothing. Returns whether this chat holds it. */
+export async function claimTelegramLink(db: D1Database, code: string, chatId: number): Promise<boolean> {
+  const result = await db
+    .prepare('UPDATE telegram_links SET chat_id = ? WHERE code = ? AND (chat_id IS NULL OR chat_id = ?)')
+    .bind(chatId, code, chatId)
     .run();
+  return (result.meta.changes ?? 0) > 0;
 }
 
 export async function markTelegramDelivered(db: D1Database, code: string): Promise<void> {

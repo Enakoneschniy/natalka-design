@@ -6,7 +6,7 @@
  * Rows go first and stored objects after, best effort — an object nobody points at any more is
  * harmless, a row pointing at a deleted object is not. */
 
-import { expiryFrom, now, scrubExpiredJobPayloads } from './db';
+import { expiryFrom, now, scrubExpiredJobPayloads, TELEGRAM_LINK_DAYS } from './db';
 import type { Env } from './env';
 import { errorCode } from './errors';
 import { sealLegacyPayloads } from './pipeline';
@@ -16,8 +16,6 @@ import { dropExpiredBirths, sealLegacyCharts, sweepSubscriptions } from './subsc
 const UNPAID_DAYS = 7;
 /** How long a paid order keeps the address it was paid from. */
 const ADDRESS_DAYS = 180;
-/** A Telegram link code lives as long as the order's link token. */
-const TELEGRAM_LINK_DAYS = 30;
 /** Rows touched per statement, and the most statements a step runs in one night. */
 const BATCH = 500;
 const ROUNDS = 40;

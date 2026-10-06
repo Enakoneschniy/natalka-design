@@ -511,6 +511,8 @@ export async function telegramCodeForSubscription(db: D1Database, id: string): P
   return code;
 }
 
+/** Binds a subscription's code to the chat that opened it first, like a document's: a code bound
+ * to another chat stays with it until that chat says /stop. */
 export async function claimTelegramSubscription(
   db: D1Database,
   code: string,
@@ -524,8 +526,11 @@ export async function claimTelegramSubscription(
     .bind(code)
     .first<{ id: string; locale: string }>();
   if (!row) return null;
-  await db.prepare('UPDATE telegram_subscriptions SET chat_id = ? WHERE code = ?').bind(chatId, code).run();
-  return row;
+  const bound = await db
+    .prepare('UPDATE telegram_subscriptions SET chat_id = ? WHERE code = ? AND (chat_id IS NULL OR chat_id = ?)')
+    .bind(chatId, code, chatId)
+    .run();
+  return (bound.meta.changes ?? 0) > 0 ? row : null;
 }
 
 export async function telegramChatFor(db: D1Database, id: string): Promise<number | null> {

@@ -491,7 +491,8 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
         horoscope: latest ? { title: latest.title, text: latest.text } : null,
       };
     }
-    await claimTelegramLink(this.env.DB, link.code, chatId);
+    // A code already bound to another chat is not this chat's to use.
+    if (!(await claimTelegramLink(this.env.DB, link.code, chatId))) return null;
     const job = await getJob(this.env.DB, link.job_id);
     const ready = job?.step === 'done';
     const token = ready
