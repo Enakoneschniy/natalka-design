@@ -308,23 +308,62 @@ describe("a seller's pack: disputes and out-of-order events", () => {
     expect(await balance(testEnv.DB, account)).toBe(0);
   });
 
-  for (const [what, early] of [
-    ['a refund', (pi: string) => refund(pi)],
-    ['a dispute', (pi: string) => dispute('charge.dispute.created', pi, `dp_${pi}`)],
-  ] as const) {
-    it(`closes a pack whose payment was overtaken by ${what}, and credits nothing`, async () => {
-      const account = await seller(`early-${what.replace(' ', '-')}`);
-      const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
-      const first = await send(early(`pi_${p.id}`));
-      expect(first.status).toBe(200);
-      const late = await send(packSession(p));
-      expect(await late.json()).toMatchObject({ pack: 'refunded' });
-      expect(await purchase(p.id)).toEqual({ status: 'refunded' });
-      expect(await balance(testEnv.DB, account)).toBe(0);
-      expect(await (await send(packSession(p))).json()).toMatchObject({ pack: 'already' });
-      expect(await balance(testEnv.DB, account)).toBe(0);
-    });
+  it('closes a pack whose payment was overtaken by a refund, and credits nothing', async () => {
+    const account = await seller('early-refund');
+    const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
+    const first = await send(refund(`pi_${p.id}`));
+    expect(first.status).toBe(200);
+    const late = await send(packSession(p));
+    expect(await late.json()).toMatchObject({ pack: 'refunded' });
+    expect(await purchase(p.id)).toEqual({ status: 'refunded' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    expect(await (await send(packSession(p))).json()).toMatchObject({ pack: 'already' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+  });
+
+  /** A pack whose payment Stripe reported disputed (by each of `disputes`) before its completion,
+   * then completed. */
+  async function overtakenPack(name: string, disputes: string[]) {
+    const account = await seller(name);
+    const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
+    const pi = `pi_${p.id}`;
+    for (const id of disputes) await send(dispute('charge.dispute.created', pi, id));
+    const late = await send(packSession(p));
+    expect(await late.json()).toMatchObject({ pack: 'disputed' });
+    expect(await purchase(p.id)).toEqual({ status: 'paid' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    return { account, p, pi };
   }
+
+  it('books a pack whose payment a dispute overtook as paid, its credits taken until the dispute is won', async () => {
+    const dp = 'dp_overtook_won';
+    const { account, p, pi } = await overtakenPack('early-dispute-won', [dp]);
+    expect(await taken(p.id)).toBe(`dispute:${dp}`);
+    expect(await (await send(packSession(p))).json()).toMatchObject({ pack: 'already' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    for (let i = 0; i < 2; i++) await send(dispute('charge.dispute.closed', pi, dp, 'won'));
+    expect(await balance(testEnv.DB, account)).toBe(30);
+    expect(await taken(p.id)).toBeNull();
+  });
+
+  it('keeps the credits of a pack whose payment a dispute overtook taken when the dispute is lost', async () => {
+    const dp = 'dp_overtook_lost';
+    const { account, p, pi } = await overtakenPack('early-dispute-lost', [dp]);
+    await send(dispute('charge.dispute.closed', pi, dp, 'lost'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    // A refund after it takes nothing more.
+    await send(refund(pi));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    expect(await purchase(p.id)).toEqual({ status: 'refunded' });
+  });
+
+  it('leaves the credits of a pack whose payment two disputes overtook to the owner', async () => {
+    const { account, p, pi } = await overtakenPack('early-two-disputes', ['dp_overtook_a', 'dp_overtook_b']);
+    expect(await taken(p.id)).toBe('dispute:multiple');
+    await send(dispute('charge.dispute.closed', pi, 'dp_overtook_a', 'won'));
+    await send(dispute('charge.dispute.closed', pi, 'dp_overtook_b', 'won'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+  });
 
   /** A pack bought and paid for: 30 credits. */
   async function paidPack(name: string) {

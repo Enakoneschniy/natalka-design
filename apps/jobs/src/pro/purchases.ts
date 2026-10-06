@@ -115,8 +115,11 @@ export async function attachSession(
 }
 
 /** Settles a purchase Stripe says is paid. 'paid' only the one time that books the credits.
- * 'refunded' when Stripe reported a refund or a dispute of this payment before its completion
- * (a tombstone): the purchase is closed and books nothing. */
+ * 'refunded' when Stripe reported a refund of this payment before its completion (a tombstone):
+ * the purchase is closed and books nothing. 'disputed' when it reported a dispute instead: the
+ * purchase is paid and its credits are taken back in the same batch, as disputePurchase would
+ * have done had the dispute come after — so a dispute won gives them back and a lost one keeps
+ * them, and two disputes leave them to the owner. */
 export async function markPaid(
   db: D1Database,
   entry: {
@@ -126,7 +129,7 @@ export async function markPaid(
     amountSubtotal: number;
     currency: string;
   },
-): Promise<'paid' | 'already' | 'mismatch' | 'unknown' | 'refunded'> {
+): Promise<'paid' | 'disputed' | 'already' | 'mismatch' | 'unknown' | 'refunded'> {
   const row = await db
     .prepare('SELECT status, credits, amount_minor, currency FROM pro_purchases WHERE id = ? AND account_id = ?')
     .bind(entry.purchaseId, entry.accountId)
@@ -146,32 +149,55 @@ export async function markPaid(
   }
 
   const at = now();
-  const tombstone = 'EXISTS (SELECT 1 FROM stripe_tombstones WHERE payment_intent = ?)';
-  // The ledger row goes in first, while the purchase is still pending and only if it is; the
+  const refunded = "EXISTS (SELECT 1 FROM stripe_tombstones WHERE payment_intent = ? AND kind = 'refund')";
+  // The ledger rows go in first, while the purchase is still pending and only if it is; the
   // status flip follows in the same transaction. A concurrent delivery finds nothing pending.
-  const [, flip, closed] = await db.batch([
+  const [, , flip, closed] = await db.batch([
     db
       .prepare(
         `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
          SELECT ?, account_id, credits, 'purchase', id, ?
-         FROM pro_purchases WHERE id = ? AND account_id = ? AND status = 'pending' AND NOT ${tombstone}
+         FROM pro_purchases WHERE id = ? AND account_id = ? AND status = 'pending' AND NOT ${refunded}
          ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
       )
       .bind(crypto.randomUUID(), at, entry.purchaseId, entry.accountId, entry.paymentIntent),
+    // The disputes listed before the completion (see recordDispute) take the credits back at once,
+    // under the first one's id.
     db
       .prepare(
-        `UPDATE pro_purchases SET status = 'paid', paid_at = ?, stripe_payment_intent = ?
-         WHERE id = ? AND account_id = ? AND status = 'pending' AND NOT ${tombstone}`,
+        `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+         SELECT ?, p.account_id, -p.credits, 'adjust', 'dispute:' || substr(t.ref, 1, instr(t.ref || ' ', ' ') - 1), ?
+         FROM pro_purchases p JOIN stripe_tombstones t ON t.payment_intent = ? AND t.kind = 'dispute'
+         WHERE p.id = ? AND p.account_id = ? AND p.status = 'pending' AND NOT ${refunded}
+         ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
       )
-      .bind(at, entry.paymentIntent, entry.purchaseId, entry.accountId, entry.paymentIntent),
+      .bind(crypto.randomUUID(), at, entry.paymentIntent, entry.purchaseId, entry.accountId, entry.paymentIntent),
+    db
+      .prepare(
+        `UPDATE pro_purchases SET status = 'paid', paid_at = ?, stripe_payment_intent = ?,
+           credits_taken = (SELECT CASE WHEN instr(ref, ' ') > 0 THEN ? ELSE 'dispute:' || ref END
+                            FROM stripe_tombstones WHERE payment_intent = ? AND kind = 'dispute')
+         WHERE id = ? AND account_id = ? AND status = 'pending' AND NOT ${refunded}
+         RETURNING credits_taken`,
+      )
+      .bind(
+        at,
+        entry.paymentIntent,
+        TAKEN_BY_DISPUTES,
+        entry.paymentIntent,
+        entry.purchaseId,
+        entry.accountId,
+        entry.paymentIntent,
+      ),
     db
       .prepare(
         `UPDATE pro_purchases SET status = 'refunded', paid_at = ?, refunded_at = ?, stripe_payment_intent = ?
-         WHERE id = ? AND account_id = ? AND status = 'pending' AND ${tombstone}`,
+         WHERE id = ? AND account_id = ? AND status = 'pending' AND ${refunded}`,
       )
       .bind(at, at, entry.paymentIntent, entry.purchaseId, entry.accountId, entry.paymentIntent),
   ]);
-  if (changes(flip) > 0) return 'paid';
+  const paid = flip?.results[0] as { credits_taken: string | null } | undefined;
+  if (paid) return paid.credits_taken ? 'disputed' : 'paid';
   return changes(closed) > 0 ? 'refunded' : 'already';
 }
 
