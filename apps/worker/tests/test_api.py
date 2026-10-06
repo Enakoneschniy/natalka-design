@@ -14,6 +14,11 @@ def test_health() -> None:
     assert r.status_code == 200 and r.json()["status"] == "ok"
 
 
+def test_the_api_publishes_no_schema_and_no_docs() -> None:
+    for path in ("/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"):
+        assert client.get(path).status_code == 404
+
+
 def test_the_calculation_endpoints_are_gone() -> None:
     """They live in the public ephemeris service; this image must not answer for them."""
     for path in ("/v1/calc", "/v1/synastry", "/v1/zone", "/v1/wheel.svg"):
@@ -92,3 +97,20 @@ def test_a_field_this_image_does_not_know_is_refused(facts: dict[str, Any]) -> N
     assert client.post("/v1/skeleton", json={**skeleton_body, "logo_v2": "x"}).status_code == 422
     section_body = {"facts": facts, "section_id": "intro", "name": "Аня", "tone_v2": "warm"}
     assert client.post("/v1/section", json=section_body).status_code == 422
+
+
+def test_a_refusal_names_the_field_but_never_repeats_the_input(facts: dict[str, Any]) -> None:
+    """The caller logs what comes back, and what was sent is a chart and a name."""
+    long_name = "Оксана" * 20
+    r = client.post("/v1/section", json={"facts": facts, "section_id": "intro", "name": long_name})
+    assert r.status_code == 422
+    assert r.json()["detail"][0]["loc"] == ["body", "name"]
+    assert r.json()["detail"][0]["type"] == "string_too_long"
+    assert "Оксана" not in r.text
+
+    # A missing field is reported against the whole body; the body itself stays out.
+    r = client.post("/v1/section", json={"facts": facts, "name": "Аня"})
+    assert r.status_code == 422
+    assert r.json()["detail"][0]["loc"] == ["body", "section_id"]
+    assert "Аня" not in r.text
+    assert "positions" not in r.text

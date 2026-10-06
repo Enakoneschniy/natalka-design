@@ -11,8 +11,9 @@ import os
 import re
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, Response
 from natalka_document.build import SECTIONS, fill_sections
 from natalka_document.build import skeleton as build_skeleton
 from natalka_document.render import render_pdf
@@ -37,7 +38,25 @@ from natalka_texts.prompts import repair_prompt, section_prompt, system_prompt
 from natalka_texts.validate import check
 from pydantic import BaseModel, ConfigDict, Field
 
-app = FastAPI(title="Natalka internal API", version="0.1.0", docs_url=None, redoc_url=None)
+#: No docs and no schema: the jobs Worker is the only caller, and it has the source.
+app = FastAPI(
+    title="Natalka internal API",
+    version="0.1.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
+
+
+@app.exception_handler(RequestValidationError)
+async def refuse_invalid(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """Which field, and what is wrong with it — never the value. A request is a chart and a name,
+    and a refusal ends up in the caller's error log."""
+    detail = [
+        {"loc": list(error["loc"]), "type": error["type"], "msg": error["msg"]}
+        for error in exc.errors()
+    ]
+    return JSONResponse({"detail": detail}, status_code=422)
 
 
 @app.get("/health")
