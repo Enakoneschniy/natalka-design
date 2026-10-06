@@ -51,7 +51,7 @@ import {
   updateSubscription,
 } from './subscriptions';
 import { contentDisposition, documentFilename } from './filename';
-import { type CheckoutSession, createCheckoutSession } from './stripe';
+import { type CheckoutSession, createCheckoutSession, expireCheckoutSession } from './stripe';
 import { json, readJson } from './http';
 import { InvalidField, type OrderInput, parseOrder } from './validate';
 import { errorCode } from './errors';
@@ -248,6 +248,50 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   await setOrderSession(env.DB, orderId, session.id);
   // The job waits in the table, not in the queue, until the webhook says the money is in.
   return json({ order_id: orderId, job_id: jobId, token, checkout_url: session.url }, 201);
+}
+
+/** A new payment page for an order that was never paid. The previous page is closed first, so one
+ * order cannot be paid twice from two pages; if it turns out to have been paid a moment ago, the
+ * answer says so and nothing new is opened. */
+async function resumeCheckout(env: Env, token: string): Promise<Response> {
+  const claims = await readLink('order', token, env.LINK_KEY);
+  if (!claims) return json({ error: 'not found' }, 404);
+  const order = await orderState(env.DB, claims.order);
+  if (!order || order.pro_account_id) return json({ error: 'not found' }, 404);
+  const status = orderStatusOf(order);
+  if (status === 'paid' || status === 'test') return json({ error: 'paid' }, 409);
+  if (status !== 'pending') return json({ error: 'closed' }, 409);
+  if (!env.STRIPE_SECRET_KEY) return json({ error: 'payments unavailable' }, 503);
+
+  const previous = order.stripe_session_id;
+  if (previous && (await expireCheckoutSession(env, previous)) === 'complete') {
+    return json({ error: 'paid' }, 409);
+  }
+  let session: CheckoutSession;
+  try {
+    session = await createCheckoutSession(env, {
+      orderId: order.id,
+      jobId: claims.job,
+      email: order.email,
+      locale: order.locale,
+      currency: order.currency,
+      amountMinor: order.amount_minor,
+      product: order.product,
+      returnUrl: orderPage(env, order.locale, token),
+      // Two taps while one page is current open one new page between them, not two.
+      idempotencyKey: `resume-${order.id}-${previous ?? 'none'}`,
+    });
+  } catch (error) {
+    console.error('checkout failed', order.id, errorCode(error));
+    return json({ error: 'checkout' }, 502);
+  }
+  await env.DB.prepare(
+    `UPDATE orders SET stripe_session_id = ?, checkout_at = ?
+     WHERE id = ? AND status = 'pending' AND hold IS NULL`,
+  )
+    .bind(session.id, now(), order.id)
+    .run();
+  return json({ checkout_url: session.url });
 }
 
 async function jobStatus(env: Env, token: string): Promise<Response> {
@@ -506,9 +550,17 @@ export default {
     const refused = await siteGate(request, env);
     if (refused) return refused;
 
-    // The site asks for the code behind its Telegram link; the token names the order.
-    const code = url.pathname.match(/^\/v1\/jobs\/(.+)\/telegram$/);
-    if (code?.[1] && request.method === 'POST') return telegramCode(env, code[1]);
+    // An order's routes; the token names the order.
+    const job = url.pathname.match(/^\/v1\/jobs\/([^/]+)(?:\/(telegram|checkout))?$/);
+    if (job?.[1]) {
+      const [, token, action] = job;
+      // The code behind the site's "get it in Telegram" link.
+      if (action === 'telegram' && request.method === 'POST') return telegramCode(env, token);
+      if (action === 'checkout' && request.method === 'POST') return resumeCheckout(env, token);
+      if (!action && request.method === 'GET') return jobStatus(env, token);
+    }
+    const file = url.pathname.match(/^\/d\/([^/]+)$/);
+    if (file?.[1] && request.method === 'GET') return download(env, file[1]);
 
     if (url.pathname === '/v1/subscriptions' && request.method === 'POST') {
       return subscribe(request, env);
@@ -525,10 +577,6 @@ export default {
     if (url.pathname === '/v1/preview' && request.method === 'POST') {
       return previewText(request, env);
     }
-    const status = url.pathname.match(/^\/v1\/jobs\/(.+)$/);
-    if (status?.[1]) return jobStatus(env, status[1]);
-    const file = url.pathname.match(/^\/d\/(.+)$/);
-    if (file?.[1]) return download(env, file[1]);
 
     return new Response('not found', { status: 404 });
   },
