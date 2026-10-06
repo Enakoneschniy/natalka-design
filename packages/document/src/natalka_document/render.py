@@ -4,6 +4,10 @@ Layout: dark cover with the gold wheel → table of contents → sections. Every
 paper with a faint motif of the current section (see :mod:`motifs`) and a running side label.
 Computed blocks (wheel, positions, aspect grid) are rendered from ``document.facts``; text blocks
 are rendered as given.
+
+A ReportLab ``Paragraph`` parses its text as markup, and a tag in it can open files. Text blocks
+arrive already cleaned by the schema; every other string from the document or its facts is
+escaped where it becomes a Paragraph. Strings drawn straight on the canvas are not parsed.
 """
 
 from __future__ import annotations
@@ -272,10 +276,10 @@ class Renderer:
                 Spacer(1, 18),
                 st.HRule(),
                 Spacer(1, 8),
-                Paragraph(self.doc.closing_note, st.s_small_center),
+                Paragraph(escape(self.doc.closing_note), st.s_small_center),
             ]
         if self.doc.disclaimer:
-            story += [Spacer(1, 10), Paragraph(self.doc.disclaimer, st.s_caption)]
+            story += [Spacer(1, 10), Paragraph(escape(self.doc.disclaimer), st.s_caption)]
         return story
 
     # ---------- a seller's own pages ----------
@@ -330,21 +334,23 @@ class Renderer:
     def _section(self, s: Section, number: int) -> list[Flowable]:
         out: list[Flowable] = []
         head: list[Flowable] = []
+        # The heading text also becomes the table of contents entry, which is markup as well.
+        title = escape(s.title)
         if s.level == 1:
             eyebrow = s.eyebrow or (
                 f"{ui(self.lang, 'section')} {ROMAN[number - 1]}" if number else ""
             )
             if eyebrow:
-                head.append(Paragraph(eyebrow.upper(), self.s_eyebrow))
+                head.append(Paragraph(escape(eyebrow.upper()), self.s_eyebrow))
             head += [
-                _Heading(s.title, st.s_h1_big if number else st.s_h1, 0, s.toc),
+                _Heading(title, st.s_h1_big if number else st.s_h1, 0, s.toc),
                 st.HRule(),
                 Spacer(1, 8),
             ]
         else:
             if s.eyebrow:
-                head.append(Paragraph(s.eyebrow.upper(), st.s_eyebrow_2))
-            head.append(_Heading(s.title, st.s_h2, 1, s.toc))
+                head.append(Paragraph(escape(s.eyebrow.upper()), st.s_eyebrow_2))
+            head.append(_Heading(title, st.s_h2, 1, s.toc))
         first = self._blocks(s.blocks[:1])
         out.append(KeepTogether(head + first))
         out += self._blocks(s.blocks[1:])
@@ -429,7 +435,7 @@ class Renderer:
                 [
                     name_cell,
                     Paragraph(sign_name(lang, p["sign"]), st.s_table),
-                    Paragraph(p["degree"], st.s_table_mono),
+                    Paragraph(escape(str(p["degree"])), st.s_table_mono),
                     Paragraph(house, st.s_table_mono),
                     Paragraph(retro, st.s_table_mono),
                 ]
@@ -481,7 +487,8 @@ class Renderer:
             label = f"{body_name(lang, body)} → {sign_name(lang, sign)}"
             if event.get("retrograde"):
                 label += f", {ui(lang, 'retrograde')}"
-            parts.append(Paragraph(label, st.s_table))
+            # An unknown body falls back to its own name, so the label can carry caller text.
+            parts.append(Paragraph(escape(label), st.s_table))
             widths.append(None)
         else:
             aspect = str(event.get("aspect", ""))
@@ -492,10 +499,10 @@ class Renderer:
             if target in PLANET_PATHS:
                 parts.append(_glyph_drawing(PLANET_PATHS[target], 11, INK_HEX))
                 widths.append(16)
-            parts.append(Paragraph(body_name(lang, target), st.s_table))
+            parts.append(Paragraph(escape(body_name(lang, target)), st.s_table))
             widths.append(None)
         what: Any = Table([parts], colWidths=widths, style=_tight()) if parts else ""
-        return [Paragraph(_dmy(str(event.get("date", ""))), st.s_table_mono), what]
+        return [Paragraph(escape(_dmy(str(event.get("date", "")))), st.s_table_mono), what]
 
     def _dates_table(self, b: DatesTable) -> list[Flowable]:
         """The window's exact dates, in order. Glyphs rather than words: the same table then reads
@@ -593,7 +600,7 @@ class Renderer:
 
     def _timeline(self, b: Timeline) -> Flowable:
         rows = [
-            [Paragraph(i.date, st.s_timeline_date), Paragraph(i.text, st.s_timeline_text)]
+            [Paragraph(escape(i.date), st.s_timeline_date), Paragraph(i.text, st.s_timeline_text)]
             for i in b.items
         ]
         t = Table(rows, colWidths=[3.4 * cm, self.width - 3.4 * cm])
