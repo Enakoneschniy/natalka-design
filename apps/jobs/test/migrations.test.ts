@@ -68,6 +68,10 @@ async function seedProduction(): Promise<void> {
       `INSERT INTO pro_readings (order_id, account_id, job_id, client_id, editable_until, created_at)
        VALUES ('o3', 'a1', 'j3', 'pc1', ?, ?)`,
     ).bind(ts, ts),
+    db.prepare(
+      `INSERT INTO pro_purchases (id, account_id, pack, credits, amount_minor, currency, status, stripe_payment_intent, created_at, paid_at)
+       VALUES ('pp1', 'a1', 'p10', 10, 9900, 'EUR', 'paid', 'pi_pp1', ?, ?)`,
+    ).bind(ts, ts),
   ]);
 }
 
@@ -91,6 +95,7 @@ describe('the migrations of this release', () => {
       'pro_login_tokens',
       'pro_clients',
       'pro_readings',
+      'pro_purchases',
     ];
     const before = Object.fromEntries(await Promise.all(tables.map(async (t) => [t, await count(t)] as const)));
 
@@ -137,6 +142,10 @@ describe('the migrations of this release', () => {
     expect(await db.prepare("SELECT sections_planned, sections_written FROM jobs WHERE id = 'j3'").first()).toEqual({
       sections_planned: null,
       sections_written: null,
+    });
+    expect(await db.prepare("SELECT status, credits_taken FROM pro_purchases WHERE id = 'pp1'").first()).toEqual({
+      status: 'paid',
+      credits_taken: null,
     });
   });
 

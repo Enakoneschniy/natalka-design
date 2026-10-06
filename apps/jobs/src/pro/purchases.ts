@@ -175,41 +175,62 @@ export async function markPaid(
   return changes(closed) > 0 ? 'refunded' : 'already';
 }
 
-/** A disputed payment for a pack takes the pack's credits back, once per dispute. The purchase
- * keeps its status: the dispute may still be won. */
+/** A disputed payment for a pack takes the pack's credits back, once per payment: not when a
+ * refund or another dispute has already taken them. The purchase keeps its status (the dispute may
+ * still be won) and records what took the credits. One batch: the debit, then the record, which is
+ * written only for a debit this dispute holds and that nothing has given back (an event Stripe
+ * repeats after the dispute was won takes nothing). */
 export async function disputePurchase(
   db: D1Database,
   entry: { paymentIntent: string; disputeId: string },
 ): Promise<'debited' | 'already' | 'unknown'> {
-  const result = await db
-    .prepare(
-      `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
-       SELECT ?, account_id, -credits, 'adjust', ?, ?
-       FROM pro_purchases WHERE stripe_payment_intent = ? AND status = 'paid'
-       ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
-    )
-    .bind(crypto.randomUUID(), `dispute:${entry.disputeId}`, now(), entry.paymentIntent)
-    .run();
-  if (changes(result) > 0) return 'debited';
+  const taken = `dispute:${entry.disputeId}`;
+  const [, recorded] = await db.batch([
+    db
+      .prepare(
+        `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+         SELECT ?, account_id, -credits, 'adjust', ?, ?
+         FROM pro_purchases WHERE stripe_payment_intent = ? AND status = 'paid' AND credits_taken IS NULL
+         ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
+      )
+      .bind(crypto.randomUUID(), taken, now(), entry.paymentIntent),
+    db
+      .prepare(
+        `UPDATE pro_purchases SET credits_taken = ?
+         WHERE stripe_payment_intent = ? AND status = 'paid' AND credits_taken IS NULL
+           AND EXISTS (SELECT 1 FROM credit_ledger WHERE reason = 'adjust' AND ref = ?)
+           AND NOT EXISTS (SELECT 1 FROM credit_ledger WHERE reason = 'adjust' AND ref = ?)`,
+      )
+      .bind(taken, entry.paymentIntent, taken, `dispute_won:${entry.disputeId}`),
+  ]);
+  if (changes(recorded) > 0) return 'debited';
   return (await purchaseExists(db, entry.paymentIntent)) ? 'already' : 'unknown';
 }
 
-/** A dispute won gives back what it took, once, and only if it took something. */
+/** A dispute won (or an inquiry closed) gives back what that dispute took, once, and only if it
+ * took something and the payment has not been refunded since: the refund keeps the credits. */
 export async function disputeWon(
   db: D1Database,
   entry: { paymentIntent: string; disputeId: string },
 ): Promise<'credited' | 'already' | 'unknown'> {
-  const result = await db
-    .prepare(
-      `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
-       SELECT ?, account_id, credits, 'adjust', ?, ?
-       FROM pro_purchases WHERE stripe_payment_intent = ?
-         AND EXISTS (SELECT 1 FROM credit_ledger WHERE reason = 'adjust' AND ref = ?)
-       ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
-    )
-    .bind(crypto.randomUUID(), `dispute_won:${entry.disputeId}`, now(), entry.paymentIntent, `dispute:${entry.disputeId}`)
-    .run();
-  if (changes(result) > 0) return 'credited';
+  const taken = `dispute:${entry.disputeId}`;
+  const [, cleared] = await db.batch([
+    db
+      .prepare(
+        `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+         SELECT ?, account_id, credits, 'adjust', ?, ?
+         FROM pro_purchases WHERE stripe_payment_intent = ? AND status = 'paid' AND credits_taken = ?
+         ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
+      )
+      .bind(crypto.randomUUID(), `dispute_won:${entry.disputeId}`, now(), entry.paymentIntent, taken),
+    db
+      .prepare(
+        `UPDATE pro_purchases SET credits_taken = NULL
+         WHERE stripe_payment_intent = ? AND status = 'paid' AND credits_taken = ?`,
+      )
+      .bind(entry.paymentIntent, taken),
+  ]);
+  if (changes(cleared) > 0) return 'credited';
   return (await purchaseExists(db, entry.paymentIntent)) ? 'already' : 'unknown';
 }
 
@@ -224,24 +245,25 @@ export async function markFailed(db: D1Database, purchaseId: string, accountId: 
     .run();
 }
 
-/** A full refund of a paid purchase: flips it and takes the credits back, once. */
+/** A full refund of a paid purchase: flips it and takes the credits back, once per payment. */
 export async function markRefunded(
   db: D1Database,
   paymentIntent: string,
 ): Promise<'refunded' | 'already' | 'unknown'> {
   const at = now();
+  // Credits a dispute has already taken back are not taken twice: the refund keeps them taken.
   const [, flip] = await db.batch([
     db
       .prepare(
         `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
          SELECT ?, account_id, -credits, 'adjust', 'refund:' || id, ?
-         FROM pro_purchases WHERE stripe_payment_intent = ? AND status = 'paid'
+         FROM pro_purchases WHERE stripe_payment_intent = ? AND status = 'paid' AND credits_taken IS NULL
          ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
       )
       .bind(crypto.randomUUID(), at, paymentIntent),
     db
       .prepare(
-        `UPDATE pro_purchases SET status = 'refunded', refunded_at = ?
+        `UPDATE pro_purchases SET status = 'refunded', refunded_at = ?, credits_taken = COALESCE(credits_taken, 'refund')
          WHERE stripe_payment_intent = ? AND status = 'paid'`,
       )
       .bind(at, paymentIntent),

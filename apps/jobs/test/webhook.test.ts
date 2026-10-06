@@ -178,6 +178,41 @@ describe("a shopper's refund and dispute", () => {
     expect(await order(orderId)).toMatchObject({ status: 'paid', hold: null });
   });
 
+  it('gives the document back when an inquiry is closed, as when a dispute is won', async () => {
+    const { orderId, pi } = await paidOrder('Запрос банка');
+    await send(dispute('charge.dispute.created', pi, `dp_${orderId}`, 'warning_needs_response'));
+    expect(await order(orderId)).toMatchObject({ status: 'paid', hold: 'disputed' });
+    await send(dispute('charge.dispute.closed', pi, `dp_${orderId}`, 'warning_closed'));
+    expect(await order(orderId)).toMatchObject({ status: 'paid', hold: null });
+  });
+
+  it('writes the document of a payment disputed before it settled, once the dispute is won', async () => {
+    const { orderId, jobId } = await pendingOrder('Спор до оплаты');
+    const pi = `pi_${orderId}`;
+    await send(dispute('charge.dispute.created', pi, `dp_${orderId}`));
+    const paid = recordingQueue();
+    expect(await (await stripeWebhook(await signed(paidSession(orderId, jobId)), paid.env)).json()).toMatchObject({
+      order: 'disputed',
+    });
+    expect(paid.sent).toEqual([]);
+    expect(await order(orderId)).toMatchObject({ status: 'paid', hold: 'disputed' });
+
+    const won = recordingQueue();
+    const response = await stripeWebhook(await signed(dispute('charge.dispute.closed', pi, `dp_${orderId}`, 'won')), won.env);
+    expect(await response.json()).toMatchObject({ dispute: 'won', queued: true });
+    expect(won.sent).toEqual([{ jobId }]);
+    expect(await order(orderId)).toMatchObject({ status: 'paid', hold: null });
+  });
+
+  it('queues nothing when a dispute is won after the document was written', async () => {
+    const { orderId, jobId, pi } = await paidOrder('Спор после');
+    await testEnv.DB.prepare("UPDATE jobs SET status = 'done', step = 'done', attempts = 1 WHERE id = ?").bind(jobId).run();
+    await send(dispute('charge.dispute.created', pi, `dp_${orderId}`));
+    const won = recordingQueue();
+    await stripeWebhook(await signed(dispute('charge.dispute.closed', pi, `dp_${orderId}`, 'won')), won.env);
+    expect(won.sent).toEqual([]);
+  });
+
   it('keeps the document withheld when the dispute is lost', async () => {
     const { orderId, pi } = await paidOrder('Проигрыш');
     await send(dispute('charge.dispute.created', pi, `dp_${orderId}`));
@@ -253,6 +288,55 @@ describe("a seller's pack: disputes and out-of-order events", () => {
       expect(await balance(testEnv.DB, account)).toBe(0);
     });
   }
+
+  /** A pack bought and paid for: 30 credits. */
+  async function paidPack(name: string) {
+    const account = await seller(name);
+    const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
+    await attachSession(testEnv.DB, p.id, `cs_${p.id}`);
+    await send(packSession(p));
+    expect(await balance(testEnv.DB, account)).toBe(30);
+    return { account, p, pi: `pi_${p.id}`, dp: `dp_${p.id}` };
+  }
+
+  it('gives the credits back once when an inquiry is closed, as when a dispute is won', async () => {
+    const { account, pi, dp } = await paidPack('inquiry');
+    await send(dispute('charge.dispute.created', pi, dp, 'warning_needs_response'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    for (let i = 0; i < 2; i++) await send(dispute('charge.dispute.closed', pi, dp, 'warning_closed'));
+    expect(await balance(testEnv.DB, account)).toBe(30);
+  });
+
+  it('takes the credits back once when a refund follows a dispute, and gives nothing back after', async () => {
+    const { account, p, pi, dp } = await paidPack('dispute-then-refund');
+    await send(dispute('charge.dispute.created', pi, dp, 'warning_needs_response'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    expect(await (await send(refund(pi))).json()).toMatchObject({ refund: 'refunded' });
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    expect(await purchase(p.id)).toEqual({ status: 'refunded' });
+    await send(dispute('charge.dispute.closed', pi, dp, 'warning_closed'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+  });
+
+  it('takes nothing more when a dispute follows a refund', async () => {
+    const { account, pi, dp } = await paidPack('refund-then-dispute');
+    await send(refund(pi));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+    await send(dispute('charge.dispute.created', pi, dp));
+    await send(dispute('charge.dispute.closed', pi, dp, 'won'));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+  });
+
+  it('takes nothing when Stripe repeats a dispute already won, and a later refund takes the credits once', async () => {
+    const { account, pi, dp } = await paidPack('repeated');
+    await send(dispute('charge.dispute.created', pi, dp));
+    await send(dispute('charge.dispute.closed', pi, dp, 'won'));
+    expect(await balance(testEnv.DB, account)).toBe(30);
+    expect(await (await send(dispute('charge.dispute.created', pi, dp))).json()).toMatchObject({ dispute: 'already' });
+    expect(await balance(testEnv.DB, account)).toBe(30);
+    await send(refund(pi));
+    expect(await balance(testEnv.DB, account)).toBe(0);
+  });
 });
 
 describe('the Stripe signature', () => {

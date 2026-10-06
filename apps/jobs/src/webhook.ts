@@ -177,13 +177,24 @@ async function disputeCreated(env: Env, dispute: StripeObject): Promise<Response
   return json({ received: true, dispute: pack });
 }
 
+/** Won, or an inquiry closed without becoming a dispute ('warning_closed'): what the dispute held
+ * or took comes back. Lost: the money is gone and the document and credits stay withheld. */
 async function disputeClosed(env: Env, dispute: StripeObject): Promise<Response> {
   const paymentIntent = dispute.payment_intent;
   if (!paymentIntent) return json({ received: true, ignored: 'no payment' });
-  // Lost: the money is gone and the document and credits stay withheld; nothing changes.
-  if (dispute.status !== 'won') return json({ received: true, dispute: dispute.status ?? 'closed' });
+  if (dispute.status !== 'won' && dispute.status !== 'warning_closed') {
+    return json({ received: true, dispute: dispute.status ?? 'closed' });
+  }
   await dropTombstone(env.DB, paymentIntent, 'dispute');
   const orderId = await setDisputeHold(env.DB, paymentIntent, false);
-  if (orderId) return json({ received: true, dispute: 'won' });
+  if (orderId) {
+    // A payment disputed before it settled was never written; it is now.
+    const job = await env.DB.prepare('SELECT id FROM jobs WHERE order_id = ?').bind(orderId).first<{ id: string }>();
+    if (job && (await neverStarted(env, orderId, job.id))) {
+      await env.JOBS.send({ jobId: job.id });
+      return json({ received: true, dispute: 'won', queued: true });
+    }
+    return json({ received: true, dispute: 'won' });
+  }
   return json({ received: true, dispute: await disputeWon(env.DB, { paymentIntent, disputeId: dispute.id }) });
 }
