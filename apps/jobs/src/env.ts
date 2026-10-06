@@ -23,10 +23,12 @@ export interface Env {
   /** Sent as x-api-key on every call to that API. Worker secret, the same value as the API
    * edge's ACCESS_KEY. Unset, no call is made: jobs fail and previews answer 503. */
   NATALKA_API_KEY?: string;
+  /** Days a document, the birth data and the texts written from it are kept. A var. */
   RETENTION_DAYS: string;
-  /** Where the site lives; the ready letter links back to it. */
+  /** Where the site lives; the ready letter, Stripe's return and the subscription letters link
+   * back to it. */
   SITE_URL: string;
-  /** Resend API key. Worker secret; absent means the ready letter is skipped, not failed. */
+  /** Resend API key. Worker secret; absent means letters are skipped, not failed. */
   RESEND_API_KEY?: string;
   /** Where owner alerts go (refunds to make, disputes, failed documents). A var; help@chronika.me
    * when unset. Alerts carry ids and status codes only. */
@@ -34,11 +36,13 @@ export interface Env {
   /** "1" only on a developer's machine: the sign-in and confirmation links in letters are also
    * written to the log. Never set in wrangler.jsonc or in production. */
   MAIL_LOG_LINKS?: string;
-  /** Stripe. Worker secrets. With no secret key, orders are not accepted at all — except test
-   * orders that carry TEST_ORDER_KEY, which skip payment. */
+  /** Stripe. Worker secrets. With no secret key, orders are refused with 503 — except test orders
+   * that carry TEST_ORDER_KEY, which skip payment. Without the webhook secret every event is
+   * refused as unsigned. */
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
-  /** "1" once Stripe Tax is activated in the dashboard; enables automatic tax on Checkout. */
+  /** "1" once Stripe Tax is activated in the dashboard; enables automatic tax on Checkout. A var,
+   * declared "0" in wrangler.jsonc: the owner decides when to switch it on. */
   STRIPE_TAX?: string;
   /** A test order — no payment, straight to the queue — is one whose request carries this key in
    * x-test-order. Worker secret. */
@@ -46,9 +50,11 @@ export interface Env {
   /** "1" only on a developer's machine without Stripe: every order is a free test order. Never
    * set in wrangler.jsonc or in production, where an order without Stripe is refused with 503. */
   ALLOW_FREE_ORDERS?: string;
-  /** AES-GCM key (base64url, 32 bytes) for birth data. Worker secret. */
+  /** AES-GCM key (base64url, 32 bytes) for everything kept encrypted: birth data, job payloads,
+   * subscription charts, sellers' clients. Worker secret. */
   DATA_KEY: string;
-  /** HMAC secret for download links. Worker secret. */
+  /** HMAC secret for the links in letters and on the site (order, subscription, confirmation) and
+   * for the keyed hash of addresses the letter limit counts by. Worker secret. */
   LINK_KEY: string;
   /** HMAC secret for Chronika Pro sessions. Worker secret; never the same value as LINK_KEY, so a
    * download link can never be replayed as a session. */

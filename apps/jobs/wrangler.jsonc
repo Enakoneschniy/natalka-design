@@ -4,7 +4,11 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true },
+  // The site and Stripe reach this worker on workers.dev; a preview URL per version would be one
+  // more address to keep track of, so there are none.
+  "preview_urls": false,
+  // Logs keep what the worker writes (ids and status codes), not every request it answers.
+  "observability": { "enabled": true, "logs": { "invocation_logs": false } },
   "vars": {
     // The calculation and text API (Python in a container).
     "NATALKA_API_URL": "https://natalka-api.ceo-63e.workers.dev",
@@ -13,7 +17,15 @@
     // The ready letter links to the waiting screen here, which turns into the download.
     "SITE_URL": "https://chronika.me",
     // The seller cabinet; sign-in letters link to it.
-    "PRO_SITE_URL": "https://pro.chronika.me"
+    "PRO_SITE_URL": "https://pro.chronika.me",
+    // Stripe Tax on Checkout: "1" once it is activated in the Stripe dashboard, which is the
+    // owner's call. Declared here because vars set in the Cloudflare dashboard are wiped on deploy.
+    "STRIPE_TAX": "0",
+    // Where owner alerts go: payments to refund, disputes, documents that could not be made.
+    "ALERT_EMAIL": "help@chronika.me"
+    // Secrets, set with `wrangler secret put` and never here: DATA_KEY, LINK_KEY, SESSION_KEY,
+    // PRO_API_KEY, SITE_KEY, NATALKA_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
+    // RESEND_API_KEY, TEST_ORDER_KEY (optional).
   },
   // Worker-to-worker over a service binding, not a public fetch: Cloudflare refuses the latter
   // between two workers on the same zone (error 1042), and this keeps the call private and fast.
