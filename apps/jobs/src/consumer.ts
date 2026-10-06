@@ -118,10 +118,11 @@ export async function deadLetter(env: Env, message: Message<QueueMessage>): Prom
   }
   await updateJob(env.DB, job.id, { status: 'failed', last_error: job.last_error ?? 'gave up' });
   if (await settleFailedJob(env, job.id)) return message.ack();
+  // Ids and a code only: what the job last recorded stays in its row, out of mail and logs.
   await sendAlert(
     env,
     'A document could not be made',
-    `job ${job.id}\norder ${job.order_id}\nstep ${job.step}\nlast error ${job.last_error ?? '-'}\n` +
+    `job ${job.id}\norder ${job.order_id}\ncode gave_up_at_${job.step}\n` +
       'The buyer sees that it failed: refund the order or run the job again.',
   );
   message.ack();
