@@ -55,6 +55,12 @@ describe('access', () => {
     assert.equal(await statusOf(post), null);
   });
 
+  test('a stray newline around the configured key does not lock the caller out', async () => {
+    const r = request('GET', '/v1/sections', { 'x-api-key': KEY });
+    assert.equal(await statusOf(r, `${KEY}\n`), null);
+    assert.equal(await statusOf(request('GET', '/v1/sections', { 'x-api-key': KEY }), ' \n'), 503);
+  });
+
   test('without a configured key nothing but the health checks is served', async () => {
     const refused = await refusal(request('GET', '/v1/sections', { 'x-api-key': '' }), undefined);
     assert.equal(refused?.status, 503);

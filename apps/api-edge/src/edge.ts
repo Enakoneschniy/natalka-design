@@ -48,13 +48,15 @@ export async function refusal(
 ): Promise<Response | null> {
   const { pathname } = new URL(request.url);
   if (request.method === 'GET' && OPEN_PATHS.has(pathname)) return null;
+  // A header value arrives trimmed; a secret typed or piped in may end in a newline.
+  const expected = accessKey?.trim();
   // Fail closed: a deploy that lost the secret serves the health checks and nothing else.
-  if (!accessKey) {
+  if (!expected) {
     console.error('ACCESS_KEY is not set; refusing everything but the health checks');
     return refuse(503, 'unavailable');
   }
   const given = request.headers.get(KEY_HEADER);
-  if (given === null || !(await sameKey(given, accessKey))) return refuse(401, 'unauthorized');
+  if (given === null || !(await sameKey(given, expected))) return refuse(401, 'unauthorized');
 
   // A body has to announce its size, so an oversized one is refused before it is read; a
   // request without a body has nothing to announce.
