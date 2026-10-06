@@ -4,12 +4,17 @@ This is the harness behind the cost figures: it drives the same per-section endp
 worker will use, so the numbers it prints are the numbers a real order produces. It writes the
 finished PDF next to the JSON so the text can be read, not just counted.
 
-    uv run python scripts/measure_reading.py --lang ru --name Оксана --gender f
+The API answers only with its key, read from NATALKA_API_KEY; the chart comes from the public
+ephemeris service, which takes no key and is never sent ours.
+
+    NATALKA_API_KEY=… uv run python scripts/measure_reading.py --lang ru --name Оксана --gender f
 """
 
 from __future__ import annotations
 
 import argparse
+import os
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -29,19 +34,31 @@ def post_with_retry(client: httpx.Client, url: str, payload: dict[str, Any]) -> 
         response = client.post(url, json=payload)
         if response.status_code not in RETRYABLE:
             response.raise_for_status()
-            return response.json()
+            return dict(response.json())
         last = f"{response.status_code}: {response.text[:120]}"
         time.sleep(5 * (attempt + 1))
     raise RuntimeError(f"gave up after four attempts — {last}")
 
 
 API = "https://natalka-api.ceo-63e.workers.dev"
+EPHEMERIS = "https://ephemeris-api.ceo-63e.workers.dev"
+KEY_VARIABLE = "NATALKA_API_KEY"
 TIMEOUT = httpx.Timeout(600.0)
 
 
-def main() -> int:
+def api_key() -> str | None:
+    """The API's key, from the environment only: never an argument, so it stays out of history."""
+    key = os.environ.get(KEY_VARIABLE, "").strip()
+    if not key:
+        print(f"{KEY_VARIABLE} is not set; the API answers nothing without it.", file=sys.stderr)
+        return None
+    return key
+
+
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--api", default=API)
+    ap.add_argument("--ephemeris", default=EPHEMERIS)
     ap.add_argument("--date", default="1994-05-15")
     ap.add_argument("--time", dest="birth_time", default="15:25")
     ap.add_argument("--lat", type=float, default=45.1972)
@@ -52,30 +69,32 @@ def main() -> int:
     ap.add_argument("--lang", default="uk")
     ap.add_argument("--product", default="natal")
     ap.add_argument("--out", type=Path, default=Path("/tmp/reading"))
-    ns = ap.parse_args()
+    ns = ap.parse_args(argv)
 
-    client = httpx.Client(timeout=TIMEOUT)
+    key = api_key()
+    if key is None:
+        return 2
+    # Two clients: the key goes only to our API, never to the ephemeris service.
+    client = httpx.Client(base_url=ns.api, timeout=TIMEOUT, headers={"x-api-key": key})
+    ephemeris = httpx.Client(base_url=ns.ephemeris, timeout=TIMEOUT)
 
-    facts = (
-        client.post(
-            f"{ns.api}/v1/calc",
-            json={
-                "date": ns.date,
-                "time": ns.birth_time,
-                "latitude": ns.lat,
-                "longitude": ns.lon,
-                "transit_years": 3,
-            },
-        )
-        .raise_for_status()
-        .json()
+    facts = post_with_retry(
+        ephemeris,
+        "/v1/calc",
+        {
+            "date": ns.date,
+            "time": ns.birth_time,
+            "latitude": ns.lat,
+            "longitude": ns.lon,
+            "transit_years": 3,
+        },
     )
     transits = facts.pop("transits", [])
     unknown_time = facts["birth"]["unknown_time"]
 
     plan = (
         client.get(
-            f"{ns.api}/v1/sections",
+            "/v1/sections",
             params={"product": ns.product, "lang": ns.lang, "unknown_time": unknown_time},
         )
         .raise_for_status()
@@ -91,7 +110,7 @@ def main() -> int:
         t0 = time.monotonic()
         section = post_with_retry(
             client,
-            f"{ns.api}/v1/section",
+            "/v1/section",
             {
                 "facts": facts,
                 "transits": transits,
