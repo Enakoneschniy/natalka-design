@@ -39,6 +39,33 @@ describe('pro client', () => {
     expect(headersOf(init).authorization).toBe('Bearer s-1');
   });
 
+  describe('a redirect from jobs', () => {
+    const redirect = (status: number) =>
+      new Response(null, { status, headers: { location: 'https://elsewhere.test/' } });
+
+    it('is not followed: the key and the bearer go to jobs and nowhere else', async () => {
+      fetchMock.mockResolvedValue(redirect(302));
+      await expect(proCall('/v1/pro/me', { session: 's-1' })).rejects.toThrow('redirect → 302');
+      expect(sent()[1]?.redirect).toBe('manual');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([301, 302, 303, 307, 308])('%s is an outage for every call', async (status) => {
+      fetchMock.mockResolvedValue(redirect(status));
+      await expect(requestLogin('a@b.co')).rejects.toThrow(`redirect → ${status}`);
+      await expect(startSession('t-1')).rejects.toThrow(`redirect → ${status}`);
+      await expect(peekLogin('t-1')).rejects.toThrow(`redirect → ${status}`);
+    });
+
+    it('is an outage when the runtime hides it as an opaque redirect', async () => {
+      const opaque = new Response(null, { status: 200 });
+      Object.defineProperty(opaque, 'type', { value: 'opaqueredirect' });
+      Object.defineProperty(opaque, 'status', { value: 0 });
+      fetchMock.mockResolvedValue(opaque);
+      await expect(proCall('/v1/pro/me', { session: 's-1' })).rejects.toThrow('redirect');
+    });
+  });
+
   it('throws ProUnauthorized on 401 when a session was sent', async () => {
     fetchMock.mockResolvedValue(reply(401));
     await expect(proCall('/v1/pro/me', { session: 's-1' })).rejects.toBeInstanceOf(ProUnauthorized);

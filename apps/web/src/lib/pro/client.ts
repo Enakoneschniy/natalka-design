@@ -19,8 +19,15 @@ const config = (): { base: string; key: string } => {
   return { base: url.replace(/\/$/, ''), key };
 };
 
+/** True for an answer that is a redirect, however the runtime reports one. Redirects are never
+ * followed and the jobs worker has none to give: one is an outage. */
+export function isRedirect(response: Response): boolean {
+  return response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400);
+}
+
 /** A call to the jobs worker. `clientIp` is the visitor's address, sent as `x-client-ip` for the
- * worker's sign-in throttle; only sign-in, sign-up and the session pass it. */
+ * worker's sign-in throttle; only sign-in, sign-up and the session pass it. A redirect throws, like
+ * any outage. */
 export async function proCall<T>(
   path: string,
   init: { method?: string; body?: unknown; session?: string | null; clientIp?: string | null } = {},
@@ -34,7 +41,10 @@ export async function proCall<T>(
     headers,
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
     cache: 'no-store',
+    // The key and the bearer go to the jobs worker and nowhere else.
+    redirect: 'manual',
   });
+  if (isRedirect(response)) throw new Error(`jobs redirect → ${response.status}`);
   if (response.status === 401 && init.session) throw new ProUnauthorized();
   const data = (await response.json().catch(() => null)) as T;
   return { status: response.status, data };

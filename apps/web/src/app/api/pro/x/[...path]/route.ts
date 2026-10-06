@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { matchProxy, type ProxyMatch } from '@/lib/pro/allow';
-import { proForward } from '@/lib/pro/client';
+import { isRedirect, proForward } from '@/lib/pro/client';
 import {
   MAX_IMAGE_BYTES,
   notFromThisOrigin,
@@ -73,8 +73,7 @@ async function proxy(request: Request, { params }: Context): Promise<Response> {
     return unavailable();
   }
   // Redirects are not followed (`proForward`), and jobs has none to give: one is an outage.
-  if (upstream.type === 'opaqueredirect' || (upstream.status >= 300 && upstream.status < 400))
-    return unavailable();
+  if (isRedirect(upstream)) return unavailable();
   if (upstream.status === 401) return isFile(match) ? signInForFile() : signedOut();
   if (closesCabinet(request, match) && upstream.ok) return clearSessionCookies(noContent());
   if (upstream.status === 204) return noContent();

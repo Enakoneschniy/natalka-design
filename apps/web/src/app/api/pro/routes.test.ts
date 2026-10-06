@@ -132,6 +132,16 @@ describe('api/pro routes', () => {
       expect(await res.json()).toEqual({ error: 'unavailable' });
     });
 
+    it('answers 503 and sets no cookie when jobs redirects', async () => {
+      fetchMock.mockResolvedValue(
+        new Response(null, { status: 307, headers: { location: 'https://elsewhere.test/' } }),
+      );
+      const res = await session(post('session', { token: 't-1' }));
+      expect(res.status).toBe(503);
+      expect(res.headers.get('set-cookie')).toBeNull();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     it('is not there on the shop host', async () => {
       const res = await session(post('session', { token: 't-1' }, 'chronika.me'));
       expect(res.status).toBe(404);
@@ -159,6 +169,15 @@ describe('api/pro routes', () => {
       fetchMock.mockRejectedValue(new TypeError('fetch failed'));
       const res = await login(post('login', { email: 'a@b.co' }));
       expect(res.status).toBe(503);
+    });
+
+    it('answers 503 to a jobs redirect, not 202', async () => {
+      fetchMock.mockResolvedValue(
+        new Response(null, { status: 302, headers: { location: 'https://elsewhere.test/' } }),
+      );
+      const res = await login(post('login', { email: 'a@b.co' }));
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({ error: 'unavailable' });
     });
 
     it('answers 400 to a body that is not JSON', async () => {
