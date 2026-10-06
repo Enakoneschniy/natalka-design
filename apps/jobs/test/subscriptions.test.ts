@@ -267,6 +267,16 @@ describe('subscriptions from before this release', () => {
     expect(await view.json()).toMatchObject({ status: 'active', name: 'Старая' });
   });
 
+  it('send the text API a name of at most 80 characters, cut as the documents cut it', async () => {
+    const long = `${'Ж'.repeat(79)}😀${'Я'.repeat(30)}`;
+    const { id } = await legacy('long@subs.test', { display_name: long });
+    await deliverHoroscope(testEnv, id);
+    const clamped = [...long].slice(0, 80).join('');
+    expect([...clamped]).toHaveLength(80);
+    expect(await lastRequest(`/v1/horoscope|${clamped}`)).toMatchObject({ name: clamped });
+    expect(await lastRequest(`/v1/horoscope|${long}`)).toBeNull();
+  });
+
   it('count as confirmed when the previous worker made them during the deploy', async () => {
     const { manage } = await legacy('deploy@subs.test', { confirmed_at: null });
     const view = await SELF.fetch(`https://jobs.test/v1/subscriptions/${manage}`, { headers: SITE });

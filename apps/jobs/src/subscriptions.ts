@@ -3,7 +3,7 @@ import { expiryFrom, now } from './db';
 import type { Env } from './env';
 import { errorCode, UpstreamError } from './errors';
 import { sendHoroscope, sendSubscriptionConfirm, sendTrialEnded } from './mail';
-import { apiFetch, ephemeris } from './pipeline';
+import { apiFetch, clampName, ephemeris } from './pipeline';
 import type { Birth, SubscriptionInput } from './validate';
 
 /* The horoscope subscription: a chart kept on file, a cadence, and a channel or two.
@@ -376,7 +376,7 @@ export async function deliverHoroscope(env: Env, id: string): Promise<void> {
     end: endDate,
     lang: sub.locale,
     gender: sub.gender,
-    name: chart.name,
+    name: clampName(chart.name),
   });
 
   const horoscopeId = crypto.randomUUID();

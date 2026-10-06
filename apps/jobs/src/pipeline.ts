@@ -183,8 +183,8 @@ export async function dropDocuments(env: Env, orderId: string, keep?: string): P
 const AND: Record<string, string> = { uk: 'і', ru: 'и', en: 'and', pl: 'i', de: 'und' };
 
 /** The text API takes a name of at most 80 characters, the two names of a synastry cover
- * included; an order from before names were limited may carry a longer one. */
-const clampName = (name: string): string => [...name].slice(0, 80).join('').trim();
+ * included; an order or a subscription from before names were limited may carry a longer one. */
+export const clampName = (name: string): string => [...name].slice(0, 80).join('').trim();
 
 /** The people a job is about: one, or two for a synastry. */
 export interface People {
