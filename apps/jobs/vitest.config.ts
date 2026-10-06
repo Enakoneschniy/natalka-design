@@ -15,7 +15,8 @@ export default defineConfig({
       miniflare: {
         compatibilityDate: '2026-09-01',
         compatibilityFlags: ['nodejs_compat'],
-        d1Databases: ['DB'],
+        // REPLAY_DB starts empty: test/migrations.test.ts replays the migrations on it.
+        d1Databases: ['DB', 'REPLAY_DB'],
         r2Buckets: ['DOCS'],
         queueProducers: { JOBS: 'natalka-jobs' },
         // The text API and the ephemeris service, faked in Node (see test/fakes.ts).
