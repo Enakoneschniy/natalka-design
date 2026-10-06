@@ -28,7 +28,6 @@ import {
   orderContact,
   setOrderSession,
   bumpStat,
-  updateJob,
 } from './db';
 import type { Env, QueueMessage } from './env';
 import { WorkerEntrypoint } from 'cloudflare:workers';
@@ -62,16 +61,12 @@ import {
   type PreviewInput,
   type SubscriptionInput,
 } from './validate';
+import { consumeJob, DEAD_LETTER_QUEUE, deadLetter } from './consumer';
 import { errorCode } from './errors';
-import { advance, apiFetch, loadBirth, openPayload } from './pipeline';
+import { apiFetch, loadBirth, openPayload } from './pipeline';
 import { sweep } from './retention';
-import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
 import { handlePro } from './pro/routes';
 import { stripeWebhook } from './webhook';
-
-/** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
- * so we stop writing after four minutes and let the message come back for the rest. */
-const PASS_BUDGET_MS = 4 * 60 * 1000;
 
 /** A chart's facts run to a few kilobytes; a synastry carries two. */
 const PREVIEW_LIMIT = 64 * 1024;
@@ -594,6 +589,10 @@ export default {
 
   async queue(batch: MessageBatch<QueueMessage>, env: Env): Promise<void> {
     for (const message of batch.messages) {
+      if (batch.queue === DEAD_LETTER_QUEUE) {
+        await deadLetter(env, message);
+        continue;
+      }
       if ('subscriptionId' in message.body) {
         try {
           await deliverHoroscope(env, message.body.subscriptionId);
@@ -604,41 +603,7 @@ export default {
         }
         continue;
       }
-      const job = await getJob(env.DB, message.body.jobId);
-      if (!job || job.status === 'done') {
-        message.ack();
-        continue;
-      }
-      try {
-        await updateJob(env.DB, job.id, {
-          status: 'running',
-          attempts: job.attempts + 1,
-          last_error: null,
-        });
-        const finished = await advance(env, job, Date.now() + PASS_BUDGET_MS);
-        if (!finished) {
-          // More sections to write: a fresh message rather than a long-running invocation.
-          await env.JOBS.send({ jobId: job.id });
-        }
-        message.ack();
-      } catch (error) {
-        const reason = errorCode(error);
-        await updateJob(env.DB, job.id, { status: 'failed', last_error: reason });
-        console.error('job failed', job.id, reason);
-        // Retry with the queue's backoff; the work already banked in payload is not repeated.
-        if (message.attempts >= MAX_DELIVERIES) {
-          try {
-            if (await settleFailedJob(env, job.id)) {
-              // A seller's reading is settled here rather than left in the dead-letter queue.
-              message.ack();
-              continue;
-            }
-          } catch (settleError) {
-            console.error('settling a failed reading', job.id, errorCode(settleError));
-          }
-        }
-        message.retry();
-      }
+      await consumeJob(env, message);
     }
   },
 

@@ -40,6 +40,10 @@ export interface JobRow {
   tokens_out: number;
   cost_micros: number;
   model: string | null;
+  /** Until when a queue delivery holds the job, and which message it is (see consumer.ts). */
+  lease_until: string | null;
+  lease_by: string | null;
+  updated_at: string;
 }
 
 export const now = (): string => new Date().toISOString();

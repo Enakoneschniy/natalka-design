@@ -38,6 +38,14 @@
         "max_concurrency": 4,
         "max_retries": 3,
         "dead_letter_queue": "natalka-jobs-dlq"
+      },
+      {
+        // What the queue above gave up on: the job is failed for good, a seller's reading settled
+        // and the owner told about a shopper's (src/consumer.ts). A job another delivery is still
+        // working on is looked at again later, which takes a few retries.
+        "queue": "natalka-jobs-dlq",
+        "max_batch_size": 10,
+        "max_retries": 10
       }
     ]
   },
