@@ -13,6 +13,7 @@
  */
 
 import { now } from '../db';
+import { giveAttemptBack, takeAttempt } from './attempts';
 
 export const FAILED_INVITES_PER_HOUR = 5;
 
@@ -39,29 +40,16 @@ export async function redeemInvite(
   if (!code) return { status: 'invalid' };
   if (await hasRedeemed(db, accountId)) return { status: 'already' };
 
-  // The try takes a place among the hour's failures before the code is looked at, counted and
-  // stored in one statement, so tries sent at once cannot pass the limit together. It gives the
-  // place back unless the code turns out not to work.
-  const attempt = crypto.randomUUID();
-  const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
-  const placed = await db
-    .prepare(
-      `INSERT INTO pro_attempts (id, kind, subject, created_at)
-       SELECT ?, 'invite', ?, ?
-       WHERE (SELECT COUNT(*) FROM pro_attempts WHERE kind = 'invite' AND subject = ? AND created_at > ?) < ?`,
-    )
-    .bind(attempt, accountId, now(), accountId, hourAgo, FAILED_INVITES_PER_HOUR)
-    .run();
-  if (!placed.meta.changes) return { status: 'too_many' };
-
+  // The try takes a place among the hour's failures before the code is looked at, and gives it
+  // back unless the code turns out not to work.
+  const attempt = await takeAttempt(db, 'invite', accountId, FAILED_INVITES_PER_HOUR);
+  if (!attempt) return { status: 'too_many' };
   let result: InviteResult | undefined;
   try {
     result = await redeem(db, accountId, code);
     return result;
   } finally {
-    if (result?.status !== 'invalid') {
-      await db.prepare('DELETE FROM pro_attempts WHERE id = ?').bind(attempt).run();
-    }
+    if (result?.status !== 'invalid') await giveAttemptBack(db, attempt);
   }
 }
 

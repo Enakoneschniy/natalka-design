@@ -1,6 +1,8 @@
 -- Chronika Pro: tries that are limited per hour, one row per try that counts.
 --   kind 'invite'  an invite code that did not work; subject = the seller's account id. At most
 --                  five an hour, then every try is refused until the hour has passed.
+--   kind 'pdf'     a PDF assembly that was queued; subject = the reading's order id. At most ten
+--                  an hour per reading.
 -- Ids and times only; the nightly sweep removes rows older than a day. A new table, additive only.
 CREATE TABLE pro_attempts (
   id         TEXT PRIMARY KEY,

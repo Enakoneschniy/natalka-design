@@ -14,6 +14,7 @@ import {
   type WrittenSection,
   writeSection,
 } from '../pipeline';
+import { giveAttemptBack, takeAttempt } from './attempts';
 import { refundStatement } from './credits';
 import { readingRow, readingStatus, REGENERATIONS_PER_READING } from './readings';
 
@@ -196,10 +197,21 @@ async function rewriteHeld(env: Env, accountId: string, orderId: string, section
   };
 }
 
-export type AssembleResult = 'queued' | 'not_found' | 'not_ready' | 'incomplete' | 'building' | 'no_brand';
+export type AssembleResult =
+  | 'queued'
+  | 'not_found'
+  | 'not_ready'
+  | 'incomplete'
+  | 'building'
+  | 'no_brand'
+  | 'too_many';
+
+/** PDFs one reading may be assembled into per hour. */
+export const ASSEMBLIES_PER_HOUR = 10;
 
 /** Puts a finished reading back on the queue to have its PDF made. Every planned section must be
- * there: a PDF with a hole in it is not something to hand a client. */
+ * there: a PDF with a hole in it is not something to hand a client. An assembly that is queued
+ * counts towards the reading's hour; one refused or never queued does not. */
 export async function assemblePdf(env: Env, accountId: string, orderId: string): Promise<AssembleResult> {
   const row = await readingRow(env.DB, orderId, accountId);
   if (!row) return 'not_found';
@@ -214,12 +226,17 @@ export async function assemblePdf(env: Env, accountId: string, orderId: string):
     .first();
   if (!brand) return 'no_brand';
 
+  const attempt = await takeAttempt(env.DB, 'pdf', orderId, ASSEMBLIES_PER_HOUR);
+  if (!attempt) return 'too_many';
   const moved = await env.DB.prepare(
     "UPDATE jobs SET step = 'pdf', status = 'queued', updated_at = ? WHERE id = ? AND step = 'done'",
   )
     .bind(now(), row.job_id)
     .run();
-  if (!moved.meta.changes) return 'building';
+  if (!moved.meta.changes) {
+    await giveAttemptBack(env.DB, attempt);
+    return 'building';
+  }
   try {
     await env.JOBS.send({ jobId: row.job_id });
   } catch (error) {
@@ -230,6 +247,7 @@ export async function assemblePdf(env: Env, accountId: string, orderId: string):
       )
         .bind(now(), row.job_id)
         .run();
+      await giveAttemptBack(env.DB, attempt);
     } catch (cleanupError) {
       console.error('undoing the PDF request failed', row.job_id, errorCode(cleanupError));
     }

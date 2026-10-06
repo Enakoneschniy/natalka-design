@@ -323,6 +323,7 @@ async function readingRoutes(request: Request, env: Env, url: URL, account: ProA
       const result = await assemblePdf(env, account.id, pdf[1]);
       if (result === 'queued') return json({ ok: true }, 202);
       if (result === 'not_found') return json({ error: 'not found' }, 404);
+      if (result === 'too_many') return json({ error: 'too_many' }, 429);
       return json({ error: result }, 409);
     }
     if (method === 'GET') {
