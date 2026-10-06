@@ -133,6 +133,7 @@ async function invite(request: Request, env: Env, account: ProAccount): Promise<
   const result = await redeemInvite(env.DB, account.id, (await readBody(request))?.code);
   if (result.status === 'already') return json({ error: 'already redeemed' }, 409);
   if (result.status === 'invalid') return json({ error: 'invalid code' }, 404);
+  if (result.status === 'too_many') return json({ error: 'too_many' }, 429);
   return json({ credits: result.credits, balance: await balance(env.DB, account.id) });
 }
 

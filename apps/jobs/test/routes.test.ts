@@ -84,6 +84,19 @@ describe('/v1/pro', () => {
     expect((await call('POST', '/v1/pro/invite', { code: 'NOSUCH' }, session)).status).toBe(404);
   });
 
+  it('answers 429 once a seller has tried five codes that did not work this hour', async () => {
+    await testEnv.DB.prepare(
+      "INSERT INTO pro_invite_codes (code, credits, max_uses, created_at) VALUES ('CHR-ROUT-ES29', 3, 1, '2026-10-03T00:00:00.000Z')",
+    ).run();
+    const session = await sessionFor('guessing@routes.test');
+    for (let i = 0; i < 5; i++) {
+      expect((await call('POST', '/v1/pro/invite', { code: `CHR-GUES-S00${i}` }, session)).status).toBe(404);
+    }
+    const refused = await call('POST', '/v1/pro/invite', { code: 'CHR-ROUT-ES29' }, session);
+    expect(refused.status).toBe(429);
+    expect(await refused.json()).toEqual({ error: 'too_many' });
+  });
+
   it('signs out everywhere', async () => {
     const session = await sessionFor('leaving@routes.test');
     expect((await call('POST', '/v1/pro/logout', {}, session)).status).toBe(200);

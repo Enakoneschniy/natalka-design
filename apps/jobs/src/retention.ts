@@ -48,6 +48,8 @@ export async function sweep(env: Env, options: SweepOptions = {}): Promise<Recor
     // Sign-in links are worth nothing a day after they expire; the hour of history the throttle
     // needs is long past by then.
     ['sign-in links', () => run(env, 'DELETE FROM pro_login_tokens WHERE expires_at < ?', expiryFrom(-1))],
+    // The cabinet's hourly limits look back an hour; a day of history is more than they need.
+    ['cabinet attempts', () => run(env, 'DELETE FROM pro_attempts WHERE created_at < ?', expiryFrom(-1))],
     ['stripe tombstones', () => run(env, 'DELETE FROM stripe_tombstones WHERE created_at < ?', expiryFrom(-30))],
     ['letter log', () => run(env, 'DELETE FROM mail_log WHERE created_at < ?', expiryFrom(-2))],
   ];
