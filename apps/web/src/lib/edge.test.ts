@@ -50,40 +50,45 @@ describe('gate: request bodies', () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
-  it('refuses a POST that does not say how long it is', async () => {
-    const next = ok();
-    const response = await gate(
-      request(`https://${SHOP}/api/orders`, { method: 'POST' }),
-      env(),
-      next,
-    );
-    expect(response.status).toBe(411);
-    expect(next).not.toHaveBeenCalled();
-  });
-
-  it('refuses a chunked body of unknown length, whatever the method', async () => {
-    for (const method of ['POST', 'DELETE']) {
-      const response = await gate(
-        request(`https://${SHOP}/api/subscriptions/t`, {
-          method,
-          headers: { 'transfer-encoding': 'chunked' },
+  it('refuses a body that does not say how long it is, whatever the method', async () => {
+    /** A body streamed in chunks: there is no length to state. */
+    const streamed = (method: string) =>
+      new Request(`https://${SHOP}/api/subscriptions/t`, {
+        method,
+        headers: { host: SHOP },
+        body: new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{}'));
+            controller.close();
+          },
         }),
-        env(),
-        ok(),
-      );
-      expect(response.status).toBe(411);
+        duplex: 'half',
+      } as RequestInit & { duplex: 'half' });
+    for (const method of ['POST', 'PUT', 'DELETE']) {
+      const next = ok();
+      const response = await gate(streamed(method), env(), next);
+      expect(response.status, method).toBe(411);
+      expect(next).not.toHaveBeenCalled();
     }
+    const unstated = await gate(
+      request(`https://${SHOP}/api/orders`, { method: 'POST', body: '{}' }),
+      env(),
+      ok(),
+    );
+    expect(unstated.status).toBe(411);
   });
 
-  it('lets a DELETE without a body through: fetch sends no length for one', async () => {
-    const next = ok();
-    const response = await gate(
-      request(`https://${SHOP}/api/subscriptions/t`, { method: 'DELETE' }),
-      env(),
-      next,
-    );
-    expect(response.status).toBe(200);
-    expect(next).toHaveBeenCalledOnce();
+  it('lets a request without a body through without a length: browsers send none for one', async () => {
+    for (const method of ['POST', 'DELETE', 'PATCH']) {
+      const next = ok();
+      const response = await gate(
+        request(`https://${SHOP}/api/subscriptions/t`, { method }),
+        env(),
+        next,
+      );
+      expect(response.status, method).toBe(200);
+      expect(next).toHaveBeenCalledOnce();
+    }
   });
 
   it('refuses a length that is not a number', async () => {

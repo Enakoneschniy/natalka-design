@@ -61,22 +61,15 @@ function refuse(status: number, error: string, api: boolean): Response {
       });
 }
 
-/** The size of a body must be known before anything reads it. A body that does not say how long
- * it is (chunked), or a POST/PUT/PATCH without a length, is refused; a DELETE or OPTIONS without
- * one carries nothing — `fetch` sends no length for a bodiless DELETE. */
+/** The size of a body must be known before anything reads it: a body that does not say how long
+ * it is (chunked) is refused. A request without a body needs no length — browsers send a bodiless
+ * DELETE or POST without one. */
 function bodyRefusal(request: Request, path: string): Response | null {
   const method = request.method.toUpperCase();
   if (method === 'GET' || method === 'HEAD') return null;
   const api = isApi(path);
   const declared = request.headers.get('content-length');
-  if (declared === null) {
-    const carriesBody =
-      request.headers.has('transfer-encoding') ||
-      method === 'POST' ||
-      method === 'PUT' ||
-      method === 'PATCH';
-    return carriesBody ? refuse(411, 'length', api) : null;
-  }
+  if (declared === null) return request.body !== null ? refuse(411, 'length', api) : null;
   if (!/^\d+$/.test(declared.trim())) return refuse(411, 'length', api);
   const cap = IMAGE_UPLOAD.test(path) ? MAX_IMAGE_BODY_BYTES : MAX_BODY_BYTES;
   return Number(declared) > cap ? refuse(413, 'too large', api) : null;
