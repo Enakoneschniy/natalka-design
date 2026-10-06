@@ -55,6 +55,18 @@ describe('the site key', () => {
     expect(site.status).toBe(401);
   });
 
+  it('takes a configured key without its surrounding whitespace, and one of whitespace alone as none', async () => {
+    const call = (env: ReturnType<typeof envWith>) =>
+      worker.fetch(new Request('https://jobs.test/nowhere', { headers: SITE }), env, createExecutionContext());
+    expect((await call(envWith('SITE_KEY', 'test-site-key\n'))).status).toBe(404);
+    expect((await call(envWith('SITE_KEY', '  test-site-key  '))).status).toBe(404);
+    for (const blank of ['', '   ', '\n']) {
+      const refused = await call(envWith('SITE_KEY', blank));
+      expect(refused.status, JSON.stringify(blank)).toBe(503);
+      expect(await refused.json()).toEqual({ error: 'unavailable' });
+    }
+  });
+
   it('serves nothing but health and the webhook when the key is not configured', async () => {
     const env = envWith('SITE_KEY', undefined);
     const call = (method: string, path: string) =>
