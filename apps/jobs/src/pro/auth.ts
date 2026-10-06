@@ -50,8 +50,12 @@ function randomToken(): string {
     .replace(/=+$/, '');
 }
 
+/** Whether an address has an open account. A closed one never counts: it gets no sign-in letter. */
 export async function accountExists(db: D1Database, email: string): Promise<boolean> {
-  const row = await db.prepare('SELECT 1 AS yes FROM pro_accounts WHERE email = ?').bind(email).first();
+  const row = await db
+    .prepare('SELECT 1 AS yes FROM pro_accounts WHERE email = ? AND closed_at IS NULL')
+    .bind(email)
+    .first();
   return Boolean(row);
 }
 
@@ -130,14 +134,15 @@ export function maskEmail(email: string): string {
 }
 
 /** The address a sign-in or sign-up link would open, without spending it: only while the link is
- * unused and unexpired, and for a sign-in link only while its account exists. */
+ * unused and unexpired, and for a sign-in link only while its account exists and is open. */
 export async function peekLoginToken(db: D1Database, raw: string): Promise<string | null> {
   if (!raw) return null;
   const row = await db
     .prepare(
       `SELECT t.email FROM pro_login_tokens t
        WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ?
-         AND (t.purpose = 'signup' OR EXISTS (SELECT 1 FROM pro_accounts a WHERE a.email = t.email))`,
+         AND (t.purpose = 'signup'
+              OR EXISTS (SELECT 1 FROM pro_accounts a WHERE a.email = t.email AND a.closed_at IS NULL))`,
     )
     .bind(await hashToken(raw), now())
     .first<{ email: string }>();
@@ -145,8 +150,9 @@ export async function peekLoginToken(db: D1Database, raw: string): Promise<strin
 }
 
 /** Spends a token and returns the account behind it. A sign-up token creates the account (an
- * existing one is left as it is); a login token needs the account to exist already.
- * The UPDATE is the whole check: of two requests racing with one token, only one gets a row. */
+ * existing one is left as it is); a login token needs the account to exist already. A closed
+ * account is never returned. The UPDATE is the whole check: of two requests racing with one
+ * token, only one gets a row. */
 export async function consumeLoginToken(db: D1Database, raw: string): Promise<ProAccount | null> {
   if (!raw) return null;
   const ts = now();
@@ -178,7 +184,7 @@ export async function consumeLoginToken(db: D1Database, raw: string): Promise<Pr
     }
   }
   return db
-    .prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE email = ?`)
+    .prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE email = ? AND closed_at IS NULL`)
     .bind(used.email)
     .first<ProAccount>();
 }
@@ -190,8 +196,8 @@ export const issueSession = (env: Env, account: ProAccount): Promise<string> =>
     SESSION_TTL_SECONDS,
   );
 
-/** The account behind a request's bearer session, or null. Never throws on a malformed token:
- * whatever arrives in the header is somebody else's input. */
+/** The open account behind a request's bearer session, or null. Never throws on a malformed
+ * token: whatever arrives in the header is somebody else's input. */
 export async function authenticate(request: Request, env: Env): Promise<ProAccount | null> {
   const header = request.headers.get('authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : '';
@@ -204,7 +210,9 @@ export async function authenticate(request: Request, env: Env): Promise<ProAccou
   }
   if (!claims || claims.typ !== 'pro' || typeof claims.sub !== 'string') return null;
   if (typeof claims.epoch !== 'number') return null;
-  return env.DB.prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE id = ? AND session_epoch = ?`)
+  return env.DB.prepare(
+    `SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE id = ? AND session_epoch = ? AND closed_at IS NULL`,
+  )
     .bind(claims.sub, claims.epoch)
     .first<ProAccount>();
 }

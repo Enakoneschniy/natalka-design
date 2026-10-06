@@ -12,7 +12,7 @@ import { errorCode } from '../errors';
 import { openPayload } from '../pipeline';
 import { type ClientBirth, getClient } from './clients';
 import { balance, CREDIT_COST, refund, refundStatement, spend } from './credits';
-import { dropReadingFiles } from './storage';
+import { dropFilesThenRows, readingFolder } from './storage';
 
 /** Seller readings are written in Russian during the pilot. */
 export const PRO_LANG = 'ru';
@@ -302,25 +302,10 @@ export async function deleteClient(env: Env, accountId: string, clientId: string
     .bind(accountId, clientId, clientId)
     .all<{ order_id: string }>();
   const orders = results.map((row) => row.order_id);
-  await dropFilesThenRows(env, orders, [
+  // An order takes its charts, job, documents, reading and reports with it.
+  await dropFilesThenRows(env, orders.map(readingFolder), [
     ...orders.map((id) => env.DB.prepare('DELETE FROM orders WHERE id = ?').bind(id)),
     env.DB.prepare('DELETE FROM pro_clients WHERE id = ? AND account_id = ?').bind(clientId, accountId),
   ]);
   return true;
-}
-
-/** Deletes readings for good: their files, then their rows (one batch; an order takes its charts,
- * job, documents, reading and reports with it). Files go first, so that a failure leaves rows to
- * delete again rather than files nothing points at; a PDF stored while the rows were going is
- * looked for once more after. */
-export async function dropFilesThenRows(env: Env, orders: string[], rows: D1PreparedStatement[]): Promise<void> {
-  for (const id of orders) await dropReadingFiles(env, id);
-  await env.DB.batch(rows);
-  for (const id of orders) {
-    try {
-      await dropReadingFiles(env, id);
-    } catch (error) {
-      console.error('reading files left in storage', id, errorCode(error));
-    }
-  }
 }

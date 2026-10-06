@@ -128,6 +128,12 @@ describe('the migrations of this release', () => {
       regenerations: 0,
       busy_until: null,
     });
+    expect(await db.prepare("SELECT email, name, closed_at FROM pro_accounts WHERE id = 'a1'").first()).toEqual({
+      email: 'seller@replay.test',
+      name: 'Продавец',
+      closed_at: null,
+    });
+    expect(await count('pro_attempts')).toBe(0);
   });
 
   it("leave the previous worker's own writes working while it still runs", async () => {

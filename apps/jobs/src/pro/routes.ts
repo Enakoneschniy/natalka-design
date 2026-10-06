@@ -34,6 +34,7 @@ import {
   saveBrand,
 } from './brand';
 import { createClient, getClient, listClients, parseClientBirth } from './clients';
+import { closeAccount } from './closing';
 import { balance } from './credits';
 import { PACKS, attachSession, createPurchase, isPack, listPurchases, markFailed } from './purchases';
 import { createPackCheckout } from '../stripe';
@@ -138,6 +139,15 @@ async function me(env: Env, account: ProAccount): Promise<Response> {
     balance: await balance(env.DB, account.id),
     invite_redeemed: await hasRedeemed(env.DB, account.id),
   });
+}
+
+/** Closes the cabinet for good (closing.ts), once the seller has typed its address: 204, or 400
+ * when the address is not the cabinet's. */
+async function closeCabinet(request: Request, env: Env, account: ProAccount): Promise<Response> {
+  const typed = normalizeEmail((await readBody(request))?.confirm_email);
+  if (typed === null || typed !== account.email) return json({ error: 'confirm' }, 400);
+  await closeAccount(env, account);
+  return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } });
 }
 
 async function invite(request: Request, env: Env, account: ProAccount): Promise<Response> {
@@ -375,6 +385,7 @@ export async function handlePro(
   if (!account) return json({ error: 'unauthorized' }, 401);
 
   if (route === 'GET /v1/pro/me') return me(env, account);
+  if (route === 'DELETE /v1/pro/me') return closeCabinet(request, env, account);
   if (route === 'POST /v1/pro/invite') return invite(request, env, account);
   if (route === 'POST /v1/pro/logout') {
     await endSessions(env.DB, account.id);
