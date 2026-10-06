@@ -370,14 +370,52 @@ export async function markOrderPaid(
   return (result.meta.changes ?? 0) > 0;
 }
 
+/** Records the order's current Checkout Session and when it was opened; an unpaid order is swept a
+ * week after its last one. */
 export async function setOrderSession(db: D1Database, orderId: string, sessionId: string) {
-  await db.prepare('UPDATE orders SET stripe_session_id = ? WHERE id = ?').bind(sessionId, orderId).run();
+  await db
+    .prepare('UPDATE orders SET stripe_session_id = ?, checkout_at = ? WHERE id = ?')
+    .bind(sessionId, now(), orderId)
+    .run();
 }
 
-export async function orderStatus(db: D1Database, orderId: string): Promise<string | null> {
-  const row = await db.prepare('SELECT status FROM orders WHERE id = ?').bind(orderId).first<{ status: string }>();
-  return row?.status ?? null;
+/** What the site is told about an order. The stored status holds pending, paid, test and
+ * refunded; a dispute or a payment of the wrong amount is a hold beside it (see migration 0014). */
+export type OrderStatus = 'pending' | 'paid' | 'test' | 'refunded' | 'disputed' | 'failed';
+
+export interface OrderState {
+  id: string;
+  email: string;
+  product: Product;
+  locale: string;
+  amount_minor: number;
+  currency: string;
+  status: 'pending' | 'paid' | 'test' | 'refunded';
+  hold: 'amount_mismatch' | 'disputed' | null;
+  stripe_session_id: string | null;
+  stripe_payment_intent: string | null;
+  pro_account_id: string | null;
 }
+
+export const orderState = (db: D1Database, orderId: string): Promise<OrderState | null> =>
+  db
+    .prepare(
+      `SELECT id, email, product, locale, amount_minor, currency, status, hold, stripe_session_id,
+              stripe_payment_intent, pro_account_id
+       FROM orders WHERE id = ?`,
+    )
+    .bind(orderId)
+    .first<OrderState>();
+
+export function orderStatusOf(order: Pick<OrderState, 'status' | 'hold'>): OrderStatus {
+  if (order.hold === 'disputed') return 'disputed';
+  if (order.hold === 'amount_mismatch') return 'failed';
+  return order.status;
+}
+
+/** Whether the order's document may be handed out: it was paid for (or is a test) and nothing
+ * has taken the payment back. */
+export const deliverable = (status: OrderStatus): boolean => status === 'paid' || status === 'test';
 
 // ---- what the site is doing -----------------------------------------------------------------
 

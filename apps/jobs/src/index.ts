@@ -10,10 +10,12 @@ import { encryptJson, LINK_TTL_SECONDS, readLink, sameSecret, sha256Hex, signLin
 import {
   cachePreview,
   claimTelegramLink,
+  deliverable,
   forgetTelegramChat,
   markOrderPaid,
   markTelegramDelivered,
-  orderStatus,
+  orderState,
+  orderStatusOf,
   telegramCodeFor,
   telegramLink,
   cachedPreview,
@@ -30,7 +32,6 @@ import {
   orderFacts,
   bumpStat,
   scrubExpiredJobPayloads,
-  type Product,
   updateJob,
 } from './db';
 import type { Env, QueueMessage } from './env';
@@ -52,7 +53,9 @@ import {
   updateSubscription,
 } from './subscriptions';
 import { contentDisposition, documentFilename } from './filename';
-import { createCheckoutSession, verifyWebhook } from './stripe';
+import { type CheckoutSession, createCheckoutSession, verifyWebhook } from './stripe';
+import { json, readJson } from './http';
+import { InvalidField, type OrderInput, parseOrder } from './validate';
 import { errorCode } from './errors';
 import { advance, apiFetch, type JobPayload, loadBirth } from './pipeline';
 import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
@@ -62,41 +65,6 @@ import { markFailed, markPaid, markRefunded } from './pro/purchases';
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
  * so we stop writing after four minutes and let the message come back for the rest. */
 const PASS_BUDGET_MS = 4 * 60 * 1000;
-
-const json = (body: unknown, status = 200): Response =>
-  Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
-
-interface CreateOrder {
-  email: string;
-  product: Product;
-  locale: string;
-  country?: string;
-  amount_minor: number;
-  currency: string;
-  /** Which side of the price experiment the visitor was shown. */
-  variant?: string | null;
-  /** Their answer to the cookie question, and where they came from. */
-  consent?: string | null;
-  source?: string | null;
-  /** Where Stripe sends the customer back if they abandon the payment page. */
-  cancel_url?: string;
-  /** The product's title in the customer's language, for the payment page. */
-  product_name?: string;
-  birth: BirthInput;
-  /** The partner. Only a synastry has one; anything else ignores it. */
-  birth_second?: BirthInput;
-}
-
-interface BirthInput {
-  date: string;
-  time: string | null;
-  latitude: number;
-  longitude: number;
-  zone: string;
-  place: string;
-  name: string;
-  gender: 'f' | 'm' | 'n';
-}
 
 interface PreviewRequest {
   facts: Record<string, unknown>;
@@ -179,45 +147,56 @@ async function previewText(request: Request, env: Env): Promise<Response> {
   return json({ blocks: result.blocks, cached: false });
 }
 
+/** An order is a few hundred bytes; this leaves room for long place names and nothing else. */
+const ORDER_LIMIT = 16 * 1024;
+
+/** The order's own page: where the buyer waits for the document, and where Stripe sends them back
+ * whether they paid or not. */
+const orderPage = (env: Env, locale: string, token: string): string =>
+  `${env.SITE_URL}/${locale}/generating?t=${token}`;
+
 async function createOrder(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json()) as CreateOrder;
-  if (!body?.email || !body?.birth?.date || !body?.birth?.zone) {
-    return json({ error: 'email and birth data are required' }, 400);
+  const read = await readJson(request, ORDER_LIMIT);
+  if (!read.ok) return read.response;
+  let order: OrderInput;
+  try {
+    order = parseOrder(read.body);
+  } catch (error) {
+    if (error instanceof InvalidField) return json({ error: 'invalid', field: error.field }, 400);
+    throw error;
   }
-  if (body.product === 'synastry' && !(body.birth_second?.date && body.birth_second?.zone)) {
-    return json({ error: 'a synastry needs two people' }, 400);
-  }
+
+  // Whether an order is free is decided by the worker, never by the request alone: with Stripe
+  // configured only the test key makes one free, and without Stripe nothing is accepted unless
+  // free orders are switched on, which only a developer's machine does.
+  const test =
+    (await sameSecret(request.headers.get('x-test-order'), env.TEST_ORDER_KEY)) ||
+    (!env.STRIPE_SECRET_KEY && env.ALLOW_FREE_ORDERS === '1');
+  if (!test && !env.STRIPE_SECRET_KEY) return json({ error: 'payments unavailable' }, 503);
 
   const orderId = crypto.randomUUID();
   const jobId = crypto.randomUUID();
   const retention = Number(env.RETENTION_DAYS ?? '30');
 
-  // What decides whether this order is a test is the state of the worker, not a flag in the
-  // request: without a Stripe key nothing can be charged, and with one nothing is free unless
-  // it carries the test key. The caller cannot make itself free by asking.
-  const testKey = request.headers.get('x-test-order');
-  const test =
-    !env.STRIPE_SECRET_KEY || Boolean(env.TEST_ORDER_KEY && testKey && testKey === env.TEST_ORDER_KEY);
-
   await insertOrder(env.DB, {
     id: orderId,
-    email: body.email,
-    product: body.product,
-    locale: body.locale,
-    country: body.country ?? null,
-    amount_minor: body.amount_minor,
-    currency: body.currency,
+    email: order.email,
+    product: order.product,
+    locale: order.locale,
+    country: order.country,
+    amount_minor: order.amount_minor,
+    currency: order.currency,
     status: test ? 'test' : 'pending',
-    variant: body.variant ?? null,
-    consent: body.consent ?? null,
-    source: body.source ?? null,
+    variant: order.variant,
+    consent: order.consent,
+    source: order.source,
     created_at: now(),
   });
 
   // One encrypted row per person; the second exists only for a synastry.
-  const people = body.product === 'synastry' && body.birth_second ? [body.birth, body.birth_second] : [body.birth];
+  const people = order.birth_second ? [order.birth, order.birth_second] : [order.birth];
   for (const [index, person] of people.entries()) {
-    const { ciphertext, nonce } = await encryptJson({ ...person, lang: body.locale }, env.DATA_KEY);
+    const { ciphertext, nonce } = await encryptJson({ ...person, lang: order.locale }, env.DATA_KEY);
     await insertChart(env.DB, {
       id: crypto.randomUUID(),
       order_id: orderId,
@@ -232,14 +211,14 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     });
   }
 
-  await insertJob(env.DB, { id: jobId, order_id: orderId, kind: body.product });
+  await insertJob(env.DB, { id: jobId, order_id: orderId, kind: order.product });
   // Counted here rather than in the browser: an order is a thing that happened, not a click.
   await bumpStat(env.DB, {
     event: 'order',
-    variant: body.variant,
-    source: body.source,
-    country: body.country,
-    currency: body.currency,
+    variant: order.variant,
+    source: order.source,
+    country: order.country,
+    currency: order.currency,
   });
   // The token is the only thing the browser needs afterwards: it names the order and expires.
   const token = await signLink('order', { order: orderId, job: jobId }, env.LINK_KEY, LINK_TTL_SECONDS);
@@ -250,17 +229,24 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     return json({ order_id: orderId, job_id: jobId, token }, 201);
   }
 
-  const session = await createCheckoutSession(env, {
-    orderId,
-    jobId,
-    email: body.email,
-    locale: body.locale,
-    currency: body.currency,
-    amountMinor: body.amount_minor,
-    productName: body.product_name ?? body.product,
-    successUrl: `${env.SITE_URL}/${body.locale}/generating?t=${token}`,
-    cancelUrl: body.cancel_url ?? `${env.SITE_URL}/${body.locale}`,
-  });
+  let session: CheckoutSession;
+  try {
+    session = await createCheckoutSession(env, {
+      orderId,
+      jobId,
+      email: order.email,
+      locale: order.locale,
+      currency: order.currency,
+      amountMinor: order.amount_minor,
+      product: order.product,
+      returnUrl: orderPage(env, order.locale, token),
+      idempotencyKey: `checkout-${orderId}`,
+    });
+  } catch (error) {
+    // The order stays pending: the buyer can open the payment page again from the order's page.
+    console.error('checkout failed', orderId, errorCode(error));
+    return json({ error: 'checkout' }, 502);
+  }
   await setOrderSession(env.DB, orderId, session.id);
   // The job waits in the table, not in the queue, until the webhook says the money is in.
   return json({ order_id: orderId, job_id: jobId, token, checkout_url: session.url }, 201);
@@ -360,30 +346,35 @@ async function jobStatus(env: Env, token: string): Promise<Response> {
 
   const job = await getJob(env.DB, claims.job);
   if (!job || job.order_id !== claims.order) return json({ error: 'not found' }, 404);
+  const order = await orderState(env.DB, job.order_id);
+  if (!order || order.pro_account_id) return json({ error: 'not found' }, 404);
 
   const payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
   const total = payload.plan?.length ?? 0;
   const written = payload.sections?.length ?? 0;
-  const document = job.step === 'done' ? await documentForOrder(env.DB, job.order_id) : null;
-  const order = await orderStatus(env.DB, job.order_id);
+  const status = orderStatusOf(order);
+  const document =
+    job.step === 'done' && deliverable(status) ? await documentForOrder(env.DB, job.order_id) : null;
   // The sale, for the conversion the browser reports once the buyer is back from the payment
   // page. A run that was never charged says so, so that a free document is not counted as one.
-  const facts = order === 'paid' ? await orderFacts(env.DB, job.order_id) : null;
+  const sale = order.status === 'paid';
 
   return json({
     step: job.step,
     status: job.status,
     // 'pending' means the payment page was opened and nothing has settled yet.
-    paid: order === 'paid' || order === 'test',
-    test: order === 'test',
+    paid: order.status === 'paid' || order.status === 'test',
+    test: order.status === 'test',
+    order_status: status,
     order_id: job.order_id,
-    amount_minor: facts?.amount_minor ?? null,
-    currency: facts?.currency ?? null,
+    amount_minor: sale ? order.amount_minor : null,
+    currency: sale ? order.currency : null,
     written,
     total,
     // Calculation is quick and rendering is a few seconds; the text is the whole wait.
     progress: total ? Math.round((written / total) * 100) : 0,
-    error: job.last_error,
+    // A code, never the reason: the site shows its own words for it.
+    error: job.status === 'failed' ? 'failed' : null,
     pages: document?.pages ?? null,
     download: document ? `/d/${token}` : null,
   });
@@ -396,6 +387,14 @@ async function finishedDocument(
 ): Promise<{ body: ReadableStream; filename: string } | Response> {
   const claims = await readLink('order', token, env.LINK_KEY);
   if (!claims) return new Response('link expired', { status: 404 });
+  const order = await orderState(env.DB, claims.order);
+  const job = await getJob(env.DB, claims.job);
+  if (!order || order.pro_account_id || !job || job.order_id !== claims.order) {
+    return new Response('not found', { status: 404 });
+  }
+  // A refunded or disputed payment takes the document with it.
+  const status = orderStatusOf(order);
+  if (status === 'refunded' || status === 'disputed') return new Response('gone', { status: 410 });
 
   const document = await documentForOrder(env.DB, claims.order);
   if (!document) return new Response('not ready', { status: 404 });
@@ -403,8 +402,7 @@ async function finishedDocument(
   const object = await env.DOCS.get(document.storage_key);
   if (!object) return new Response('gone', { status: 410 });
 
-  const job = await getJob(env.DB, claims.job);
-  const product = job?.kind ?? 'natal';
+  const product = job.kind;
   const first = await loadBirth(env, claims.order);
   const second = product === 'synastry' ? await loadBirth(env, claims.order, 2) : null;
   return {

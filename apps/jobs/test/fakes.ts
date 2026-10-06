@@ -53,6 +53,10 @@ export async function fakeApi(request: Request): Promise<Response> {
   if (path === '/__last') {
     return json(lastSeen.get(new URL(request.url).searchParams.get('key') ?? '') ?? null);
   }
+  if (path === '/__stripe') {
+    completeSession(((await request.json()) as { complete: string }).complete);
+    return json({ ok: true });
+  }
   if (request.headers.get('x-api-key') !== API_KEY) return json({ error: 'unauthorized' }, 401);
   if (path === '/v1/sections') {
     // The plan request carries no name, so it is kept by its form of address: test files run side
@@ -120,12 +124,40 @@ export async function fakeOutbound(request: Request): Promise<Response> {
     if (fields.customer_email?.startsWith('fail-checkout@')) {
       return new Response('stripe-secret-detail: card_declined_internal', { status: 500 });
     }
-    lastSeen.set(`stripe|checkout|${fields['metadata[purchase_id]']}`, {
-      fields,
-      headers: Object.fromEntries(request.headers),
-    });
+    // Like Stripe, the same idempotency key gets the same session back.
+    const idempotency = request.headers.get('idempotency-key') ?? '';
+    const known = idempotent.get(idempotency);
+    if (known) return json(known);
+    const owner = fields['metadata[purchase_id]'] ?? fields['metadata[order_id]'];
+    lastSeen.set(`stripe|checkout|${owner}`, { fields, headers: Object.fromEntries(request.headers) });
     const id = `cs_test_${crypto.randomUUID().replaceAll('-', '')}`;
-    return json({ id, url: `https://checkout.stripe.test/${id}` });
+    const session = { id, url: `https://checkout.stripe.test/${id}` };
+    sessions.set(id, 'open');
+    if (idempotency) idempotent.set(idempotency, session);
+    return json(session);
+  }
+  const session = url.pathname.match(/^\/v1\/checkout\/sessions\/([^/]+)(\/expire)?$/);
+  if (url.origin === 'https://api.stripe.com' && session?.[1]) {
+    const id = session[1];
+    const status = sessions.get(id);
+    if (!status) return json({ error: { code: 'resource_missing' } }, 404);
+    if (session[2] && request.method === 'POST') {
+      if (status !== 'open') return json({ error: { code: 'checkout_session_not_open' } }, 400);
+      sessions.set(id, 'expired');
+      lastSeen.set(`stripe|expired|${id}`, true);
+      return json({ id, status: 'expired' });
+    }
+    if (!session[2] && request.method === 'GET') return json({ id, status });
   }
   return new Response('not found', { status: 404 });
+}
+
+/** Sessions the fake Stripe has opened, and what became of them. */
+const sessions = new Map<string, 'open' | 'complete' | 'expired'>();
+const idempotent = new Map<string, { id: string; url: string }>();
+
+/** Marks a fake Checkout Session paid, as if the buyer had finished on Stripe's page. Reached
+ * through the API binding: POST /__stripe { complete: <session id> }. */
+export function completeSession(id: string): void {
+  if (sessions.has(id)) sessions.set(id, 'complete');
 }

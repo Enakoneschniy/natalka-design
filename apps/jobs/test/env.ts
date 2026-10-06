@@ -61,6 +61,15 @@ export interface Letter {
   headers?: Record<string, string>;
 }
 
+/** Marks a Checkout Session of the fake Stripe as paid on Stripe's side. */
+export async function completeCheckout(sessionId: string): Promise<void> {
+  await testEnv.API.fetch('https://api.test/__stripe', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ complete: sessionId }),
+  });
+}
+
 /** Every letter the fake Resend took for `to`, oldest first. */
 export async function letters(to: string): Promise<Letter[]> {
   return ((await lastRequest(`mail|${to}`)) as Letter[] | null) ?? [];

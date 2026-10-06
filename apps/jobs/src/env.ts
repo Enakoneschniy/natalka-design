@@ -40,8 +40,12 @@ export interface Env {
   STRIPE_WEBHOOK_SECRET?: string;
   /** "1" once Stripe Tax is activated in the dashboard; enables automatic tax on Checkout. */
   STRIPE_TAX?: string;
-  /** A test order — no payment, straight to the queue — is one whose request carries this key. */
+  /** A test order — no payment, straight to the queue — is one whose request carries this key in
+   * x-test-order. Worker secret. */
   TEST_ORDER_KEY?: string;
+  /** "1" only on a developer's machine without Stripe: every order is a free test order. Never
+   * set in wrangler.jsonc or in production, where an order without Stripe is refused with 503. */
+  ALLOW_FREE_ORDERS?: string;
   /** AES-GCM key (base64url, 32 bytes) for birth data. Worker secret. */
   DATA_KEY: string;
   /** HMAC secret for download links. Worker secret. */
