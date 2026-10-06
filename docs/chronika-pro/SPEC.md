@@ -57,6 +57,9 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
   refunded, takes the credits back via the ledger (negative adjustment), and may result in a
   negative balance. `refundable` eligibility (≤14 days, unspent credits) is shown as advisory,
   not enforced.
+- A disputed pack payment takes the pack's credits back while the dispute is open; a dispute won,
+  or a bank inquiry closed, gives them back. A payment's credits are taken back once, whether a
+  dispute or a refund comes first, and nothing is given back once the payment is refunded.
 
 ## Access
 
@@ -230,7 +233,7 @@ the commands pipe it into `wrangler secret put`, so it is never shown or pasted.
      `openssl rand -base64 48 | pnpm --filter @natalka/web exec wrangler secret put PREVIEW_KEY`
 2. The dead-letter queue the jobs worker now consumes:
    `pnpm --filter @natalka/jobs exec wrangler queues create natalka-jobs-dlq`
-3. Migrations `0014` to `0021` (a production write). All are additive and safe while the current
+3. Migrations `0014` to `0023` (a production write). All are additive and safe while the current
    worker runs: `pnpm --filter @natalka/jobs migrate`
 4. Deploy the web app, then the jobs worker, then the API edge with its container. Each one sends
    its key before the next one starts asking for it. Between the web app and the jobs worker, the
