@@ -1,9 +1,9 @@
 /* The Telegram bot: a second way to receive a finished document, and later the channel the
  * horoscopes arrive through.
  *
- * It holds exactly one secret, the bot token. Everything else — who ordered what, whether it is
- * ready, the PDF itself — is asked of the jobs worker over a service binding, so a leak here
- * exposes a chat bot and nothing behind it. */
+ * It holds two secrets: the bot token and the key that guards /setup. Everything else — who
+ * ordered what, whether it is ready, the PDF itself — is asked of the jobs worker over a service
+ * binding, so a leak here exposes a chat bot and nothing behind it. */
 
 import { WorkerEntrypoint } from 'cloudflare:workers';
 
@@ -20,6 +20,8 @@ interface Env {
   JOBS: JobsInternalStub;
   SITE_URL: string;
   TELEGRAM_BOT_TOKEN?: string;
+  /** Sent as `x-setup-key` to run /setup; while it is unset the route does not exist. */
+  SETUP_KEY?: string;
 }
 
 interface Update {
@@ -104,6 +106,15 @@ async function webhookSecret(token: string): Promise<string> {
     .slice(0, 16)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+/** Constant-time check of a header against a secret; a missing header never matches. */
+function matches(given: string | null, expected: string): boolean {
+  if (!given) return false;
+  const encoder = new TextEncoder();
+  const a = encoder.encode(given);
+  const b = encoder.encode(expected);
+  return a.byteLength === b.byteLength && crypto.subtle.timingSafeEqual(a, b);
 }
 
 const api = (token: string, method: string) => `https://api.telegram.org/bot${token}/${method}`;
@@ -202,8 +213,9 @@ async function onUpdate(env: Env, token: string, update: Update): Promise<void> 
   return sendText(token, chatId, COPY[fallback].hello);
 }
 
-/** Points Telegram at this worker. Idempotent, and it can only ever point the bot at itself. */
-async function setup(env: Env, token: string, origin: string): Promise<Response> {
+/** Points Telegram at this worker. Idempotent, and it can only ever point the bot at itself;
+ * messages Telegram is still holding for the bot are delivered, not dropped. */
+async function setup(token: string, origin: string): Promise<Response> {
   const secret = await webhookSecret(token);
   const response = await fetch(api(token, 'setWebhook'), {
     method: 'POST',
@@ -212,7 +224,7 @@ async function setup(env: Env, token: string, origin: string): Promise<Response>
       url: `${origin}/webhook`,
       secret_token: secret,
       allowed_updates: ['message'],
-      drop_pending_updates: true,
+      drop_pending_updates: false,
     }),
   });
   const result = (await response.json()) as { ok: boolean; description?: string };
@@ -237,10 +249,17 @@ export default {
       return Response.json({ status: 'ok', configured: Boolean(token) });
     if (!token) return Response.json({ error: 'bot token is not configured' }, { status: 503 });
 
-    if (url.pathname === '/setup') return setup(env, token, url.origin);
+    if (url.pathname === '/setup') {
+      // Only the owner re-points the webhook; to anyone without the key this is an unknown path.
+      if (!env.SETUP_KEY || !matches(request.headers.get('x-setup-key'), env.SETUP_KEY)) {
+        return new Response('not found', { status: 404 });
+      }
+      return setup(token, url.origin);
+    }
 
     if (url.pathname === '/webhook' && request.method === 'POST') {
-      if (request.headers.get('x-telegram-bot-api-secret-token') !== (await webhookSecret(token))) {
+      const secret = await webhookSecret(token);
+      if (!matches(request.headers.get('x-telegram-bot-api-secret-token'), secret)) {
         return new Response('forbidden', { status: 403 });
       }
       const update = (await request.json()) as Update;

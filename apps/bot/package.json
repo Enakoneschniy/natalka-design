@@ -6,7 +6,8 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check src"
+    "lint": "biome check .",
+    "test": "node --experimental-strip-types --import ./test/workers-runtime.mjs --test test/bot.test.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250927.0",
