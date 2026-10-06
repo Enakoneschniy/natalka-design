@@ -119,6 +119,31 @@ export const createSignupToken = (
     invite: invite?.trim().toUpperCase() || null,
   });
 
+/** An address as the sign-in confirm page shows it: the first two characters of the local part, or
+ * one when it has two or fewer, then `***@` and the whole domain (`ab@x.com` → `a***@x.com`,
+ * `abc@x.com` → `ab***@x.com`). The site masks the signed-in seller's address the same way and
+ * compares the two. */
+export function maskEmail(email: string): string {
+  const at = email.lastIndexOf('@');
+  const keep = at <= 2 ? 1 : 2;
+  return `${email.slice(0, keep)}***@${email.slice(at + 1)}`;
+}
+
+/** The address a sign-in or sign-up link would open, without spending it: only while the link is
+ * unused and unexpired, and for a sign-in link only while its account exists. */
+export async function peekLoginToken(db: D1Database, raw: string): Promise<string | null> {
+  if (!raw) return null;
+  const row = await db
+    .prepare(
+      `SELECT t.email FROM pro_login_tokens t
+       WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ?
+         AND (t.purpose = 'signup' OR EXISTS (SELECT 1 FROM pro_accounts a WHERE a.email = t.email))`,
+    )
+    .bind(await hashToken(raw), now())
+    .first<{ email: string }>();
+  return row?.email ?? null;
+}
+
 /** Spends a token and returns the account behind it. A sign-up token creates the account (an
  * existing one is left as it is); a login token needs the account to exist already.
  * The UPDATE is the whole check: of two requests racing with one token, only one gets a row. */

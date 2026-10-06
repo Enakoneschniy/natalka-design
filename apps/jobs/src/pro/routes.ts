@@ -1,7 +1,8 @@
 /** /v1/pro/* — the seller cabinet's API.
  *
  * Called only by the pro site's server, which proves itself with PRO_API_KEY (x-pro-key); the
- * browser never has the key. Past that, every route but the two sign-in steps needs a session.
+ * browser never has the key. Past that, every route but the sign-in steps (asking for a link,
+ * looking at one, spending one) needs a session.
  */
 
 import type { Env } from '../env';
@@ -16,7 +17,9 @@ import {
   createSignupToken,
   endSessions,
   issueSession,
+  maskEmail,
   normalizeEmail,
+  peekLoginToken,
   type ProAccount,
 } from './auth';
 import {
@@ -107,6 +110,14 @@ async function requestSignup(request: Request, env: Env, ctx?: ExecutionContext)
   const invite = code && code.length <= MAX_INVITE ? code : null;
   await afterAnswer(ctx, sendSignInLetter(env, email, await requesterOf(request, env), { name, invite }));
   return json({ ok: true }, 202);
+}
+
+/** Whose cabinet a link opens, masked, for the confirm page: 404 for a link that is used, expired
+ * or unknown. Nothing is spent. */
+async function peekLogin(request: Request, env: Env): Promise<Response> {
+  const token = (await readBody(request))?.token;
+  const email = typeof token === 'string' ? await peekLoginToken(env.DB, token) : null;
+  return email ? json({ email: maskEmail(email) }) : json({ error: 'not found' }, 404);
 }
 
 async function startSession(request: Request, env: Env): Promise<Response> {
@@ -354,6 +365,7 @@ export async function handlePro(
   // Only POST spends a sign-in token: mail scanners open links with GET.
   if (route === 'POST /v1/pro/login') return requestLogin(request, env, ctx);
   if (route === 'POST /v1/pro/signup') return requestSignup(request, env, ctx);
+  if (route === 'POST /v1/pro/login/peek') return peekLogin(request, env);
   if (route === 'POST /v1/pro/session') return startSession(request, env);
 
   const account = await authenticate(request, env);
