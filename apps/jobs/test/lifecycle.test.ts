@@ -12,8 +12,8 @@ describe('settleFailedJob', () => {
     expect(await balance(testEnv.DB, account.id)).toBe(2);
     await expect(runJob(jobId)).rejects.toThrow(/ephemeris/);
 
-    expect(await settleFailedJob(testEnv, jobId)).toBe(true);
-    expect(await settleFailedJob(testEnv, jobId)).toBe(true);
+    expect(await settleFailedJob(testEnv, jobId)).toBe('refunded');
+    expect(await settleFailedJob(testEnv, jobId)).toBe('refunded');
 
     expect(await balance(testEnv.DB, account.id)).toBe(3);
     const view = await readingView(testEnv, (await readingRow(testEnv.DB, id, account.id))!);
@@ -64,7 +64,7 @@ describe('settleFailedJob', () => {
         return typeof value === 'function' ? value.bind(target) : value;
       },
     });
-    expect(await settleFailedJob({ ...testEnv, DB: db }, jobId)).toBe(true);
+    expect(await settleFailedJob({ ...testEnv, DB: db }, jobId)).toBe('refunded');
     expect(batches).toBe(1);
     expect(await balance(testEnv.DB, account.id)).toBe(3);
     expect((await readingRow(testEnv.DB, id, account.id))?.refunded_at).not.toBeNull();
@@ -76,7 +76,7 @@ describe('settleFailedJob', () => {
     await armFailure('Частично|b');
     await expect(runJob(jobId)).rejects.toThrow(/503/);
 
-    expect(await settleFailedJob(testEnv, jobId)).toBe(true);
+    expect(await settleFailedJob(testEnv, jobId)).toBe('kept');
     expect(await balance(testEnv.DB, account.id)).toBe(2);
     const view = await readingView(testEnv, (await readingRow(testEnv.DB, id, account.id))!);
     expect(view).toMatchObject({ status: 'ready', written: 1 });
@@ -90,12 +90,12 @@ describe('settleFailedJob', () => {
     await testEnv.DB.prepare("UPDATE jobs SET step = 'pdf' WHERE id = ?").bind(jobId).run();
     await expect(runJob(jobId)).rejects.toThrow();
 
-    expect(await settleFailedJob(testEnv, jobId)).toBe(true);
+    expect(await settleFailedJob(testEnv, jobId)).toBe('kept');
     expect(await getJob(testEnv.DB, jobId)).toMatchObject({ step: 'done', status: 'done' });
   });
 
   it("leaves a shopper's job to the queue", async () => {
     const { jobId } = await seedOrder({ pro: false, name: 'Покупатель' });
-    expect(await settleFailedJob(testEnv, jobId)).toBe(false);
+    expect(await settleFailedJob(testEnv, jobId)).toBeNull();
   });
 });

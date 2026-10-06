@@ -25,19 +25,20 @@ export const MAX_DELIVERIES = 4;
 /** Called when the queue has delivered a seller's job for the last time and it still failed.
  * A reading never goes to the dead-letter queue: what was written is delivered, the gaps are
  * filled free on request, and a reading with nothing written gives its credits back. Returns
- * false for a shopper's job, which the queue handles as before. Safe to run twice. */
-export async function settleFailedJob(env: Env, jobId: string): Promise<boolean> {
+ * which of the two it was ('kept' or 'refunded'), or null for a shopper's job, which the queue
+ * handles as before. Safe to run twice. */
+export async function settleFailedJob(env: Env, jobId: string): Promise<'kept' | 'refunded' | null> {
   const reading = await env.DB.prepare('SELECT order_id FROM pro_readings WHERE job_id = ?')
     .bind(jobId)
     .first<{ order_id: string }>();
-  if (!reading) return false;
+  if (!reading) return null;
   const job = await getJob(env.DB, jobId);
-  if (!job) return false;
+  if (!job) return null;
 
   if (job.step === 'pdf') {
     // The texts are fine; only the assembly failed. The seller can ask again.
     await updateJob(env.DB, jobId, { step: 'done', status: 'done' });
-    return true;
+    return 'kept';
   }
   const payload = await openPayload(env, job);
   if ((payload.sections ?? []).length === 0) {
@@ -51,10 +52,10 @@ export async function settleFailedJob(env: Env, jobId: string): Promise<boolean>
       ),
       env.DB.prepare("UPDATE jobs SET status = 'failed', updated_at = ? WHERE id = ?").bind(ts, jobId),
     ]);
-    return true;
+    return 'refunded';
   }
   await updateJob(env.DB, jobId, { step: 'done', status: 'done' });
-  return true;
+  return 'kept';
 }
 
 export type RegenerateResult =

@@ -5,7 +5,7 @@
  * before the next pass is queued, and the retry of a delivery that died takes its job over at
  * once: the lease names the message that holds it. */
 
-import { getJob, now, updateJob } from './db';
+import { getJob, now, type OrderState, updateJob } from './db';
 import type { Env, QueueMessage } from './env';
 import { errorCode } from './errors';
 import { sendAlert } from './mail';
@@ -97,10 +97,22 @@ async function failedPass(env: Env, message: Message<QueueMessage>, jobId: strin
   message.retry();
 }
 
+/** The first line of a dead letter's alert about a shopper's order: whether their money was taken,
+ * and so what is left to do. */
+function moneyLine(order: Pick<OrderState, 'status' | 'hold'> | null): string {
+  if (!order) return 'order not found';
+  if (order.hold === 'amount_mismatch') return 'PAID the wrong amount — refund it';
+  if (order.hold === 'disputed') return 'PAID order, disputed — rerun once the dispute is won';
+  if (order.status === 'paid') return 'PAID order — refund or rerun';
+  if (order.status === 'refunded') return 'refunded order, nothing to refund';
+  return 'unpaid order, nothing to refund';
+}
+
 /** A message the queue gave up on. A job another delivery is still working on is left to it.
  * Otherwise the job has failed for good: a seller's reading is settled by the usual rule (what was
  * written is delivered, a reading with nothing written gives its credits back), and the owner is
- * told about a shopper's, whose status page now shows the failure. */
+ * told — first of all whether money was taken — about every job but a test order's, which is only
+ * logged. A shopper's status page now shows the failure. */
 export async function deadLetter(env: Env, message: Message<QueueMessage>): Promise<void> {
   const body = message.body;
   if ('subscriptionId' in body) {
@@ -117,13 +129,20 @@ export async function deadLetter(env: Env, message: Message<QueueMessage>): Prom
     return message.attempts < DEAD_LETTER_CHECKS ? message.retry({ delaySeconds: DEAD_LETTER_RETRY_SECONDS }) : message.ack();
   }
   await updateJob(env.DB, job.id, { status: 'failed', last_error: job.last_error ?? 'gave up' });
-  if (await settleFailedJob(env, job.id)) return message.ack();
+  const reading = await settleFailedJob(env, job.id);
+  const order = await env.DB.prepare('SELECT status, hold FROM orders WHERE id = ?')
+    .bind(job.order_id)
+    .first<Pick<OrderState, 'status' | 'hold'>>();
   // Ids and a code only: what the job last recorded stays in its row, out of mail and logs.
-  await sendAlert(
-    env,
-    'A document could not be made',
-    `job ${job.id}\norder ${job.order_id}\ncode gave_up_at_${job.step}\n` +
-      'The buyer sees that it failed: refund the order or run the job again.',
-  );
+  const code = `gave_up_at_${job.step}`;
+  if (order?.status === 'test') {
+    // Nobody paid for it.
+    console.error('test order gave up', job.id, job.order_id, code);
+    return message.ack();
+  }
+  const first = reading ? `pro, ${reading === 'refunded' ? 'credits refunded' : 'sections kept'}` : moneyLine(order);
+  const lines = [first, `job ${job.id}`, `order ${job.order_id}`, `code ${code}`];
+  if (!reading) lines.push('The buyer sees that it failed.');
+  await sendAlert(env, 'A document could not be made', lines.join('\n'));
   message.ack();
 }
