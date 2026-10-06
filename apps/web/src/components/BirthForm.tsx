@@ -4,26 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { cityLabel, emptyPerson, PersonFields, type PersonState } from '@/components/PersonFields';
-
-/** dd.mm.yyyy → ISO, or null when the date does not exist (31.02, 1799, …). */
-function parseDate(value: string): string | null {
-  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value.trim());
-  if (!match) return null;
-  const [, dd, mm, yyyy] = match as unknown as [string, string, string, string];
-  const iso = `${yyyy}-${mm}-${dd}`;
-  const date = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(date.getTime()) || date.getUTCDate() !== Number(dd)) return null;
-  if (Number(yyyy) < 1800 || Number(yyyy) > 2099) return null;
-  return iso;
-}
-
-function parseTime(value: string): string | null {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-  if (!match) return null;
-  const [, hh, mm] = match as unknown as [string, string, string];
-  if (Number(hh) > 23 || Number(mm) > 59) return null;
-  return `${hh.padStart(2, '0')}:${mm}`;
-}
+import { parseDate, parseTime } from '@/lib/birth-input';
 
 const GENDER_CODE: Record<string, string> = { female: 'f', male: 'm', neutral: 'n' };
 

@@ -18,8 +18,6 @@ export interface OrderRequest {
   /** Their answer to the cookie question, and the campaign that brought them. */
   consent?: string | null;
   source?: string | null;
-  cancel_url?: string;
-  product_name?: string;
   birth: BirthInput;
   /** The partner; only a synastry has one. */
   birth_second?: BirthInput;
@@ -96,10 +94,23 @@ const postJson = (body: unknown): RequestInit => ({
 const withToken = (prefix: string, token: string, suffix = '') =>
   `${prefix}/${encodeURIComponent(token)}${suffix}`;
 
-export async function createOrder(order: OrderRequest): Promise<OrderCreated> {
-  const response = await jobsFetch('/v1/orders', postJson(order));
-  if (!response.ok) throw new Error(`orders → ${response.status}`);
-  return (await response.json()) as OrderCreated;
+/** Only Stripe's own payment pages are sent to the browser to open. */
+export const isStripeCheckout = (url: unknown): url is string =>
+  typeof url === 'string' && url.startsWith('https://checkout.stripe.com/');
+
+/** The jobs worker's answer to a call that changes something: what it made, or its status and,
+ * for a 400, the field it named. */
+export type Outcome<T> = { ok: true; data: T } | { ok: false; status: number; field?: string };
+
+async function outcome<T>(response: Response): Promise<Outcome<T>> {
+  if (response.ok) return { ok: true, data: (await response.json()) as T };
+  const data = (await response.json().catch(() => null)) as { field?: unknown } | null;
+  const field = typeof data?.field === 'string' ? data.field : undefined;
+  return { ok: false, status: response.status, ...(field ? { field } : {}) };
+}
+
+export async function createOrder(order: OrderRequest): Promise<Outcome<OrderCreated>> {
+  return outcome(await jobsFetch('/v1/orders', postJson(order)));
 }
 
 export async function jobStatus(token: string): Promise<JobStatus | null> {

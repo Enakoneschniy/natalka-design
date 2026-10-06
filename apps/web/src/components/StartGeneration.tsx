@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { checkEmail } from '@/lib/validate';
 
 interface Birth {
   date: string;
@@ -19,14 +20,12 @@ interface Birth {
 export function StartGeneration({
   locale,
   product,
-  productName,
   birth,
   birthSecond,
   blocked = false,
 }: {
   locale: string;
   product: string;
-  productName: string;
   birth: Birth;
   birthSecond?: Birth;
   /** The visitor's country is one the payment provider does not allow us to sell to. */
@@ -41,7 +40,8 @@ export function StartGeneration({
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    const address = checkEmail(email);
+    if (!address.ok) {
       setError(t('emailInvalid'));
       return;
     }
@@ -52,16 +52,25 @@ export function StartGeneration({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          email,
+          email: address.value,
           product,
-          product_name: productName,
           locale,
           birth,
           birth_second: birthSecond,
-          cancel_url: window.location.href,
         }),
       });
-      if (!response.ok) throw new Error(String(response.status));
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { field?: string } | null;
+        setError(
+          response.status === 429
+            ? t('tooMany')
+            : data?.field === 'email'
+              ? t('emailInvalid')
+              : t('startFailed'),
+        );
+        setPending(false);
+        return;
+      }
       const { token, checkout_url } = (await response.json()) as {
         token: string;
         checkout_url?: string;
