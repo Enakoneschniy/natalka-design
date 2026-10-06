@@ -3,6 +3,7 @@
 
 import { documentForOrder, getJob, now, updateJob } from '../db';
 import type { Env } from '../env';
+import { errorCode } from '../errors';
 import { documentFilename } from '../filename';
 import {
   dropDocuments,
@@ -101,7 +102,7 @@ export async function regenerateSection(
       const others = sections.filter((s) => s.id !== sectionId);
       written = await writeSection(env, row.product, people, payload, sectionId, others, row.address);
     } catch (error) {
-      console.error('regenerating a section', orderId, sectionId, error instanceof Error ? error.message : error);
+      console.error('regenerating a section', orderId, sectionId, errorCode(error));
       return { status: 'failed' };
     }
 
@@ -139,7 +140,7 @@ export async function regenerateSection(
     await dropDocuments(env, orderId);
   } catch (error) {
     // The text is saved and the rewrite spent; a stale PDF is rebuilt on the next request.
-    console.error('dropping stale documents', orderId, error instanceof Error ? error.message : error);
+    console.error('dropping stale documents', orderId, errorCode(error));
   }
 
   const used = await env.DB.prepare('SELECT regenerations FROM pro_readings WHERE order_id = ?')
@@ -179,7 +180,7 @@ export async function assemblePdf(env: Env, accountId: string, orderId: string):
   try {
     await env.JOBS.send({ jobId: row.job_id });
   } catch (error) {
-    console.error('PDF assembly could not be queued', row.job_id, error);
+    console.error('PDF assembly could not be queued', row.job_id, errorCode(error));
     try {
       await env.DB.prepare(
         "UPDATE jobs SET step = 'done', status = 'done', updated_at = ? WHERE id = ? AND step = 'pdf'",
@@ -187,7 +188,7 @@ export async function assemblePdf(env: Env, accountId: string, orderId: string):
         .bind(now(), row.job_id)
         .run();
     } catch (cleanupError) {
-      console.error('undoing the PDF request failed', row.job_id, cleanupError);
+      console.error('undoing the PDF request failed', row.job_id, errorCode(cleanupError));
     }
     throw error;
   }

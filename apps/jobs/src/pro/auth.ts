@@ -9,6 +9,7 @@
 import { sha256Hex, signToken, verifyToken } from '../crypto';
 import { now } from '../db';
 import type { Env } from '../env';
+import { errorCode } from '../errors';
 import { redeemInvite } from './invites';
 
 export const LOGIN_TTL_SECONDS = 15 * 60;
@@ -131,7 +132,7 @@ export async function consumeLoginToken(db: D1Database, raw: string): Promise<Pr
       try {
         await redeemInvite(db, created.id, used.signup_invite);
       } catch (error) {
-        console.error('sign-up invite failed', created.id, error);
+        console.error('sign-up invite failed', created.id, errorCode(error));
       }
     }
   }

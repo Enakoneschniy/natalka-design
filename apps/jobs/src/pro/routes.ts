@@ -5,6 +5,7 @@
  */
 
 import type { Env } from '../env';
+import { errorCode } from '../errors';
 import { contentDisposition } from '../filename';
 import { sendLoginLink, sendSignupLink } from '../mail';
 import {
@@ -55,7 +56,7 @@ const readBody = async (request: Request): Promise<Record<string, unknown> | nul
  * gets one. Without a context (direct callers, tests) the send is awaited, so it is deterministic.
  * A failed send is logged and never shown: it would tell whether a letter was attempted. */
 async function dispatch(ctx: ExecutionContext | undefined, send: Promise<unknown>): Promise<void> {
-  const logged = send.catch((error) => console.error('pro letter failed', error));
+  const logged = send.catch((error) => console.error('pro letter failed', errorCode(error)));
   if (ctx) ctx.waitUntil(logged);
   else await logged;
 }
@@ -213,7 +214,7 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
       currency: purchase.currency,
     });
   } catch (error) {
-    console.error('pack checkout failed', purchase.id, error);
+    console.error('pack checkout failed', purchase.id, errorCode(error));
     await markFailed(env.DB, purchase.id, account.id);
     return json({ error: 'checkout' }, 502);
   }
@@ -222,7 +223,7 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
   try {
     await attachSession(env.DB, purchase.id, session.id);
   } catch (error) {
-    console.error('pack attachSession failed', purchase.id, error);
+    console.error('pack attachSession failed', purchase.id, errorCode(error));
   }
   return json({ id: purchase.id, checkout_url: session.url }, 201);
 }

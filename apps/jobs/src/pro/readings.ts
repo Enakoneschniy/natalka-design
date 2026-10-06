@@ -8,6 +8,7 @@
 import { type Blobish, encryptJson } from '../crypto';
 import { documentForOrder, expiryFrom, type JobStatus, type JobStep, now, type Product } from '../db';
 import type { Env } from '../env';
+import { errorCode } from '../errors';
 import { dropDocuments, openPayload } from '../pipeline';
 import { type ClientBirth, getClient } from './clients';
 import { balance, CREDIT_COST, refund, refundStatement, spend } from './credits';
@@ -121,14 +122,14 @@ export async function createReading(
     try {
       await refund(env.DB, jobId);
     } catch (refundError) {
-      console.error('refund failed', jobId, refundError);
+      console.error('refund failed', jobId, errorCode(refundError));
     }
     throw error;
   }
   try {
     await env.JOBS.send({ jobId });
   } catch (error) {
-    console.error('reading could not be queued', jobId, error);
+    console.error('reading could not be queued', jobId, errorCode(error));
     try {
       const ts = now();
       await env.DB.batch([
@@ -137,7 +138,7 @@ export async function createReading(
         env.DB.prepare("UPDATE jobs SET status = 'failed', updated_at = ? WHERE id = ?").bind(ts, jobId),
       ]);
     } catch (cleanupError) {
-      console.error('refund after queue failure failed', jobId, cleanupError);
+      console.error('refund after queue failure failed', jobId, errorCode(cleanupError));
     }
     throw error;
   }
