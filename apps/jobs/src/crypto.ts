@@ -89,26 +89,76 @@ export async function signToken(
   return `${header}.${claims}.${base64url(signature)}`;
 }
 
+/** The claims of a token we signed that has not expired, or null. Never throws: whatever arrives
+ * as a token is somebody's input, and a malformed one is simply not valid. */
 export async function verifyToken<T>(token: string, secret: string): Promise<T | null> {
-  const [header, claims, signature] = token.split('.');
-  if (!header || !claims || !signature) return null;
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['verify'],
-  );
-  const ok = await crypto.subtle.verify(
-    'HMAC',
-    key,
-    fromBase64url(signature) as unknown as ArrayBuffer,
-    encoder.encode(`${header}.${claims}`),
-  );
-  if (!ok) return null;
-  const payload = JSON.parse(decoder.decode(fromBase64url(claims))) as { exp?: number };
-  if (typeof payload.exp === 'number' && payload.exp < Date.now() / 1000) return null;
-  return payload as T;
+  try {
+    if (token.length > 2048) return null;
+    const [header, claims, signature, ...rest] = token.split('.');
+    if (!header || !claims || !signature || rest.length > 0) return null;
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify'],
+    );
+    const ok = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      fromBase64url(signature) as unknown as ArrayBuffer,
+      encoder.encode(`${header}.${claims}`),
+    );
+    if (!ok) return null;
+    const payload = JSON.parse(decoder.decode(fromBase64url(claims))) as unknown;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+    // Every token we sign expires; one without a date is not ours to honour.
+    const exp = (payload as { exp?: unknown }).exp;
+    if (typeof exp !== 'number' || exp < Date.now() / 1000) return null;
+    return payload as T;
+  } catch {
+    return null;
+  }
+}
+
+/** What a link is for. A link of one kind never works as another: a download link does not manage
+ * a subscription, and a management link does not confirm one. */
+export type LinkKind = 'order' | 'sub' | 'subconfirm';
+
+export interface LinkClaims {
+  order: { order: string; job: string };
+  sub: { sub: string };
+  subconfirm: { sub: string };
+}
+
+export const signLink = <K extends LinkKind>(
+  kind: K,
+  claims: LinkClaims[K],
+  secret: string,
+  ttlSeconds: number,
+): Promise<string> => signToken({ typ: kind, ...claims }, secret, ttlSeconds);
+
+const id = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0 && value.length <= 64;
+
+/** The claims of a link of this kind, or null. Links signed before they carried a kind are
+ * recognised by their shape until they expire; a confirmation link has always carried one. */
+export async function readLink<K extends LinkKind>(
+  kind: K,
+  token: string,
+  secret: string,
+): Promise<LinkClaims[K] | null> {
+  const claims = await verifyToken<Record<string, unknown>>(token, secret);
+  if (!claims) return null;
+  const legacy = claims.typ === undefined;
+  if (!legacy && claims.typ !== kind) return null;
+  if (kind === 'order') {
+    if (!id(claims.order) || !id(claims.job) || (legacy && claims.sub !== undefined)) return null;
+    return { order: claims.order, job: claims.job } as LinkClaims[K];
+  }
+  if (kind === 'subconfirm' && legacy) return null;
+  if (!id(claims.sub) || (legacy && (claims.order !== undefined || claims.job !== undefined))) return null;
+  return { sub: claims.sub } as LinkClaims[K];
 }
 
 export const sha256Hex = async (data: ArrayBuffer): Promise<string> => {

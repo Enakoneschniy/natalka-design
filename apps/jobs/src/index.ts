@@ -6,7 +6,7 @@
  * the only place with the database, the bucket and the keys.
  */
 
-import { encryptJson, LINK_TTL_SECONDS, sameSecret, sha256Hex, signToken, verifyToken } from './crypto';
+import { encryptJson, LINK_TTL_SECONDS, readLink, sameSecret, sha256Hex, signLink } from './crypto';
 import {
   cachePreview,
   claimTelegramLink,
@@ -242,7 +242,7 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     currency: body.currency,
   });
   // The token is the only thing the browser needs afterwards: it names the order and expires.
-  const token = await signToken({ order: orderId, job: jobId }, env.LINK_KEY, LINK_TTL_SECONDS);
+  const token = await signLink('order', { order: orderId, job: jobId }, env.LINK_KEY, LINK_TTL_SECONDS);
 
   // A test order skips the payment and goes straight to the queue.
   if (test) {
@@ -355,11 +355,11 @@ async function stripeWebhook(request: Request, env: Env): Promise<Response> {
 }
 
 async function jobStatus(env: Env, token: string): Promise<Response> {
-  const claims = await verifyToken<{ order: string; job: string }>(token, env.LINK_KEY);
+  const claims = await readLink('order', token, env.LINK_KEY);
   if (!claims) return json({ error: 'link expired' }, 404);
 
   const job = await getJob(env.DB, claims.job);
-  if (!job) return json({ error: 'not found' }, 404);
+  if (!job || job.order_id !== claims.order) return json({ error: 'not found' }, 404);
 
   const payload: JobPayload = job.payload ? (JSON.parse(job.payload) as JobPayload) : {};
   const total = payload.plan?.length ?? 0;
@@ -394,7 +394,7 @@ async function finishedDocument(
   env: Env,
   token: string,
 ): Promise<{ body: ReadableStream; filename: string } | Response> {
-  const claims = await verifyToken<{ order: string; job: string }>(token, env.LINK_KEY);
+  const claims = await readLink('order', token, env.LINK_KEY);
   if (!claims) return new Response('link expired', { status: 404 });
 
   const document = await documentForOrder(env.DB, claims.order);
@@ -427,7 +427,7 @@ async function download(env: Env, token: string): Promise<Response> {
 
 /** The code the site puts in its "get it in Telegram" link. */
 async function telegramCode(env: Env, token: string): Promise<Response> {
-  const claims = await verifyToken<{ order: string; job: string }>(token, env.LINK_KEY);
+  const claims = await readLink('order', token, env.LINK_KEY);
   if (!claims) return json({ error: 'link expired' }, 404);
   const contact = await orderContact(env.DB, claims.order);
   if (!contact) return json({ error: 'not found' }, 404);
@@ -540,11 +540,7 @@ export class JobsInternal extends WorkerEntrypoint<Env> {
     const job = await getJob(this.env.DB, link.job_id);
     const ready = job?.step === 'done';
     const token = ready
-      ? await signToken(
-          { order: link.order_id, job: link.job_id },
-          this.env.LINK_KEY,
-          LINK_TTL_SECONDS,
-        )
+      ? await signLink('order', { order: link.order_id, job: link.job_id }, this.env.LINK_KEY, LINK_TTL_SECONDS)
       : null;
     return {
       kind: 'document' as const,

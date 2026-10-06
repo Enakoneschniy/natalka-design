@@ -1,4 +1,4 @@
-import { type Blobish, decryptJson, encryptJson, signToken, verifyToken } from './crypto';
+import { type Blobish, decryptJson, encryptJson, readLink, signLink } from './crypto';
 import { expiryFrom, now } from './db';
 import type { Env } from './env';
 import { errorCode, UpstreamError } from './errors';
@@ -78,14 +78,14 @@ const texts = async <T>(env: Env, path: string, body: unknown): Promise<T> => {
 };
 
 export async function manageToken(env: Env, id: string): Promise<string> {
-  return signToken({ sub: id }, env.LINK_KEY, MANAGE_TTL_SECONDS);
+  return signLink('sub', { sub: id }, env.LINK_KEY, MANAGE_TTL_SECONDS);
 }
 
 export async function subscriptionFromToken(
   env: Env,
   token: string,
 ): Promise<SubscriptionRow | null> {
-  const claims = await verifyToken<{ sub: string }>(token, env.LINK_KEY);
+  const claims = await readLink('sub', token, env.LINK_KEY);
   if (!claims) return null;
   return getSubscription(env.DB, claims.sub);
 }

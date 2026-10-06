@@ -4,7 +4,7 @@
  * from where it stopped instead of paying the model twice for the same section.
  */
 
-import { type Blobish, decryptJson, LINK_TTL_SECONDS, sha256Hex, signToken } from './crypto';
+import { type Blobish, decryptJson, LINK_TTL_SECONDS, sha256Hex, signLink } from './crypto';
 import {
   expiryFrom,
   insertDocument,
@@ -424,7 +424,7 @@ export async function advance(env: Env, job: JobRow, deadline: number): Promise<
 async function notify(env: Env, job: JobRow): Promise<void> {
   const contact = await orderContact(env.DB, job.order_id);
   if (!contact) throw new JobError(`no order for job ${job.id}`);
-  const token = await signToken({ order: job.order_id, job: job.id }, env.LINK_KEY, LINK_TTL_SECONDS);
+  const token = await signLink('order', { order: job.order_id, job: job.id }, env.LINK_KEY, LINK_TTL_SECONDS);
   const link = `${env.SITE_URL}/${contact.locale}/generating?t=${token}`;
   const sent = await sendReady(env, contact.email, contact.locale, link);
   await insertEmailEvent(env.DB, {
