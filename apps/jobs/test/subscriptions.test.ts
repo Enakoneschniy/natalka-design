@@ -198,7 +198,7 @@ describe('a confirmed subscription', () => {
       .bind(new Date(Date.now() - 1000).toISOString(), new Date(Date.now() - 1000).toISOString(), id)
       .run();
     const { env, sent } = recordingQueue();
-    const hourly = () => worker.scheduled(createScheduledController({ cron: '5 * * * *' }), env, createExecutionContext());
+    const hourly = () => worker.scheduled(createScheduledController({ cron: '5 * * * *' }), env);
     await hourly();
     await hourly();
     expect(sent.filter((m) => 'subscriptionId' in m && m.subscriptionId === id)).toEqual([]);

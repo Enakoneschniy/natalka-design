@@ -1,4 +1,4 @@
-import { createExecutionContext, createScheduledController } from 'cloudflare:test';
+import { createScheduledController } from 'cloudflare:test';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import worker from '../src/index';
 import { sweep } from '../src/retention';
@@ -166,7 +166,7 @@ describe('the nightly sweep', () => {
     quiet();
     const { orderId } = await seedOrder({ pro: false, name: 'Крон' });
     const key = await document(orderId, daysAgo(1));
-    await worker.scheduled(createScheduledController({ cron: '17 3 * * *' }), testEnv, createExecutionContext());
+    await worker.scheduled(createScheduledController({ cron: '17 3 * * *' }), testEnv);
     expect(await testEnv.DOCS.get(key)).toBeNull();
   });
 });
