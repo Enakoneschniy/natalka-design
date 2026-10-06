@@ -16,6 +16,8 @@ import httpx
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-5"
 OPENROUTER_DIRECT = "https://openrouter.ai/api"
+#: Cloudflare AI Gateway. An authenticated gateway wants its own token beside the model key.
+GATEWAY_HOST = "gateway.ai.cloudflare.com"
 
 #: USD per million tokens, as listed by OpenRouter. Only a fallback: OpenRouter returns the real
 #: cost of each generation in `usage`, and that is what we store — it includes their markup and
@@ -66,6 +68,7 @@ class OpenRouterProvider:
         base_url: str | None = None,
         model: str | None = None,
         timeout: float = 300.0,
+        gateway_token: str | None = None,
     ) -> None:
         self.api_key = api_key or os.environ.get("NATALKA_MODEL_API_KEY", "")
         self.base_url = (
@@ -73,6 +76,25 @@ class OpenRouterProvider:
         ).rstrip("/")
         self.model = model or os.environ.get("NATALKA_MODEL") or DEFAULT_MODEL
         self.timeout = timeout
+        self.gateway_token = (
+            gateway_token
+            if gateway_token is not None
+            else os.environ.get("NATALKA_AI_GATEWAY_TOKEN", "")
+        )
+
+    def _headers(self) -> dict[str, str]:
+        headers = {
+            "authorization": f"Bearer {self.api_key}",
+            "content-type": "application/json",
+            # OpenRouter attributes traffic by these; they show up in its dashboard.
+            "http-referer": "https://chronika.me",
+            "x-title": "Chronika",
+        }
+        # Only the gateway itself is given its token; OpenRouter, called directly, never sees it.
+        url = httpx.URL(self.base_url)
+        if self.gateway_token and url.scheme == "https" and url.host == GATEWAY_HOST:
+            headers["cf-aig-authorization"] = f"Bearer {self.gateway_token}"
+        return headers
 
     def complete(self, system: str, user: str, *, max_tokens: int = 4096) -> Completion:
         if not self.api_key:
@@ -80,13 +102,7 @@ class OpenRouterProvider:
         try:
             response = httpx.post(
                 f"{self.base_url}/v1/chat/completions",
-                headers={
-                    "authorization": f"Bearer {self.api_key}",
-                    "content-type": "application/json",
-                    # OpenRouter attributes traffic by these; they show up in its dashboard.
-                    "http-referer": "https://chronika.me",
-                    "x-title": "Chronika",
-                },
+                headers=self._headers(),
                 json={
                     "model": self.model,
                     "max_tokens": max_tokens,
