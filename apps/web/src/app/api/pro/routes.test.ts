@@ -97,13 +97,16 @@ describe('api/pro routes', () => {
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ ok: true });
       expect(forwarded().body).toEqual({ token: 't-1' });
-      const cookie = res.headers.get('set-cookie') ?? '';
-      expect(cookie).toMatch(/^chp_session=s-1/);
+      const [cookie = '', legacy = ''] = res.headers.getSetCookie();
+      expect(cookie).toMatch(/^__Host-chp_session=s-1;/);
+      expect(cookie).toMatch(/; Path=\/;/);
       expect(cookie).toMatch(/HttpOnly/i);
       expect(cookie).toMatch(/Secure/i);
       expect(cookie).toMatch(/SameSite=Lax/i);
       expect(cookie).toMatch(/Max-Age=2592000/i);
       expect(cookie).not.toMatch(/Domain=/i);
+      // A session kept under the old name does not outlive the new one.
+      expect(legacy).toMatch(/^chp_session=;.*Max-Age=0/);
     });
 
     it('answers 400 and sets no cookie on a bad token', async () => {
@@ -127,6 +130,16 @@ describe('api/pro routes', () => {
       const res = await session(post('session', { token: 't-1' }));
       expect(res.status).toBe(503);
       expect(await res.json()).toEqual({ error: 'unavailable' });
+    });
+
+    it('answers 503 and sets no cookie when jobs redirects', async () => {
+      fetchMock.mockResolvedValue(
+        new Response(null, { status: 307, headers: { location: 'https://elsewhere.test/' } }),
+      );
+      const res = await session(post('session', { token: 't-1' }));
+      expect(res.status).toBe(503);
+      expect(res.headers.get('set-cookie')).toBeNull();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('is not there on the shop host', async () => {
@@ -158,6 +171,15 @@ describe('api/pro routes', () => {
       expect(res.status).toBe(503);
     });
 
+    it('answers 503 to a jobs redirect, not 202', async () => {
+      fetchMock.mockResolvedValue(
+        new Response(null, { status: 302, headers: { location: 'https://elsewhere.test/' } }),
+      );
+      const res = await login(post('login', { email: 'a@b.co' }));
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({ error: 'unavailable' });
+    });
+
     it('answers 400 to a body that is not JSON', async () => {
       const res = await login(
         raw('login', { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' }, 'no'),
@@ -171,6 +193,58 @@ describe('api/pro routes', () => {
       const res = await login(post('login', { email: 'a@b.co' }));
       expect(res.status).toBe(400);
       expect(await res.json()).toEqual({ error: 'invalid' });
+    });
+  });
+
+  describe('the JSON cap', () => {
+    it.each([
+      ['login', login],
+      ['signup', signup],
+      ['session', session],
+    ] as const)('%s refuses a body that says it is over 64 KB with 413', async (path, route) => {
+      const res = await route(
+        post(path, { email: 'a@b.co' }, undefined, { 'content-length': '65537' }),
+      );
+      expect(res.status).toBe(413);
+      expect(await res.json()).toEqual({ error: 'too large' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('does not read past the cap when the size is not given', async () => {
+      const big = { email: 'a@b.co', pad: 'x'.repeat(65_536) };
+      expect((await login(post('login', big))).status).toBe(400);
+      expect((await session(post('session', { token: 't', pad: big.pad }))).status).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('the visitor address for the sign-in throttle', () => {
+    const ipSent = () => {
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      return ((init?.headers ?? {}) as Record<string, string>)['x-client-ip'];
+    };
+    const calls = [
+      ['login', login, { email: 'a@b.co' }, reply(202, { ok: true })],
+      ['signup', signup, { email: 'a@b.co', name: 'Мария', terms: true }, reply(202, { ok: true })],
+      ['session', session, { token: 't-1' }, reply(200, { session: 's-1', account: {} })],
+    ] as const;
+
+    it.each(calls)(
+      '%s passes cf-connecting-ip on as x-client-ip',
+      async (path, route, body, answer) => {
+        fetchMock.mockResolvedValue(answer.clone());
+        await route(post(path, body, undefined, { 'cf-connecting-ip': '203.0.113.7' }));
+        expect(ipSent()).toBe('203.0.113.7');
+      },
+    );
+
+    it.each(calls)('%s sends none without a usable address', async (path, route, body, answer) => {
+      const variants: Record<string, string>[] = [{}, { 'cf-connecting-ip': 'unknown' }];
+      for (const headers of variants) {
+        fetchMock.mockReset().mockResolvedValue(answer.clone());
+        await route(post(path, body, undefined, headers));
+        expect(ipSent()).toBeUndefined();
+      }
     });
   });
 

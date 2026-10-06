@@ -19,19 +19,32 @@ const config = (): { base: string; key: string } => {
   return { base: url.replace(/\/$/, ''), key };
 };
 
+/** True for an answer that is a redirect, however the runtime reports one. Redirects are never
+ * followed and the jobs worker has none to give: one is an outage. */
+export function isRedirect(response: Response): boolean {
+  return response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400);
+}
+
+/** A call to the jobs worker. `clientIp` is the visitor's address, sent as `x-client-ip` for the
+ * worker's sign-in throttle; only sign-in, sign-up and the session pass it. A redirect throws, like
+ * any outage. */
 export async function proCall<T>(
   path: string,
-  init: { method?: string; body?: unknown; session?: string | null } = {},
+  init: { method?: string; body?: unknown; session?: string | null; clientIp?: string | null } = {},
 ): Promise<{ status: number; data: T }> {
   const { base, key } = config();
   const headers: Record<string, string> = { 'x-pro-key': key, 'content-type': 'application/json' };
   if (init.session) headers.authorization = `Bearer ${init.session}`;
+  if (init.clientIp) headers['x-client-ip'] = init.clientIp;
   const response = await fetch(`${base}${path}`, {
     method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
     headers,
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
     cache: 'no-store',
+    // The key and the bearer go to the jobs worker and nowhere else.
+    redirect: 'manual',
   });
+  if (isRedirect(response)) throw new Error(`jobs redirect → ${response.status}`);
   if (response.status === 401 && init.session) throw new ProUnauthorized();
   const data = (await response.json().catch(() => null)) as T;
   return { status: response.status, data };
@@ -81,21 +94,29 @@ export interface SignupInput {
 /** `ok` when the API accepted the request; otherwise its status and the reason it gave. */
 export type Accepted = { ok: true } | { ok: false; status: number; error: string };
 
-const accepted = async (path: string, body: unknown): Promise<Accepted> => {
-  const { status, data } = await proCall<{ error?: string } | null>(path, { method: 'POST', body });
+const accepted = async (
+  path: string,
+  body: unknown,
+  clientIp: string | null | undefined,
+): Promise<Accepted> => {
+  const { status, data } = await proCall<{ error?: string } | null>(path, {
+    method: 'POST',
+    body,
+    clientIp,
+  });
   if (status === 202) return { ok: true };
   // A fixed fallback: the jobs path must not reach the browser.
   return { ok: false, status, error: data?.error ?? 'invalid' };
 };
 
 /** Asks for a sign-in letter. The answer is the same whoever the address belongs to. */
-export function requestLogin(email: string): Promise<Accepted> {
-  return accepted('/v1/pro/login', { email });
+export function requestLogin(email: string, clientIp?: string | null): Promise<Accepted> {
+  return accepted('/v1/pro/login', { email }, clientIp);
 }
 
 /** Asks for a confirmation letter (or a sign-in letter, when the address already has a cabinet). */
-export function requestSignup(input: SignupInput): Promise<Accepted> {
-  return accepted('/v1/pro/signup', input);
+export function requestSignup(input: SignupInput, clientIp?: string | null): Promise<Accepted> {
+  return accepted('/v1/pro/signup', input, clientIp);
 }
 
 /** Trades the emailed token for a session; null when the jobs worker says the link is not good
@@ -103,14 +124,34 @@ export function requestSignup(input: SignupInput): Promise<Accepted> {
  * dead link from a service that is down. */
 export async function startSession(
   token: string,
+  clientIp?: string | null,
 ): Promise<{ session: string; account: ProAccount } | null> {
   const { status, data } = await proCall<{ session: string; account: ProAccount } | null>(
     '/v1/pro/session',
-    { method: 'POST', body: { token } },
+    { method: 'POST', body: { token }, clientIp },
   );
   if (status === 400) return null;
   if (status === 200 && data?.session) return data;
   throw new Error(`session → ${status}`);
+}
+
+/** An address longer than any the jobs worker accepts is not a masked one. */
+const MAX_EMAIL = 254;
+
+/** Whose cabinet a sign-in link opens, without spending it: the address as the jobs worker masks
+ * it (`ye***@gmail.com`), or null when the link is dead (404): used, expired or never sent.
+ * Anything else throws, so the caller can tell a dead link from a service that is down. */
+export async function peekLogin(token: string): Promise<string | null> {
+  const { status, data } = await proCall<{ email?: unknown } | null>('/v1/pro/login/peek', {
+    method: 'POST',
+    body: { token },
+  });
+  if (status === 404) return null;
+  const email = data?.email;
+  if (status === 200 && typeof email === 'string' && email && email.length <= MAX_EMAIL) {
+    return email;
+  }
+  throw new Error(`peek → ${status}`);
 }
 
 export async function me(session: string): Promise<ProMe> {

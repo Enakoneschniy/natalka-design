@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { startSession } from '@/lib/pro/client';
-import { jsonBody, notOnProHost, notSameOrigin, unavailable } from '@/lib/pro/guard';
-import { sessionCookie } from '@/lib/pro/session';
+import {
+  clientIp,
+  jsonBody,
+  notOnProHost,
+  notSameOrigin,
+  overJsonCap,
+  unavailable,
+} from '@/lib/pro/guard';
+import { setSessionCookie } from '@/lib/pro/session';
 
 const expired = () => NextResponse.json({ error: 'link expired' }, { status: 400 });
 
@@ -11,19 +18,17 @@ const expired = () => NextResponse.json({ error: 'link expired' }, { status: 400
 export async function POST(request: Request) {
   const blocked = notOnProHost(request);
   if (blocked) return blocked;
-  const refused = notSameOrigin(request);
+  const refused = notSameOrigin(request) ?? overJsonCap(request);
   if (refused) return refused;
   const body = await jsonBody(request);
   const token = typeof body?.token === 'string' ? body.token : '';
   if (!token) return expired();
   let started: Awaited<ReturnType<typeof startSession>>;
   try {
-    started = await startSession(token);
+    started = await startSession(token, clientIp(request));
   } catch {
     return unavailable();
   }
   if (!started) return expired();
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set(sessionCookie(started.session));
-  return response;
+  return setSessionCookie(NextResponse.json({ ok: true }), started.session);
 }

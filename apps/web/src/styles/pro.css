@@ -305,14 +305,43 @@ body.pro {
   text-align: right;
 }
 
+/* The name opens the account page. It reads as the name, brightening on hover. The box around it
+   clips the usual focus ring (it cuts a long name short), so focus underlines it instead. */
+.bar .who a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bar .who a:hover {
+  color: var(--text);
+}
+
+.bar .who a:focus-visible {
+  box-shadow: none;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+/* «Выйти» is a button in a form. The form draws no box, so the button lays out as the bar's (and,
+   on a desktop, the rail's) own child; the button wears the pill and nothing of the browser's. */
+.signout-form {
+  display: contents;
+}
+
 .bar .signout {
+  font: inherit;
   font-size: 12.5px;
   color: var(--text-2);
+  background: none;
   text-decoration: none;
+  margin: 0;
   padding: 5px 9px;
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .bar .signout:hover {
@@ -704,6 +733,27 @@ input[type="checkbox"]:disabled {
   color: var(--danger);
 }
 
+/* Worth a look before going on, not an error: the confirm page's «Вы уже вошли как …». */
+.card.notice.warn {
+  background: var(--accent-soft);
+}
+
+.card.notice.warn strong {
+  color: var(--accent);
+}
+
+/* An address in running text: brighter than the muted line around it, and free to break on a
+   narrow screen. Inside a notice it keeps the notice's own colour. */
+.addr {
+  color: var(--text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.card.notice .addr {
+  color: inherit;
+}
+
 .alt {
   text-align: center;
 }
@@ -787,6 +837,11 @@ ul.list {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* A long address breaks anywhere rather than run off a narrow screen. */
+.wrap {
+  overflow-wrap: anywhere;
 }
 
 .pro h2 {
@@ -1389,6 +1444,36 @@ dialog.sheet::backdrop {
 .pack .per {
   font-size: 11.5px;
   color: var(--text-3);
+}
+
+/* ---- the account page ---- */
+
+/* Closing the cabinet: what goes, said plainly, before the button that does it. Set apart from
+   the facts above it, at a reading width. */
+.close-cabinet {
+  display: grid;
+  gap: 10px;
+  max-width: 600px;
+  margin-top: 10px;
+  color: var(--text-2);
+  font-size: 13.5px;
+}
+
+.close-cabinet h2 {
+  color: var(--text);
+}
+
+.close-cabinet ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.close-cabinet .card.confirm {
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 14px;
 }
 
 /* ---- the offer ---- */

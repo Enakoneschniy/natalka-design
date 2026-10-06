@@ -7,6 +7,17 @@ export function notOnProHost(request: Request): Response | null {
   return isProHost(request.headers.get('host')) ? null : new Response(null, { status: 404 });
 }
 
+/** One IPv4 address, or an IPv6 one (which may end in an IPv4 address). */
+const IP_ADDRESS = /^(?:\d{1,3}(?:\.\d{1,3}){3}|[0-9a-f:]*:[0-9a-f:.]*)$/i;
+const MAX_IP_LENGTH = 45;
+
+/** The visitor's address as Cloudflare saw it (`cf-connecting-ip`), for the jobs worker's sign-in
+ * throttle; null when it is absent or is not one address. */
+export function clientIp(request: Request): string | null {
+  const ip = request.headers.get('cf-connecting-ip')?.trim() ?? '';
+  return ip.length <= MAX_IP_LENGTH && IP_ADDRESS.test(ip) ? ip : null;
+}
+
 /** Refuses anything a page on another site could send: a non-JSON body (a cross-site
  * `<form enctype="text/plain">` needs no preflight) and a request the browser marks as not
  * same-origin. Without `Sec-Fetch-Site` (older browsers) the `Origin` must name this host. */
@@ -54,9 +65,46 @@ export function notImageUpload(request: Request): Response | null {
 
 export const tooLarge = () => NextResponse.json({ error: 'too large' }, { status: 413 });
 
-/** The request's JSON object, or null when the body is not one. */
+/** The most a JSON body may be. The cabinet's own forms send a few hundred bytes; the worker
+ * entry caps every body as well. */
+export const MAX_JSON_BYTES = 65_536;
+
+/** Refuses a JSON body that says it is over the cap (413), before anything is read. */
+export function overJsonCap(request: Request): Response | null {
+  const raw = request.headers.get('content-length')?.trim() ?? '';
+  return /^\d+$/.test(raw) && Number(raw) > MAX_JSON_BYTES ? tooLarge() : null;
+}
+
+/** The body as text, read no further than `max` bytes: null once it runs past them. A
+ * `content-length` is only a claim, and a body may come without one. */
+export async function cappedText(request: Request, max = MAX_JSON_BYTES): Promise<string | null> {
+  if (!request.body) return '';
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let size = 0;
+  let text = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return text + decoder.decode();
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+}
+
+/** The request's JSON object, or null when the body is not one or runs past the JSON cap. */
 export async function jsonBody(request: Request): Promise<Record<string, unknown> | null> {
-  const body: unknown = await request.json().catch(() => null);
+  const text = await cappedText(request);
+  if (text === null) return null;
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    return null;
+  }
   return body && typeof body === 'object' && !Array.isArray(body)
     ? (body as Record<string, unknown>)
     : null;

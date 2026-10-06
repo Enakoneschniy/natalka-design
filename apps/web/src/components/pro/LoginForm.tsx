@@ -6,8 +6,10 @@ import { postJson, TRY_LATER } from './post';
 
 type State = 'idle' | 'sending' | 'sent';
 
-/** Email in, «Проверьте почту» out — the same answer whether or not the address has a cabinet. */
-export function LoginForm({ expired }: { expired: boolean }) {
+/** Email in, «Проверьте почту» out — the same answer whether or not the address has a cabinet.
+ * Above the field it says why the visitor is here, when the session ran out or the cabinet was
+ * just closed. */
+export function LoginForm({ expired, closed = false }: { expired: boolean; closed?: boolean }) {
   const [email, setEmail] = useState('');
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,13 @@ export function LoginForm({ expired }: { expired: boolean }) {
 
   return (
     <form onSubmit={submit} noValidate>
-      {expired && <p className="muted">Сессия закончилась, войдите снова.</p>}
+      {closed ? (
+        <div className="card notice" role="status">
+          <strong>Кабинет закрыт, данные удалены.</strong>
+        </div>
+      ) : (
+        expired && <p className="muted">Сессия закончилась, войдите снова.</p>
+      )}
       <div className="field">
         <label htmlFor="login-email">Электронная почта</label>
         <input

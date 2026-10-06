@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 import { matchProxy, type ProxyMatch } from '@/lib/pro/allow';
-import { proForward } from '@/lib/pro/client';
+import { isRedirect, proForward } from '@/lib/pro/client';
 import {
+  cappedText,
   MAX_IMAGE_BYTES,
   notFromThisOrigin,
   notImageUpload,
   notOnProHost,
   notSameOrigin,
+  overJsonCap,
   tooLarge,
   unavailable,
 } from '@/lib/pro/guard';
-import { sessionFrom } from '@/lib/pro/session';
+import { clearSessionCookies, sessionFrom } from '@/lib/pro/session';
 
 /** The cabinet's one door to the jobs worker for calls made from the browser.
  *
@@ -22,6 +24,12 @@ type Context = { params: Promise<{ path: string[] }> };
 
 const notFound = () => NextResponse.json({ error: 'not found' }, { status: 404 });
 const signedOut = () => NextResponse.json({ error: 'signed out' }, { status: 401 });
+const noContent = () =>
+  new NextResponse(null, { status: 204, headers: { 'cache-control': 'private, no-store' } });
+
+/** Closing the cabinet ends its session for good: the cookies go with the answer. */
+const closesCabinet = (request: Request, match: ProxyMatch) =>
+  request.method === 'DELETE' && match.path === 'me';
 
 /** A file is opened by a link, not by the cabinet's scripts: a JSON 401 would be saved as the
  * download. Sign-in comes instead, saying why; a relative Location keeps the host. */
@@ -45,7 +53,7 @@ async function proxy(request: Request, { params }: Context): Promise<Response> {
     const refused =
       match.kind === 'image-upload'
         ? (notFromThisOrigin(request) ?? notImageUpload(request))
-        : notSameOrigin(request);
+        : (notSameOrigin(request) ?? overJsonCap(request));
     if (refused) return refused;
   }
 
@@ -67,27 +75,33 @@ async function proxy(request: Request, { params }: Context): Promise<Response> {
     return unavailable();
   }
   // Redirects are not followed (`proForward`), and jobs has none to give: one is an outage.
-  if (upstream.type === 'opaqueredirect' || (upstream.status >= 300 && upstream.status < 400))
-    return unavailable();
+  if (isRedirect(upstream)) return unavailable();
   if (upstream.status === 401) return isFile(match) ? signInForFile() : signedOut();
+  if (closesCabinet(request, match) && upstream.ok) return clearSessionCookies(noContent());
+  if (upstream.status === 204) return noContent();
   if (isFile(match) && upstream.ok) return stream(upstream);
   return relayJson(upstream);
 }
 
-/** What to send on: nothing for GET and DELETE, the JSON text, or the image bytes — read in
- * full and measured, since a `content-length` is only a claim. */
+/** What to send on: nothing for a GET, the image bytes (read in full and measured) or the JSON
+ * text (read no further than its cap) — a `content-length` is only a claim. A DELETE sends JSON
+ * only when it has some: closing the cabinet carries the address it confirms, the others carry
+ * nothing. */
 async function bodyOf(
   request: Request,
   match: ProxyMatch,
 ): Promise<{ body?: BodyInit; contentType?: string } | Response> {
-  if (request.method === 'GET' || request.method === 'DELETE') return {};
+  if (request.method === 'GET') return {};
   if (match.kind === 'image-upload') {
     const bytes = await request.arrayBuffer();
     if (bytes.byteLength > MAX_IMAGE_BYTES) return tooLarge();
     const contentType = request.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
     return { body: bytes, contentType };
   }
-  return { body: await request.text(), contentType: 'application/json' };
+  const text = await cappedText(request);
+  if (text === null) return tooLarge();
+  if (request.method === 'DELETE' && text === '') return {};
+  return { body: text, contentType: 'application/json' };
 }
 
 function stream(upstream: Response): Response {

@@ -7,9 +7,11 @@
 //     corepack pnpm --filter @natalka/web dev
 //
 // Any `x-pro-key` and any bearer are accepted; `POST /v1/pro/session` takes any token. Sign in
-// through the site (any address, then open /login/<anything>) or set the `chp_session` cookie
-// by hand. One reading is being written and gains a section on every look at it; a bought pack
-// is paid a few seconds after its checkout link is opened.
+// through the site (any address, then open /login/<anything>) or set the `__Host-chp_session`
+// cookie by hand; over plain http, where a browser keeps no Secure cookie, set the old name
+// `chp_session` instead, which the cabinet still reads. One reading is being written and gains a
+// section on every look at it; a bought pack is paid a few seconds after its checkout link is
+// opened.
 
 import { createServer } from 'node:http';
 
@@ -30,6 +32,8 @@ const seller = {
   invite_redeemed: false,
 };
 const INVITES = { START3: 3 };
+/** Set by closing the cabinet: every session is refused until the next sign-in. */
+let closed = false;
 
 // ---- clients ----
 
@@ -346,6 +350,13 @@ const readJson = async (req) => {
 
 const ownReading = (id) => readings.find((r) => r.id === id);
 
+/** `ye***@gmail.com`: two characters of the local part (one when it has two or fewer), then the
+ * domain. */
+const mask = (email) => {
+  const at = email.lastIndexOf('@');
+  return `${email.slice(0, at <= 2 ? 1 : 2)}***@${email.slice(at + 1)}`;
+};
+
 async function route(req, res, path) {
   const m = req.method;
   const at = (re) => path.match(re);
@@ -357,17 +368,33 @@ async function route(req, res, path) {
   }
   if (m === 'POST' && path === '/v1/pro/session') {
     await readRaw(req);
+    closed = false;
     return send(res, 200, {
       session: 'dev',
       account: { email: seller.email, tone: seller.tone },
     });
   }
-  if (!/^Bearer \S+/.test(req.headers.authorization ?? '')) {
+  // Whose cabinet a link opens: /login/dead is a used link, /login/other one for someone else.
+  if (m === 'POST' && path === '/v1/pro/login/peek') {
+    const token = String((await readJson(req)).token ?? '');
+    if (token === 'dead') return send(res, 404, { error: 'not found' });
+    return send(res, 200, { email: mask(token === 'other' ? 'yevhenii@gmail.com' : seller.email) });
+  }
+  if (closed || !/^Bearer \S+/.test(req.headers.authorization ?? '')) {
     return send(res, 401, { error: 'unauthorized' });
   }
   settle();
 
   if (m === 'GET' && path === '/v1/pro/me') return send(res, 200, { ...seller });
+  // Closing answers 204 and refuses every session until the next sign-in. The data stays: restart
+  // the fake to have a fresh cabinet.
+  if (m === 'DELETE' && path === '/v1/pro/me') {
+    const typed = String((await readJson(req)).confirm_email ?? '');
+    if (typed.trim().toLowerCase() !== seller.email) return send(res, 400, { error: 'confirm' });
+    closed = true;
+    res.writeHead(204, { 'cache-control': 'no-store' });
+    return res.end();
+  }
   if (m === 'POST' && path === '/v1/pro/logout') return send(res, 200, { ok: true });
   if (m === 'POST' && path === '/v1/pro/invite') {
     const code = String((await readJson(req)).code ?? '')
