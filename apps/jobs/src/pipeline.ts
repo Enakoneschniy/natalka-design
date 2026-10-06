@@ -85,30 +85,51 @@ export async function sealPayload(
   return { payload: null, payload_ct: ciphertext, payload_nonce: nonce };
 }
 
+/** Rows a nightly encryption step lists at a time. Only their ids are listed; each row is then read
+ * on its own. */
+export const SEAL_ROUND = 50;
+
 /** Encrypts up to `limit` payloads still stored in plain text; the nightly sweep calls it until
- * none are left. A row rewritten meanwhile is left for the next run. */
+ * none are left. A payload can be large, so they are never read together: ids are listed
+ * SEAL_ROUND at a time, and each payload is read, sealed and written in turn. A row rewritten
+ * meanwhile, or one that cannot be read, is left for the next run. */
 export async function sealLegacyPayloads(env: Env, limit: number): Promise<number> {
-  const { results } = await env.DB.prepare('SELECT id, payload FROM jobs WHERE payload IS NOT NULL LIMIT ?')
-    .bind(limit)
-    .all<{ id: string; payload: string }>();
   let sealed = 0;
-  for (const row of results) {
-    let parsed: JobPayload;
-    try {
-      parsed = JSON.parse(row.payload) as JobPayload;
-    } catch {
-      console.error('unreadable payload left as it is', row.id);
-      continue;
-    }
-    const columns = await sealPayload(env, parsed);
-    const result = await env.DB.prepare(
-      'UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ? WHERE id = ? AND payload = ?',
+  let after = 0;
+  for (let seen = 0; seen < limit; ) {
+    const { results } = await env.DB.prepare(
+      'SELECT rowid AS at, id FROM jobs WHERE payload IS NOT NULL AND rowid > ? ORDER BY rowid LIMIT ?',
     )
-      .bind(columns.payload_ct, columns.payload_nonce, row.id, row.payload)
-      .run();
-    sealed += result.meta.changes ?? 0;
+      .bind(after, Math.min(SEAL_ROUND, limit - seen))
+      .all<{ at: number; id: string }>();
+    if (results.length === 0) break;
+    for (const row of results) {
+      after = row.at;
+      seen += 1;
+      sealed += await sealLegacyPayload(env, row.id);
+    }
   }
   return sealed;
+}
+
+/** One plain payload encrypted: 1 when it was, 0 when it is gone, unreadable or was rewritten. */
+async function sealLegacyPayload(env: Env, id: string): Promise<number> {
+  const row = await env.DB.prepare('SELECT payload FROM jobs WHERE id = ?').bind(id).first<{ payload: string | null }>();
+  if (!row?.payload) return 0;
+  let parsed: JobPayload;
+  try {
+    parsed = JSON.parse(row.payload) as JobPayload;
+  } catch {
+    console.error('unreadable payload left as it is', id);
+    return 0;
+  }
+  const columns = await sealPayload(env, parsed);
+  const result = await env.DB.prepare(
+    'UPDATE jobs SET payload = NULL, payload_ct = ?, payload_nonce = ? WHERE id = ? AND payload = ?',
+  )
+    .bind(columns.payload_ct, columns.payload_nonce, id, row.payload)
+    .run();
+  return result.meta.changes ?? 0;
 }
 
 /** The ephemeris service: charts, synastry, transits, the sky. Public and AGPL, ours by binding. */
