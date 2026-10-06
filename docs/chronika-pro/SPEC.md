@@ -59,7 +59,10 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
   not enforced.
 - A disputed pack payment takes the pack's credits back while the dispute is open; a dispute won,
   or a bank inquiry closed, gives them back. A payment's credits are taken back once, whether a
-  dispute or a refund comes first, and nothing is given back once the payment is refunded.
+  dispute or a refund comes first, and nothing is given back once the payment is refunded. A second
+  dispute on the same payment leaves the credits to the owner, who settles them by hand (a ledger
+  adjustment); a pack whose dispute arrives before its payment is booked paid with the credits
+  already taken.
 
 ## Access
 
@@ -68,7 +71,8 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
 - A sign-in or sign-up request is answered `202` at once, whatever the address; the letter follows.
   An address gets at most 5 links an hour from one requester (the visitor's address as the pro
   site saw it, passed as `x-client-ip` and kept only as a keyed hash; an IPv6 address counts by its
-  /64) and 20 an hour in all. A link works once, for 15 minutes, and only by POST; the confirm page
+  /64) and 20 an hour in all — except a requester whose link to that address was opened within the
+  last 30 days, which is held to its own 5 only. A link works once, for 15 minutes, and only by POST; the confirm page
   shows whose cabinet it opens (`ye***@gmail.com`) without spending it.
 - The session lives in the cookie `__Host-chp_session` (Secure, HttpOnly, SameSite=Lax, Path=/);
   the old name `chp_session` is still read until it is removed. «Выйти» ends every session of the
