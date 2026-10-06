@@ -95,7 +95,9 @@ export async function attachSession(
     .run();
 }
 
-/** Settles a purchase Stripe says is paid. 'paid' only the one time that books the credits. */
+/** Settles a purchase Stripe says is paid. 'paid' only the one time that books the credits.
+ * 'refunded' when Stripe reported a refund or a dispute of this payment before its completion
+ * (a tombstone): the purchase is closed and books nothing. */
 export async function markPaid(
   db: D1Database,
   entry: {
@@ -105,7 +107,7 @@ export async function markPaid(
     amountSubtotal: number;
     currency: string;
   },
-): Promise<'paid' | 'already' | 'mismatch' | 'unknown'> {
+): Promise<'paid' | 'already' | 'mismatch' | 'unknown' | 'refunded'> {
   const row = await db
     .prepare('SELECT status, credits, amount_minor, currency FROM pro_purchases WHERE id = ? AND account_id = ?')
     .bind(entry.purchaseId, entry.accountId)
@@ -125,26 +127,75 @@ export async function markPaid(
   }
 
   const at = now();
+  const tombstone = 'EXISTS (SELECT 1 FROM stripe_tombstones WHERE payment_intent = ?)';
   // The ledger row goes in first, while the purchase is still pending and only if it is; the
   // status flip follows in the same transaction. A concurrent delivery finds nothing pending.
-  const [, flip] = await db.batch([
+  const [, flip, closed] = await db.batch([
     db
       .prepare(
         `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
          SELECT ?, account_id, credits, 'purchase', id, ?
-         FROM pro_purchases WHERE id = ? AND account_id = ? AND status = 'pending'
+         FROM pro_purchases WHERE id = ? AND account_id = ? AND status = 'pending' AND NOT ${tombstone}
          ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
       )
-      .bind(crypto.randomUUID(), at, entry.purchaseId, entry.accountId),
+      .bind(crypto.randomUUID(), at, entry.purchaseId, entry.accountId, entry.paymentIntent),
     db
       .prepare(
         `UPDATE pro_purchases SET status = 'paid', paid_at = ?, stripe_payment_intent = ?
-         WHERE id = ? AND account_id = ? AND status = 'pending'`,
+         WHERE id = ? AND account_id = ? AND status = 'pending' AND NOT ${tombstone}`,
       )
-      .bind(at, entry.paymentIntent, entry.purchaseId, entry.accountId),
+      .bind(at, entry.paymentIntent, entry.purchaseId, entry.accountId, entry.paymentIntent),
+    db
+      .prepare(
+        `UPDATE pro_purchases SET status = 'refunded', paid_at = ?, refunded_at = ?, stripe_payment_intent = ?
+         WHERE id = ? AND account_id = ? AND status = 'pending' AND ${tombstone}`,
+      )
+      .bind(at, at, entry.paymentIntent, entry.purchaseId, entry.accountId, entry.paymentIntent),
   ]);
-  return changes(flip) > 0 ? 'paid' : 'already';
+  if (changes(flip) > 0) return 'paid';
+  return changes(closed) > 0 ? 'refunded' : 'already';
 }
+
+/** A disputed payment for a pack takes the pack's credits back, once per dispute. The purchase
+ * keeps its status: the dispute may still be won. */
+export async function disputePurchase(
+  db: D1Database,
+  entry: { paymentIntent: string; disputeId: string },
+): Promise<'debited' | 'already' | 'unknown'> {
+  const result = await db
+    .prepare(
+      `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+       SELECT ?, account_id, -credits, 'adjust', ?, ?
+       FROM pro_purchases WHERE stripe_payment_intent = ? AND status = 'paid'
+       ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
+    )
+    .bind(crypto.randomUUID(), `dispute:${entry.disputeId}`, now(), entry.paymentIntent)
+    .run();
+  if (changes(result) > 0) return 'debited';
+  return (await purchaseExists(db, entry.paymentIntent)) ? 'already' : 'unknown';
+}
+
+/** A dispute won gives back what it took, once, and only if it took something. */
+export async function disputeWon(
+  db: D1Database,
+  entry: { paymentIntent: string; disputeId: string },
+): Promise<'credited' | 'already' | 'unknown'> {
+  const result = await db
+    .prepare(
+      `INSERT INTO credit_ledger (id, account_id, delta, reason, ref, created_at)
+       SELECT ?, account_id, credits, 'adjust', ?, ?
+       FROM pro_purchases WHERE stripe_payment_intent = ?
+         AND EXISTS (SELECT 1 FROM credit_ledger WHERE reason = 'adjust' AND ref = ?)
+       ON CONFLICT (reason, ref) WHERE ref IS NOT NULL DO NOTHING`,
+    )
+    .bind(crypto.randomUUID(), `dispute_won:${entry.disputeId}`, now(), entry.paymentIntent, `dispute:${entry.disputeId}`)
+    .run();
+  if (changes(result) > 0) return 'credited';
+  return (await purchaseExists(db, entry.paymentIntent)) ? 'already' : 'unknown';
+}
+
+const purchaseExists = async (db: D1Database, paymentIntent: string): Promise<boolean> =>
+  Boolean(await db.prepare('SELECT 1 AS x FROM pro_purchases WHERE stripe_payment_intent = ?').bind(paymentIntent).first());
 
 /** pending → failed, nothing else. */
 export async function markFailed(db: D1Database, purchaseId: string, accountId: string): Promise<void> {

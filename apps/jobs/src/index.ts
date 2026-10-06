@@ -12,7 +12,6 @@ import {
   claimTelegramLink,
   deliverable,
   forgetTelegramChat,
-  markOrderPaid,
   markTelegramDelivered,
   orderState,
   orderStatusOf,
@@ -29,7 +28,6 @@ import {
   now,
   orderContact,
   setOrderSession,
-  orderFacts,
   bumpStat,
   scrubExpiredJobPayloads,
   updateJob,
@@ -53,14 +51,14 @@ import {
   updateSubscription,
 } from './subscriptions';
 import { contentDisposition, documentFilename } from './filename';
-import { type CheckoutSession, createCheckoutSession, verifyWebhook } from './stripe';
+import { type CheckoutSession, createCheckoutSession } from './stripe';
 import { json, readJson } from './http';
 import { InvalidField, type OrderInput, parseOrder } from './validate';
 import { errorCode } from './errors';
 import { advance, apiFetch, type JobPayload, loadBirth } from './pipeline';
 import { MAX_DELIVERIES, settleFailedJob } from './pro/lifecycle';
 import { handlePro } from './pro/routes';
-import { markFailed, markPaid, markRefunded } from './pro/purchases';
+import { stripeWebhook } from './webhook';
 
 /** A queue invocation gets thirty seconds of CPU but far more wall time; sections take ~30 s each,
  * so we stop writing after four minutes and let the message come back for the rest. */
@@ -250,94 +248,6 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   await setOrderSession(env.DB, orderId, session.id);
   // The job waits in the table, not in the queue, until the webhook says the money is in.
   return json({ order_id: orderId, job_id: jobId, token, checkout_url: session.url }, 201);
-}
-
-/** Stripe calls this when a payment settles. The job is queued here and nowhere else once
- * payments are live; a session that never completes leaves a pending order and a job that never
- * runs, which the retention sweep clears with everything else. */
-async function stripeWebhook(request: Request, env: Env): Promise<Response> {
-  const event = await verifyWebhook(env, request);
-  if (!event) return new Response('bad signature', { status: 400 });
-
-  // A seller's credit pack never reaches the B2C order code below.
-  const packMeta = event.data.object.metadata;
-  if (packMeta?.kind === 'pro_pack') {
-    const session = event.data.object;
-    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
-      if (session.payment_status !== 'paid') return json({ received: true });
-      if (!session.payment_intent) console.error('pro pack paid without a payment_intent; a later refund will not be matched to it', packMeta.purchase_id);
-      const pack = await markPaid(env.DB, {
-        purchaseId: packMeta.purchase_id ?? '',
-        accountId: packMeta.account_id ?? '',
-        paymentIntent: session.payment_intent ?? null,
-        amountSubtotal: session.amount_subtotal ?? -1,
-        currency: session.currency ?? '',
-      });
-      if (pack === 'mismatch') {
-        // The seller paid an amount we did not ask for and got no credits: the owner must refund.
-        console.error('pro pack amount mismatch', {
-          purchase_id: packMeta.purchase_id,
-          account_id: packMeta.account_id,
-          amount_subtotal: session.amount_subtotal,
-          currency: session.currency,
-        });
-      }
-      return json({ received: true, pack });
-    }
-    if (event.type === 'checkout.session.async_payment_failed') {
-      await markFailed(env.DB, packMeta.purchase_id ?? '', packMeta.account_id ?? '');
-      return json({ received: true });
-    }
-    if (event.type === 'checkout.session.expired') {
-      // An abandoned checkout; markFailed leaves a purchase that is already paid alone.
-      await markFailed(env.DB, packMeta.purchase_id ?? '', packMeta.account_id ?? '');
-      return json({ received: true, pack: 'expired' });
-    }
-  }
-  if (event.type === 'charge.refunded') {
-    const charge = event.data.object;
-    if (charge.refunded === true && charge.payment_intent) {
-      const refund = await markRefunded(env.DB, charge.payment_intent);
-      return json({ received: true, refund });
-    }
-    if (charge.refunded === false) {
-      console.warn('partial refund ignored', charge.id, charge.amount_refunded);
-      return json({ received: true, ignored: 'partial refund' });
-    }
-  }
-
-  if (
-    event.type === 'checkout.session.completed' ||
-    event.type === 'checkout.session.async_payment_succeeded'
-  ) {
-    const session = event.data.object;
-    if (session.payment_status && session.payment_status !== 'paid') return json({ received: true });
-    const orderId = session.metadata?.order_id ?? session.client_reference_id;
-    const jobId = session.metadata?.job_id;
-    if (!orderId || !jobId) return json({ received: true, ignored: 'no order' });
-    const flipped = await markOrderPaid(env.DB, orderId, session.payment_intent ?? null);
-    if (flipped) {
-      await env.JOBS.send({ jobId });
-      const facts = await orderFacts(env.DB, orderId);
-      if (facts) {
-        await bumpStat(env.DB, {
-          event: 'paid',
-          variant: facts.variant,
-          source: facts.source,
-          country: facts.country,
-          currency: facts.currency,
-          amountMinor: facts.amount_minor,
-        });
-      }
-    }
-    return json({ received: true, queued: flipped });
-  }
-  if (event.type === 'checkout.session.async_payment_failed') {
-    const jobId = event.data.object.metadata?.job_id;
-    if (jobId) await updateJob(env.DB, jobId, { status: 'failed', last_error: 'payment failed' });
-    return json({ received: true });
-  }
-  return json({ received: true, ignored: event.type });
 }
 
 async function jobStatus(env: Env, token: string): Promise<Response> {

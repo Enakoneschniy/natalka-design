@@ -1,6 +1,7 @@
 import type { Product } from './db';
 import type { Env } from './env';
 import { errorCode, UpstreamError } from './errors';
+import { readText } from './http';
 
 /* Stripe, without the SDK: a few calls and a signature check.
  *
@@ -217,9 +218,14 @@ export interface StripeEvent {
       currency?: string;
       refunded?: boolean;
       amount_refunded?: number;
+      /** A dispute's outcome: 'won', 'lost', or one of the states before. */
+      status?: string;
     };
   };
 }
+
+/** No event Stripe sends comes near this; anything larger is not read. */
+const MAX_EVENT_BYTES = 1024 * 1024;
 
 const encoder = new TextEncoder();
 
@@ -243,19 +249,27 @@ function same(a: string, b: string): boolean {
   return diff === 0;
 }
 
-/** The event, if the signature is Stripe's and fresh; null otherwise. */
+/** The event, if the signature is Stripe's and fresh; null otherwise. While an endpoint secret is
+ * being rolled Stripe signs with the old and the new one, and the header carries a v1 for each:
+ * one of them matching is enough. */
 export async function verifyWebhook(env: Env, request: Request): Promise<StripeEvent | null> {
   if (!env.STRIPE_WEBHOOK_SECRET) return null;
   const header = request.headers.get('stripe-signature') ?? '';
-  const parts = Object.fromEntries(
-    header.split(',').map((p) => p.split('=') as [string, string]),
-  );
-  const timestamp = Number(parts.t);
-  const expected = parts.v1;
-  if (!timestamp || !expected) return null;
+  const parts = header.split(',').map((part) => {
+    const at = part.indexOf('=');
+    return [part.slice(0, at).trim(), part.slice(at + 1).trim()] as const;
+  });
+  const timestamp = Number(parts.find(([key]) => key === 't')?.[1]);
+  const signatures = parts.filter(([key, value]) => key === 'v1' && value).map(([, value]) => value);
+  if (!timestamp || signatures.length === 0) return null;
   if (Math.abs(Date.now() / 1000 - timestamp) > TOLERANCE_SECONDS) return null;
-  const payload = await request.text();
+  const payload = await readText(request, MAX_EVENT_BYTES);
+  if (payload === null) return null;
   const computed = await hmacHex(env.STRIPE_WEBHOOK_SECRET, `${timestamp}.${payload}`);
-  if (!same(computed, expected)) return null;
-  return JSON.parse(payload) as StripeEvent;
+  if (!signatures.some((signature) => same(computed, signature))) return null;
+  try {
+    return JSON.parse(payload) as StripeEvent;
+  } catch {
+    return null;
+  }
 }

@@ -354,20 +354,124 @@ export async function forgetTelegramChat(db: D1Database, chatId: number): Promis
   await db.prepare('DELETE FROM telegram_links WHERE chat_id = ?').bind(chatId).run();
 }
 
-export async function markOrderPaid(
+const changed = (result: D1Result | undefined): boolean => (result?.meta.changes ?? 0) > 0;
+
+export type Settlement = 'paid' | 'mismatch' | 'refunded' | 'disputed' | 'already' | 'second_payment' | 'unknown';
+
+/** Settles a shopper's order that Stripe says is paid. 'paid' only the one time the order flips,
+ * however often or concurrently the event is delivered: then, and only then, is it written.
+ *
+ * The amount and currency must be the order's own; anything else holds the order and pays for
+ * nothing. A refund or a dispute that Stripe delivered before this completion (it does not
+ * promise the order of events) is found as a tombstone, and the order is closed accordingly. */
+export async function settleOrderPayment(
   db: D1Database,
-  orderId: string,
-  paymentIntent: string | null,
-): Promise<boolean> {
-  // Returns whether this call was the one that flipped it: the webhook can arrive twice.
+  payment: { orderId: string; paymentIntent: string | null; amountSubtotal?: number; currency?: string },
+): Promise<Settlement> {
+  const order = await orderState(db, payment.orderId);
+  if (!order || order.pro_account_id) return 'unknown';
+  if (order.status !== 'pending' || order.hold) {
+    const another = payment.paymentIntent && order.stripe_payment_intent && payment.paymentIntent !== order.stripe_payment_intent;
+    return another ? 'second_payment' : 'already';
+  }
+  const pi = payment.paymentIntent;
+  if (
+    payment.amountSubtotal !== order.amount_minor ||
+    (payment.currency ?? '').toLowerCase() !== order.currency.toLowerCase()
+  ) {
+    const held = await db
+      .prepare(
+        `UPDATE orders SET hold = 'amount_mismatch', stripe_payment_intent = ?
+         WHERE id = ? AND status = 'pending' AND hold IS NULL`,
+      )
+      .bind(pi, payment.orderId)
+      .run();
+    return changed(held) ? 'mismatch' : 'already';
+  }
+  const at = now();
+  const open = `id = ? AND status = 'pending' AND hold IS NULL`;
+  const [paid, refunded, disputed] = await db.batch([
+    db
+      .prepare(
+        `UPDATE orders SET status = 'paid', paid_at = ?, stripe_payment_intent = ?
+         WHERE ${open} AND NOT EXISTS (SELECT 1 FROM stripe_tombstones WHERE payment_intent = ?)`,
+      )
+      .bind(at, pi, payment.orderId, pi),
+    db
+      .prepare(
+        `UPDATE orders SET status = 'refunded', paid_at = ?, stripe_payment_intent = ?
+         WHERE ${open} AND EXISTS (SELECT 1 FROM stripe_tombstones WHERE payment_intent = ? AND kind = 'refund')`,
+      )
+      .bind(at, pi, payment.orderId, pi),
+    db
+      .prepare(
+        `UPDATE orders SET status = 'paid', hold = 'disputed', paid_at = ?, stripe_payment_intent = ?
+         WHERE ${open} AND EXISTS (SELECT 1 FROM stripe_tombstones WHERE payment_intent = ? AND kind = 'dispute')`,
+      )
+      .bind(at, pi, payment.orderId, pi),
+  ]);
+  if (changed(paid)) return 'paid';
+  if (changed(refunded)) return 'refunded';
+  return changed(disputed) ? 'disputed' : 'already';
+}
+
+/** A full refund of a shopper's payment. A paid order becomes refunded, and so does one held for
+ * the wrong amount, which is what the owner refunds it for. */
+export async function refundOrder(db: D1Database, paymentIntent: string): Promise<'refunded' | 'already' | 'unknown'> {
   const result = await db
     .prepare(
-      `UPDATE orders SET status = 'paid', paid_at = ?, stripe_payment_intent = ?
-       WHERE id = ? AND status = 'pending'`,
+      `UPDATE orders SET status = 'refunded', hold = NULLIF(hold, 'amount_mismatch')
+       WHERE stripe_payment_intent = ? AND pro_account_id IS NULL
+         AND (status = 'paid' OR (status = 'pending' AND hold = 'amount_mismatch'))`,
     )
-    .bind(now(), paymentIntent, orderId)
+    .bind(paymentIntent)
     .run();
-  return (result.meta.changes ?? 0) > 0;
+  if (changed(result)) return 'refunded';
+  const seen = await db
+    .prepare('SELECT 1 AS yes FROM orders WHERE stripe_payment_intent = ? AND pro_account_id IS NULL')
+    .bind(paymentIntent)
+    .first();
+  return seen ? 'already' : 'unknown';
+}
+
+/** Holds a shopper's order while its payment is disputed, or lets it go when the dispute is won.
+ * An order held for the wrong amount keeps that hold. The id of the shopper's order with this
+ * payment, or null when there is none. */
+export async function setDisputeHold(db: D1Database, paymentIntent: string, disputed: boolean): Promise<string | null> {
+  await db
+    .prepare(
+      disputed
+        ? `UPDATE orders SET hold = 'disputed'
+           WHERE stripe_payment_intent = ? AND pro_account_id IS NULL AND hold IS NULL`
+        : `UPDATE orders SET hold = NULL
+           WHERE stripe_payment_intent = ? AND pro_account_id IS NULL AND hold = 'disputed'`,
+    )
+    .bind(paymentIntent)
+    .run();
+  const order = await db
+    .prepare('SELECT id FROM orders WHERE stripe_payment_intent = ? AND pro_account_id IS NULL')
+    .bind(paymentIntent)
+    .first<{ id: string }>();
+  return order?.id ?? null;
+}
+
+/** Remembers that Stripe refunded or disputed a payment, whether or not it is known here yet: a
+ * completion delivered after it then books nothing. */
+export async function recordTombstone(
+  db: D1Database,
+  entry: { paymentIntent: string; kind: 'refund' | 'dispute'; ref: string },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO stripe_tombstones (payment_intent, kind, ref, created_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT (payment_intent, kind) DO NOTHING`,
+    )
+    .bind(entry.paymentIntent, entry.kind, entry.ref, now())
+    .run();
+}
+
+export async function dropTombstone(db: D1Database, paymentIntent: string, kind: 'refund' | 'dispute'): Promise<void> {
+  await db.prepare('DELETE FROM stripe_tombstones WHERE payment_intent = ? AND kind = ?').bind(paymentIntent, kind).run();
 }
 
 /** Records the order's current Checkout Session and when it was opened; an unpaid order is swept a

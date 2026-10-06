@@ -167,6 +167,9 @@ describe('credit pack webhook', () => {
           object: 'checkout.session',
           payment_status: 'paid',
           payment_intent: 'pi_b2c',
+          // The seeded order asks for 0 EUR; Stripe's amount must be the order's own.
+          amount_subtotal: 0,
+          currency: 'eur',
           metadata: { order_id: orderId, job_id: jobId },
         },
       },
