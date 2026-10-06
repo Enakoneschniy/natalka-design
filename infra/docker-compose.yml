@@ -1,6 +1,7 @@
 # Local development stack: Postgres plus the internal API.
 # Usage: docker compose -f infra/docker-compose.yml up db     (database only, API runs from uv)
 #        docker compose -f infra/docker-compose.yml up        (everything)
+# Ports are published on 127.0.0.1 only: reachable from this machine, not from its network.
 name: natalka
 
 services:
@@ -10,7 +11,7 @@ services:
       POSTGRES_USER: natalka
       POSTGRES_PASSWORD: natalka
       POSTGRES_DB: natalka
-    ports: ["5432:5432"]
+    ports: ["127.0.0.1:5432:5432"]
     volumes: ["natalka-db:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U natalka"]
@@ -26,7 +27,7 @@ services:
     environment:
       NATALKA_DATABASE_URL: postgresql://natalka:natalka@db:5432/natalka
     env_file: [../.env]
-    ports: ["8000:8000"]
+    ports: ["127.0.0.1:8000:8000"]
     depends_on:
       db: {condition: service_healthy}
 
