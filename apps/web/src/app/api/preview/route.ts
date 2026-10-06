@@ -1,15 +1,17 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { fetchPreview } from '@/lib/jobs';
+import { unavailable } from '@/lib/route';
 
 /** The free preview passages. Proxied so the jobs Worker address stays private. */
 export async function POST(request: NextRequest) {
-  const base = process.env.NATALKA_JOBS_URL;
-  if (!base) return NextResponse.json({ error: 'not configured' }, { status: 500 });
-
-  const upstream = await fetch(`${base.replace(/\/$/, '')}/v1/preview`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(await request.json()),
-  });
+  const body: unknown = await request.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'bad request' }, { status: 400 });
+  let upstream: Response;
+  try {
+    upstream = await fetchPreview(body);
+  } catch (error) {
+    return unavailable('preview failed', error);
+  }
   if (!upstream.ok) {
     return NextResponse.json({ error: 'preview unavailable' }, { status: upstream.status });
   }

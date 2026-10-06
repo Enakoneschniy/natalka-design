@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createSubscription, type SubscriptionRequest } from '@/lib/jobs';
+import { createSubscription, JobsNotConfigured, type SubscriptionRequest } from '@/lib/jobs';
+import { unavailable } from '@/lib/route';
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
+    if (error instanceof JobsNotConfigured) return unavailable('subscription failed', error);
     console.error('subscription failed', error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: 'could not subscribe' }, { status: 502 });
   }

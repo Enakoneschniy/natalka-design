@@ -22,9 +22,10 @@ export default async function GeneratingPage({
   const search = await searchParams;
   const token = Array.isArray(search.t) ? search.t[0] : search.t;
   const t = await getTranslations({ locale, namespace: 'generating' });
-  // The bot is optional: without a username configured there is no link to show.
+  // The bot is optional: without a username configured there is no link to show, and without the
+  // jobs worker the page still renders, just without it.
   const bot = process.env.TELEGRAM_BOT_USERNAME;
-  const code = token && bot ? await telegramCode(token) : null;
+  const code = token && bot ? await telegramCode(token).catch(() => null) : null;
   const telegram = bot && code ? `https://t.me/${bot}?start=${code}` : null;
 
   return (

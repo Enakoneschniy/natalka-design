@@ -1,7 +1,8 @@
 /** Server-side client for the jobs Worker.
  *
  * The browser never sees this address: orders carry birth data and the pipeline spends money, so
- * everything goes through route handlers on our own origin.
+ * everything goes through route handlers on our own origin. Every call carries the site key; with
+ * no key configured nothing is called at all.
  */
 
 export interface OrderRequest {
@@ -60,40 +61,64 @@ export interface JobStatus {
   download: string | null;
 }
 
-const base = (): string => {
+/** The jobs worker's address or the site key is missing: a route answers 503 and the log says
+ * which. */
+export class JobsNotConfigured extends Error {
+  constructor(what: string) {
+    super(`${what} is not configured`);
+    this.name = 'JobsNotConfigured';
+  }
+}
+
+const config = (): { base: string; key: string } => {
   const url = process.env.NATALKA_JOBS_URL;
-  if (!url) throw new Error('NATALKA_JOBS_URL is not configured');
-  return url.replace(/\/$/, '');
+  const key = process.env.SITE_KEY;
+  if (!url) throw new JobsNotConfigured('NATALKA_JOBS_URL');
+  if (!key) throw new JobsNotConfigured('SITE_KEY');
+  return { base: url.replace(/\/$/, ''), key };
 };
 
+/** The one way to call the jobs worker. The site key goes with every call, and a redirect is not
+ * followed: the key is for the jobs worker and nowhere else. */
+export function jobsFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const { base, key } = config();
+  const headers = new Headers(init.headers);
+  headers.set('x-site-key', key);
+  return fetch(`${base}${path}`, { cache: 'no-store', ...init, headers, redirect: 'manual' });
+}
+
+const postJson = (body: unknown): RequestInit => ({
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify(body),
+});
+
+const withToken = (prefix: string, token: string, suffix = '') =>
+  `${prefix}/${encodeURIComponent(token)}${suffix}`;
+
 export async function createOrder(order: OrderRequest): Promise<OrderCreated> {
-  const response = await fetch(`${base()}/v1/orders`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(order),
-  });
-  if (!response.ok) {
-    throw new Error(`orders → ${response.status}: ${(await response.text()).slice(0, 200)}`);
-  }
+  const response = await jobsFetch('/v1/orders', postJson(order));
+  if (!response.ok) throw new Error(`orders → ${response.status}`);
   return (await response.json()) as OrderCreated;
 }
 
 export async function jobStatus(token: string): Promise<JobStatus | null> {
-  const response = await fetch(`${base()}/v1/jobs/${encodeURIComponent(token)}`, {
-    cache: 'no-store',
-  });
+  const response = await jobsFetch(withToken('/v1/jobs', token));
   if (!response.ok) return null;
   return (await response.json()) as JobStatus;
 }
 
-export const documentUrl = (token: string): string => `${base()}/d/${encodeURIComponent(token)}`;
+/** The finished PDF as the jobs worker answers for it. */
+export const fetchDocument = (token: string): Promise<Response> =>
+  jobsFetch(withToken('/d', token));
+
+/** The free preview passages, as the jobs worker answers for them. */
+export const fetchPreview = (body: unknown): Promise<Response> =>
+  jobsFetch('/v1/preview', postJson(body));
 
 /** The code behind the "get it in Telegram" link, or null when the link has expired. */
 export async function telegramCode(token: string): Promise<string | null> {
-  const response = await fetch(`${base()}/v1/jobs/${encodeURIComponent(token)}/telegram`, {
-    method: 'POST',
-    cache: 'no-store',
-  });
+  const response = await jobsFetch(withToken('/v1/jobs', token, '/telegram'), { method: 'POST' });
   if (!response.ok) return null;
   const data = (await response.json()) as { code?: string };
   return data.code ?? null;
@@ -121,19 +146,13 @@ export interface SubscriptionView {
 }
 
 export async function createSubscription(input: SubscriptionRequest): Promise<{ token: string }> {
-  const response = await fetch(`${base()}/v1/subscriptions`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  if (!response.ok) throw new Error(`subscriptions → ${response.status}: ${await response.text()}`);
+  const response = await jobsFetch('/v1/subscriptions', postJson(input));
+  if (!response.ok) throw new Error(`subscriptions → ${response.status}`);
   return response.json() as Promise<{ token: string }>;
 }
 
 export async function subscriptionView(token: string): Promise<SubscriptionView | null> {
-  const response = await fetch(`${base()}/v1/subscriptions/${encodeURIComponent(token)}`, {
-    cache: 'no-store',
-  });
+  const response = await jobsFetch(withToken('/v1/subscriptions', token));
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`subscription → ${response.status}`);
   return response.json() as Promise<SubscriptionView>;
@@ -144,9 +163,9 @@ export async function subscriptionChange(
   method: 'PATCH' | 'DELETE',
   body?: { cadence?: string; status?: string },
 ): Promise<boolean> {
-  const response = await fetch(`${base()}/v1/subscriptions/${encodeURIComponent(token)}`, {
+  const response = await jobsFetch(withToken('/v1/subscriptions', token), {
     method,
-    headers: { 'content-type': 'application/json' },
+    headers: body ? { 'content-type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
   return response.ok;
