@@ -1,29 +1,30 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createSubscription, JobsNotConfigured, type SubscriptionRequest } from '@/lib/jobs';
-import { unavailable } from '@/lib/route';
+import { createSubscription } from '@/lib/jobs';
+import { invalid, notSameOrigin, readJson, relayFailure, unavailable } from '@/lib/route';
+import { checkSubscription } from '@/lib/validate';
 
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const MAX_SUBSCRIPTION_BYTES = 16 * 1024;
 
-/** Starts a horoscope subscription: the chart is computed and the first horoscope written. */
+/** Asks for a horoscope subscription. Nothing starts here: the jobs worker keeps it pending and
+ * mails a confirmation link to the address, so the answer is always the same 202 "pending" and
+ * never a link to manage it. */
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as Partial<SubscriptionRequest>;
-  if (!body.email || !EMAIL.test(body.email) || !body.birth?.date || !body.birth?.zone) {
-    return NextResponse.json({ error: 'email and birth data are required' }, { status: 400 });
-  }
-  if (body.cadence !== 'week' && body.cadence !== 'month') {
-    return NextResponse.json({ error: 'cadence' }, { status: 400 });
-  }
+  const refused = notSameOrigin(request);
+  if (refused) return refused;
+  const read = await readJson(request, MAX_SUBSCRIPTION_BYTES);
+  if (!read.ok) return read.response;
+  const checked = checkSubscription(read.value);
+  if (!checked.ok) return invalid(checked.field);
+
+  let result: Awaited<ReturnType<typeof createSubscription>>;
   try {
-    const created = await createSubscription({
-      email: body.email,
-      locale: body.locale ?? 'ru',
-      cadence: body.cadence,
-      birth: body.birth as SubscriptionRequest['birth'],
-    });
-    return NextResponse.json(created, { status: 201 });
+    result = await createSubscription(checked.value);
   } catch (error) {
-    if (error instanceof JobsNotConfigured) return unavailable('subscription failed', error);
-    console.error('subscription failed', error instanceof Error ? error.message : String(error));
-    return NextResponse.json({ error: 'could not subscribe' }, { status: 502 });
+    return unavailable('subscription failed', error);
   }
+  if (!result.ok) return relayFailure('subscription refused', result);
+  return NextResponse.json(
+    { status: 'pending' },
+    { status: 202, headers: { 'cache-control': 'no-store' } },
+  );
 }

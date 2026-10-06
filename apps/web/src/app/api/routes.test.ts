@@ -11,6 +11,7 @@ import {
   GET as subscription,
   DELETE as unsubscribe,
 } from './subscriptions/[token]/route';
+import { POST as confirm } from './subscriptions/confirm/route';
 import { POST as subscribe } from './subscriptions/route';
 
 const SHOP = 'chronika.me';
@@ -448,6 +449,104 @@ describe('shop API routes and the jobs worker', () => {
       expect((await preview(send('/api/preview', await sign()))).status).toBe(503);
       fetchMock.mockResolvedValueOnce(reply(200, { blocks: [] }));
       expect((await preview(send('/api/preview', await sign()))).status).toBe(503);
+    });
+  });
+
+  describe('subscriptions', () => {
+    const request = { email: 'anna@example.com', locale: 'ru', cadence: 'week', birth: person };
+
+    it('answers «pending» and nothing more, whatever the jobs worker gives back', async () => {
+      fetchMock.mockResolvedValueOnce(reply(202, { status: 'pending', token: 'manage-me' }));
+      const answer = await subscribe(send('/api/subscriptions', { ...request, extra: 1 }));
+      expect(answer.status).toBe(202);
+      expect(await answer.json()).toEqual({ status: 'pending' });
+      const call = forwarded();
+      expect(call.url).toBe('https://jobs.test/v1/subscriptions');
+      expect(call.headers.get('x-site-key')).toBe('site-key-123');
+      expect(call.body).toEqual(request);
+    });
+
+    it('holds the birth to an order’s limits and takes our own pages only', async () => {
+      const longName = await subscribe(
+        send('/api/subscriptions', { ...request, birth: { ...person, name: 'и'.repeat(81) } }),
+      );
+      expect(longName.status).toBe(400);
+      expect(await longName.json()).toEqual({ error: 'invalid', field: 'birth.name' });
+      const crossSite = await subscribe(
+        send('/api/subscriptions', request, 'POST', { 'sec-fetch-site': 'cross-site' }),
+      );
+      expect(crossSite.status).toBe(403);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('passes a limit from the jobs worker on as it is', async () => {
+      fetchMock.mockResolvedValueOnce(reply(429, { error: 'too_many' }));
+      expect((await subscribe(send('/api/subscriptions', request))).status).toBe(429);
+    });
+
+    it('confirms with the token from the letter and gives back the management token', async () => {
+      fetchMock.mockResolvedValueOnce(reply(200, { token: 'manage.token.x' }));
+      const answer = await confirm(send('/api/subscriptions/confirm', { token: 'confirm.t.x' }));
+      expect(answer.status).toBe(200);
+      expect(await answer.json()).toEqual({ token: 'manage.token.x' });
+      const call = forwarded();
+      expect(call.url).toBe('https://jobs.test/v1/subscriptions/confirm');
+      expect(call.body).toEqual({ token: 'confirm.t.x' });
+      expect(call.headers.get('x-site-key')).toBe('site-key-123');
+    });
+
+    it('says when the letter’s link is no good', async () => {
+      fetchMock.mockResolvedValueOnce(reply(404, { error: 'link expired' }));
+      const gone = await confirm(send('/api/subscriptions/confirm', { token: 'old' }));
+      expect(gone.status).toBe(404);
+      const missing = await confirm(send('/api/subscriptions/confirm', { token: 42 }));
+      expect(missing.status).toBe(400);
+      fetchMock.mockResolvedValueOnce(reply(200, {}));
+      const empty = await confirm(send('/api/subscriptions/confirm', { token: 't' }));
+      expect(empty.status).toBe(503);
+    });
+
+    it('confirms nothing for a request from another site', async () => {
+      const answer = await confirm(
+        send('/api/subscriptions/confirm', { token: 't' }, 'POST', {
+          'sec-fetch-site': 'cross-site',
+        }),
+      );
+      expect(answer.status).toBe(403);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('changes a subscription only from our own page, with only what may change', async () => {
+      fetchMock.mockResolvedValueOnce(reply(200, { ok: true }));
+      const changed = await changeSubscription(
+        send(
+          '/api/subscriptions/t',
+          { cadence: 'month', status: 'active', email: 'x@y.z' },
+          'PATCH',
+        ),
+        token('t'),
+      );
+      expect(changed.status).toBe(200);
+      expect(forwarded().body).toEqual({ cadence: 'month', status: 'active' });
+
+      const unknown = await changeSubscription(
+        send('/api/subscriptions/t', { status: 'ended' }, 'PATCH'),
+        token('t'),
+      );
+      expect(unknown.status).toBe(400);
+      const crossSite = await changeSubscription(
+        send('/api/subscriptions/t', { cadence: 'week' }, 'PATCH', {
+          'sec-fetch-site': 'cross-site',
+        }),
+        token('t'),
+      );
+      expect(crossSite.status).toBe(403);
+      const removed = await unsubscribe(
+        send('/api/subscriptions/t', undefined, 'DELETE', { 'sec-fetch-site': 'cross-site' }),
+        token('t'),
+      );
+      expect(removed.status).toBe(403);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 });

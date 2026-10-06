@@ -92,6 +92,34 @@ export function checkBirth(input: unknown, field: string, today = new Date()): C
   };
 }
 
+export interface CheckedSubscription {
+  email: string;
+  locale: DocumentLocale;
+  cadence: 'week' | 'month';
+  birth: BirthInput;
+}
+
+/** A horoscope subscription as the browser sent it: the address, the language, how often, and
+ * one birth, held to the same limits as an order's. */
+export function checkSubscription(body: unknown, today = new Date()): Checked<CheckedSubscription> {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return fail('body');
+  const input = body as Record<string, unknown>;
+  const email = checkEmail(input.email);
+  if (!email.ok) return email;
+  const locale = input.locale ?? 'ru';
+  if (typeof locale !== 'string' || !(DOCUMENT_LOCALES as readonly string[]).includes(locale)) {
+    return fail('locale');
+  }
+  const { cadence } = input;
+  if (cadence !== 'week' && cadence !== 'month') return fail('cadence');
+  const birth = checkBirth(input.birth, 'birth', today);
+  if (!birth.ok) return birth;
+  return {
+    ok: true,
+    value: { email: email.value, locale: locale as DocumentLocale, cadence, birth: birth.value },
+  };
+}
+
 export interface CheckedOrder {
   email: string;
   product: ProductKey;

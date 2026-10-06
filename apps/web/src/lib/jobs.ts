@@ -206,7 +206,8 @@ export interface SubscriptionRequest {
 }
 
 export interface SubscriptionView {
-  status: 'active' | 'paused' | 'cancelled';
+  /** `pending` until the address is confirmed; `ended` once the free month is over. */
+  status: 'pending' | 'active' | 'paused' | 'cancelled' | 'ended';
   cadence: 'week' | 'month';
   email: string | null;
   locale: string;
@@ -219,10 +220,18 @@ export interface SubscriptionView {
   latest: { title: string; text: string; period: string; start: string; end: string } | null;
 }
 
-export async function createSubscription(input: SubscriptionRequest): Promise<{ token: string }> {
-  const response = await jobsFetch('/v1/subscriptions', postJson(input));
-  if (!response.ok) throw new Error(`subscriptions → ${response.status}`);
-  return response.json() as Promise<{ token: string }>;
+/** Asks for a subscription. The jobs worker keeps it pending and mails a confirmation link; its
+ * answer is the same 202 whoever the address belongs to, and carries no link of its own. */
+export async function createSubscription(
+  input: SubscriptionRequest,
+): Promise<Outcome<{ status?: unknown }>> {
+  return outcome(await jobsFetch('/v1/subscriptions', postJson(input)));
+}
+
+/** The confirmation link's token, traded for the subscription's management token: the first
+ * confirmation starts it, a repeated one answers the same; 404 for a link that is not good. */
+export async function confirmSubscription(token: string): Promise<Outcome<{ token?: unknown }>> {
+  return outcome(await jobsFetch('/v1/subscriptions/confirm', postJson({ token })));
 }
 
 export async function subscriptionView(token: string): Promise<SubscriptionView | null> {

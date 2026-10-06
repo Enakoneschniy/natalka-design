@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkBirth, checkEmail, checkOrder, cleanText } from './validate';
+import { checkBirth, checkEmail, checkOrder, checkSubscription, cleanText } from './validate';
 
 const TODAY = new Date('2026-10-06T12:00:00Z');
 
@@ -146,5 +146,34 @@ describe('checkOrder', () => {
   it('defaults the locale to Russian', () => {
     const result = checkOrder({ ...order, locale: undefined }, TODAY);
     expect(result.ok && result.value.locale).toBe('ru');
+  });
+});
+
+describe('checkSubscription', () => {
+  const subscription = {
+    email: 'anna@example.com',
+    locale: 'ru',
+    cadence: 'week',
+    birth: person,
+    token: 'nothing to see',
+  };
+
+  it('keeps the address, language, cadence and birth, and nothing else', () => {
+    expect(checkSubscription(subscription, TODAY)).toEqual({
+      ok: true,
+      value: { email: 'anna@example.com', locale: 'ru', cadence: 'week', birth: person },
+    });
+  });
+
+  it('holds the birth to an order’s limits and names what is wrong', () => {
+    expect(field(checkSubscription({ ...subscription, email: 'x' }, TODAY))).toBe('email');
+    expect(field(checkSubscription({ ...subscription, cadence: 'day' }, TODAY))).toBe('cadence');
+    expect(field(checkSubscription({ ...subscription, locale: 'fr' }, TODAY))).toBe('locale');
+    expect(
+      field(
+        checkSubscription({ ...subscription, birth: { ...person, name: 'и'.repeat(81) } }, TODAY),
+      ),
+    ).toBe('birth.name');
+    expect(field(checkSubscription({ ...subscription, birth: undefined }, TODAY))).toBe('birth');
   });
 });
