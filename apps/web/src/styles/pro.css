@@ -305,14 +305,24 @@ body.pro {
   text-align: right;
 }
 
+/* «Выйти» is a button in a form. The form draws no box, so the button lays out as the bar's (and,
+   on a desktop, the rail's) own child; the button wears the pill and nothing of the browser's. */
+.signout-form {
+  display: contents;
+}
+
 .bar .signout {
+  font: inherit;
   font-size: 12.5px;
   color: var(--text-2);
+  background: none;
   text-decoration: none;
+  margin: 0;
   padding: 5px 9px;
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .bar .signout:hover {
