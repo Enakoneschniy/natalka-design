@@ -57,6 +57,27 @@ describe('middleware: the cabinet host', () => {
     expect(rewriteOf(product)).not.toContain('/pro');
   });
 
+  it('notes the campaign once, cleaned, and replaces a cookie that holds nothing usable', async () => {
+    const fresh = await middleware(
+      request('https://chronika.me/ru?utm_source=Meta<b>', { host: 'chronika.me' }),
+    );
+    expect(fresh.cookies.get('chr_src')?.value).toBe('metab');
+    const kept = await middleware(
+      request('https://chronika.me/ru?utm_source=tiktok', {
+        host: 'chronika.me',
+        cookie: 'chr_src=meta',
+      }),
+    );
+    expect(kept.cookies.get('chr_src')).toBeUndefined();
+    const replaced = await middleware(
+      request('https://chronika.me/ru?utm_source=tiktok', {
+        host: 'chronika.me',
+        cookie: 'chr_src=<>!',
+      }),
+    );
+    expect(replaced.cookies.get('chr_src')?.value).toBe('tiktok');
+  });
+
   it('keeps Russia out of the cabinet too', async () => {
     const response = await middleware(
       request('https://pro.chronika.me/clients', {

@@ -9,7 +9,7 @@ import {
   randomVariant,
   readVariant,
 } from '@/lib/experiment';
-import { cleanSource, SOURCE_COOKIE } from '@/lib/marketing';
+import { cleanSource, readSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { isProHost } from '@/lib/pro/host';
 import { isClosedCountry } from '@/lib/region';
 import { INDEXABLE, isPrivatePath } from '@/lib/seo';
@@ -67,7 +67,7 @@ export async function middleware(request: NextRequest) {
   // closed. First touch wins: the landing is where the campaign is named, and the pages after it
   // carry no utm of their own.
   const source = cleanSource(request.nextUrl.searchParams.get('utm_source'));
-  if (source && !request.cookies.get(SOURCE_COOKIE)) {
+  if (source && !readSource(request.cookies.get(SOURCE_COOKIE)?.value)) {
     response.cookies.set(SOURCE_COOKIE, source, { sameSite: 'lax', secure: true, path: '/' });
   }
 

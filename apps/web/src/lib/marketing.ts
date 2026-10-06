@@ -44,3 +44,8 @@ export const cleanSource = (value: string | null | undefined): string =>
     .toLowerCase()
     .replace(/[^a-z0-9_.-]/g, '')
     .slice(0, 24);
+
+/** The source cookie as it is read back: cleaned again, since a cookie is whatever the browser
+ * sends; null when nothing usable is left. */
+export const readSource = (value: string | null | undefined): string | null =>
+  cleanSource(value) || null;

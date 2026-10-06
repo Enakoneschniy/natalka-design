@@ -197,6 +197,15 @@ describe('shop API routes and the jobs worker', () => {
       expect(body.birth_second.name).toBe('Борис');
     });
 
+    it('keeps the campaign only as a clean label', async () => {
+      fetchMock.mockResolvedValueOnce(reply(201, created));
+      await order(send('/api/orders', validOrder, 'POST', { cookie: 'chr_src=Meta<b>(x)' }));
+      expect(forwarded().body.source).toBe('metabx');
+      fetchMock.mockResolvedValueOnce(reply(201, created));
+      await order(send('/api/orders', validOrder, 'POST', { cookie: 'chr_src=<>!' }));
+      expect(forwarded(1).body.source).toBeNull();
+    });
+
     it('refuses a request from another site or without JSON before reading it', async () => {
       const crossSite = await order(
         send('/api/orders', validOrder, 'POST', { 'sec-fetch-site': 'cross-site' }),

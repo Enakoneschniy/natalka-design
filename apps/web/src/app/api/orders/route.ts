@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { createOrder, isStripeCheckout } from '@/lib/jobs';
-import { CONSENT_COOKIE, readConsent, SOURCE_COOKIE } from '@/lib/marketing';
+import { CONSENT_COOKIE, readConsent, readSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { bundlePrice, priceFor } from '@/lib/pricing';
 import { invalid, notSameOrigin, readJson, relayFailure, unavailable } from '@/lib/route';
 import { checkOrder } from '@/lib/validate';
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   // Kept with the order because the payment webhook arrives later, without a browser: this is
   // the only moment at which either of these is knowable.
   const consent = readConsent(request.cookies.get(CONSENT_COOKIE)?.value);
-  const source = request.cookies.get(SOURCE_COOKIE)?.value ?? null;
+  const source = readSource(request.cookies.get(SOURCE_COOKIE)?.value);
   const price = product === 'bundle' ? bundlePrice(country, variant) : priceFor(product, country);
 
   let result: Awaited<ReturnType<typeof createOrder>>;
