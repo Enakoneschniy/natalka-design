@@ -71,3 +71,22 @@ export const randomVariant = (): Variant => {
   const [byte = 0] = crypto.getRandomValues(new Uint8Array(1));
   return VARIANTS[byte % VARIANTS.length] as Variant;
 };
+
+/** The side for a visitor who carries no cookie: drawn from their address under the experiment
+ * key, so clearing cookies does not draw again, and nobody without the key can tell which side
+ * an address falls on. The address is neither stored nor sent anywhere. Without an address (or a
+ * key) the draw is random. */
+export async function variantFor(address: string | null | undefined): Promise<Variant> {
+  const secret = key();
+  if (!secret || !address) return randomVariant();
+  const material = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const mac = await crypto.subtle.sign('HMAC', material, encoder.encode(`address:${address}`));
+  const [byte = 0] = new Uint8Array(mac);
+  return VARIANTS[byte % VARIANTS.length] as Variant;
+}

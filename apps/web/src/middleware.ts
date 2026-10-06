@@ -6,8 +6,8 @@ import {
   EXPERIMENT_COOKIE,
   EXPERIMENT_MAX_AGE,
   mintVariant,
-  randomVariant,
   readVariant,
+  variantFor,
 } from '@/lib/experiment';
 import { cleanSource, readSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { isProHost } from '@/lib/pro/host';
@@ -50,9 +50,11 @@ export async function middleware(request: NextRequest) {
   const response = intl(request);
 
   // The price experiment: assigned once, here, before a page can read it, and left alone after.
+  // A visitor without the cookie gets the side their address falls on, so clearing cookies shows
+  // the same price again.
   const carried = request.cookies.get(EXPERIMENT_COOKIE)?.value;
   if (!(await readVariant(carried))) {
-    const minted = await mintVariant(randomVariant());
+    const minted = await mintVariant(await variantFor(request.headers.get('cf-connecting-ip')));
     if (minted) {
       response.cookies.set(EXPERIMENT_COOKIE, minted, {
         maxAge: EXPERIMENT_MAX_AGE,

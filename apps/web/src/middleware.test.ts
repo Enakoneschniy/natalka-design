@@ -78,6 +78,30 @@ describe('middleware: the cabinet host', () => {
     expect(replaced.cookies.get('chr_src')?.value).toBe('tiktok');
   });
 
+  it('gives a visitor without the price cookie the side their address falls on', async () => {
+    process.env.EXPERIMENT_KEY = 'x'.repeat(32);
+    try {
+      const visit = async (cookie?: string) =>
+        (
+          await middleware(
+            request('https://chronika.me/ru', {
+              host: 'chronika.me',
+              'cf-connecting-ip': '203.0.113.9',
+              ...(cookie ? { cookie } : {}),
+            }),
+          )
+        ).cookies.get('cx')?.value;
+      const first = await visit();
+      expect(first).toMatch(/^[ab]\./);
+      // Cookies cleared: the same address, the same side.
+      expect(await visit()).toBe(first);
+      // A carried cookie is left alone.
+      expect(await visit(`cx=${first}`)).toBeUndefined();
+    } finally {
+      delete process.env.EXPERIMENT_KEY;
+    }
+  });
+
   it('keeps Russia out of the cabinet too', async () => {
     const response = await middleware(
       request('https://pro.chronika.me/clients', {
