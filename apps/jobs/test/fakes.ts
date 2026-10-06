@@ -98,11 +98,22 @@ export async function fakeApi(request: Request): Promise<Response> {
   return new Response('not found', { status: 404 });
 }
 
-/** Stand-in for api.stripe.com, bound as the worker's outbound fetch. Checkout creation answers
- * with a fake session and records the form it was sent under "stripe|checkout|<purchase id>" with its headers (read it through
- * the API binding's /__last). Anything else is a 404. */
+/** Stand-in for api.stripe.com and api.resend.com, bound as the worker's outbound fetch. Checkout
+ * creation answers with a fake session and records the form it was sent under
+ * "stripe|checkout|<purchase id>" with its headers; letters are kept under "mail|<recipient>"
+ * (read either through the API binding's /__last). Anything else is a 404. */
 export async function fakeOutbound(request: Request): Promise<Response> {
   const url = new URL(request.url);
+  if (request.method === 'POST' && url.origin === 'https://api.resend.com' && url.pathname === '/emails') {
+    // Every letter is kept under "mail|<recipient>", oldest first. An address starting with
+    // "fail-mail@" is refused, with a body that quotes it back and must never be logged.
+    const letter = (await request.json()) as { to: string[] };
+    const to = letter.to[0] ?? '';
+    if (to.startsWith('fail-mail@')) return new Response(`{"message":"invalid to: ${to}"}`, { status: 422 });
+    const key = `mail|${to}`;
+    lastSeen.set(key, [...((lastSeen.get(key) as unknown[] | undefined) ?? []), letter]);
+    return json({ id: `re_${crypto.randomUUID()}` });
+  }
   if (request.method === 'POST' && url.origin === 'https://api.stripe.com' && url.pathname === '/v1/checkout/sessions') {
     const fields = Object.fromEntries(new URLSearchParams(await request.text()));
     // A seller with this address makes Checkout fail, with an error body that must never leak.

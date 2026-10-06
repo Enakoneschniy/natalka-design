@@ -36,6 +36,10 @@ export default defineConfig({
           SITE_KEY: 'test-site-key',
           STRIPE_SECRET_KEY: 'sk_test_fake',
           STRIPE_WEBHOOK_SECRET: 'whsec_test_fake',
+          // Letters go to the fake Resend in test/fakes.ts; the links are logged as on a laptop.
+          RESEND_API_KEY: 're_test_fake',
+          MAIL_LOG_LINKS: '1',
+          ALERT_EMAIL: 'owner@alerts.test',
         },
       },
     }),

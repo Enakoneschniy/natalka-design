@@ -28,6 +28,12 @@ export interface Env {
   SITE_URL: string;
   /** Resend API key. Worker secret; absent means the ready letter is skipped, not failed. */
   RESEND_API_KEY?: string;
+  /** Where owner alerts go (refunds to make, disputes, failed documents). A var; help@chronika.me
+   * when unset. Alerts carry ids and status codes only. */
+  ALERT_EMAIL?: string;
+  /** "1" only on a developer's machine: the sign-in and confirmation links in letters are also
+   * written to the log. Never set in wrangler.jsonc or in production. */
+  MAIL_LOG_LINKS?: string;
   /** Stripe. Worker secrets. With no secret key, orders are not accepted at all — except test
    * orders that carry TEST_ORDER_KEY, which skip payment. */
   STRIPE_SECRET_KEY?: string;

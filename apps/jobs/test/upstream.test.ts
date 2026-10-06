@@ -5,14 +5,8 @@ import type { QueueMessage } from '../src/env';
 import { errorCode, UpstreamError } from '../src/errors';
 import worker from '../src/index';
 import { advance } from '../src/pipeline';
-import { armFailure, testEnv } from './env';
+import { armFailure, envWith, testEnv } from './env';
 import { seedOrder } from './seed';
-
-const envWith = (name: string, value: unknown) => {
-  const env = Object.create(testEnv);
-  Object.defineProperty(env, name, { value });
-  return env;
-};
 
 /** One delivery of a job message to the worker's queue handler. */
 async function deliver(jobId: string, attempts = 1) {

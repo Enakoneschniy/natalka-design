@@ -1,17 +1,9 @@
 import { createExecutionContext, SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import worker from '../src/index';
-import { testEnv } from './env';
+import { envWith } from './env';
 
 const SITE = { 'x-site-key': 'test-site-key' };
-
-/** The worker with one binding replaced. defineProperty, not assignment: assigning through the
- * prototype would reach the shared bindings and change them for every later test. */
-const envWith = (name: string, value: unknown) => {
-  const env = Object.create(testEnv);
-  Object.defineProperty(env, name, { value });
-  return env;
-};
 
 describe('the site key', () => {
   it('leaves /health open', async () => {

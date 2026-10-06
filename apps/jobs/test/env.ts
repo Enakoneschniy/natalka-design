@@ -52,3 +52,24 @@ export async function lastRequest(key: string): Promise<Record<string, unknown> 
   const response = await testEnv.API.fetch(`https://api.test/__last?key=${encodeURIComponent(key)}`);
   return (await response.json()) as Record<string, unknown> | null;
 }
+
+export interface Letter {
+  to: string[];
+  subject: string;
+  html: string;
+  text: string;
+  headers?: Record<string, string>;
+}
+
+/** Every letter the fake Resend took for `to`, oldest first. */
+export async function letters(to: string): Promise<Letter[]> {
+  return ((await lastRequest(`mail|${to}`)) as Letter[] | null) ?? [];
+}
+
+/** The worker's bindings with one of them replaced. defineProperty, not assignment: assigning
+ * through the prototype would reach the shared bindings and change them for every later test. */
+export function envWith(name: string, value: unknown): Env {
+  const env = Object.create(testEnv);
+  Object.defineProperty(env, name, { value });
+  return env;
+}
