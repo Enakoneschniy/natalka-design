@@ -65,15 +65,57 @@ const giveBack = (db: D1Database, orderId: string) =>
     .bind(orderId)
     .run();
 
+/** The longest a rewrite holds its reading. A section takes about half a minute to write; a hold
+ * whose worker stopped before letting go runs out after this. */
+export const REWRITE_HOLD_MS = 5 * 60 * 1000;
+
+/** Takes the reading for one rewrite: the seller's own reading, when nobody holds it or the last
+ * hold has run out. One statement, so two requests cannot both take it. Returns the hold's end,
+ * which is also what lets it go, or null. */
+async function holdReading(db: D1Database, orderId: string, accountId: string): Promise<string | null> {
+  const until = new Date(Date.now() + REWRITE_HOLD_MS).toISOString();
+  const taken = await db
+    .prepare(
+      `UPDATE pro_readings SET busy_until = ?
+       WHERE order_id = ? AND account_id = ? AND (busy_until IS NULL OR busy_until < ?)`,
+    )
+    .bind(until, orderId, accountId, now())
+    .run();
+  return taken.meta.changes ? until : null;
+}
+
+/** Lets the reading go, unless the hold ran out and somebody else has taken it since. */
+async function releaseReading(db: D1Database, orderId: string, until: string): Promise<void> {
+  try {
+    await db.prepare('UPDATE pro_readings SET busy_until = NULL WHERE order_id = ? AND busy_until = ?').bind(orderId, until).run();
+  } catch (error) {
+    // The hold runs out on its own.
+    console.error('releasing a reading', orderId, errorCode(error));
+  }
+}
+
 /** Rewrites one section of a finished reading. A section that was never written is filled free;
  * rewriting a written one uses one of the reading's paid rewrites, and only within the edit
- * window. The rewrite is reserved before the model is called and given back if nothing is saved. */
+ * window. The reading is held first, before anything is charged or sent to the model, and let go
+ * however the rewrite ends: a request for the same reading meanwhile is told it is busy. The
+ * rewrite is reserved before the model is called and given back if nothing is saved. */
 export async function regenerateSection(
   env: Env,
   accountId: string,
   orderId: string,
   sectionId: string,
 ): Promise<RegenerateResult> {
+  const hold = await holdReading(env.DB, orderId, accountId);
+  if (!hold) return (await readingRow(env.DB, orderId, accountId)) ? { status: 'busy' } : { status: 'not_found' };
+  try {
+    return await rewriteHeld(env, accountId, orderId, sectionId);
+  } finally {
+    await releaseReading(env.DB, orderId, hold);
+  }
+}
+
+/** The rewrite itself, read and written while the reading is held. */
+async function rewriteHeld(env: Env, accountId: string, orderId: string, sectionId: string): Promise<RegenerateResult> {
   const row = await readingRow(env.DB, orderId, accountId);
   if (!row) return { status: 'not_found' };
   if (row.refunded_at || row.step !== 'done') return { status: 'not_ready' };
@@ -129,7 +171,8 @@ export async function regenerateSection(
         row.updated_at,
       )
       .run();
-    // Another rewrite of this reading landing first means saving now would undo it.
+    // The job changed meanwhile (a PDF was asked for, or a rewrite took over a hold that ran out):
+    // saving now would undo that.
     if (!result.meta.changes) return { status: 'busy' };
     saved = true;
   } finally {

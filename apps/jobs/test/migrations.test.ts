@@ -124,6 +124,10 @@ describe('the migrations of this release', () => {
       purpose: 'login',
       requester: null,
     });
+    expect(await db.prepare("SELECT regenerations, busy_until FROM pro_readings WHERE order_id = 'o3'").first()).toEqual({
+      regenerations: 0,
+      busy_until: null,
+    });
   });
 
   it("leave the previous worker's own writes working while it still runs", async () => {
