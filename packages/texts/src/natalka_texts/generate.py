@@ -79,7 +79,8 @@ def _one_section(
     if report.ok:
         return SectionText(spec.id, title(spec, lang), completion.text, quote=spec.quote)
 
-    log.info("section %s rejected: %s", spec.id, "; ".join(report.problems))
+    # Codes only: the problems quote the draft, and the draft can carry the person's name.
+    log.info("section %s rejected: %s", spec.id, ", ".join(report.codes))
     retry = provider.complete(
         system, f"{user}\n\n{repair_prompt(list(report.problems))}", max_tokens=MAX_TOKENS
     )
@@ -156,7 +157,7 @@ def write_horoscope(
     spec = HOROSCOPE[period]
     sheet = horoscope_sheet(facts, sky=sky, transits=transits, period=period, start=start, end=end)
     system = system_prompt(lang, gender, "horoscope")
-    user = section_prompt(spec, name=name or "—", sheet=sheet, written_so_far=[])
+    user = section_prompt(spec, name=name, sheet=sheet, written_so_far=[])
     reading = Reading(lang=lang)
     reading.sections.append(
         _one_section(provider, spec, system=system, user=user, lang=lang, reading=reading)

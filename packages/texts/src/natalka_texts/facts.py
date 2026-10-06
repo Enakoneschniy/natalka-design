@@ -1,15 +1,43 @@
 """Turn the engine JSON into the fact sheet the model is allowed to see.
 
 The model never receives anything the person typed beyond their first name and gender — no email,
-no exact coordinates, no free text. It receives what the engine computed, already phrased in the
-document language, plus counts (elements, modalities, house occupancy) worked out here rather than
-by the model, which cannot be trusted to add up twelve numbers reliably.
+no place of birth, no coordinates or time zone, no free text. It receives what the engine computed,
+plus counts (elements, modalities, house occupancy) worked out here rather than by the model,
+which cannot be trusted to add up twelve numbers reliably.
 """
 
 from __future__ import annotations
 
+import json
+import unicodedata
 from collections import Counter
 from typing import Any
+
+#: The longest name the model is shown.
+NAME_MAX = 80
+#: Control characters, line and paragraph separators: anything that could start a new line.
+_BREAKS = frozenset({"Cc", "Zl", "Zp"})
+#: Invisible formatting (direction overrides, zero-width marks) and broken surrogates.
+_INVISIBLE = frozenset({"Cf", "Cs"})
+
+
+def clean_name(name: str) -> str:
+    """A name on one line: breaks and control characters become spaces, invisible characters
+    go, runs of space collapse to one, and it stops at :data:`NAME_MAX` characters."""
+    kept: list[str] = []
+    for char in name:
+        category = unicodedata.category(char)
+        if category in _BREAKS:
+            kept.append(" ")
+        elif category not in _INVISIBLE:
+            kept.append(char)
+    return " ".join("".join(kept).split())[:NAME_MAX].rstrip()
+
+
+def as_data(name: str) -> str:
+    """A name as the model reads it: cleaned and quoted, so whatever it says, it is a value."""
+    return json.dumps(clean_name(name), ensure_ascii=False)
+
 
 SIGNS = (
     "aries", "taurus", "gemini", "cancer", "leo", "virgo",
@@ -94,11 +122,9 @@ def fact_sheet(facts: dict[str, Any], transits: list[dict[str, Any]] | None = No
     degrees back into the reading, and a flat line is harder to garble than nested braces."""
     lines: list[str] = []
     birth = facts["birth"]
-    lines.append(
-        f"Birth: {birth['date']} {birth['time'] or 'time unknown'} "
-        f"({birth['zone']}, {birth['utc_offset']}), "
-        f"lat {birth['latitude']:.2f}, lon {birth['longitude']:.2f}"
-    )
+    # When, never where: the engine has already turned the place into houses and angles, and a
+    # time zone is named after a city. The date stays because ages and returns are read from it.
+    lines.append(f"Birth: {birth['date']} {birth['time'] or 'time unknown'}")
     if birth["unknown_time"]:
         lines.append("NO BIRTH TIME: houses, Ascendant and MC are not available for this chart.")
 
@@ -222,7 +248,10 @@ def synastry_sheet(data: dict[str, Any], *, first_name: str, second_name: str) -
 
     Named rather than numbered: "Sun of Оксана trine Moon of Ігор" is a sentence the model can
     write from, while "first/second" invites it to mix the two people up halfway down the page.
+    The names are quoted wherever they appear: they are data, whatever they say.
     """
+    first_name = as_data(clean_name(first_name) or "A")
+    second_name = as_data(clean_name(second_name) or "B")
     lines = [f"CHART A — {first_name}", fact_sheet(data["first"]), ""]
     lines += [f"CHART B — {second_name}", fact_sheet(data["second"]), ""]
 

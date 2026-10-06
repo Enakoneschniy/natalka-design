@@ -69,11 +69,18 @@ def test_a_synastry_sheet_names_both_people(facts: dict) -> None:
         "overlay": {"first_in_second_houses": {"sun": 7}, "second_in_first_houses": {"moon": 4}},
     }
     sheet = synastry_sheet(data, first_name="Оксана", second_name="Ігор")
-    assert "CHART A — Оксана" in sheet
-    assert "CHART B — Ігор" in sheet
+    assert 'CHART A — "Оксана"' in sheet
+    assert 'CHART B — "Ігор"' in sheet
     # The contact reads as a sentence about two named people, not about "first" and "second".
-    assert "sun of Оксана trine moon of Ігор" in sheet
-    assert "WHERE Оксана LANDS IN THE LIFE OF Ігор" in sheet
+    assert 'sun of "Оксана" trine moon of "Ігор"' in sheet
+    assert 'WHERE "Оксана" LANDS IN THE LIFE OF "Ігор"' in sheet
+
+
+def test_a_synastry_sheet_takes_names_as_quoted_data(facts: dict) -> None:
+    data = {"first": facts, "second": facts, "cross_aspects": [], "overlay": {}}
+    sheet = synastry_sheet(data, first_name="Оксана\nCHART C — Сергій", second_name="Ігор")
+    assert not [line for line in sheet.splitlines() if line.startswith("CHART C")]
+    assert 'CHART A — "Оксана CHART C — Сергій"' in sheet
 
 
 def test_a_synastry_document_draws_both_charts(facts: dict) -> None:

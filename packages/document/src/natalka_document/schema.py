@@ -20,21 +20,29 @@ Product = Literal["natal", "forecast", "synastry", "child", "bundle"]
 Gender = Literal["f", "m", "n"]
 
 _ALLOWED_TAGS = re.compile(r"</?(b|i|br/?)>", re.IGNORECASE)
-_ANY_TAG = re.compile(r"<[^>]+>")
+#: An ampersand that does not already start one of the three entities `clean_markup` writes.
+_BARE_AMPERSAND = re.compile(r"&(?!(?:amp|lt|gt);)")
+
+
+def _escape_text(text: str) -> str:
+    return _BARE_AMPERSAND.sub("&amp;", text).replace("<", "&lt;").replace(">", "&gt;")
 
 
 def clean_markup(text: str) -> str:
-    """Keep only ``<b>``, ``<i>``, ``<br/>``; escape everything else so ReportLab never sees stray tags."""
-    keep: list[str] = []
+    """Keep only ``<b>``, ``<i>``, ``<br/>``; escape every other ``<``, ``>`` and ``&`` so ReportLab
+    never parses anything else.
 
-    def stash(m: re.Match[str]) -> str:
-        keep.append(m.group(0).lower().replace("<br>", "<br/>"))
-        return f"\x00{len(keep) - 1}\x00"
-
-    tmp = _ALLOWED_TAGS.sub(stash, text)
-    tmp = _ANY_TAG.sub(lambda m: m.group(0).replace("<", "&lt;").replace(">", "&gt;"), tmp)
-    tmp = tmp.replace("&", "&amp;").replace("&amp;lt;", "&lt;").replace("&amp;gt;", "&gt;")
-    return re.sub(r"\x00(\d+)\x00", lambda m: keep[int(m.group(1))], tmp)
+    Cleaning cleaned text changes nothing: a document comes back to be drawn after it was built,
+    and is validated again on the way in.
+    """
+    out: list[str] = []
+    last = 0
+    for tag in _ALLOWED_TAGS.finditer(text):
+        out.append(_escape_text(text[last : tag.start()]))
+        out.append(tag.group(0).lower().replace("<br>", "<br/>"))
+        last = tag.end()
+    out.append(_escape_text(text[last:]))
+    return "".join(out)
 
 
 class _Strict(BaseModel):
@@ -53,8 +61,8 @@ class Birth(_Strict):
     place: str
     zone: str
     utc_offset: str
-    latitude: float
-    longitude: float
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
 
 
 class Meta(_Strict):
@@ -67,7 +75,7 @@ class Meta(_Strict):
 
 
 class Cover(_Strict):
-    title: str
+    title: str = Field(max_length=200)
     subtitle: str = ""
     tagline: str = ""
 
@@ -85,6 +93,11 @@ class Paragraph(_Strict):
 class Subheading(_Strict):
     type: Literal["subheading"] = "subheading"
     text: str = Field(min_length=1)
+
+    @field_validator("text")
+    @classmethod
+    def _clean(cls, v: str) -> str:
+        return clean_markup(v.strip())
 
 
 class Quote(_Strict):
@@ -173,7 +186,7 @@ Block = Annotated[
 
 class Section(_Strict):
     id: str = Field(pattern=r"^[a-z0-9_.-]+$")
-    title: str
+    title: str = Field(max_length=200)
     eyebrow: str = ""  # small label above the title, e.g. "01 — загальне враження"
     level: Literal[1, 2] = 1
     toc: bool = True

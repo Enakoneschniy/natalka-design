@@ -154,11 +154,19 @@ MARKDOWN = re.compile(r"^\s{0,3}(#{1,6}\s|\*\s|-\s|\d+\.\s)", re.MULTILINE)
 
 @dataclass(frozen=True, slots=True)
 class Report:
+    #: What is wrong, in words the model is given back. These quote the draft.
     problems: tuple[str, ...]
+    #: One code per problem, in the same order: what a log line may say about a draft, since the
+    #: draft can carry the person's name.
+    codes: tuple[str, ...] = ()
 
     @property
     def ok(self) -> bool:
         return not self.problems
+
+
+#: A problem as a check finds it: its code, then its description.
+_Problem = tuple[str, str]
 
 
 def _found(text: str, needles: tuple[str, ...]) -> list[str]:
@@ -168,14 +176,17 @@ def _found(text: str, needles: tuple[str, ...]) -> list[str]:
 
 def _address_problems(
     text: str, lang: str, *, impersonal_ok: bool, address: Address, pair: bool
-) -> list[str]:
+) -> list[_Problem]:
     """The form of address: «вы» by default, «ты» when the seller asked for it."""
-    problems: list[str] = []
+    problems: list[_Problem] = []
     informal_re = INFORMAL.get(lang)
     informal = informal_re.search(text) if informal_re else None
     if informal and address == "vy":
         problems.append(
-            f"addresses the reader informally ({informal.group(0)}); the reading is on «вы»"
+            (
+                "informal_address",
+                f"addresses the reader informally ({informal.group(0)}); the reading is on «вы»",
+            )
         )
 
     if not impersonal_ok and len(text) > ADDRESS_MIN_CHARS:
@@ -183,12 +194,20 @@ def _address_problems(
             plural = SECOND_PERSON.get(lang)
             if not informal and not (pair and plural and plural.search(text)):
                 problems.append(
-                    "the section talks about the reader instead of addressing them as «ты»"
+                    (
+                        "not_addressed",
+                        "the section talks about the reader instead of addressing them as «ты»",
+                    )
                 )
         else:
             formal = SECOND_PERSON.get(lang)
             if formal and not formal.search(text) and not informal:
-                problems.append("the section talks about the reader instead of addressing them")
+                problems.append(
+                    (
+                        "not_addressed",
+                        "the section talks about the reader instead of addressing them",
+                    )
+                )
     return problems
 
 
@@ -199,27 +218,41 @@ def _language_problems(
     impersonal_ok: bool = False,
     address: Address = "vy",
     pair: bool = False,
-) -> list[str]:
+) -> list[_Problem]:
     """Checks that only make sense for a given language: banned phrases, stray Latin, address."""
-    problems: list[str] = []
+    problems: list[_Problem] = []
     for phrase in _found(text, IMPLIES_KNOWLEDGE.get(lang, ())):
-        problems.append(f'"{phrase}" implies we know something the chart cannot tell us')
+        problems.append(
+            ("implies_knowledge", f'"{phrase}" implies we know something the chart cannot tell us')
+        )
     for phrase in _found(text, CLICHES.get(lang, ())):
-        problems.append(f'"{phrase}" is on the banned list in the style guide')
+        problems.append(("cliche", f'"{phrase}" is on the banned list in the style guide'))
 
     if lang in CYRILLIC_LANGS:
         mixed = MIXED_WORD.findall(text)
         if mixed:
-            problems.append(f"Latin letters inside a word: {', '.join(sorted(set(mixed))[:3])}")
+            problems.append(
+                (
+                    "latin_in_word",
+                    f"Latin letters inside a word: {', '.join(sorted(set(mixed))[:3])}",
+                )
+            )
         latin = [w for w in LATIN_WORD.findall(text) if w.lower() not in LATIN_OK]
         if latin:
-            problems.append(f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
+            problems.append(
+                ("latin_word", f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
+            )
 
     letters = FOREIGN_LETTERS.get(lang)
     if letters:
         words = _foreign_words(text, letters)
         if words:
-            problems.append(f"words from the other language: {', '.join(sorted(words)[:3])}")
+            problems.append(
+                (
+                    "other_language",
+                    f"words from the other language: {', '.join(sorted(words)[:3])}",
+                )
+            )
 
     problems.extend(
         _address_problems(text, lang, impersonal_ok=impersonal_ok, address=address, pair=pair)
@@ -237,34 +270,42 @@ def check(
     address: Address = "vy",
     pair: bool = False,
 ) -> Report:
-    problems: list[str] = []
+    problems: list[_Problem] = []
 
     stripped = text.strip()
     if not stripped:
-        return Report(("the section is empty",))
+        return Report(("the section is empty",), ("empty",))
 
     paragraphs = [p for p in re.split(r"\n\s*\n", stripped) if p.strip()]
     if len(paragraphs) < min_paragraphs:
         problems.append(
-            f"only {len(paragraphs)} paragraphs, at least {min_paragraphs} were asked for"
+            (
+                "too_few_paragraphs",
+                f"only {len(paragraphs)} paragraphs, at least {min_paragraphs} were asked for",
+            )
         )
     # One over is fine — the model often splits a long paragraph; two over means it ignored the brief.
     if len(paragraphs) > max_paragraphs + 1:
-        problems.append(f"{len(paragraphs)} paragraphs, at most {max_paragraphs} were asked for")
+        problems.append(
+            (
+                "too_many_paragraphs",
+                f"{len(paragraphs)} paragraphs, at most {max_paragraphs} were asked for",
+            )
+        )
 
     problems.extend(
         _language_problems(stripped, lang, impersonal_ok=impersonal_ok, address=address, pair=pair)
     )
 
     if "!" in stripped:
-        problems.append("exclamation marks are not used in the reading")
+        problems.append(("exclamation", "exclamation marks are not used in the reading"))
 
     if MARKDOWN.search(stripped):
-        problems.append("markdown headings or bullets — plain paragraphs only")
+        problems.append(("markdown", "markdown headings or bullets — plain paragraphs only"))
 
     without_allowed = ALLOWED_TAGS.sub("", stripped)
     stray = ANY_TAG.findall(without_allowed)
     if stray:
-        problems.append(f"unsupported markup: {', '.join(sorted(set(stray))[:3])}")
+        problems.append(("markup", f"unsupported markup: {', '.join(sorted(set(stray))[:3])}"))
 
-    return Report(tuple(problems))
+    return Report(tuple(m for _, m in problems), tuple(c for c, _ in problems))
