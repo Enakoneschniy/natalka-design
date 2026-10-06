@@ -350,10 +350,11 @@ const readJson = async (req) => {
 
 const ownReading = (id) => readings.find((r) => r.id === id);
 
-/** `ye***@gmail.com`: two characters of the local part (one if shorter), then the domain. */
+/** `ye***@gmail.com`: two characters of the local part (one when it has two or fewer), then the
+ * domain. */
 const mask = (email) => {
   const at = email.lastIndexOf('@');
-  return `${email.slice(0, Math.min(2, at))}***@${email.slice(at + 1)}`;
+  return `${email.slice(0, at <= 2 ? 1 : 2)}***@${email.slice(at + 1)}`;
 };
 
 async function route(req, res, path) {

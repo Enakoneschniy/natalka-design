@@ -2,12 +2,14 @@
  * closing the cabinet. Pure; pages and client components share it. */
 
 /** An address masked as the jobs worker masks it on the sign-in confirm page: the first two
- * characters of the local part (one, when it is shorter), `***@` and the whole domain. */
+ * characters of the local part, or one when the local part has two or fewer, then `***@` and the
+ * whole domain. */
 export function maskEmail(email: string): string {
   const address = email.trim().toLowerCase();
   const at = address.lastIndexOf('@');
   if (at < 1) return '***';
-  return `${address.slice(0, Math.min(2, at))}***@${address.slice(at + 1)}`;
+  const keep = at <= 2 ? 1 : 2;
+  return `${address.slice(0, keep)}***@${address.slice(at + 1)}`;
 }
 
 /** The signed-in cabinet, masked, when a sign-in link opens a different one; null when the link
