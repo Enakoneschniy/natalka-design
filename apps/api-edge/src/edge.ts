@@ -47,7 +47,11 @@ export async function refusal(
   accessKey: string | undefined,
 ): Promise<Response | null> {
   const { pathname } = new URL(request.url);
-  if (request.method === 'GET' && OPEN_PATHS.has(pathname)) return null;
+  if (request.method === 'GET' && OPEN_PATHS.has(pathname)) {
+    // A health check sends nothing, so nothing reaches the container without the key.
+    const empty = request.body === null && (request.headers.get('content-length') ?? '0') === '0';
+    return empty ? null : refuse(413, 'too large');
+  }
   // A header value arrives trimmed; a secret typed or piped in may end in a newline.
   const expected = accessKey?.trim();
   // Fail closed: a deploy that lost the secret serves the health checks and nothing else.

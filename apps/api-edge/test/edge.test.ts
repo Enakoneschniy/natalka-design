@@ -30,6 +30,12 @@ describe('access', () => {
     }
   });
 
+  test('a health check carries no body', async () => {
+    assert.equal(await statusOf(request('GET', '/health', { 'content-length': '0' })), null);
+    assert.equal(await statusOf(request('GET', '/health', { 'content-length': '5' })), 413);
+    assert.equal(await statusOf(request('GET', '/health', { 'content-length': 'x' })), 413);
+  });
+
   test('only GET is open on the health paths', async () => {
     assert.equal(await statusOf(request('POST', '/health', { 'content-length': '2' }, '{}')), 401);
     assert.equal(await statusOf(request('HEAD', '/health')), 401);
