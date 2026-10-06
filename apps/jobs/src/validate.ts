@@ -83,9 +83,8 @@ export interface Birth {
   gender: 'f' | 'm' | 'n';
 }
 
-/** One person's birth. The time is null when unknown — said explicitly, never by leaving it out.
- * `nameRequired`: the text API writes a reading around a name and refuses an empty one. */
-export function parseBirth(raw: unknown, field: string, { nameRequired = false } = {}): Birth {
+/** One person's birth. The time is null when unknown — said explicitly, never by leaving it out. */
+export function parseBirth(raw: unknown, field: string): Birth {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new InvalidField(field);
   const b = raw as Record<string, unknown>;
   const time = b.time === null ? null : typeof b.time === 'string' && TIME.test(b.time) ? b.time : undefined;
@@ -99,7 +98,7 @@ export function parseBirth(raw: unknown, field: string, { nameRequired = false }
     longitude: coordinate(b.longitude, `${field}.longitude`, 180),
     zone: line(b.zone, `${field}.zone`, 64, 1),
     place: line(b.place ?? '', `${field}.place`, 120),
-    name: line(b.name ?? '', `${field}.name`, 80, nameRequired ? 1 : 0),
+    name: line(b.name ?? '', `${field}.name`, 80),
     gender,
   };
 }
@@ -132,7 +131,7 @@ export function parseOrder(body: Record<string, unknown>): OrderInput {
   if (typeof amount !== 'number' || !Number.isInteger(amount) || amount < 50 || amount > 1_000_000) {
     throw new InvalidField('amount_minor');
   }
-  const birth = parseBirth(body.birth, 'birth', { nameRequired: true });
+  const birth = parseBirth(body.birth, 'birth');
   if (product === 'synastry' && (body.birth_second === undefined || body.birth_second === null)) {
     throw new InvalidField('birth_second');
   }
@@ -159,8 +158,7 @@ export interface SubscriptionInput {
   birth: Birth;
 }
 
-/** A horoscope subscription as the site sends it. The name may be empty: a horoscope can be
- * written without one. */
+/** A horoscope subscription as the site sends it. */
 export function parseSubscription(body: Record<string, unknown>): SubscriptionInput {
   const email = parseEmail(body.email);
   if (!isLocale(body.locale)) throw new InvalidField('locale');
