@@ -1,3 +1,6 @@
 node_modules
-.wrangler
+.wrangler/
 worker-configuration.d.ts
+# Local secrets for wrangler dev; only the example is committed.
+.dev.vars*
+!.dev.vars.example

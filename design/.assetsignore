@@ -3,7 +3,13 @@ wrangler.jsonc
 package.json
 node_modules
 shots.mjs
+shot.mjs
 fold.mjs
 frames.mjs
 el.mjs
 README.md
+README-deploy.md
+# Local state and secrets are never published.
+.gitignore
+.wrangler
+.dev.vars*

@@ -1,9 +1,9 @@
 /* The Telegram bot: a second way to receive a finished document, and later the channel the
  * horoscopes arrive through.
  *
- * It holds exactly one secret, the bot token. Everything else — who ordered what, whether it is
- * ready, the PDF itself — is asked of the jobs worker over a service binding, so a leak here
- * exposes a chat bot and nothing behind it. */
+ * It holds two secrets: the bot token and the key that guards /setup. Everything else — who
+ * ordered what, whether it is ready, the PDF itself — is asked of the jobs worker over a service
+ * binding, so a leak here exposes a chat bot and nothing behind it. */
 
 import { WorkerEntrypoint } from 'cloudflare:workers';
 
@@ -20,6 +20,8 @@ interface Env {
   JOBS: JobsInternalStub;
   SITE_URL: string;
   TELEGRAM_BOT_TOKEN?: string;
+  /** Sent as `x-setup-key` to run /setup; while it is unset the route does not exist. */
+  SETUP_KEY?: string;
 }
 
 interface Update {
@@ -44,33 +46,48 @@ interface Claim {
 
 const COPY = {
   uk: {
-    hello: 'Це Chronika. Щоб отримати документ сюди, відкрийте посилання «Отримати в Telegram» на сторінці свого замовлення.',
-    unknown: 'Такого коду немає або посилання застаріло. Відкрийте сторінку замовлення ще раз і натисніть «Отримати в Telegram».',
-    waiting: 'Розбір ще пишеться — зазвичай це десять–п’ятнадцять хвилин. Щойно документ буде готовий, я надішлю його сюди.',
-    failed: 'З цим замовленням щось пішло не так. Ми бачимо помилку і повторимо генерацію; якщо за годину нічого не зміниться — напишіть на help@chronika.me.',
+    hello:
+      'Це Chronika. Щоб отримати документ сюди, відкрийте посилання «Отримати в Telegram» на сторінці свого замовлення.',
+    unknown:
+      'Такого коду немає або посилання застаріло. Відкрийте сторінку замовлення ще раз і натисніть «Отримати в Telegram».',
+    waiting:
+      'Розбір ще пишеться — зазвичай це десять–п’ятнадцять хвилин. Щойно документ буде готовий, я надішлю його сюди.',
+    failed:
+      'З цим замовленням щось пішло не так. Ми бачимо помилку і повторимо генерацію; якщо за годину нічого не зміниться — напишіть на help@chronika.me.',
     here: 'Ваш розбір готовий.',
     caption: 'Chronika · документ зберігається тридцять днів',
-    subscribed: 'Готово: гороскопи будуть приходити сюди. Керувати підпискою можна за посиланням із листа; /stop — відв’язати цей чат.',
+    subscribed:
+      'Готово: гороскопи будуть приходити сюди. Керувати підпискою можна за посиланням із листа; /stop — відв’язати цей чат.',
     stopped: 'Гаразд, більше нічого сюди не надсилатиму.',
   },
   ru: {
-    hello: 'Это Chronika. Чтобы получить документ сюда, откройте ссылку «Получить в Telegram» на странице своего заказа.',
-    unknown: 'Такого кода нет или ссылка устарела. Откройте страницу заказа ещё раз и нажмите «Получить в Telegram».',
-    waiting: 'Разбор ещё пишется — обычно это десять–пятнадцать минут. Как только документ будет готов, я пришлю его сюда.',
-    failed: 'С этим заказом что-то пошло не так. Мы видим ошибку и повторим генерацию; если за час ничего не изменится — напишите на help@chronika.me.',
+    hello:
+      'Это Chronika. Чтобы получить документ сюда, откройте ссылку «Получить в Telegram» на странице своего заказа.',
+    unknown:
+      'Такого кода нет или ссылка устарела. Откройте страницу заказа ещё раз и нажмите «Получить в Telegram».',
+    waiting:
+      'Разбор ещё пишется — обычно это десять–пятнадцать минут. Как только документ будет готов, я пришлю его сюда.',
+    failed:
+      'С этим заказом что-то пошло не так. Мы видим ошибку и повторим генерацию; если за час ничего не изменится — напишите на help@chronika.me.',
     here: 'Ваш разбор готов.',
     caption: 'Chronika · документ хранится тридцать дней',
-    subscribed: 'Готово: гороскопы будут приходить сюда. Управлять подпиской можно по ссылке из письма; /stop — отвязать этот чат.',
+    subscribed:
+      'Готово: гороскопы будут приходить сюда. Управлять подпиской можно по ссылке из письма; /stop — отвязать этот чат.',
     stopped: 'Хорошо, больше ничего сюда не пришлю.',
   },
   en: {
-    hello: 'This is Chronika. To receive your document here, open the "Get it in Telegram" link on your order page.',
-    unknown: 'No such code, or the link has expired. Open your order page again and tap "Get it in Telegram".',
-    waiting: 'Your reading is still being written — usually ten to fifteen minutes. As soon as the document is ready I will send it here.',
-    failed: 'Something went wrong with this order. We can see the error and will retry; if nothing changes within an hour, write to help@chronika.me.',
+    hello:
+      'This is Chronika. To receive your document here, open the "Get it in Telegram" link on your order page.',
+    unknown:
+      'No such code, or the link has expired. Open your order page again and tap "Get it in Telegram".',
+    waiting:
+      'Your reading is still being written — usually ten to fifteen minutes. As soon as the document is ready I will send it here.',
+    failed:
+      'Something went wrong with this order. We can see the error and will retry; if nothing changes within an hour, write to help@chronika.me.',
     here: 'Your reading is ready.',
     caption: 'Chronika · the document is kept for thirty days',
-    subscribed: 'Done: your horoscopes will arrive here. Manage the subscription at the link in your email; /stop unbinds this chat.',
+    subscribed:
+      'Done: your horoscopes will arrive here. Manage the subscription at the link in your email; /stop unbinds this chat.',
     stopped: 'All right, nothing more will be sent here.',
   },
 } as const;
@@ -81,11 +98,23 @@ const lang = (code?: string | null): Lang => (code === 'uk' || code === 'ru' ? c
 /* Telegram authenticates its webhook calls with a secret we choose. Derived from the token rather
  * than stored as a second secret: it is only ever compared here. */
 async function webhookSecret(token: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${token}:webhook`));
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`${token}:webhook`),
+  );
   return [...new Uint8Array(digest)]
     .slice(0, 16)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+/** Constant-time check of a header against a secret; a missing header never matches. */
+function matches(given: string | null, expected: string): boolean {
+  if (!given) return false;
+  const encoder = new TextEncoder();
+  const a = encoder.encode(given);
+  const b = encoder.encode(expected);
+  return a.byteLength === b.byteLength && crypto.subtle.timingSafeEqual(a, b);
 }
 
 const api = (token: string, method: string) => `https://api.telegram.org/bot${token}/${method}`;
@@ -184,8 +213,9 @@ async function onUpdate(env: Env, token: string, update: Update): Promise<void> 
   return sendText(token, chatId, COPY[fallback].hello);
 }
 
-/** Points Telegram at this worker. Idempotent, and it can only ever point the bot at itself. */
-async function setup(env: Env, token: string, origin: string): Promise<Response> {
+/** Points Telegram at this worker. Idempotent, and it can only ever point the bot at itself;
+ * messages Telegram is still holding for the bot are delivered, not dropped. */
+async function setup(token: string, origin: string): Promise<Response> {
   const secret = await webhookSecret(token);
   const response = await fetch(api(token, 'setWebhook'), {
     method: 'POST',
@@ -194,7 +224,7 @@ async function setup(env: Env, token: string, origin: string): Promise<Response>
       url: `${origin}/webhook`,
       secret_token: secret,
       allowed_updates: ['message'],
-      drop_pending_updates: true,
+      drop_pending_updates: false,
     }),
   });
   const result = (await response.json()) as { ok: boolean; description?: string };
@@ -215,13 +245,21 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const token = env.TELEGRAM_BOT_TOKEN;
-    if (url.pathname === '/health') return Response.json({ status: 'ok', configured: Boolean(token) });
+    if (url.pathname === '/health')
+      return Response.json({ status: 'ok', configured: Boolean(token) });
     if (!token) return Response.json({ error: 'bot token is not configured' }, { status: 503 });
 
-    if (url.pathname === '/setup') return setup(env, token, url.origin);
+    if (url.pathname === '/setup') {
+      // Only the owner re-points the webhook; to anyone without the key this is an unknown path.
+      if (!env.SETUP_KEY || !matches(request.headers.get('x-setup-key'), env.SETUP_KEY)) {
+        return new Response('not found', { status: 404 });
+      }
+      return setup(token, url.origin);
+    }
 
     if (url.pathname === '/webhook' && request.method === 'POST') {
-      if (request.headers.get('x-telegram-bot-api-secret-token') !== (await webhookSecret(token))) {
+      const secret = await webhookSecret(token);
+      if (!matches(request.headers.get('x-telegram-bot-api-secret-token'), secret)) {
         return new Response('forbidden', { status: 403 });
       }
       const update = (await request.json()) as Update;

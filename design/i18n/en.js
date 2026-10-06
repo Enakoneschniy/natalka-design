@@ -134,7 +134,7 @@ window.NATALKA_I18N.en = {
   "5 · Стосунки, робота, гроші": "5 · Relationships, work, money", "Гроші: Телець і другий дім": "Money: Taurus and the second house",
   "Ваше ставлення до грошей — як до їжі: важлива не кількість, а відчуття, що є запас. Порожній рахунок тривожить сильніше, ніж має, а повний — заспокоює більше, ніж варто.": "You treat money like food: it's not the amount that matters but the feeling of having a reserve. An empty account worries you more than it should; a full one calms you more than it ought to.",
   "Сатурн у восьмому домі додає обережності до спільних грошей і кредитів. Ви не берете чужого, але й своє віддаєте важко.": "Saturn in the eighth house adds caution around shared money and loans. You don't take what isn't yours — but you part with your own reluctantly.",
-  "38 сторінок про вашу карту. PDF на oksana@gmail.com за 5–15 хвилин після оплати.": "38 pages about your chart. PDF to oksana@gmail.com 5–15 minutes after payment.",
+  "38 сторінок про вашу карту. PDF на oksana@example.com за 5–15 хвилин після оплати.": "38 pages about your chart. PDF to oksana@example.com 5–15 minutes after payment.",
   "Усі десять планет у знаках і домах": "All ten planets in signs and houses", "12 аспектів вашої карти з практиками": "12 aspects of your chart, with practices",
   "Назавжди в кабінеті, можна роздрукувати": "Kept in your account forever, printable",
   "Apple Pay, Google Pay, картка. Повернення, якщо документ не прийшов.": "Apple Pay, Google Pay, card. Refund if the document doesn't arrive.",
@@ -142,7 +142,7 @@ window.NATALKA_I18N.en = {
   "Повний розбір з прогнозом і сумісністю — 1190 грн": "Complete reading with forecast and compatibility — €29",
   /* checkout */
   "Chronika — оплата": "Chronika — payment", "Назад до карти": "Back to the chart",
-  "Після оплати одразу починаємо рахувати. PDF прийде на oksana@gmail.com.": "We start calculating right after payment. The PDF will arrive at oksana@gmail.com.",
+  "Після оплати одразу починаємо рахувати. PDF прийде на oksana@example.com.": "We start calculating right after payment. The PDF will arrive at oksana@example.com.",
   "Спосіб оплати": "Payment method", "або карткою": "or by card", "Номер картки": "Card number", "Термін дії": "Expiry", "мм/рр": "mm/yy", "Три цифри на звороті": "Three digits on the back",
   "Погоджуюсь з": "I agree to the", "публічною офертою": "terms of service", "і": "and", "політикою конфіденційності": "privacy policy",
   "Розумію, що генерація розбору починається одразу після оплати, і відмовитися від замовлення після цього неможливо. Якщо документ не прийде — кошти повернуть повністю.": "I understand that generation starts immediately after payment and the order can't be cancelled after that. If the document doesn't arrive, I get a full refund.",

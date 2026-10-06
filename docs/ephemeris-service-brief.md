@@ -2,13 +2,14 @@
 
 Decision (owner, 2026-09-29): the calculation layer that links `pyswisseph` (AGPL-3.0) is split
 out of this repository into a **public, AGPL-3.0 service**, and everything here — texts, prompts,
-documents, orders, the site — stays private and talks to it over HTTP. No commercial ephemeris
-licence is bought. This is AGPL compliance, not a workaround: it only holds if the public service
-is a real, independently usable program whose source is offered to everyone who uses it.
+documents, orders, the site — talks to it over HTTP. This repository is public as well, but it is
+not AGPL: nothing in it links the engine. No commercial ephemeris licence is bought. This is AGPL
+compliance, not a workaround: it only holds if the public service is a real, independently usable
+program whose source is offered to everyone who uses it.
 
 ## What this must achieve
 
-1. Nothing in this private repository imports `swisseph`, links to it, or ships its data files.
+1. Nothing in this repository imports `swisseph`, links to it, or ships its data files.
 2. The public service contains *everything* that runs in the same process as `swisseph`, under
    AGPL-3.0, with the original copyright and licence notices intact.
 3. Every user of the public service can find its complete corresponding source: a link in a
@@ -47,9 +48,9 @@ is a real, independently usable program whose source is offered to everyone who 
 
 ## What changes in this repository
 
-- Delete `packages/engine` and the `pyswisseph` dependency; `apps/worker` (the private
+- Delete `packages/engine` and the `pyswisseph` dependency; `apps/worker` (the internal
   container: texts + document) loses every `from natalka_engine import …`:
-  - `/v1/calc`, `/v1/synastry`, `/v1/zone` are removed from the private API — the jobs worker
+  - `/v1/calc`, `/v1/synastry`, `/v1/zone` are removed from the internal API — the jobs worker
     and the site call the public service directly (service binding `EPHEMERIS`).
   - `/v1/horoscope` takes the transit list and the sky as input instead of computing them
     (the jobs worker gets both from `/v1/transits` and `/v1/sky` first).
@@ -68,12 +69,12 @@ is a real, independently usable program whose source is offered to everyone who 
 - `grep -r swisseph` in this repository finds nothing but this document.
 - A natal chart, a synastry and a weekly horoscope generated end to end on production match the
   numbers from before the split (compare against a stored `/v1/calc` response for the demo data).
-- The public service answers from a cold start within the same budget the private one had, and
+- The public service answers from a cold start within the same budget the internal one had, and
   `/` shows the licence and the repository link.
 
 ## Order of work
 
 1. Create the public repository from `packages/engine` + the thin API; deploy; run its tests.
 2. Point `apps/jobs` and `apps/web` at it behind a flag; verify numbers match.
-3. Remove the engine from this repository; rebuild the private container; deploy.
+3. Remove the engine from this repository; rebuild the internal container; deploy.
 4. Update docs and the brief's licensing rule.

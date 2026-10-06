@@ -29,7 +29,7 @@
 ## Review Focus
 
 1. **Mail scanners pre-fetching the magic link.** Outlook Safe Links and Gmail open URLs with GET. Expected: no GET request can consume a login token. Only `POST /v1/pro/session` consumes one. → test in Task 6.
-2. **The same person typing their address differently** (`" Anna@Mail.RU "` vs `anna@mail.ru`). Expected: one account. → test in Task 3.
+2. **The same person typing their address differently** (`" Anna@Example.COM "` vs `anna@example.com`). Expected: one account. → test in Task 3.
 3. **Double-tap on "create reading" with 1 credit left.** Expected: exactly one spend succeeds and the balance never goes negative. → test in Task 4.
 4. **An invite code's last use claimed by two sellers at once, or one seller redeeming twice.** Expected: uses never exceed `max_uses`, and one grant per account. → tests in Task 5.
 5. **Forged or garbage bearer tokens**, including a valid download-link token (signed with `LINK_KEY`) replayed as a session. Expected: a clean 401, never a 500. → tests in Task 3 and Task 6.
@@ -462,7 +462,7 @@ const bearer = (token: string) =>
 
 describe('normalizeEmail', () => {
   it('trims and lower-cases', () => {
-    expect(normalizeEmail('  Anna@Mail.RU ')).toBe('anna@mail.ru');
+    expect(normalizeEmail('  Anna@Example.COM ')).toBe('anna@example.com');
   });
 
   it('rejects what is not an address', () => {

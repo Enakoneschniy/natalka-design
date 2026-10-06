@@ -3,12 +3,20 @@
   "name": "natalka-bot",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
-  "observability": { "enabled": true },
+  // Only the deployed version answers; no per-version preview hostnames.
+  "preview_urls": false,
+  // Our own log lines only: no per-request invocation logs, no traces.
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false },
+    "traces": { "enabled": false }
+  },
   "vars": {
     // Where "open on the site" links point.
     "SITE_URL": "https://chronika.me"
   },
-  // Documents and link codes live with the jobs worker; this one only holds the bot token.
+  // Documents and link codes live with the jobs worker; this one only holds the bot's own secrets.
   "services": [{ "binding": "JOBS", "service": "natalka-jobs", "entrypoint": "JobsInternal" }]
-  // Secrets: TELEGRAM_BOT_TOKEN — set in the dashboard, never here.
+  // Secrets: TELEGRAM_BOT_TOKEN and SETUP_KEY (sent as x-setup-key to /setup) — set in the
+  // dashboard, never here.
 }

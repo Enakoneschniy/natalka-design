@@ -7,5 +7,8 @@ reference/
 **/.pytest_cache/
 **/.mypy_cache/
 **/.ruff_cache/
-.env
+# Local secrets and Worker state stay out of every image.
+**/.env*
+**/.dev.vars*
+**/.wrangler/
 *.pdf

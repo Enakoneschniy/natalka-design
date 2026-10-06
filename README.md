@@ -35,9 +35,14 @@ curl -s -X POST https://ephemeris-api.ceo-63e.workers.dev/v1/calc \
   -d '{"date":"1994-05-15","time":"15:25","latitude":45.1972,"longitude":33.3664}'
 # the example reading as PDF
 uv run natalka-document render packages/document/examples/natal-uk.json out.pdf
-# the internal API on :8000 (docs disabled; see apps/worker/src/natalka_worker/api.py)
-uv run python -m natalka_worker api
+# the internal API on 127.0.0.1:8000 (docs disabled; see apps/worker/src/natalka_worker/api.py)
+uv run python -m natalka_worker api --host 127.0.0.1
 ```
+
+## Security
+
+This repository is public. To report a vulnerability, write to help@chronika.me — not a public
+issue. What is in scope and how we handle reports: [SECURITY.md](SECURITY.md).
 
 ## Licence note
 

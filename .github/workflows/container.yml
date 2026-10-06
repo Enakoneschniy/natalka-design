@@ -12,24 +12,33 @@ on:
       - '.github/workflows/container.yml'
   workflow_dispatch:
 
+# The token only reads the repository; the deploy authenticates to Cloudflare with its own secret.
+permissions:
+  contents: read
+
 concurrency:
   group: container-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  IMAGE: registry.cloudflare.com/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/natalka-api
-
+# Actions are pinned to full commit SHAs (the release tag is in the comment); Dependabot bumps them.
 jobs:
   build-and-deploy:
     name: build image · deploy worker
+    # Deploys only from main, and only with the production environment's secrets.
+    if: github.ref == 'refs/heads/main'
+    environment: production
     runs-on: ubuntu-latest
+    env:
+      IMAGE: registry.cloudflare.com/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/natalka-api
     steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           version: 10.17.1
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
           cache: pnpm

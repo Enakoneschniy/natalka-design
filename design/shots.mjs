@@ -3,7 +3,7 @@
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
-const BASE = process.env.BASE || 'http://astro:8080/design/';
+const BASE = process.env.BASE || 'http://astro:8080/';
 const OUT = new URL('./screenshots/', import.meta.url).pathname;
 const ALL = ['landing', 'form', 'preview', 'checkout', 'generating', 'account', 'pdf', 'components'];
 const pages = process.argv.slice(2).length ? process.argv.slice(2) : ALL;

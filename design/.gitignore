@@ -1,0 +1,4 @@
+# Local state and secrets from wrangler dev / deploy of the mockups.
+.wrangler/
+.dev.vars*
+!.dev.vars.example
