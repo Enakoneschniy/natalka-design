@@ -24,14 +24,15 @@ describe('GET /logout', () => {
     logout.mockReset().mockResolvedValue(undefined);
   });
 
-  it('ends the session, clears the cookie and lands on sign-in', async () => {
+  it('ends the session, clears both cookies and lands on sign-in', async () => {
     const res = await GET(visit('', 'same-origin'));
     expect(logout).toHaveBeenCalledWith('s-1');
     expect(res.status).toBe(303);
     expect(res.headers.get('location')).toBe('/login');
-    const cookie = res.headers.get('set-cookie') ?? '';
-    expect(cookie).toMatch(/^chp_session=;/);
-    expect(cookie).toMatch(/Max-Age=0/i);
+    const [current = '', legacy = ''] = res.headers.getSetCookie();
+    expect(current).toMatch(/^__Host-chp_session=;.*Max-Age=0/);
+    expect(current).toMatch(/Secure/);
+    expect(legacy).toMatch(/^chp_session=;.*Max-Age=0/);
   });
 
   it('keeps ?expired=1 on the way to sign-in', async () => {

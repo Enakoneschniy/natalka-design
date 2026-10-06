@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { logout } from '@/lib/pro/client';
-import { clearedSessionCookie, readSession } from '@/lib/pro/session';
+import { clearSessionCookies, readSession } from '@/lib/pro/session';
 
 /** A relative Location keeps the visitor on whichever host they came in on. */
 const goTo = (location: string) =>
@@ -21,7 +21,5 @@ export async function GET(request: Request) {
   if (site !== null && site !== 'same-origin' && site !== 'none') return goTo(signIn);
   const session = await readSession();
   if (session) await logout(session).catch(() => undefined);
-  const response = goTo(signIn);
-  response.cookies.set(clearedSessionCookie());
-  return response;
+  return clearSessionCookies(goTo(signIn));
 }

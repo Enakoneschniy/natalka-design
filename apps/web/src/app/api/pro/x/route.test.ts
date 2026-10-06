@@ -20,7 +20,7 @@ const req = (
   const headers: Record<string, string> = {};
   const merged: Record<string, string | null> = {
     host,
-    cookie: 'chp_session=s-1; other=x',
+    cookie: '__Host-chp_session=s-1; other=x',
     'sec-fetch-site': 'same-origin',
     origin: `https://${host}`,
     ...(method === 'GET' ? {} : { 'content-type': 'application/json' }),
@@ -105,10 +105,22 @@ describe('api/pro/x proxy', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('still takes a session kept under the old cookie name, the current one first', async () => {
+    fetchMock.mockResolvedValue(json(200, { email: 'a@b.co' }));
+    await GET(req('GET', 'me', { headers: { cookie: 'chp_session=old' } }), ctx('me'));
+    expect(sent().headers.get('authorization')).toBe('Bearer old');
+    fetchMock.mockClear();
+    await GET(
+      req('GET', 'me', { headers: { cookie: 'chp_session=old; __Host-chp_session=new' } }),
+      ctx('me'),
+    );
+    expect(sent().headers.get('authorization')).toBe('Bearer new');
+  });
+
   it('forwards an allowlisted GET with the key, the bearer and the query', async () => {
     fetchMock.mockResolvedValue(json(200, { readings: [] }));
     const request = new Request(`https://${HOST}/api/pro/x/readings?client=c-1&x=%2F`, {
-      headers: { host: HOST, cookie: 'chp_session=s-1' },
+      headers: { host: HOST, cookie: '__Host-chp_session=s-1' },
     });
     const res = await GET(request, ctx('readings'));
     expect(res.status).toBe(200);
@@ -142,7 +154,7 @@ describe('api/pro/x proxy', () => {
       method: 'POST',
       headers: {
         host: HOST,
-        cookie: 'chp_session=s-1',
+        cookie: '__Host-chp_session=s-1',
         'sec-fetch-site': 'same-origin',
         'content-type': 'application/json',
       },

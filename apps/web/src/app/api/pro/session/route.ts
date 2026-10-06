@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { startSession } from '@/lib/pro/client';
 import { jsonBody, notOnProHost, notSameOrigin, unavailable } from '@/lib/pro/guard';
-import { sessionCookie } from '@/lib/pro/session';
+import { setSessionCookie } from '@/lib/pro/session';
 
 const expired = () => NextResponse.json({ error: 'link expired' }, { status: 400 });
 
@@ -23,7 +23,5 @@ export async function POST(request: Request) {
     return unavailable();
   }
   if (!started) return expired();
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set(sessionCookie(started.session));
-  return response;
+  return setSessionCookie(NextResponse.json({ ok: true }), started.session);
 }

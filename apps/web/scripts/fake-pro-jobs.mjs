@@ -7,9 +7,11 @@
 //     corepack pnpm --filter @natalka/web dev
 //
 // Any `x-pro-key` and any bearer are accepted; `POST /v1/pro/session` takes any token. Sign in
-// through the site (any address, then open /login/<anything>) or set the `chp_session` cookie
-// by hand. One reading is being written and gains a section on every look at it; a bought pack
-// is paid a few seconds after its checkout link is opened.
+// through the site (any address, then open /login/<anything>) or set the `__Host-chp_session`
+// cookie by hand; over plain http, where a browser keeps no Secure cookie, set the old name
+// `chp_session` instead, which the cabinet still reads. One reading is being written and gains a
+// section on every look at it; a bought pack is paid a few seconds after its checkout link is
+// opened.
 
 import { createServer } from 'node:http';
 

@@ -97,13 +97,16 @@ describe('api/pro routes', () => {
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ ok: true });
       expect(forwarded().body).toEqual({ token: 't-1' });
-      const cookie = res.headers.get('set-cookie') ?? '';
-      expect(cookie).toMatch(/^chp_session=s-1/);
+      const [cookie = '', legacy = ''] = res.headers.getSetCookie();
+      expect(cookie).toMatch(/^__Host-chp_session=s-1;/);
+      expect(cookie).toMatch(/; Path=\/;/);
       expect(cookie).toMatch(/HttpOnly/i);
       expect(cookie).toMatch(/Secure/i);
       expect(cookie).toMatch(/SameSite=Lax/i);
       expect(cookie).toMatch(/Max-Age=2592000/i);
       expect(cookie).not.toMatch(/Domain=/i);
+      // A session kept under the old name does not outlive the new one.
+      expect(legacy).toMatch(/^chp_session=;.*Max-Age=0/);
     });
 
     it('answers 400 and sets no cookie on a bad token', async () => {
