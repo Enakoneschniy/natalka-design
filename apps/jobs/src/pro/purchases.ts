@@ -54,11 +54,17 @@ export interface PurchaseView {
 
 const changes = (r: D1Result | undefined): number => r?.meta.changes ?? 0;
 
+/** Unpaid checkouts a seller may have opened in the last hour; past them no new one is opened. */
+export const PENDING_PURCHASES_PER_HOUR = 3;
+
+/** Writes a pending purchase, or returns null when the seller already has
+ * PENDING_PURCHASES_PER_HOUR purchases still pending from the last hour. The count and the insert
+ * are one statement, so purchases asked for at once cannot pass the limit together. */
 export async function createPurchase(
   db: D1Database,
   accountId: string,
   pack: PackId,
-): Promise<PurchaseRow> {
+): Promise<PurchaseRow | null> {
   const p = PACKS[pack];
   const row: PurchaseRow = {
     id: crypto.randomUUID(),
@@ -74,14 +80,27 @@ export async function createPurchase(
     paid_at: null,
     refunded_at: null,
   };
-  await db
+  const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
+  const stored = await db
     .prepare(
       `INSERT INTO pro_purchases (id, account_id, pack, credits, amount_minor, currency, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`,
+       SELECT ?, ?, ?, ?, ?, ?, 'pending', ?
+       WHERE (SELECT COUNT(*) FROM pro_purchases WHERE account_id = ? AND status = 'pending' AND created_at > ?) < ?`,
     )
-    .bind(row.id, accountId, pack, row.credits, row.amount_minor, row.currency, row.created_at)
+    .bind(
+      row.id,
+      accountId,
+      pack,
+      row.credits,
+      row.amount_minor,
+      row.currency,
+      row.created_at,
+      accountId,
+      hourAgo,
+      PENDING_PURCHASES_PER_HOUR,
+    )
     .run();
-  return row;
+  return changes(stored) > 0 ? row : null;
 }
 
 export async function attachSession(

@@ -213,7 +213,7 @@ describe("a seller's pack: disputes and out-of-order events", () => {
 
   it('takes the credits back once per dispute and gives them back once when it is won', async () => {
     const account = await seller('disputed');
-    const p = await createPurchase(testEnv.DB, account, 'p30');
+    const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
     await attachSession(testEnv.DB, p.id, `cs_${p.id}`);
     await send(packSession(p));
     expect(await balance(testEnv.DB, account)).toBe(30);
@@ -230,7 +230,7 @@ describe("a seller's pack: disputes and out-of-order events", () => {
 
   it('gives nothing back for a won dispute that never took anything', async () => {
     const account = await seller('nodebit');
-    const p = await createPurchase(testEnv.DB, account, 'p10');
+    const p = (await createPurchase(testEnv.DB, account, 'p10'))!;
     const response = await send(dispute('charge.dispute.closed', `pi_${p.id}`, `dp_${p.id}`, 'won'));
     expect(await response.json()).toMatchObject({ dispute: 'unknown' });
     expect(await balance(testEnv.DB, account)).toBe(0);
@@ -242,7 +242,7 @@ describe("a seller's pack: disputes and out-of-order events", () => {
   ] as const) {
     it(`closes a pack whose payment was overtaken by ${what}, and credits nothing`, async () => {
       const account = await seller(`early-${what.replace(' ', '-')}`);
-      const p = await createPurchase(testEnv.DB, account, 'p30');
+      const p = (await createPurchase(testEnv.DB, account, 'p30'))!;
       const first = await send(early(`pi_${p.id}`));
       expect(first.status).toBe(200);
       const late = await send(packSession(p));

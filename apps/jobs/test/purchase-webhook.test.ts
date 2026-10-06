@@ -46,7 +46,7 @@ const refundEvent = (pi: string | null, refunded: boolean) => ({
 describe('credit pack webhook', () => {
   it('credits a pack once however often it is delivered', async () => {
     const id = await seller('once');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     await attachSession(db(), p.id, `cs_${p.id}`);
     for (const type of ['checkout.session.completed', 'checkout.session.completed', 'checkout.session.async_payment_succeeded']) {
       expect((await send(sessionEvent(type, p))).status).toBe(200);
@@ -57,7 +57,7 @@ describe('credit pack webhook', () => {
 
   it('does nothing for a session that is not paid yet', async () => {
     const id = await seller('unpaid');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     await send(sessionEvent('checkout.session.completed', p, { payment_status: 'unpaid' }));
     expect(await balance(db(), id)).toBe(0);
     expect(await status(p.id)).toBe('pending');
@@ -70,7 +70,7 @@ describe('credit pack webhook', () => {
 
   it('rejects a bad signature and changes nothing', async () => {
     const id = await seller('badsig');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     const res = await send(sessionEvent('checkout.session.completed', p), 'whsec_wrong');
     expect(res.status).toBe(400);
     expect(await balance(db(), id)).toBe(0);
@@ -79,7 +79,7 @@ describe('credit pack webhook', () => {
 
   it('fails a pack whose amount differs', async () => {
     const id = await seller('amount');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     await send(sessionEvent('checkout.session.completed', p, { amount_subtotal: 100 }));
     expect(await balance(db(), id)).toBe(0);
     expect(await status(p.id)).toBe('failed');
@@ -88,7 +88,7 @@ describe('credit pack webhook', () => {
   it('does not credit when the metadata names another seller', async () => {
     const id = await seller('owner');
     const other = await seller('other');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     const res = await send(sessionEvent('checkout.session.completed', { id: p.id, account_id: other }));
     expect(await res.json()).toMatchObject({ pack: 'unknown' });
     expect(await balance(db(), id)).toBe(0);
@@ -98,7 +98,7 @@ describe('credit pack webhook', () => {
 
   it('marks a pack failed when the async payment fails', async () => {
     const id = await seller('asyncfail');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     await send(sessionEvent('checkout.session.async_payment_failed', p));
     expect(await status(p.id)).toBe('failed');
     expect(await balance(db(), id)).toBe(0);
@@ -106,7 +106,7 @@ describe('credit pack webhook', () => {
 
   it('takes the credits back on a full refund, once', async () => {
     const id = await seller('refund');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     await send(sessionEvent('checkout.session.completed', p));
     expect(await balance(db(), id)).toBe(30);
     const first = await send(refundEvent(`pi_${p.id}`, true));
@@ -118,7 +118,7 @@ describe('credit pack webhook', () => {
 
   it('ignores a partial refund', async () => {
     const id = await seller('partial');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     await send(sessionEvent('checkout.session.completed', p));
     const res = await send(refundEvent(`pi_${p.id}`, false));
     expect(res.status).toBe(200);
@@ -129,7 +129,7 @@ describe('credit pack webhook', () => {
 
   it('answers 200 for a refund of an unrelated intent', async () => {
     const id = await seller('unrelated');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     await send(sessionEvent('checkout.session.completed', p));
     const res = await send(refundEvent('pi_b2c_something', true));
     expect(res.status).toBe(200);
@@ -139,7 +139,7 @@ describe('credit pack webhook', () => {
 
   it('marks an abandoned checkout failed', async () => {
     const id = await seller('expired');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     const res = await send(sessionEvent('checkout.session.expired', p, { payment_status: 'unpaid', payment_intent: null }));
     expect(await res.json()).toEqual({ received: true, pack: 'expired' });
     expect(await status(p.id)).toBe('failed');
@@ -148,7 +148,7 @@ describe('credit pack webhook', () => {
 
   it('leaves a paid pack paid when an expired event arrives', async () => {
     const id = await seller('expiredpaid');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     await send(sessionEvent('checkout.session.completed', p));
     await send(sessionEvent('checkout.session.expired', p));
     expect(await status(p.id)).toBe('paid');

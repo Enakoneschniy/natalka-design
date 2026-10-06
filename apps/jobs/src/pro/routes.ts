@@ -224,6 +224,8 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
   const pack = (await readBody(request))?.pack;
   if (!isPack(pack)) return json({ error: 'pack' }, 400);
   const purchase = await createPurchase(env.DB, account.id, pack);
+  // Checkouts opened and left unpaid this hour: no more until they are paid, expire or age.
+  if (!purchase) return json({ error: 'too_many' }, 429);
   let session;
   try {
     session = await createPackCheckout(env, {

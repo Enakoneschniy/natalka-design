@@ -1,5 +1,6 @@
 import { SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
+import { PENDING_PURCHASES_PER_HOUR } from '../src/pro/purchases';
 import { handlePro } from '../src/pro/routes';
 import { lastRequest, testEnv, tokenFor } from './env';
 
@@ -121,5 +122,52 @@ describe('GET /v1/pro/purchases', () => {
 
     const theirs = (await (await call('GET', '/v1/pro/purchases', other.session)).json()) as { purchases: unknown[] };
     expect(theirs.purchases).toEqual([]);
+  });
+});
+
+describe('unpaid checkouts', () => {
+  const purchases = async (email: string) =>
+    (
+      await testEnv.DB.prepare(
+        'SELECT p.id, p.status FROM pro_purchases p JOIN pro_accounts a ON a.id = p.account_id WHERE a.email = ? ORDER BY p.rowid',
+      )
+        .bind(email)
+        .all<{ id: string; status: string }>()
+    ).results;
+
+  it('open no fourth while three from the last hour are unpaid, and answer 429', async () => {
+    const { session, email } = await seller('impatient');
+    for (let i = 0; i < PENDING_PURCHASES_PER_HOUR; i++) {
+      expect((await call('POST', '/v1/pro/purchases', session, { pack: 'p10' })).status).toBe(201);
+    }
+    const refused = await call('POST', '/v1/pro/purchases', session, { pack: 'p30' });
+    expect(refused.status).toBe(429);
+    expect(await refused.json()).toEqual({ error: 'too_many' });
+    expect(await purchases(email)).toHaveLength(PENDING_PURCHASES_PER_HOUR);
+  });
+
+  it('count only purchases still pending from the last hour', async () => {
+    const { session, email } = await seller('settling');
+    for (let i = 0; i < PENDING_PURCHASES_PER_HOUR; i++) await call('POST', '/v1/pro/purchases', session, { pack: 'p10' });
+    const [paid, failed, old] = await purchases(email);
+    await testEnv.DB.prepare("UPDATE pro_purchases SET status = 'paid' WHERE id = ?").bind(paid?.id).run();
+    await testEnv.DB.prepare("UPDATE pro_purchases SET status = 'failed' WHERE id = ?").bind(failed?.id).run();
+    await testEnv.DB.prepare('UPDATE pro_purchases SET created_at = ? WHERE id = ?')
+      .bind(new Date(Date.now() - 61 * 60 * 1000).toISOString(), old?.id)
+      .run();
+    for (let i = 0; i < PENDING_PURCHASES_PER_HOUR; i++) {
+      expect((await call('POST', '/v1/pro/purchases', session, { pack: 'p10' })).status).toBe(201);
+    }
+    expect((await call('POST', '/v1/pro/purchases', session, { pack: 'p10' })).status).toBe(429);
+  });
+
+  it('hold the limit when they are asked for at once', async () => {
+    const { session, email } = await seller('hasty');
+    const statuses = (
+      await Promise.all(Array.from({ length: 8 }, () => call('POST', '/v1/pro/purchases', session, { pack: 'p10' })))
+    ).map((response) => response.status);
+    expect(statuses.filter((status) => status === 201)).toHaveLength(PENDING_PURCHASES_PER_HOUR);
+    expect(statuses.filter((status) => status === 429)).toHaveLength(8 - PENDING_PURCHASES_PER_HOUR);
+    expect(await purchases(email)).toHaveLength(PENDING_PURCHASES_PER_HOUR);
   });
 });

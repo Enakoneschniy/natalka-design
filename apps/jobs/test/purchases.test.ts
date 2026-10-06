@@ -26,7 +26,7 @@ describe('purchases', () => {
 
   it('writes a pending purchase with the catalogue values', async () => {
     const id = await seller('create');
-    const p = await createPurchase(db(), id, 'p30');
+    const p = (await createPurchase(db(), id, 'p30'))!;
     expect(p).toMatchObject({ status: 'pending', ...PACKS.p30, account_id: id });
     await attachSession(db(), p.id, 'cs_create');
     const row = await db().prepare('SELECT * FROM pro_purchases WHERE id = ?').bind(p.id).first<any>();
@@ -35,7 +35,7 @@ describe('purchases', () => {
 
   it('credits a paid purchase once', async () => {
     const id = await seller('paid');
-    const p = await createPurchase(db(), id, 'p10');
+    const p = (await createPurchase(db(), id, 'p10'))!;
     expect(await pay(p, 'pi_paid')).toBe('paid');
     expect(await balance(db(), id)).toBe(10);
     expect(await pay(p, 'pi_paid')).toBe('already');
@@ -44,7 +44,7 @@ describe('purchases', () => {
 
   it('credits once when delivered concurrently', async () => {
     const id = await seller('conc');
-    const p = await createPurchase(db(), id, 'p10');
+    const p = (await createPurchase(db(), id, 'p10'))!;
     const r = await Promise.all([pay(p, 'pi_c'), pay(p, 'pi_c'), pay(p, 'pi_c')]);
     expect(r.filter((x) => x === 'paid')).toHaveLength(1);
     expect(await balance(db(), id)).toBe(10);
@@ -52,13 +52,13 @@ describe('purchases', () => {
 
   it('fails a purchase whose amount or currency differs and grants nothing', async () => {
     const id = await seller('mismatch');
-    const p = await createPurchase(db(), id, 'p10');
+    const p = (await createPurchase(db(), id, 'p10'))!;
     expect(await pay(p, 'pi_m', 100)).toBe('mismatch');
     expect(await balance(db(), id)).toBe(0);
     const row = await db().prepare('SELECT status FROM pro_purchases WHERE id = ?').bind(p.id).first<any>();
     expect(row.status).toBe('failed');
     expect(await pay(p, 'pi_m')).toBe('already');
-    const q = await createPurchase(db(), id, 'p10');
+    const q = (await createPurchase(db(), id, 'p10'))!;
     expect(await pay(q, 'pi_m2', 9900, 'usd')).toBe('mismatch');
     expect(await balance(db(), id)).toBe(0);
   });
@@ -66,7 +66,7 @@ describe('purchases', () => {
   it("does not settle another account's purchase", async () => {
     const a = await seller('owner');
     const b = await seller('thief');
-    const p = await createPurchase(db(), a, 'p10');
+    const p = (await createPurchase(db(), a, 'p10'))!;
     expect(await pay({ id: p.id, account_id: b })).toBe('unknown');
     expect(await balance(db(), a)).toBe(0);
     expect(await balance(db(), b)).toBe(0);
@@ -74,8 +74,8 @@ describe('purchases', () => {
 
   it('marks failed only from pending', async () => {
     const id = await seller('failed');
-    const p = await createPurchase(db(), id, 'p10');
-    const q = await createPurchase(db(), id, 'p10');
+    const p = (await createPurchase(db(), id, 'p10'))!;
+    const q = (await createPurchase(db(), id, 'p10'))!;
     await pay(q, 'pi_f');
     await markFailed(db(), p.id, id);
     await markFailed(db(), q.id, id);
@@ -86,7 +86,7 @@ describe('purchases', () => {
 
   it('takes the credits back once on a refund', async () => {
     const id = await seller('refund');
-    const p = await createPurchase(db(), id, 'p10');
+    const p = (await createPurchase(db(), id, 'p10'))!;
     await pay(p, 'pi_r');
     expect(await markRefunded(db(), 'pi_r')).toBe('refunded');
     expect(await balance(db(), id)).toBe(0);
@@ -97,7 +97,7 @@ describe('purchases', () => {
 
   it('lets a refund push the balance below zero', async () => {
     const id = await seller('negative');
-    const p = await createPurchase(db(), id, 'p10');
+    const p = (await createPurchase(db(), id, 'p10'))!;
     await pay(p, 'pi_n');
     await spend(db(), { accountId: id, amount: 4, ref: 'job-n' });
     await markRefunded(db(), 'pi_n');
@@ -106,7 +106,7 @@ describe('purchases', () => {
 
   it('lists newest first and says what looks refundable', async () => {
     const id = await seller('list');
-    const p = await createPurchase(db(), id, 'p10');
+    const p = (await createPurchase(db(), id, 'p10'))!;
     await pay(p, 'pi_l');
     expect((await listPurchases(db(), id))[0]).toMatchObject({ id: p.id, status: 'paid', refundable: true });
 
@@ -114,7 +114,7 @@ describe('purchases', () => {
     expect((await listPurchases(db(), id))[0].refundable).toBe(false);
 
     const id2 = await seller('list-old');
-    const old = await createPurchase(db(), id2, 'p10');
+    const old = (await createPurchase(db(), id2, 'p10'))!;
     await pay(old, 'pi_old');
     await db()
       .prepare('UPDATE pro_purchases SET paid_at = ? WHERE id = ?')
@@ -122,7 +122,7 @@ describe('purchases', () => {
       .run();
     expect((await listPurchases(db(), id2))[0].refundable).toBe(false);
 
-    const second = await createPurchase(db(), id2, 'p30');
+    const second = (await createPurchase(db(), id2, 'p30'))!;
     const rows = await listPurchases(db(), id2);
     expect(rows[0].id).toBe(second.id);
     expect(rows[0].refundable).toBe(false);
