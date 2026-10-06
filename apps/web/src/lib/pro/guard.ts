@@ -7,6 +7,17 @@ export function notOnProHost(request: Request): Response | null {
   return isProHost(request.headers.get('host')) ? null : new Response(null, { status: 404 });
 }
 
+/** One IPv4 address, or an IPv6 one (which may end in an IPv4 address). */
+const IP_ADDRESS = /^(?:\d{1,3}(?:\.\d{1,3}){3}|[0-9a-f:]*:[0-9a-f:.]*)$/i;
+const MAX_IP_LENGTH = 45;
+
+/** The visitor's address as Cloudflare saw it (`cf-connecting-ip`), for the jobs worker's sign-in
+ * throttle; null when it is absent or is not one address. */
+export function clientIp(request: Request): string | null {
+  const ip = request.headers.get('cf-connecting-ip')?.trim() ?? '';
+  return ip.length <= MAX_IP_LENGTH && IP_ADDRESS.test(ip) ? ip : null;
+}
+
 /** Refuses anything a page on another site could send: a non-JSON body (a cross-site
  * `<form enctype="text/plain">` needs no preflight) and a request the browser marks as not
  * same-origin. Without `Sec-Fetch-Site` (older browsers) the `Origin` must name this host. */

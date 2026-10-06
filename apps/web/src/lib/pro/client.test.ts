@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProUnauthorized, peekLogin, proCall, requestLogin, startSession } from './client';
+import {
+  ProUnauthorized,
+  peekLogin,
+  proCall,
+  requestLogin,
+  requestSignup,
+  startSession,
+} from './client';
 
 const headersOf = (init: RequestInit | undefined) =>
   (init?.headers ?? {}) as Record<string, string>;
@@ -51,6 +58,33 @@ describe('pro client', () => {
     expect(init?.method).toBe('POST');
     expect(JSON.parse(String(init?.body))).toEqual({ email: 'a@b.co' });
     expect(headersOf(init).authorization).toBeUndefined();
+  });
+
+  describe('the visitor address for the sign-in throttle', () => {
+    it('goes along as x-client-ip with sign-in, sign-up and the session', async () => {
+      fetchMock.mockResolvedValue(reply(202));
+      await requestLogin('a@b.co', '203.0.113.7');
+      await requestSignup({ email: 'a@b.co', name: 'Мария', terms: true }, '2001:db8::1');
+      fetchMock.mockResolvedValue(reply(200, { session: 's-1', account: {} }));
+      await startSession('t-1', '198.51.100.4');
+      const ips = fetchMock.mock.calls.map(([, init]) => headersOf(init)['x-client-ip']);
+      expect(ips).toEqual(['203.0.113.7', '2001:db8::1', '198.51.100.4']);
+    });
+
+    it('is left out when it is not known', async () => {
+      fetchMock.mockResolvedValue(reply(202));
+      await requestLogin('a@b.co', null);
+      await requestLogin('a@b.co');
+      for (const [, init] of fetchMock.mock.calls) {
+        expect(headersOf(init)).not.toHaveProperty('x-client-ip');
+      }
+    });
+
+    it('never goes with a seller call', async () => {
+      fetchMock.mockResolvedValue(reply(200, { email: 'a@b.co' }));
+      await proCall('/v1/pro/me', { session: 's-1' });
+      expect(headersOf(sent()[1])).not.toHaveProperty('x-client-ip');
+    });
   });
 
   describe('startSession', () => {

@@ -19,13 +19,16 @@ const config = (): { base: string; key: string } => {
   return { base: url.replace(/\/$/, ''), key };
 };
 
+/** A call to the jobs worker. `clientIp` is the visitor's address, sent as `x-client-ip` for the
+ * worker's sign-in throttle; only sign-in, sign-up and the session pass it. */
 export async function proCall<T>(
   path: string,
-  init: { method?: string; body?: unknown; session?: string | null } = {},
+  init: { method?: string; body?: unknown; session?: string | null; clientIp?: string | null } = {},
 ): Promise<{ status: number; data: T }> {
   const { base, key } = config();
   const headers: Record<string, string> = { 'x-pro-key': key, 'content-type': 'application/json' };
   if (init.session) headers.authorization = `Bearer ${init.session}`;
+  if (init.clientIp) headers['x-client-ip'] = init.clientIp;
   const response = await fetch(`${base}${path}`, {
     method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
     headers,
@@ -81,21 +84,29 @@ export interface SignupInput {
 /** `ok` when the API accepted the request; otherwise its status and the reason it gave. */
 export type Accepted = { ok: true } | { ok: false; status: number; error: string };
 
-const accepted = async (path: string, body: unknown): Promise<Accepted> => {
-  const { status, data } = await proCall<{ error?: string } | null>(path, { method: 'POST', body });
+const accepted = async (
+  path: string,
+  body: unknown,
+  clientIp: string | null | undefined,
+): Promise<Accepted> => {
+  const { status, data } = await proCall<{ error?: string } | null>(path, {
+    method: 'POST',
+    body,
+    clientIp,
+  });
   if (status === 202) return { ok: true };
   // A fixed fallback: the jobs path must not reach the browser.
   return { ok: false, status, error: data?.error ?? 'invalid' };
 };
 
 /** Asks for a sign-in letter. The answer is the same whoever the address belongs to. */
-export function requestLogin(email: string): Promise<Accepted> {
-  return accepted('/v1/pro/login', { email });
+export function requestLogin(email: string, clientIp?: string | null): Promise<Accepted> {
+  return accepted('/v1/pro/login', { email }, clientIp);
 }
 
 /** Asks for a confirmation letter (or a sign-in letter, when the address already has a cabinet). */
-export function requestSignup(input: SignupInput): Promise<Accepted> {
-  return accepted('/v1/pro/signup', input);
+export function requestSignup(input: SignupInput, clientIp?: string | null): Promise<Accepted> {
+  return accepted('/v1/pro/signup', input, clientIp);
 }
 
 /** Trades the emailed token for a session; null when the jobs worker says the link is not good
@@ -103,10 +114,11 @@ export function requestSignup(input: SignupInput): Promise<Accepted> {
  * dead link from a service that is down. */
 export async function startSession(
   token: string,
+  clientIp?: string | null,
 ): Promise<{ session: string; account: ProAccount } | null> {
   const { status, data } = await proCall<{ session: string; account: ProAccount } | null>(
     '/v1/pro/session',
-    { method: 'POST', body: { token } },
+    { method: 'POST', body: { token }, clientIp },
   );
   if (status === 400) return null;
   if (status === 200 && data?.session) return data;

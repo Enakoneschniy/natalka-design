@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requestSignup } from '@/lib/pro/client';
-import { jsonBody, notOnProHost, notSameOrigin, relay } from '@/lib/pro/guard';
+import { clientIp, jsonBody, notOnProHost, notSameOrigin, relay } from '@/lib/pro/guard';
 
 const text = (value: unknown) => (typeof value === 'string' ? value : '');
 
@@ -14,11 +14,14 @@ export async function POST(request: Request) {
   if (!body) return NextResponse.json({ error: 'bad request' }, { status: 400 });
   const invite = text(body.invite).trim();
   return relay(() =>
-    requestSignup({
-      email: text(body.email).trim(),
-      name: text(body.name).trim(),
-      ...(invite ? { invite } : {}),
-      terms: body.terms === true,
-    }),
+    requestSignup(
+      {
+        email: text(body.email).trim(),
+        name: text(body.name).trim(),
+        ...(invite ? { invite } : {}),
+        terms: body.terms === true,
+      },
+      clientIp(request),
+    ),
   );
 }

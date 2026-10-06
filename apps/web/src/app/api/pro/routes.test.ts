@@ -177,6 +177,36 @@ describe('api/pro routes', () => {
     });
   });
 
+  describe('the visitor address for the sign-in throttle', () => {
+    const ipSent = () => {
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      return ((init?.headers ?? {}) as Record<string, string>)['x-client-ip'];
+    };
+    const calls = [
+      ['login', login, { email: 'a@b.co' }, reply(202, { ok: true })],
+      ['signup', signup, { email: 'a@b.co', name: 'Мария', terms: true }, reply(202, { ok: true })],
+      ['session', session, { token: 't-1' }, reply(200, { session: 's-1', account: {} })],
+    ] as const;
+
+    it.each(calls)(
+      '%s passes cf-connecting-ip on as x-client-ip',
+      async (path, route, body, answer) => {
+        fetchMock.mockResolvedValue(answer.clone());
+        await route(post(path, body, undefined, { 'cf-connecting-ip': '203.0.113.7' }));
+        expect(ipSent()).toBe('203.0.113.7');
+      },
+    );
+
+    it.each(calls)('%s sends none without a usable address', async (path, route, body, answer) => {
+      const variants: Record<string, string>[] = [{}, { 'cf-connecting-ip': 'unknown' }];
+      for (const headers of variants) {
+        fetchMock.mockReset().mockResolvedValue(answer.clone());
+        await route(post(path, body, undefined, headers));
+        expect(ipSent()).toBeUndefined();
+      }
+    });
+  });
+
   describe('only the cabinet own pages may post', () => {
     const body = JSON.stringify({ token: 't-1' });
 
