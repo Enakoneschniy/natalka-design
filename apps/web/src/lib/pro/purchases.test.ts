@@ -14,6 +14,7 @@ import {
   purchasePill,
   purchaseWatch,
   refundLine,
+  signupInviteNotice,
 } from './purchases';
 
 describe('money', () => {
@@ -140,5 +141,22 @@ describe('inviteOutcome', () => {
       text: 'Вы уже активировали инвайт-код',
     });
     expect(inviteOutcome(502, null)).toEqual({ ok: false, text: TRY_LATER });
+  });
+});
+
+describe('signupInviteNotice', () => {
+  it('says the sign-up code did not apply, until a code is taken', () => {
+    expect(signupInviteNotice('refused', false)).toEqual({
+      title: 'Инвайт-код не подошёл',
+      text: 'Он уже использован или введён с ошибкой, кредиты по нему не начислены. Если у вас есть другой код, введите его ниже.',
+    });
+    expect(signupInviteNotice('failed', false)).toEqual({
+      title: 'Инвайт-код не удалось применить',
+      text: 'Кредиты по нему не начислены. Введите код ещё раз ниже.',
+    });
+    expect(signupInviteNotice('refused', true)).toBeNull();
+    expect(signupInviteNotice(undefined, false)).toBeNull();
+    expect(signupInviteNotice(['refused', 'refused'], false)).toBeNull();
+    expect(signupInviteNotice('granted', false)).toBeNull();
   });
 });

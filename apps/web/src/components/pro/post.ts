@@ -1,16 +1,20 @@
-/** Posts JSON to one of the cabinet's own `/api/pro/*` routes; the status, or 0 when offline. */
+/** Posts JSON to one of the cabinet's own `/api/pro/*` routes; the status, or 0 when offline, and
+ * the answer's `error` and (from the session route) `invite`. */
 export async function postJson(
   path: string,
   body: unknown,
-): Promise<{ status: number; error?: string }> {
+): Promise<{ status: number; error?: string; invite?: string }> {
   try {
     const response = await fetch(path, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const data = (await response.json().catch(() => null)) as { error?: string } | null;
-    return { status: response.status, error: data?.error };
+    const data = (await response.json().catch(() => null)) as {
+      error?: string;
+      invite?: string;
+    } | null;
+    return { status: response.status, error: data?.error, invite: data?.invite };
   } catch {
     return { status: 0 };
   }
@@ -74,4 +78,10 @@ export function confirmOutcome(status: number): 'signed-in' | 'expired' | 'unava
   if (status === 400) return 'expired';
   if (status === 503) return 'unavailable';
   return 'failed';
+}
+
+/** Where the confirm page goes once signed in: Кредиты, to say so, when the code typed at sign-up
+ * did not apply; the cabinet otherwise. */
+export function afterSignIn(invite: string | undefined): string {
+  return invite === 'refused' || invite === 'failed' ? `/credits?invite=${invite}` : '/';
 }

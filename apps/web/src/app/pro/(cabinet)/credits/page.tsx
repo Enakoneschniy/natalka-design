@@ -9,17 +9,19 @@ import {
   purchaseLine,
   purchasePill,
   refundLine,
+  signupInviteNotice,
 } from '@/lib/pro/purchases';
 import { readingDate } from '@/lib/pro/readings';
 
 export const metadata = { title: 'Кредиты' };
 
 /** The Кредиты tab: the balance, the packs, the purchase history and, until one is used, the
- * invite-code field. Back from Stripe with `?purchase=<id>`, it watches that purchase land. */
+ * invite-code field. Back from Stripe with `?purchase=<id>`, it watches that purchase land; from a
+ * sign-up whose code did not apply (`?invite=`), it says so above the balance. */
 export default async function Credits({
   searchParams,
 }: {
-  searchParams: Promise<{ purchase?: string | string[] }>;
+  searchParams: Promise<{ purchase?: string | string[]; invite?: string | string[] }>;
 }) {
   const [seller, history, params] = await Promise.all([
     currentSeller(),
@@ -29,6 +31,7 @@ export default async function Credits({
   // The history is a nice-to-have on this page: without it the balance and the packs still work.
   const purchases = history.status === 200 ? (history.data?.purchases ?? []) : null;
   const returning = purchaseId(params.purchase);
+  const inviteNotice = signupInviteNotice(params.invite, seller.invite_redeemed);
   const now = new Date();
 
   return (
@@ -40,6 +43,12 @@ export default async function Credits({
           id={returning}
           initial={purchases?.find((p) => p.id === returning)?.status}
         />
+      ) : null}
+      {inviteNotice ? (
+        <div className="card notice bad" role="alert">
+          <strong>{inviteNotice.title}</strong>
+          <span className="muted">{inviteNotice.text}</span>
+        </div>
       ) : null}
       <div className="card balance-card">
         <span className="muted">На балансе</span>

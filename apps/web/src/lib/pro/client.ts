@@ -120,16 +120,18 @@ export function requestSignup(input: SignupInput, clientIp?: string | null): Pro
 }
 
 /** Trades the emailed token for a session; null when the jobs worker says the link is not good
- * (400). Anything else — an outage, a status it never sends — throws, so the caller can tell a
- * dead link from a service that is down. */
+ * (400). A confirmed sign-up with a code also carries `invite`: what became of the code. Anything
+ * else — an outage, a status it never sends — throws, so the caller can tell a dead link from a
+ * service that is down. */
 export async function startSession(
   token: string,
   clientIp?: string | null,
-): Promise<{ session: string; account: ProAccount } | null> {
-  const { status, data } = await proCall<{ session: string; account: ProAccount } | null>(
-    '/v1/pro/session',
-    { method: 'POST', body: { token }, clientIp },
-  );
+): Promise<{ session: string; account: ProAccount; invite?: unknown } | null> {
+  const { status, data } = await proCall<{
+    session: string;
+    account: ProAccount;
+    invite?: unknown;
+  } | null>('/v1/pro/session', { method: 'POST', body: { token }, clientIp });
   if (status === 400) return null;
   if (status === 200 && data?.session) return data;
   throw new Error(`session → ${status}`);

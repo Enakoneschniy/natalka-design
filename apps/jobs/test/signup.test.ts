@@ -118,6 +118,33 @@ describe('POST /v1/pro/signup', () => {
     expect(me).toMatchObject({ balance: 3, invite_redeemed: true, name: 'Мария' });
   });
 
+  it('opens the cabinet without credits for a code another address used, and says so', async () => {
+    await testEnv.DB.prepare("INSERT INTO pro_invite_codes (code, credits, max_uses, created_at) VALUES ('CHR-ONCE-0001', 3, 1, ?)")
+      .bind(new Date().toISOString())
+      .run();
+    const results: unknown[] = [];
+    for (const email of ['first@once.test', 'second@once.test']) {
+      await call('/v1/pro/signup', { email, name: 'Продавец', invite: 'chr-once-0001', terms: true });
+      const started = await call('/v1/pro/session', { token: await lastLinkToken(email) });
+      expect(started.status).toBe(200);
+      const body = (await started.json()) as { session: string; invite?: string };
+      const me = (await (await call('/v1/pro/me', undefined, body.session)).json()) as Record<string, unknown>;
+      results.push({ invite: body.invite, balance: me.balance, invite_redeemed: me.invite_redeemed });
+    }
+    expect(results).toEqual([
+      { invite: 'granted', balance: 3, invite_redeemed: true },
+      { invite: 'refused', balance: 0, invite_redeemed: false },
+    ]);
+    const code = await testEnv.DB.prepare("SELECT uses FROM pro_invite_codes WHERE code = 'CHR-ONCE-0001'").first();
+    expect(code).toEqual({ uses: 1 });
+  });
+
+  it('says nothing about an invite when the sign-up had none', async () => {
+    await call('/v1/pro/signup', { email: 'plain@signup.test', name: 'Без кода', terms: true });
+    const started = await call('/v1/pro/session', { token: await lastLinkToken('plain@signup.test') });
+    expect(await started.json()).not.toHaveProperty('invite');
+  });
+
   it('sends a sign-in token, not a sign-up one, to an address that already has an account', async () => {
     const { account } = await signIn('old@signup.test');
     await testEnv.DB.prepare('UPDATE pro_accounts SET name = ? WHERE id = ?').bind('Старое', account.id).run();

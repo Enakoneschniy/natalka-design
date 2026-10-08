@@ -36,6 +36,10 @@ export interface ProAccount {
 
 const ACCOUNT_COLUMNS = 'id, email, name, tone, session_epoch, created_at';
 
+/** What became of the invite code typed at sign-up, once the address is confirmed: its credits
+ * booked, the code refused (used up, expired, never issued), or an error on the way. */
+export type SignupInvite = 'granted' | 'refused' | 'failed';
+
 export function normalizeEmail(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   const email = raw.trim().toLowerCase();
@@ -163,10 +167,14 @@ export async function peekLoginToken(db: D1Database, raw: string): Promise<strin
 }
 
 /** Spends a token and returns the account behind it. A sign-up token creates the account (an
- * existing one is left as it is); a login token needs the account to exist already. A closed
- * account is never returned. The UPDATE is the whole check: of two requests racing with one
- * token, only one gets a row. */
-export async function consumeLoginToken(db: D1Database, raw: string): Promise<ProAccount | null> {
+ * existing one is left as it is) and, when the seller typed a code, says what became of it in
+ * `invite`: the account opens either way, so this is the only place a refused code shows. A login
+ * token needs the account to exist already. A closed account is never returned. The UPDATE is the
+ * whole check: of two requests racing with one token, only one gets a row. */
+export async function consumeLoginToken(
+  db: D1Database,
+  raw: string,
+): Promise<(ProAccount & { invite?: SignupInvite }) | null> {
   if (!raw) return null;
   const ts = now();
   const used = await db
@@ -189,18 +197,26 @@ export async function consumeLoginToken(db: D1Database, raw: string): Promise<Pr
       .first<{ id: string }>();
     if (created && used.signup_invite) {
       // A code that does not work must not stop the sign-up: the seller can enter one later.
+      let invite: SignupInvite;
       try {
-        await redeemInvite(db, created.id, used.signup_invite);
+        const result = await redeemInvite(db, created.id, used.signup_invite);
+        invite = result.status === 'granted' ? 'granted' : 'refused';
       } catch (error) {
         console.error('sign-up invite failed', created.id, errorCode(error));
+        invite = 'failed';
       }
+      const account = await openAccount(db, used.email);
+      return account && { ...account, invite };
     }
   }
-  return db
-    .prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE email = ? AND closed_at IS NULL`)
-    .bind(used.email)
-    .first<ProAccount>();
+  return openAccount(db, used.email);
 }
+
+const openAccount = (db: D1Database, email: string): Promise<ProAccount | null> =>
+  db
+    .prepare(`SELECT ${ACCOUNT_COLUMNS} FROM pro_accounts WHERE email = ? AND closed_at IS NULL`)
+    .bind(email)
+    .first<ProAccount>();
 
 export const issueSession = (env: Env, account: ProAccount): Promise<string> =>
   signToken(

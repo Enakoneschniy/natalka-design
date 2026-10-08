@@ -109,6 +109,21 @@ describe('api/pro routes', () => {
       expect(legacy).toMatch(/^chp_session=;.*Max-Age=0/);
     });
 
+    it('passes on what became of the sign-up invite code, and nothing else', async () => {
+      fetchMock.mockResolvedValue(
+        reply(200, { session: 's-1', account: { email: 'a@b.co', tone: 'vy' }, invite: 'refused' }),
+      );
+      const res = await session(post('session', { token: 't-1' }));
+      expect(await res.json()).toEqual({ ok: true, invite: 'refused' });
+    });
+
+    it('drops an invite value it does not know', async () => {
+      fetchMock.mockResolvedValue(
+        reply(200, { session: 's-1', account: { email: 'a@b.co', tone: 'vy' }, invite: '<b>x' }),
+      );
+      expect(await (await session(post('session', { token: 't-1' }))).json()).toEqual({ ok: true });
+    });
+
     it('answers 400 and sets no cookie on a bad token', async () => {
       fetchMock.mockResolvedValue(reply(400, { error: 'invalid' }));
       const res = await session(post('session', { token: 'used' }));

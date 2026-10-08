@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { confirmOutcome, postJson, TRY_LATER, UNAVAILABLE } from './post';
+import { afterSignIn, confirmOutcome, postJson, TRY_LATER, UNAVAILABLE } from './post';
 
 /** A link that no longer signs anyone in, and the way to a new one. */
 export function LinkExpired() {
@@ -24,9 +24,9 @@ export function ConfirmLogin({ token }: { token: string }) {
 
   async function enter() {
     setState('sending');
-    const { status } = await postJson('/api/pro/session', { token });
+    const { status, invite } = await postJson('/api/pro/session', { token });
     const outcome = confirmOutcome(status);
-    if (outcome === 'signed-in') return window.location.assign('/');
+    if (outcome === 'signed-in') return window.location.assign(afterSignIn(invite));
     setState(outcome);
   }
 

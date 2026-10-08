@@ -147,3 +147,25 @@ export function inviteOutcome(
   if (status === 409) return { ok: false, text: 'Вы уже активировали инвайт-код' };
   return { ok: false, text: TRY_LATER };
 }
+
+/** What Кредиты says on arrival from a sign-up whose code did not apply (`?invite=`): nothing once
+ * the seller has taken a code, or for a value it does not know. */
+export function signupInviteNotice(
+  param: string | string[] | undefined,
+  redeemed: boolean,
+): { title: string; text: string } | null {
+  if (redeemed) return null;
+  if (param === 'refused') {
+    return {
+      title: 'Инвайт-код не подошёл',
+      text: 'Он уже использован или введён с ошибкой, кредиты по нему не начислены. Если у вас есть другой код, введите его ниже.',
+    };
+  }
+  if (param === 'failed') {
+    return {
+      title: 'Инвайт-код не удалось применить',
+      text: 'Кредиты по нему не начислены. Введите код ещё раз ниже.',
+    };
+  }
+  return null;
+}

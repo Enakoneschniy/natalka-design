@@ -80,7 +80,9 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
 - **3 trial credits only with an invite code** from the marketer; without one, a demo reading on a
   sample chart under the seller's brand.
 - Invite codes are random and single-use, one per seller (`CHR-XXXX-XXXX`), made by the owner. A
-  seller who tries 5 codes that do not work in an hour is refused for the rest of it.
+  seller who tries 5 codes that do not work in an hour is refused for the rest of it. A code typed
+  at sign-up is tried when the address is confirmed; if it does not apply (used up, unknown, or an
+  error), the cabinet still opens, on «Кредиты», saying so above the code field.
 - The invite code is also where a seller came from (no commission accounting).
 - **Demo**: one pre-generated sample reading (var `PRO_DEMO_ORDER_ID`) that every signed-in seller
   can open; it replaces trial credits for sellers without an invite code.

@@ -128,6 +128,7 @@ async function startSession(request: Request, env: Env): Promise<Response> {
   return json({
     session: await issueSession(env, account),
     account: { email: account.email, tone: account.tone },
+    ...(account.invite ? { invite: account.invite } : {}),
   });
 }
 

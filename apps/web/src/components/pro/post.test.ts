@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { confirmOutcome, putImage, sendJson } from './post';
+import { afterSignIn, confirmOutcome, putImage, sendJson } from './post';
 
 describe('sendJson', () => {
   afterEach(() => {
@@ -77,5 +77,14 @@ describe('putImage', () => {
       throw new TypeError('offline');
     });
     expect(await putImage('/api/pro/x/brand/photo', file)).toEqual({ status: 0 });
+  });
+});
+
+describe('afterSignIn', () => {
+  it('opens Кредиты when the sign-up code did not apply, the cabinet otherwise', () => {
+    expect(afterSignIn('refused')).toBe('/credits?invite=refused');
+    expect(afterSignIn('failed')).toBe('/credits?invite=failed');
+    expect(afterSignIn('granted')).toBe('/');
+    expect(afterSignIn(undefined)).toBe('/');
   });
 });
