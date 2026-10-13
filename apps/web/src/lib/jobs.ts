@@ -255,3 +255,17 @@ export async function subscriptionChange(
   });
   return response.ok;
 }
+
+/** Cancels a subscription by its management token, for a mail client's one-click unsubscribe:
+ * true when it is cancelled, false when the link is dead (404). Anything else throws, so the route
+ * can tell a dead link from a worker that is down. */
+export async function cancelSubscription(token: string): Promise<boolean> {
+  const response = await jobsFetch(withToken('/v1/subscriptions', token), {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'cancelled' }),
+  });
+  if (response.ok) return true;
+  if (response.status === 404) return false;
+  throw new Error(`subscription cancel → ${response.status}`);
+}

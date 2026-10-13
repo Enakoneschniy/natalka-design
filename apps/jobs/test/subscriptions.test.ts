@@ -192,6 +192,19 @@ describe('a confirmed subscription', () => {
     expect(letter).toBeTruthy();
   });
 
+  it('offers one-click unsubscribe (RFC 8058) to the mail client, by a link that cancels this subscription', async () => {
+    const { id } = await confirmed('oneclick@subs.test');
+    await deliverHoroscope(testEnv, id);
+    const letter = (await letters('oneclick@subs.test')).find((l) => l.subject.startsWith('Неделя для Марта'));
+    const headers = letter?.headers ?? {};
+    expect(headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+    const target = headers['List-Unsubscribe']?.match(
+      /^<https:\/\/chronika\.test\/api\/subscriptions\/([^/>]+)\/unsubscribe>$/,
+    )?.[1];
+    expect(target).toBeTruthy();
+    expect(await readLink('sub', target as string, testEnv.LINK_KEY)).toEqual({ sub: id });
+  });
+
   it('ends with one letter when the free month is over, and queues nothing', async () => {
     const { id, manage } = await confirmed('trial@subs.test');
     await testEnv.DB.prepare('UPDATE subscriptions SET trial_ends_at = ?, next_send_at = ? WHERE id = ?')

@@ -11,6 +11,7 @@ import {
   GET as subscription,
   DELETE as unsubscribe,
 } from './subscriptions/[token]/route';
+import { POST as oneClick, GET as oneClickPage } from './subscriptions/[token]/unsubscribe/route';
 import { POST as confirm } from './subscriptions/confirm/route';
 import { POST as subscribe } from './subscriptions/route';
 
@@ -529,6 +530,44 @@ describe('shop API routes and the jobs worker', () => {
         }),
       );
       expect(answer.status).toBe(403);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("cancels on a mail client's one-click unsubscribe, which comes from its own servers", async () => {
+      fetchMock.mockResolvedValueOnce(reply(200, { ok: true }));
+      // What Gmail sends (RFC 8058): a form POST with no Origin and no Sec-Fetch-Site.
+      const request = new NextRequest(`https://${SHOP}/api/subscriptions/t.x.y/unsubscribe`, {
+        method: 'POST',
+        headers: { host: SHOP, 'content-type': 'application/x-www-form-urlencoded' },
+        body: 'List-Unsubscribe=One-Click',
+      });
+      const answer = await oneClick(request, token('t.x.y'));
+      expect(answer.status).toBe(200);
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('https://jobs.test/v1/subscriptions/t.x.y');
+      expect(init.method).toBe('PATCH');
+      expect(JSON.parse(String(init.body))).toEqual({ status: 'cancelled' });
+    });
+
+    it('answers 404 to a one-click unsubscribe with a dead link, and 5xx when the worker is down', async () => {
+      fetchMock.mockResolvedValueOnce(reply(404, { error: 'link expired' }));
+      const gone = await oneClick(
+        send('/api/subscriptions/old/unsubscribe', undefined),
+        token('old'),
+      );
+      expect(gone.status).toBe(404);
+      fetchMock.mockResolvedValueOnce(reply(503));
+      const down = await oneClick(send('/api/subscriptions/t/unsubscribe', undefined), token('t'));
+      expect(down.status).toBeGreaterThanOrEqual(500);
+    });
+
+    it('only opens the subscription page when the unsubscribe link is opened with GET', async () => {
+      const answer = await oneClickPage(
+        get('/api/subscriptions/t.x.y/unsubscribe'),
+        token('t.x.y'),
+      );
+      expect(answer.status).toBe(303);
+      expect(answer.headers.get('location')).toBe(`https://${SHOP}/ru/subscription?t=t.x.y`);
       expect(fetchMock).not.toHaveBeenCalled();
     });
 

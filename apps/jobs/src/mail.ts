@@ -200,6 +200,8 @@ export interface HoroscopeLetter {
   start: string;
   end: string;
   manage: string;
+  /** Where a mail client's one-click unsubscribe POSTs: it cancels the subscription. */
+  unsubscribe: string;
 }
 
 const dmy = (iso: string) => iso.split('-').reverse().join('.');
@@ -236,7 +238,12 @@ export async function sendHoroscope(
     subject: `${letter.title} · ${dmy(letter.start)} — ${dmy(letter.end)}`,
     html: horoscopeHtml(copy, letter),
     text: `${letter.title}\n${copy.window} ${dmy(letter.start)} — ${dmy(letter.end)}\n\n${letter.text}\n\n${copy.manage}: ${letter.manage}\n\n${copy.unsubscribe}`,
-    headers: { 'List-Unsubscribe': `<${letter.manage}>` },
+    // One-click unsubscribe (RFC 8058): the mail client POSTs to the link itself, and that cancels.
+    // Without the Post header Gmail's «Отписаться» only opens a page and nothing is cancelled.
+    headers: {
+      'List-Unsubscribe': `<${letter.unsubscribe}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
   });
 }
 

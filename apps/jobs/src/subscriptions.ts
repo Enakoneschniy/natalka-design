@@ -382,6 +382,7 @@ export async function deliverHoroscope(env: Env, id: string): Promise<void> {
   const horoscopeId = crypto.randomUUID();
   const token = await manageToken(env, sub.id);
   const manage = `${env.SITE_URL}/${sub.locale}/subscription?t=${token}`;
+  const unsubscribe = `${env.SITE_URL}/api/subscriptions/${token}/unsubscribe`;
   const channels: string[] = [];
 
   if (sub.email) {
@@ -391,6 +392,7 @@ export async function deliverHoroscope(env: Env, id: string): Promise<void> {
       start: result.start,
       end: result.end,
       manage,
+      unsubscribe,
     });
     if (sent.status === 'sent') channels.push('email');
   }
