@@ -1,10 +1,14 @@
 from natalka_texts import fact_sheet, synastry_sheet
 from natalka_texts.facts import (
+    ELEMENTS,
+    MODALITIES,
+    WEIGHTED,
     angular_bodies,
     as_data,
     balance,
     clean_name,
     element_of,
+    horoscope_sheet,
     modality_of,
 )
 
@@ -22,6 +26,62 @@ def test_balance_counts_only_the_ten_planets(facts: dict) -> None:
     counts = balance(facts)
     assert sum(counts["elements"].values()) == 10
     assert sum(counts["modalities"].values()) == 10
+
+
+def test_balance_names_the_planets_in_each_element_and_modality(facts: dict) -> None:
+    counts = balance(facts)
+    signs = {p["body"]: p["sign"] for p in facts["positions"]}
+    for element, bodies in counts["element_bodies"].items():
+        assert len(bodies) == counts["elements"][element]
+        assert all(element_of(signs[b]) == element for b in bodies)
+    for modality, bodies in counts["modality_bodies"].items():
+        assert len(bodies) == counts["modalities"][modality]
+        assert all(modality_of(signs[b]) == modality for b in bodies)
+    # Each of the ten planets once, in the usual order.
+    named = [b for bodies in counts["element_bodies"].values() for b in bodies]
+    assert sorted(named, key=WEIGHTED.index) == list(WEIGHTED)
+    assert counts["element_bodies"]["earth"][0] == "sun"  # Sun in Taurus
+
+
+def _balance_line(name: str, bodies: list[str]) -> str:
+    return f"{name} {len(bodies)}: {', '.join(bodies) if bodies else 'none'}"
+
+
+def test_fact_sheet_says_which_planets_make_each_count(facts: dict) -> None:
+    """A count alone left the model to guess the planet: it put Mercury in Aries under air."""
+    sheet = fact_sheet(facts)
+    counts = balance(facts)
+    for element in ELEMENTS:
+        assert _balance_line(element, counts["element_bodies"][element]) in sheet.splitlines()
+    for modality in MODALITIES:
+        assert _balance_line(modality, counts["modality_bodies"][modality]) in sheet.splitlines()
+
+
+def test_fact_sheet_gives_one_element_count_not_two(facts: dict) -> None:
+    """The engine's weighted scores (earth 5, water 5, air 2, fire 1: thirteen, no planets named)
+    sat beside the planet counts; the model wrote them up as «баллы» and named a planet for each.
+    Only the counts with their planets go out; the rest of the engine's analysis still does."""
+    assert sum(facts["analysis"]["elements"].values()) != 10  # the fixture has the weighted kind
+    lines = fact_sheet(facts).splitlines()
+    for key in (
+        "ELEMENTS",
+        "MODALITIES",
+        "DOMINANT_ELEMENT",
+        "WEAKEST_ELEMENT",
+        "DOMINANT_MODALITY",
+    ):
+        assert not any(line.startswith(f"{key}:") for line in lines), key
+    assert any(line.startswith("CONFIGURATIONS:") for line in lines)
+    assert any(line.startswith("CHART_RULER:") for line in lines)
+
+
+def test_horoscope_sheet_names_the_planets_of_each_element(facts: dict) -> None:
+    sheet = horoscope_sheet(
+        facts, sky=[], transits=[], period="week", start="2026-10-19", end="2026-10-26"
+    )
+    counts = balance(facts)
+    for element in ELEMENTS:
+        assert _balance_line(element, counts["element_bodies"][element]) in sheet.splitlines()
 
 
 def test_angular_bodies_need_houses(facts: dict, facts_no_time: dict) -> None:

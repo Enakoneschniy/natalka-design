@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import unicodedata
-from collections import Counter
 from typing import Any
 
 #: The longest name the model is shown.
@@ -63,20 +62,53 @@ def modality_of(sign: str) -> str:
     return MODALITIES[SIGNS.index(sign) % 3]
 
 
-def balance(facts: dict[str, Any]) -> dict[str, dict[str, int]]:
-    """How many of the ten planets sit in each element and each modality."""
-    elements: Counter[str] = Counter()
-    modalities: Counter[str] = Counter()
-    for position in facts.get("positions", []):
-        if position["body"] not in WEIGHTED:
-            continue
+def balance(facts: dict[str, Any]) -> dict[str, Any]:
+    """How many of the ten planets sit in each element and each modality, and which ones.
+
+    The names matter as much as the counts: given "air 1" alone, the model picked the planet it
+    thought of as airy (Mercury, sitting in Aries) instead of the one actually in an air sign.
+    """
+    element_bodies: dict[str, list[str]] = {e: [] for e in ELEMENTS}
+    modality_bodies: dict[str, list[str]] = {m: [] for m in MODALITIES}
+    weighted = sorted(
+        (p for p in facts.get("positions", []) if p["body"] in WEIGHTED),
+        key=lambda p: WEIGHTED.index(p["body"]),
+    )
+    for position in weighted:
         sign = position["sign"]
-        elements[element_of(sign)] += 1
-        modalities[modality_of(sign)] += 1
+        element_bodies[element_of(sign)].append(position["body"])
+        modality_bodies[modality_of(sign)].append(position["body"])
     return {
-        "elements": {e: elements.get(e, 0) for e in ELEMENTS},
-        "modalities": {m: modalities.get(m, 0) for m in MODALITIES},
+        "elements": {e: len(b) for e, b in element_bodies.items()},
+        "modalities": {m: len(b) for m, b in modality_bodies.items()},
+        "element_bodies": element_bodies,
+        "modality_bodies": modality_bodies,
     }
+
+
+#: The engine's own element and modality scores. They weigh more than the ten planets (thirteen
+#: points where BALANCE has ten) and name no planet; sent beside BALANCE, the model wrote them up
+#: as «баллы» and made up a planet for each. BALANCE says the same thing, with names.
+WEIGHTED_SCORES = frozenset(
+    {"elements", "modalities", "dominant_element", "weakest_element", "dominant_modality"}
+)
+
+#: Said with the counts, so a planet is never placed in an element it is not in.
+BALANCE_HEADING = (
+    "BALANCE (ten planets, each counted once by the sign it is in; when you name a planet "
+    "of an element or a modality, take it from these lines)"
+)
+
+
+def _balance_lines(counts: dict[str, Any], *, modalities: bool = True) -> list[str]:
+    def line(name: str, bodies: list[str]) -> str:
+        return f"{name} {len(bodies)}: {', '.join(bodies) if bodies else 'none'}"
+
+    out = [BALANCE_HEADING]
+    out += [line(e, bodies) for e, bodies in counts["element_bodies"].items()]
+    if modalities:
+        out += [line(m, bodies) for m, bodies in counts["modality_bodies"].items()]
+    return out
 
 
 def angular_bodies(facts: dict[str, Any], orb: float = 8.0) -> list[str]:
@@ -138,11 +170,8 @@ def fact_sheet(facts: dict[str, Any], transits: list[dict[str, Any]] | None = No
         lines.append(f"HOUSES ({houses['system']})")
         lines.extend(f"{c['house']}: {c['degree']} {c['sign']}" for c in houses["cusps"])
 
-    counts = balance(facts)
     lines.append("")
-    lines.append("BALANCE (ten planets)")
-    lines.append(", ".join(f"{k} {v}" for k, v in counts["elements"].items()))
-    lines.append(", ".join(f"{k} {v}" for k, v in counts["modalities"].items()))
+    lines.extend(_balance_lines(balance(facts)))
 
     angular = angular_bodies(facts)
     if angular:
@@ -150,7 +179,7 @@ def fact_sheet(facts: dict[str, Any], transits: list[dict[str, Any]] | None = No
 
     analysis = facts.get("analysis") or {}
     for key, value in analysis.items():
-        if value:
+        if value and key not in WEIGHTED_SCORES:
             lines.append(f"{key.upper()}: {value}")
 
     aspects = facts.get("aspects", [])
@@ -236,10 +265,8 @@ def horoscope_sheet(
     else:
         lines.append("(none — a quiet stretch; say so plainly instead of inventing movement)")
 
-    counts = balance(facts)
     lines.append("")
-    lines.append("BALANCE (ten planets)")
-    lines.append(", ".join(f"{k} {v}" for k, v in counts["elements"].items()))
+    lines.extend(_balance_lines(balance(facts), modalities=False))
     return "\n".join(lines)
 
 
