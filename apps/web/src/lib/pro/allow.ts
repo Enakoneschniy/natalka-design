@@ -11,14 +11,15 @@ export interface ProxyMatch {
 
 type Methods = Partial<Record<'GET' | 'POST' | 'PUT' | 'DELETE', ProxyKind>>;
 
-/** `:id` stands for one id segment; every other segment must match literally. */
+/** `:id` stands for one id segment, `:section` for a section id; every other segment must match
+ * literally. */
 const ROUTES: [pattern: string, methods: Methods][] = [
   ['clients', { GET: 'json', POST: 'json' }],
   ['clients/:id', { GET: 'json', DELETE: 'json' }],
   ['readings', { GET: 'json', POST: 'json' }],
   ['readings/:id', { GET: 'json' }],
-  ['readings/:id/sections/:id/regenerate', { POST: 'json' }],
-  ['readings/:id/sections/:id/report', { POST: 'json' }],
+  ['readings/:id/sections/:section/regenerate', { POST: 'json' }],
+  ['readings/:id/sections/:section/report', { POST: 'json' }],
   ['readings/:id/pdf', { GET: 'pdf', POST: 'json' }],
   ['demo', { GET: 'json' }],
   ['brand', { GET: 'json', PUT: 'json' }],
@@ -33,6 +34,11 @@ const ROUTES: [pattern: string, methods: Methods][] = [
 const PATTERNS = ROUTES.map(([pattern, methods]) => ({ parts: pattern.split('/'), methods }));
 
 const ID = /^[A-Za-z0-9-]+$/;
+/** A section id as the texts package writes it: words joined by dots, `natal.mercury_venus_mars`.
+ * No leading, trailing or doubled dot, so never `.` or `..`. */
+const SECTION = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/;
+
+const PLACEHOLDER: Record<string, RegExp> = { ':id': ID, ':section': SECTION };
 
 /** A segment is usable only if it is non-empty, not `.`/`..`, and holds no slash either as
  * given or once decoded (a double-encoded `%252F` arrives as `%2F`). */
@@ -47,14 +53,16 @@ function clean(segment: string): boolean {
   return !/\/|%2f/i.test(segment) && !decoded.includes('/') && decoded === segment;
 }
 
-/** The allowlisted call for this method and path, or null. Ids are `[A-Za-z0-9-]+`. */
+/** The allowlisted call for this method and path, or null. Ids are `[A-Za-z0-9-]+`; section ids
+ * are dotted words. */
 export function matchProxy(method: string, segments: readonly string[]): ProxyMatch | null {
   if (segments.length === 0 || !segments.every(clean)) return null;
   for (const { parts, methods } of PATTERNS) {
     if (parts.length !== segments.length) continue;
     const fits = parts.every((part, i) => {
       const segment = segments[i] as string;
-      return part === ':id' ? ID.test(segment) : part === segment;
+      const placeholder = PLACEHOLDER[part];
+      return placeholder ? placeholder.test(segment) : part === segment;
     });
     if (!fits) continue;
     const kind = Object.hasOwn(methods, method) ? methods[method as keyof Methods] : undefined;

@@ -75,6 +75,31 @@ describe('matchProxy', () => {
     expect(matchProxy('GET', ['readings', ID, 'sections', 'ü', 'regenerate'])).toBeNull();
   });
 
+  it('takes the section ids the texts package writes: dotted words with underscores', () => {
+    for (const section of [
+      'intro',
+      'natal.overview',
+      'natal.mercury_venus_mars',
+      'love.seventh_house',
+    ]) {
+      expect(matchProxy('POST', ['readings', ID, 'sections', section, 'regenerate'])).toEqual({
+        path: `readings/${ID}/sections/${section}/regenerate`,
+        kind: 'json',
+      });
+      expect(matchProxy('POST', ['readings', ID, 'sections', section, 'report'])?.kind).toBe(
+        'json',
+      );
+    }
+  });
+
+  it('refuses a section id that is not dotted words', () => {
+    for (const section of ['.natal', 'natal.', 'natal..sun', 'natal sun', 'natal/sun', '..']) {
+      expect(matchProxy('POST', ['readings', ID, 'sections', section, 'regenerate'])).toBeNull();
+    }
+    // A dot is a section's, never a client's or a reading's.
+    expect(matchProxy('GET', ['readings', 'a.b'])).toBeNull();
+  });
+
   it('refuses empty segments', () => {
     expect(matchProxy('GET', ['clients', ''])).toBeNull();
     expect(matchProxy('GET', ['', 'clients'])).toBeNull();
