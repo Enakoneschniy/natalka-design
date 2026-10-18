@@ -8,7 +8,7 @@
 import type { Env } from '../env';
 import { errorCode } from '../errors';
 import { contentDisposition } from '../filename';
-import { sendLoginLink, sendSignupLink } from '../mail';
+import { type ProLetterLang, sendLoginLink, sendSignupLink } from '../mail';
 import {
   accountExists,
   authenticate,
@@ -43,7 +43,16 @@ import { hasRedeemed, redeemInvite } from './invites';
 import { assemblePdf, readingPdf, regenerateSection } from './lifecycle';
 import { fileReport } from './reports';
 import { requesterOf } from './requester';
-import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from './readings';
+import {
+  createReading,
+  DEFAULT_PRO_LANG,
+  deleteClient,
+  demoReadingRow,
+  isProLang,
+  listReadings,
+  readingRow,
+  readingView,
+} from './readings';
 
 const json = (body: unknown, status = 200): Response =>
   Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
@@ -77,22 +86,28 @@ async function sendSignInLetter(
   email: string,
   requester: string,
   signup: { name: string; invite: string | null } | null,
+  lang: ProLetterLang,
 ): Promise<void> {
   if (await accountExists(env.DB, email)) {
     const token = await createLoginToken(env.DB, email, requester);
-    if (token) await sendLoginLink(env, email, loginLink(env, token));
+    if (token) await sendLoginLink(env, email, loginLink(env, token), lang);
   } else if (signup) {
     const token = await createSignupToken(env.DB, email, requester, signup);
-    if (token) await sendSignupLink(env, email, loginLink(env, token));
+    if (token) await sendSignupLink(env, email, loginLink(env, token), lang);
   }
 }
+
+/** The language the cabinet asked the letter in; Russian for one it does not name or know. A
+ * language is never a reason to refuse: the answer must stay the same 202. */
+const letterLang = (value: unknown): ProLetterLang => (isProLang(value) ? value : DEFAULT_PRO_LANG);
 
 /** Always 202 for a well-formed address: the answer must not tell whether an account exists.
  * A link goes out only when there is an account to sign in to. */
 async function requestLogin(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
-  const email = normalizeEmail((await readBody(request))?.email);
+  const body = await readBody(request);
+  const email = normalizeEmail(body?.email);
   if (!email) return json({ error: 'email' }, 400);
-  await afterAnswer(ctx, sendSignInLetter(env, email, await requesterOf(request, env), null));
+  await afterAnswer(ctx, sendSignInLetter(env, email, await requesterOf(request, env), null, letterLang(body?.lang)));
   return json({ ok: true }, 202);
 }
 
@@ -109,7 +124,10 @@ async function requestSignup(request: Request, env: Env, ctx?: ExecutionContext)
   if (body?.terms !== true) return json({ error: 'terms' }, 400);
   const code = typeof body.invite === 'string' ? body.invite.trim() : '';
   const invite = code && code.length <= MAX_INVITE ? code : null;
-  await afterAnswer(ctx, sendSignInLetter(env, email, await requesterOf(request, env), { name, invite }));
+  await afterAnswer(
+    ctx,
+    sendSignInLetter(env, email, await requesterOf(request, env), { name, invite }, letterLang(body.lang)),
+  );
   return json({ ok: true }, 202);
 }
 
@@ -175,12 +193,17 @@ async function orderReading(request: Request, env: Env, account: ProAccount): Pr
   return json({ error: result.error }, 400);
 }
 
-/** The sample reading: texts only, nothing about whose chart it is. */
-async function demo(env: Env): Promise<Response> {
-  const row = env.PRO_DEMO_ORDER_ID ? await demoReadingRow(env.DB, env.PRO_DEMO_ORDER_ID) : null;
+/** The sample reading: texts only, nothing about whose chart it is. In Ukrainian for `?lang=uk`
+ * once PRO_DEMO_ORDER_ID_UK names one; the Russian sample otherwise. The answer says which. */
+async function demo(env: Env, url: URL): Promise<Response> {
+  const id =
+    url.searchParams.get('lang') === 'uk' && env.PRO_DEMO_ORDER_ID_UK
+      ? env.PRO_DEMO_ORDER_ID_UK
+      : env.PRO_DEMO_ORDER_ID;
+  const row = id ? await demoReadingRow(env.DB, id) : null;
   if (!row || row.step !== 'done') return json({ error: 'not found' }, 404);
   const view = await readingView(env, row);
-  return json({ product: view.product, sections: view.sections });
+  return json({ product: view.product, lang: view.lang, sections: view.sections });
 }
 
 const BRAND_IMAGE = /^\/v1\/pro\/brand\/(logo|photo)$/;
@@ -232,7 +255,8 @@ async function brandRoutes(request: Request, env: Env, url: URL, account: ProAcc
 
 async function createPackPurchase(request: Request, env: Env, account: ProAccount): Promise<Response> {
   if (!env.STRIPE_SECRET_KEY) return json({ error: 'payments unavailable' }, 503);
-  const pack = (await readBody(request))?.pack;
+  const body = await readBody(request);
+  const pack = body?.pack;
   if (!isPack(pack)) return json({ error: 'pack' }, 400);
   const purchase = await createPurchase(env.DB, account.id, pack);
   // Checkouts opened and left unpaid this hour: no more until they are paid, expire or age.
@@ -247,6 +271,7 @@ async function createPackPurchase(request: Request, env: Env, account: ProAccoun
       credits: PACKS[pack].credits,
       amountMinor: purchase.amount_minor,
       currency: purchase.currency,
+      lang: isProLang(body?.lang) ? body.lang : DEFAULT_PRO_LANG,
     });
   } catch (error) {
     console.error('pack checkout failed', purchase.id, errorCode(error));
@@ -351,7 +376,7 @@ async function readingRoutes(request: Request, env: Env, url: URL, account: ProA
       });
     }
   }
-  if (path === '/v1/pro/demo' && method === 'GET') return demo(env);
+  if (path === '/v1/pro/demo' && method === 'GET') return demo(env, url);
   return null;
 }
 

@@ -62,6 +62,25 @@ describe('POST /v1/pro/purchases', () => {
     expect(sent.cancel_url).toBe('https://pro.chronika.test/credits');
   });
 
+  it('speaks the cabinet’s language on the payment page, as far as Stripe can', async () => {
+    const { session } = await seller('buyer-uk');
+    const response = await call('POST', '/v1/pro/purchases', session, { pack: 'p10', lang: 'uk' });
+    expect(response.status).toBe(201);
+    const { id } = (await response.json()) as { id: string };
+    const sent = ((await lastRequest(`stripe|checkout|${id}`)) as { fields: Record<string, string> }).fields;
+    expect(sent['line_items[0][price_data][product_data][name]']).toBe('Chronika Pro · 10 кредитів');
+    expect(sent['payment_intent_data[description]']).toBe('Chronika Pro · 10 кредитів');
+    expect(sent['custom_text[terms_of_service_acceptance][message]']).toMatch(/^Кредити зараховуються/);
+    // Stripe Checkout has no Ukrainian: it follows the browser rather than show Russian.
+    expect(sent.locale).toBe('auto');
+
+    const { session: ruSession } = await seller('buyer-ru');
+    const ru = (await (await call('POST', '/v1/pro/purchases', ruSession, { pack: 'p10' })).json()) as { id: string };
+    const ruSent = ((await lastRequest(`stripe|checkout|${ru.id}`)) as { fields: Record<string, string> }).fields;
+    expect(ruSent.locale).toBe('ru');
+    expect(ruSent['line_items[0][price_data][product_data][name]']).toBe('Chronika Pro · 10 кредитов');
+  });
+
   it('marks the purchase failed and hides the Stripe error when Checkout fails', async () => {
     const { session, email } = await seller('fail-checkout');
     const response = await call('POST', '/v1/pro/purchases', session, { pack: 'p10' });

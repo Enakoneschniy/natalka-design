@@ -106,6 +106,23 @@ describe('a sign-in or sign-up request', () => {
     expect((await letters('registered@sign-in.test')).at(-1)?.subject).toBe('Вход в Chronika Pro');
   });
 
+  it('writes the letters in the language the cabinet asked for, Russian when it says none', async () => {
+    await signIn('uk-registered@sign-in.test');
+    const send = async (path: string, body: Record<string, unknown>) => {
+      const ctx = createExecutionContext();
+      const response = await handlePro(request(path, body), testEnv, new URL(`https://jobs.test${path}`), ctx);
+      expect(response?.status).toBe(202);
+      await waitOnExecutionContext(ctx);
+    };
+    await send('/v1/pro/login', { email: 'uk-registered@sign-in.test', lang: 'uk' });
+    expect((await letters('uk-registered@sign-in.test')).at(-1)?.subject).toBe('Вхід до Chronika Pro');
+    await send('/v1/pro/signup', { email: 'uk-newcomer@sign-in.test', name: 'Олена', terms: true, lang: 'uk' });
+    expect((await letters('uk-newcomer@sign-in.test')).at(-1)?.subject).toBe('Підтвердіть пошту для Chronika Pro');
+    // An unknown language is no reason to refuse a sign-in: the letter goes in Russian.
+    await send('/v1/pro/login', { email: 'uk-registered@sign-in.test', lang: 'de' });
+    expect((await letters('uk-registered@sign-in.test')).at(-1)?.subject).toBe('Вход в Chronika Pro');
+  });
+
   it('still refuses a malformed request at once, with nothing left to run', async () => {
     const ctx = createExecutionContext();
     const response = await handlePro(

@@ -141,16 +141,31 @@ export async function sendReady(
   });
 }
 
-/** The sign-in letter for Chronika Pro. Russian only for the pilot. */
-const LOGIN_COPY: Copy = {
-  subject: 'Вход в Chronika Pro',
-  ready: 'Нажмите кнопку, чтобы войти в кабинет. Ссылка действует 15 минут и срабатывает один раз.',
-  open: 'Войти в кабинет',
-  keeps: 'Если вы не запрашивали вход, просто проигнорируйте это письмо — без ссылки в кабинет не попасть.',
-  sign: 'Chronika Pro · pro.chronika.me',
-  window: '',
-  manage: '',
-  unsubscribe: '',
+/** The languages of the Chronika Pro letters: the cabinet's two. */
+export type ProLetterLang = 'ru' | 'uk';
+
+/** The sign-in letter for Chronika Pro. */
+const LOGIN_COPY: Record<ProLetterLang, Copy> = {
+  ru: {
+    subject: 'Вход в Chronika Pro',
+    ready: 'Нажмите кнопку, чтобы войти в кабинет. Ссылка действует 15 минут и срабатывает один раз.',
+    open: 'Войти в кабинет',
+    keeps: 'Если вы не запрашивали вход, просто проигнорируйте это письмо — без ссылки в кабинет не попасть.',
+    sign: 'Chronika Pro · pro.chronika.me',
+    window: '',
+    manage: '',
+    unsubscribe: '',
+  },
+  uk: {
+    subject: 'Вхід до Chronika Pro',
+    ready: 'Натисніть кнопку, щоб увійти до кабінету. Посилання діє 15 хвилин і спрацьовує один раз.',
+    open: 'Увійти до кабінету',
+    keeps: 'Якщо ви не запитували вхід, просто проігноруйте цей лист — без посилання до кабінету не потрапити.',
+    sign: 'Chronika Pro · pro.chronika.me',
+    window: '',
+    manage: '',
+    unsubscribe: '',
+  },
 };
 
 /** Local development only: with MAIL_LOG_LINKS=1 the link a letter carries is also written to the
@@ -160,37 +175,51 @@ function logLink(env: Env, what: string, link: string): void {
   if (env.MAIL_LOG_LINKS === '1') console.log(`${what} (MAIL_LOG_LINKS):`, link);
 }
 
-export async function sendLoginLink(env: Env, to: string, link: string): Promise<Sent> {
+export async function sendLoginLink(env: Env, to: string, link: string, lang: ProLetterLang): Promise<Sent> {
   logLink(env, 'pro sign-in link', link);
   if (!env.RESEND_API_KEY) return { status: 'skipped', providerId: null };
+  const copy = LOGIN_COPY[lang];
   return deliver(env, {
     to,
-    subject: LOGIN_COPY.subject,
-    html: html(LOGIN_COPY, link),
-    text: `${LOGIN_COPY.ready}\n\n${link}\n\n${LOGIN_COPY.keeps}\n\n${LOGIN_COPY.sign}`,
+    subject: copy.subject,
+    html: html(copy, link),
+    text: `${copy.ready}\n\n${link}\n\n${copy.keeps}\n\n${copy.sign}`,
   });
 }
 
 /** The letter that confirms a new seller's address. */
-const SIGNUP_COPY: Copy = {
-  subject: 'Подтвердите почту для Chronika Pro',
-  ready: 'Чтобы открыть кабинет, подтвердите адрес по ссылке ниже. Ссылка действует 15 минут.',
-  open: 'Подтвердить и войти',
-  keeps: 'Если вы не регистрировались, просто удалите это письмо',
-  sign: 'Chronika Pro · pro.chronika.me',
-  window: '',
-  manage: '',
-  unsubscribe: '',
+const SIGNUP_COPY: Record<ProLetterLang, Copy> = {
+  ru: {
+    subject: 'Подтвердите почту для Chronika Pro',
+    ready: 'Чтобы открыть кабинет, подтвердите адрес по ссылке ниже. Ссылка действует 15 минут.',
+    open: 'Подтвердить и войти',
+    keeps: 'Если вы не регистрировались, просто удалите это письмо',
+    sign: 'Chronika Pro · pro.chronika.me',
+    window: '',
+    manage: '',
+    unsubscribe: '',
+  },
+  uk: {
+    subject: 'Підтвердіть пошту для Chronika Pro',
+    ready: 'Щоб відкрити кабінет, підтвердіть адресу за посиланням нижче. Посилання діє 15 хвилин.',
+    open: 'Підтвердити й увійти',
+    keeps: 'Якщо ви не реєструвалися, просто видаліть цей лист',
+    sign: 'Chronika Pro · pro.chronika.me',
+    window: '',
+    manage: '',
+    unsubscribe: '',
+  },
 };
 
-export async function sendSignupLink(env: Env, to: string, link: string): Promise<Sent> {
+export async function sendSignupLink(env: Env, to: string, link: string, lang: ProLetterLang): Promise<Sent> {
   logLink(env, 'pro sign-up link', link);
   if (!env.RESEND_API_KEY) return { status: 'skipped', providerId: null };
+  const copy = SIGNUP_COPY[lang];
   return deliver(env, {
     to,
-    subject: SIGNUP_COPY.subject,
-    html: html(SIGNUP_COPY, link),
-    text: `${SIGNUP_COPY.ready}\n\n${link}\n\n${SIGNUP_COPY.keeps}\n\n${SIGNUP_COPY.sign}`,
+    subject: copy.subject,
+    html: html(copy, link),
+    text: `${copy.ready}\n\n${link}\n\n${copy.keeps}\n\n${copy.sign}`,
   });
 }
 

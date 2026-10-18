@@ -155,4 +155,41 @@ describe('clients and readings over HTTP', () => {
     expect(demo.sections.map((s) => s.id)).toEqual(['a', 'b', 'c']);
     expect(JSON.stringify(demo)).not.toContain(clientId);
   });
+
+  it('shows the Ukrainian sample to a Ukrainian cabinet, the Russian one while there is none', async () => {
+    const owner = await sellerSession('demo-lang-owner', 3);
+    const { id: clientId } = (await (
+      await call('POST', '/v1/pro/clients', owner.session, { ...ANNA, consent: true })
+    ).json()) as { id: string };
+    const order = async (lang: string) => {
+      const { id } = (await (
+        await call('POST', '/v1/pro/readings', owner.session, { product: 'natal', client_id: clientId, lang })
+      ).json()) as { id: string };
+      await runJob(await jobOf(id));
+      return id;
+    };
+    const ru = await order('ru');
+    const uk = await order('uk');
+    const visitor = await sellerSession('demo-lang-visitor', 0);
+    const ask = (env: typeof testEnv, lang?: string) => {
+      const url = new URL(`https://jobs.test/v1/pro/demo${lang ? `?lang=${lang}` : ''}`);
+      const req = new Request(url, {
+        headers: { 'x-pro-key': 'test-pro-key', authorization: `Bearer ${visitor.session}` },
+      });
+      return handlePro(req, env, url);
+    };
+    // defineProperty, not assignment: testEnv's own setters would keep the value for every test after.
+    const withVars = (vars: Record<string, string>): typeof testEnv => {
+      const env = Object.create(testEnv);
+      for (const [name, value] of Object.entries(vars)) Object.defineProperty(env, name, { value });
+      return env;
+    };
+    const both = withVars({ PRO_DEMO_ORDER_ID: ru, PRO_DEMO_ORDER_ID_UK: uk });
+    const onlyRu = withVars({ PRO_DEMO_ORDER_ID: ru });
+
+    expect(((await (await ask(both, 'uk'))?.json()) as { lang: string }).lang).toBe('uk');
+    expect(((await (await ask(both, 'ru'))?.json()) as { lang: string }).lang).toBe('ru');
+    expect(((await (await ask(both))?.json()) as { lang: string }).lang).toBe('ru');
+    expect(((await (await ask(onlyRu, 'uk'))?.json()) as { lang: string }).lang).toBe('ru');
+  });
 });

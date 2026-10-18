@@ -14,8 +14,15 @@ import { type ClientBirth, getClient } from './clients';
 import { balance, CREDIT_COST, refund, refundStatement, spend } from './credits';
 import { dropFilesThenRows, readingFolder } from './storage';
 
-/** Seller readings are written in Russian during the pilot. */
-export const PRO_LANG = 'ru';
+/** The languages a seller's reading is written in. */
+export type ProLang = 'ru' | 'uk';
+/** A reading ordered without a language (a cabinet older than the choice) is Russian. */
+export const DEFAULT_PRO_LANG: ProLang = 'ru';
+
+export const isProLang = (value: unknown): value is ProLang => value === 'ru' || value === 'uk';
+
+/** The language of a stored reading: its order's locale. */
+const langOf = (locale: string | null | undefined): ProLang => (isProLang(locale) ? locale : DEFAULT_PRO_LANG);
 export const REGENERATIONS_PER_READING = 10;
 export const EDITABLE_DAYS = 14;
 /** A seller's charts stay with their client; the nightly sweep never reaches this date. */
@@ -32,10 +39,12 @@ const isProduct = (value: unknown): value is Product =>
 export async function createReading(
   env: Env,
   account: { id: string; email: string; tone?: 'ty' | 'vy' },
-  input: { product?: unknown; client_id?: unknown; partner_client_id?: unknown },
+  input: { product?: unknown; client_id?: unknown; partner_client_id?: unknown; lang?: unknown },
 ): Promise<CreateReadingResult> {
   if (!isProduct(input.product)) return { status: 'invalid', error: 'product' };
   const product = input.product;
+  if (input.lang !== undefined && !isProLang(input.lang)) return { status: 'invalid', error: 'lang' };
+  const lang = input.lang ?? DEFAULT_PRO_LANG;
   const client =
     typeof input.client_id === 'string' ? await getClient(env, account.id, input.client_id) : null;
   if (!client) return { status: 'invalid', error: 'client' };
@@ -74,7 +83,8 @@ export async function createReading(
           place: person.place,
           gender: person.gender,
         };
-        const { ciphertext, nonce } = await encryptJson({ ...birth, lang: PRO_LANG }, env.DATA_KEY);
+        // Every step after this one (plan, sections, PDF, file name) reads the language from here.
+        const { ciphertext, nonce } = await encryptJson({ ...birth, lang }, env.DATA_KEY);
         // The name and the place live in the ciphertext only.
         return env.DB.prepare(
           `INSERT INTO charts (id, order_id, person_no, birth_ciphertext, birth_nonce, key_version,
@@ -98,7 +108,7 @@ export async function createReading(
         `INSERT INTO orders (id, email, product, locale, amount_minor, currency, status,
                              pro_account_id, created_at, paid_at)
          VALUES (?, ?, ?, ?, ?, 'credit', 'paid', ?, ?, ?)`,
-      ).bind(orderId, account.email, product, PRO_LANG, cost, account.id, ts, ts),
+      ).bind(orderId, account.email, product, lang, cost, account.id, ts, ts),
       ...charts,
       env.DB.prepare(
         `INSERT INTO jobs (id, order_id, kind, step, status, created_at, updated_at)
@@ -158,6 +168,8 @@ export interface ReadingRow {
   address: 'vy' | 'ty';
   created_at: string;
   product: Product;
+  /** The order's locale: the reading's language. */
+  locale: string;
   step: JobStep;
   status: JobStatus;
   /** The plan's sections and how many are written (see sealPayload); NULL in a row from before
@@ -174,7 +186,7 @@ export interface ReadingRow {
 /** Everything about a reading but its payload. */
 const SUMMARY_COLUMNS = `r.order_id, r.account_id, r.job_id, r.client_id, r.partner_client_id,
        r.regenerations, r.editable_until, r.refunded_at, r.address, r.created_at,
-       o.product, j.step, j.status, j.sections_planned, j.sections_written, j.updated_at`;
+       o.product, o.locale, j.step, j.status, j.sections_planned, j.sections_written, j.updated_at`;
 const READING_COLUMNS = `${SUMMARY_COLUMNS}, j.payload, j.payload_ct, j.payload_nonce`;
 const READING_FROM = 'FROM pro_readings r JOIN orders o ON o.id = r.order_id JOIN jobs j ON j.id = r.job_id';
 const READING_SELECT = `SELECT ${READING_COLUMNS}\n  ${READING_FROM}`;
@@ -208,6 +220,7 @@ export function readingStatus(row: Pick<ReadingRow, 'refunded_at' | 'step'>): Re
 export interface ReadingView {
   id: string;
   product: Product;
+  lang: ProLang;
   client_id: string;
   partner_client_id: string | null;
   status: ReadingStatus;
@@ -235,6 +248,7 @@ export async function readingView(env: Env, row: ReadingRow): Promise<ReadingVie
   return {
     id: row.order_id,
     product: row.product,
+    lang: langOf(row.locale),
     client_id: row.client_id,
     partner_client_id: row.partner_client_id,
     status,
@@ -257,6 +271,7 @@ export async function readingView(env: Env, row: ReadingRow): Promise<ReadingVie
 export interface ReadingSummary {
   id: string;
   product: Product;
+  lang: ProLang;
   client_id: string;
   partner_client_id: string | null;
   status: ReadingStatus;
@@ -304,6 +319,7 @@ export async function listReadings(env: Env, accountId: string, clientId?: strin
   return results.map((row) => ({
     id: row.order_id,
     product: row.product,
+    lang: langOf(row.locale),
     client_id: row.client_id,
     partner_client_id: row.partner_client_id,
     status: readingStatus(row),

@@ -16,11 +16,11 @@ describe('sign-in links', () => {
   it('are never written to the log unless MAIL_LOG_LINKS is 1', async () => {
     const logged = captured('log');
     const link = 'https://pro.chronika.test/login/secret-token-1';
-    await sendLoginLink(envWith('MAIL_LOG_LINKS', undefined), 'quiet@mail.test', link);
+    await sendLoginLink(envWith('MAIL_LOG_LINKS', undefined), 'quiet@mail.test', link, 'ru');
     expect(logged.join('\n')).not.toContain('secret-token-1');
     expect(await letters('quiet@mail.test')).toHaveLength(1);
 
-    await sendLoginLink(testEnv, 'loud@mail.test', 'https://pro.chronika.test/login/secret-token-2');
+    await sendLoginLink(testEnv, 'loud@mail.test', 'https://pro.chronika.test/login/secret-token-2', 'ru');
     expect(logged.join('\n')).toContain('secret-token-2');
   });
 
@@ -28,7 +28,7 @@ describe('sign-in links', () => {
     const logged = captured('log');
     const env = Object.create(envWith('MAIL_LOG_LINKS', undefined));
     Object.defineProperty(env, 'RESEND_API_KEY', { value: undefined });
-    expect(await sendLoginLink(env, 'nobody@mail.test', 'https://x.test/login/secret-token-3')).toEqual({
+    expect(await sendLoginLink(env, 'nobody@mail.test', 'https://x.test/login/secret-token-3', 'ru')).toEqual({
       status: 'skipped',
       providerId: null,
     });

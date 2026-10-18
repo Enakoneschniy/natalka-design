@@ -160,31 +160,50 @@ export interface PackCheckoutInput {
   credits: number;
   amountMinor: number;
   currency: string;
+  /** The cabinet's language: the receipt line and the consent text are written in it. */
+  lang: 'ru' | 'uk';
 }
+
+/** The pack's words on the payment page. Every pack is 10, 30 or 100 credits, so one plural form
+ * serves. Checkout has no Ukrainian: a Ukrainian cabinet lets it follow the browser instead. */
+const PACK_COPY = {
+  ru: {
+    name: (credits: number) => `Chronika Pro · ${credits} кредитов`,
+    terms:
+      'Кредиты зачисляются сразу после оплаты и не сгорают. Деньги можно вернуть в течение 14 дней, если ни один кредит пакета не потрачен.',
+    locale: 'ru',
+  },
+  uk: {
+    name: (credits: number) => `Chronika Pro · ${credits} кредитів`,
+    terms:
+      'Кредити зараховуються одразу після оплати й не згорають. Гроші можна повернути протягом 14 днів, якщо жоден кредит пакета не витрачено.',
+    locale: 'auto',
+  },
+} as const;
 
 /** Checkout for a credit pack. The seller pays us, so our name is on their receipt. */
 export async function createPackCheckout(env: Env, input: PackCheckoutInput): Promise<CheckoutSession> {
   if (!env.STRIPE_SECRET_KEY) throw new Error('Stripe is not configured');
+  const copy = PACK_COPY[input.lang];
   const fields: Record<string, string | number | boolean> = {
     mode: 'payment',
     'line_items[0][quantity]': 1,
     'line_items[0][price_data][currency]': input.currency.toLowerCase(),
     'line_items[0][price_data][unit_amount]': input.amountMinor,
-    'line_items[0][price_data][product_data][name]': `Chronika Pro · ${input.credits} кредитов`,
+    'line_items[0][price_data][product_data][name]': copy.name(input.credits),
     customer_email: input.email,
     client_reference_id: input.purchaseId,
-    'payment_intent_data[description]': `Chronika Pro · ${input.credits} кредитов`,
+    'payment_intent_data[description]': copy.name(input.credits),
     'metadata[kind]': 'pro_pack',
     'metadata[purchase_id]': input.purchaseId,
     'metadata[account_id]': input.accountId,
     'metadata[pack]': input.pack,
     success_url: `${env.PRO_SITE_URL}/credits?purchase=${input.purchaseId}`,
     cancel_url: `${env.PRO_SITE_URL}/credits`,
-    locale: 'ru',
+    locale: copy.locale,
     'tax_id_collection[enabled]': true,
     'consent_collection[terms_of_service]': 'required',
-    'custom_text[terms_of_service_acceptance][message]':
-      'Кредиты зачисляются сразу после оплаты и не сгорают. Деньги можно вернуть в течение 14 дней, если ни один кредит пакета не потрачен.',
+    'custom_text[terms_of_service_acceptance][message]': copy.terms,
   };
   if (env.STRIPE_TAX === '1') fields['automatic_tax[enabled]'] = true;
 

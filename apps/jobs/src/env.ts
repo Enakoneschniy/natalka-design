@@ -71,4 +71,6 @@ export interface Env {
   /** The order of the sample reading every seller can open before they have credits. Optional:
    * without it the demo route answers 404. */
   PRO_DEMO_ORDER_ID?: string;
+  /** The Ukrainian sample reading, shown to a Ukrainian cabinet; the Russian one while unset. */
+  PRO_DEMO_ORDER_ID_UK?: string;
 }

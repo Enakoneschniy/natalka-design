@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createClient } from '../src/pro/clients';
 import { balance, grant } from '../src/pro/credits';
-import { sealLegacyPayloads } from '../src/pipeline';
+import { loadBirth, sealLegacyPayloads } from '../src/pipeline';
 import { createReading, deleteClient, demoReadingRow, listReadings, readingRow, readingView } from '../src/pro/readings';
 import { ANNA } from './people';
 import { payloadOf, runJob, signIn, testEnv, writePayload } from './env';
@@ -38,6 +38,34 @@ describe('createReading', () => {
     expect(order).toEqual({ status: 'paid', currency: 'credit', amount_minor: 1, pro_account_id: account.id });
     const chart = await testEnv.DB.prepare('SELECT expires_at FROM charts WHERE order_id = ?').bind(id).first();
     expect(chart).toEqual({ expires_at: '9999-12-31T23:59:59.999Z' });
+  });
+
+  it('writes the reading in the language the seller chose, Russian when none is given', async () => {
+    const { account, clientId } = await seller('lang', 3);
+    const uk = (await createReading(testEnv, account, { product: 'natal', client_id: clientId, lang: 'uk' })) as { id: string };
+    const ru = (await createReading(testEnv, account, { product: 'natal', client_id: clientId })) as { id: string };
+    expect((await loadBirth(testEnv, uk.id)).lang).toBe('uk');
+    expect((await loadBirth(testEnv, ru.id)).lang).toBe('ru');
+    const locale = async (id: string) =>
+      (await testEnv.DB.prepare('SELECT locale FROM orders WHERE id = ?').bind(id).first<{ locale: string }>())?.locale;
+    expect(await locale(uk.id)).toBe('uk');
+    expect(await locale(ru.id)).toBe('ru');
+
+    const view = await readingView(testEnv, (await readingRow(testEnv.DB, uk.id, account.id))!);
+    expect(view.lang).toBe('uk');
+    const list = await listReadings(testEnv, account.id);
+    expect(Object.fromEntries(list.map((r) => [r.id, r.lang]))).toEqual({ [uk.id]: 'uk', [ru.id]: 'ru' });
+  });
+
+  it('refuses a language it does not write, before spending anything', async () => {
+    const { account, clientId } = await seller('lang-en', 2);
+    for (const lang of ['en', 'UK', '', 7, null]) {
+      expect(await createReading(testEnv, account, { product: 'natal', client_id: clientId, lang })).toEqual({
+        status: 'invalid',
+        error: 'lang',
+      });
+    }
+    expect(await balance(testEnv.DB, account.id)).toBe(2);
   });
 
   it('charges two credits for a bundle', async () => {
