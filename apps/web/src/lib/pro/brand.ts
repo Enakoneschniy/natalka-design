@@ -186,18 +186,29 @@ export function imageProblem(file: { size: number; type: string }, lang: ProLang
   return null;
 }
 
-/** The size a `width` × `height` picture is drawn at so its long side is at most `max`. */
+/** The size a `width` × `height` picture is drawn at so its long side is at most `max`. A
+ * photo is never enlarged; a drawing (`enlarge`, an SVG) is drawn at `max`, since it has no
+ * pixels of its own to lose. */
 export function fitWithin(
   width: number,
   height: number,
   max: number,
+  enlarge = false,
 ): { width: number; height: number } {
-  const scale = Math.min(1, max / Math.max(width, height));
+  const fit = max / Math.max(width, height);
+  const scale = enlarge ? fit : Math.min(1, fit);
   return {
     width: Math.max(1, Math.round(width * scale)),
     height: Math.max(1, Math.round(height * scale)),
   };
 }
+
+/** A file the jobs worker takes as it is: a PNG or JPEG up to the cap. Sent when the browser
+ * could not prepare it, as every upload was before preparing existed. */
+export const canSendAsIs = (file: { size: number; type: string }): boolean =>
+  (file.type === 'image/png' || file.type === 'image/jpeg') &&
+  file.size > 0 &&
+  file.size <= IMAGE_MAX_BYTES;
 
 /** What an image upload's answer means for the seller. */
 export function imageError(status: number, error: string | undefined, lang: ProLang): string {

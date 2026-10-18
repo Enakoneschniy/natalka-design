@@ -43,14 +43,19 @@ export function pickLang(
   return country?.trim().toUpperCase() === 'UA' ? 'uk' : 'ru';
 }
 
-/** The language of a request to one of the cabinet's own routes, picked as the pages pick it. */
-export function requestLang(request: Request): ProLang {
-  const cookie = (request.headers.get('cookie') ?? '')
+/** The language the visitor chose, out of a `Cookie` header or `document.cookie`. */
+export function langCookie(cookies: string | null | undefined): ProLang | undefined {
+  const value = (cookies ?? '')
     .split(';')
     .map((part) => part.trim().split('='))
     .find(([name]) => name === LANG_COOKIE)?.[1];
+  return isProLang(value) ? value : undefined;
+}
+
+/** The language of a request to one of the cabinet's own routes, picked as the pages pick it. */
+export function requestLang(request: Request): ProLang {
   return pickLang(
-    cookie,
+    langCookie(request.headers.get('cookie')),
     request.headers.get('accept-language'),
     request.headers.get('cf-ipcountry'),
   );

@@ -4,6 +4,7 @@ import {
   type BrandDraft,
   brandBody,
   brandSaveError,
+  canSendAsIs,
   checkBrand,
   coverDate,
   DEFAULT_ACCENT,
@@ -204,6 +205,19 @@ describe('images', () => {
   it('never enlarges a small picture, and never shrinks a side to nothing', () => {
     expect(fitWithin(300, 200, 1200)).toEqual({ width: 300, height: 200 });
     expect(fitWithin(6000, 2, 1200)).toEqual({ width: 1200, height: 1 });
+  });
+
+  it('draws a drawing (an SVG logo) at the full size, however small it says it is', () => {
+    expect(fitWithin(120, 48, 1200, true)).toEqual({ width: 1200, height: 480 });
+    expect(fitWithin(4000, 1000, 1200, true)).toEqual({ width: 1200, height: 300 });
+  });
+
+  it('sends a file as it is only when the worker would take it as it is', () => {
+    expect(canSendAsIs({ size: 900_000, type: 'image/png' })).toBe(true);
+    expect(canSendAsIs({ size: IMAGE_MAX_BYTES, type: 'image/jpeg' })).toBe(true);
+    expect(canSendAsIs({ size: IMAGE_MAX_BYTES + 1, type: 'image/png' })).toBe(false);
+    expect(canSendAsIs({ size: 10, type: 'image/webp' })).toBe(false);
+    expect(canSendAsIs({ size: 0, type: 'image/png' })).toBe(false);
   });
 
   it('keeps transparency in a PNG; a photo without it goes as JPEG', () => {

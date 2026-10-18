@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useRef, useState } from 'react';
-import { imageError, imageProblem } from '@/lib/pro/brand';
+import { canSendAsIs, imageError, imageProblem } from '@/lib/pro/brand';
 import { useLang, useText } from './Lang';
 import { putImage, sendJson, signInAgain } from './post';
 import { prepareImage } from './prepare';
@@ -47,12 +47,18 @@ export function ImageField({
     setError(null);
     setState('uploading');
     const prepared = await prepareImage(file, kind);
-    if (!prepared) {
+    // A PNG or JPEG the worker takes as it is still goes when the browser could not prepare it.
+    const upload = prepared.ok ? prepared.blob : canSendAsIs(file) ? file : null;
+    if (!upload) {
       busy.current = false;
       setState('idle');
-      return setError(t.brand.image.unreadable);
+      return setError(
+        !prepared.ok && prepared.reason === 'too-big'
+          ? t.brand.image.tooBigAfterShrinking
+          : t.brand.image.unreadable,
+      );
     }
-    const { status, error: code } = await putImage(path, prepared);
+    const { status, error: code } = await putImage(path, upload);
     busy.current = false;
     setState('idle');
     if (status === 200) return onChange(true);

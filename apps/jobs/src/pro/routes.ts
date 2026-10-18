@@ -194,14 +194,17 @@ async function orderReading(request: Request, env: Env, account: ProAccount): Pr
 }
 
 /** The sample reading: texts only, nothing about whose chart it is. In Ukrainian for `?lang=uk`
- * once PRO_DEMO_ORDER_ID_UK names one; the Russian sample otherwise. The answer says which. */
+ * when PRO_DEMO_ORDER_ID_UK names a finished one; the Russian sample otherwise. The answer says
+ * which. */
 async function demo(env: Env, url: URL): Promise<Response> {
-  const id =
-    url.searchParams.get('lang') === 'uk' && env.PRO_DEMO_ORDER_ID_UK
-      ? env.PRO_DEMO_ORDER_ID_UK
-      : env.PRO_DEMO_ORDER_ID;
-  const row = id ? await demoReadingRow(env.DB, id) : null;
-  if (!row || row.step !== 'done') return json({ error: 'not found' }, 404);
+  const finished = async (id: string | undefined) => {
+    const row = id ? await demoReadingRow(env.DB, id) : null;
+    return row?.step === 'done' ? row : null;
+  };
+  const row =
+    (url.searchParams.get('lang') === 'uk' ? await finished(env.PRO_DEMO_ORDER_ID_UK) : null) ??
+    (await finished(env.PRO_DEMO_ORDER_ID));
+  if (!row) return json({ error: 'not found' }, 404);
   const view = await readingView(env, row);
   return json({ product: view.product, lang: view.lang, sections: view.sections });
 }

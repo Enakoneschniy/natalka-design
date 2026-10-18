@@ -157,7 +157,7 @@ describe('clients and readings over HTTP', () => {
   });
 
   it('shows the Ukrainian sample to a Ukrainian cabinet, the Russian one while there is none', async () => {
-    const owner = await sellerSession('demo-lang-owner', 3);
+    const owner = await sellerSession('demo-lang-owner', 4);
     const { id: clientId } = (await (
       await call('POST', '/v1/pro/clients', owner.session, { ...ANNA, consent: true })
     ).json()) as { id: string };
@@ -191,5 +191,14 @@ describe('clients and readings over HTTP', () => {
     expect(((await (await ask(both, 'ru'))?.json()) as { lang: string }).lang).toBe('ru');
     expect(((await (await ask(both))?.json()) as { lang: string }).lang).toBe('ru');
     expect(((await (await ask(onlyRu, 'uk'))?.json()) as { lang: string }).lang).toBe('ru');
+
+    // A Ukrainian sample still being written, or gone, is no reason to show none at all.
+    const { id: unfinished } = (await (
+      await call('POST', '/v1/pro/readings', owner.session, { product: 'natal', client_id: clientId, lang: 'uk' })
+    ).json()) as { id: string };
+    const writing = withVars({ PRO_DEMO_ORDER_ID: ru, PRO_DEMO_ORDER_ID_UK: unfinished });
+    expect(((await (await ask(writing, 'uk'))?.json()) as { lang: string }).lang).toBe('ru');
+    const gone = withVars({ PRO_DEMO_ORDER_ID: ru, PRO_DEMO_ORDER_ID_UK: crypto.randomUUID() });
+    expect(((await (await ask(gone, 'uk'))?.json()) as { lang: string }).lang).toBe('ru');
   });
 });

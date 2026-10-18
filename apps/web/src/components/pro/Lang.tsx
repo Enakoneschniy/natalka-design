@@ -1,13 +1,34 @@
 'use client';
 
-import { createContext, useContext } from 'react';
-import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, PRO_LANGS, type ProLang } from '@/lib/pro/lang';
+import { createContext, useContext, useEffect } from 'react';
+import {
+  LANG_COOKIE,
+  LANG_COOKIE_MAX_AGE,
+  langCookie,
+  PRO_LANGS,
+  type ProLang,
+} from '@/lib/pro/lang';
 import { type ProText, textFor } from '@/lib/pro/text';
 
 const LangContext = createContext<ProLang>('ru');
 
-/** The language the server rendered the page in, for the client components under it. */
+/** The language the server rendered the page in, for the client components under it. A tab left
+ * open while the language was switched in another loads again in the new one when it comes back
+ * into view, rather than mix the two. */
 export function LangProvider({ lang, children }: { lang: ProLang; children?: React.ReactNode }) {
+  useEffect(() => {
+    const follow = () => {
+      if (document.visibilityState === 'hidden') return;
+      const chosen = langCookie(document.cookie);
+      if (chosen && chosen !== lang) window.location.reload();
+    };
+    document.addEventListener('visibilitychange', follow);
+    window.addEventListener('focus', follow);
+    return () => {
+      document.removeEventListener('visibilitychange', follow);
+      window.removeEventListener('focus', follow);
+    };
+  }, [lang]);
   return <LangContext.Provider value={lang}>{children}</LangContext.Provider>;
 }
 

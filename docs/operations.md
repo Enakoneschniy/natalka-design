@@ -36,6 +36,12 @@ the new value on the caller and the callee one right after the other.
 
 The jobs worker rolls forward only: rows it has encrypted cannot be read by an older build.
 
+A release in which the web starts sending something the worker must act on goes the other way:
+jobs first, then web. The Ukrainian cabinet (2026-10-18) is one: an older worker ignores the
+reading's `lang` and would charge for a Russian reading the seller ordered in Ukrainian. Its order
+is: push `main` (the API container brings the texts check that knows «твій»), then natalka-jobs,
+then natalka-web. No migration.
+
 ## Cloudflare settings
 
 - **Zone chronika.me**: Always Use HTTPS on; minimum TLS 1.2; HSTS one year without

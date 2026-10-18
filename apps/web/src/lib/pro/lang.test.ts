@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickLang, plural } from './lang';
+import { langCookie, pickLang, plural } from './lang';
 
 describe('pickLang', () => {
   it('keeps the visitor’s own choice above everything', () => {
@@ -24,6 +24,17 @@ describe('pickLang', () => {
   it('ignores a cookie it does not know and a language refused with q=0', () => {
     expect(pickLang('en', 'uk', null)).toBe('uk');
     expect(pickLang(undefined, 'uk;q=0,ru', null)).toBe('ru');
+  });
+});
+
+describe('langCookie', () => {
+  it('reads the chosen language out of a cookie header, and nothing else', () => {
+    expect(langCookie('a=1; chp_lang=uk; b=2')).toBe('uk');
+    expect(langCookie('chp_lang=ru')).toBe('ru');
+    expect(langCookie('chp_lang=en')).toBeUndefined();
+    expect(langCookie('xchp_lang=uk')).toBeUndefined();
+    expect(langCookie('')).toBeUndefined();
+    expect(langCookie(null)).toBeUndefined();
   });
 });
 

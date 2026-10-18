@@ -360,7 +360,7 @@ describe('in Ukrainian', () => {
 
   it('titles a reading and dates it', () => {
     expect(readingTitle('synastry', 'uk', 'Оксана Мельник', 'Ігор Мельник')).toBe(
-      'Оксана і Ігор · Синастрія',
+      'Оксана та Ігор · Синастрія',
     );
     expect(readingTitle('natal', 'uk', undefined)).toBe('Клієнт · Натальна карта');
     const now = new Date('2026-10-04T12:00:00.000Z');

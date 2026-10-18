@@ -67,6 +67,8 @@ describe('proOfferUk', () => {
     expect(proOfferUk).toContain('протягом 14 днів з його покупки, якщо жоден кредит');
     expect(proOfferUk).toContain('кнопкою «Закрити кабінет» на сторінці акаунта');
     expect(proOfferUk).toContain('Кнопка «Видалити клієнта»');
-    expect(proOfferUk).toContain('не пізніше ніж за 72 години');
+    // «через», not «за»: the leak is reported within 72 hours after, not 72 hours before.
+    expect(proOfferUk).toContain('не пізніше ніж через 72 години після того');
+    expect(proOfferUk).toContain('за згоди одного з батьків або опікуна');
   });
 });
