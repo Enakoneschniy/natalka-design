@@ -38,8 +38,22 @@ export const CONTACTS_MAX = 4;
 export const CONTACT_MAX = 80;
 export const TEXT_MAX = 3000;
 export const SIGNATURE_MAX = 80;
+/** The most the jobs worker stores for one picture. */
 export const IMAGE_MAX_BYTES = 1_048_576;
-export const IMAGE_TYPES = ['image/png', 'image/jpeg'] as const;
+/** The most a chosen file may be before the browser shrinks it: a phone photo is a few MB. */
+export const SOURCE_MAX_BYTES = 26_214_400;
+/** The long side a picture is shrunk to. The PDF draws the logo at most 5 cm wide and the photo
+ * 4.5 × 7 cm, which is under 900 px at 300 dpi. */
+export const IMAGE_MAX_SIDE = 1200;
+
+export type ImageKind = 'logo' | 'photo';
+
+/** What a prepared picture is saved as, first choice first: transparency survives only in a PNG;
+ * a logo without it may still fall back to JPEG to fit the cap, a photo without it is a JPEG. */
+export const OUTPUT_TYPES: Record<ImageKind, { transparent: string[]; opaque: string[] }> = {
+  logo: { transparent: ['image/png'], opaque: ['image/png', 'image/jpeg'] },
+  photo: { transparent: ['image/png'], opaque: ['image/jpeg'] },
+};
 
 export const DEFAULT_ACCENT = '#E7B75C';
 
@@ -150,13 +164,33 @@ export function coverDate(date: Date): string {
   return `${two(date.getUTCDate())}.${two(date.getUTCMonth() + 1)}.${date.getUTCFullYear()}`;
 }
 
-/** Why a chosen file cannot be uploaded, or null when it can. */
+/** Why a chosen file cannot even be tried, or null when the browser may open it. Any picture is
+ * welcome, whatever its size: it is shrunk and saved as PNG or JPEG before upload. A file without
+ * a type (a HEIC on a desktop) is left for the browser to try. */
 export function imageProblem(file: { size: number; type: string }): string | null {
-  if (!(IMAGE_TYPES as readonly string[]).includes(file.type)) return 'Нужен файл PNG или JPEG';
+  if (file.type !== '' && !file.type.startsWith('image/'))
+    return 'Нужна картинка: PNG, JPEG или фото';
   if (file.size === 0) return 'Файл пустой';
-  if (file.size > IMAGE_MAX_BYTES) return 'Файл больше 1 МБ, уменьшите его';
+  if (file.size > SOURCE_MAX_BYTES) return 'Файл больше 25 МБ, выберите поменьше';
   return null;
 }
+
+/** The size a `width` × `height` picture is drawn at so its long side is at most `max`. */
+export function fitWithin(
+  width: number,
+  height: number,
+  max: number,
+): { width: number; height: number } {
+  const scale = Math.min(1, max / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+/** The browser could not open the chosen file, or could not make it small enough. */
+export const UNREADABLE_IMAGE =
+  'Не получилось открыть картинку. Сохраните её как PNG или JPEG и попробуйте ещё раз';
 
 export const NO_BRAND = 'Сначала сохраните имя бренда';
 

@@ -1,12 +1,14 @@
 'use client';
 
 import { useId, useRef, useState } from 'react';
-import { IMAGE_TYPES, imageError, imageProblem, NO_BRAND } from '@/lib/pro/brand';
+import { imageError, imageProblem, NO_BRAND, UNREADABLE_IMAGE } from '@/lib/pro/brand';
 import { putImage, sendJson, signInAgain, TRY_LATER } from './post';
+import { prepareImage } from './prepare';
 
-/** One brand picture (logo or photo): choose a PNG/JPEG up to 1 MB and it is uploaded at once;
- * a preview of what is stored, and «Удалить». The parent keeps whether a picture exists and a
- * version number, so the cover preview and this field show the same, freshly uploaded image. */
+/** One brand picture (logo or photo): choose any picture and it is shrunk, saved as PNG or JPEG
+ * and uploaded at once; a preview of what is stored, and «Удалить». The parent keeps whether a
+ * picture exists and a version number, so the cover preview and this field show the same, freshly
+ * uploaded image. */
 export function ImageField({
   kind,
   label,
@@ -41,7 +43,13 @@ export function ImageField({
     busy.current = true;
     setError(null);
     setState('uploading');
-    const { status, error: code } = await putImage(path, file);
+    const prepared = await prepareImage(file, kind);
+    if (!prepared) {
+      busy.current = false;
+      setState('idle');
+      return setError(UNREADABLE_IMAGE);
+    }
+    const { status, error: code } = await putImage(path, prepared);
     busy.current = false;
     setState('idle');
     if (status === 200) return onChange(true);
@@ -80,7 +88,7 @@ export function ImageField({
             id={id}
             className="visually-hidden"
             type="file"
-            accept={IMAGE_TYPES.join(',')}
+            accept="image/*"
             onChange={choose}
             disabled={state !== 'idle'}
           />

@@ -202,7 +202,7 @@ export function BrandForm({
       <ImageField
         kind="logo"
         label="Логотип"
-        hint="PNG или JPEG до 1 МБ. На обложке встанет вместо имени."
+        hint="Любая картинка с телефона или компьютера, большую уменьшим сами. На обложке встанет вместо имени."
         present={pictures.logo.present}
         version={pictures.logo.version}
         brandSaved={brandSaved}
@@ -265,7 +265,7 @@ export function BrandForm({
       <ImageField
         kind="photo"
         label="Фото"
-        hint="PNG или JPEG до 1 МБ. Встанет рядом со вступлением «От автора»."
+        hint="Любое фото с телефона или компьютера, большое уменьшим сами. Встанет рядом со вступлением «От автора»."
         present={pictures.photo.present}
         version={pictures.photo.version}
         brandSaved={brandSaved}

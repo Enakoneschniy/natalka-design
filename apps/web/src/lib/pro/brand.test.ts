@@ -8,11 +8,15 @@ import {
   coverDate,
   DEFAULT_ACCENT,
   draftFromBrand,
+  fitWithin,
+  IMAGE_MAX_BYTES,
   imageError,
   imageProblem,
   isAccent,
   lowContrast,
+  OUTPUT_TYPES,
   relativeLuminance,
+  SOURCE_MAX_BYTES,
   spacedName,
   TONE_SAMPLE,
 } from './brand';
@@ -172,15 +176,41 @@ describe('cover helpers', () => {
 });
 
 describe('images', () => {
-  it('takes a PNG or JPEG up to 1 MB', () => {
-    expect(imageProblem({ size: 1_048_576, type: 'image/png' })).toBeNull();
-    expect(imageProblem({ size: 10, type: 'image/jpeg' })).toBeNull();
+  it('takes any picture a phone or computer gives, however big: the browser shrinks it', () => {
+    expect(imageProblem({ size: 7_500_000, type: 'image/jpeg' })).toBeNull();
+    expect(imageProblem({ size: 10, type: 'image/png' })).toBeNull();
+    expect(imageProblem({ size: 10, type: 'image/webp' })).toBeNull();
+    expect(imageProblem({ size: 10, type: 'image/heic' })).toBeNull();
+    // A HEIC on a desktop often comes with no type at all; whether it opens is up to the browser.
+    expect(imageProblem({ size: 10, type: '' })).toBeNull();
   });
 
-  it('refuses other types, big files and empty files', () => {
-    expect(imageProblem({ size: 10, type: 'image/webp' })).toMatch(/PNG или JPEG/);
-    expect(imageProblem({ size: 1_048_577, type: 'image/png' })).toMatch(/1 МБ/);
+  it('refuses what is not a picture, an empty file and a giant one', () => {
+    expect(imageProblem({ size: 10, type: 'application/pdf' })).toMatch(/картинк/);
     expect(imageProblem({ size: 0, type: 'image/png' })).not.toBeNull();
+    expect(imageProblem({ size: SOURCE_MAX_BYTES, type: 'image/jpeg' })).toBeNull();
+    expect(imageProblem({ size: SOURCE_MAX_BYTES + 1, type: 'image/jpeg' })).toMatch(/25 МБ/);
+  });
+
+  it('shrinks the long side to the cap and keeps the shape', () => {
+    expect(fitWithin(4032, 3024, 1200)).toEqual({ width: 1200, height: 900 });
+    expect(fitWithin(3024, 4032, 1200)).toEqual({ width: 900, height: 1200 });
+  });
+
+  it('never enlarges a small picture, and never shrinks a side to nothing', () => {
+    expect(fitWithin(300, 200, 1200)).toEqual({ width: 300, height: 200 });
+    expect(fitWithin(6000, 2, 1200)).toEqual({ width: 1200, height: 1 });
+  });
+
+  it('keeps transparency in a PNG; a photo without it goes as JPEG', () => {
+    expect(OUTPUT_TYPES.logo.transparent).toEqual(['image/png']);
+    expect(OUTPUT_TYPES.logo.opaque).toEqual(['image/png', 'image/jpeg']);
+    expect(OUTPUT_TYPES.photo.transparent).toEqual(['image/png']);
+    expect(OUTPUT_TYPES.photo.opaque).toEqual(['image/jpeg']);
+  });
+
+  it('uploads no more than the jobs worker takes', () => {
+    expect(IMAGE_MAX_BYTES).toBe(1_048_576);
   });
 
   it('explains what the server said about an upload', () => {

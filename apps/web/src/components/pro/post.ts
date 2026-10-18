@@ -47,7 +47,7 @@ export async function sendJson<T>(
  * refuses anything else. The status is 0 when offline. */
 export async function putImage(
   path: string,
-  file: File,
+  file: Blob,
 ): Promise<{ status: number; error?: string }> {
   try {
     const response = await fetch(path, {
