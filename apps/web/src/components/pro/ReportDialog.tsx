@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { reportError } from '@/lib/pro/readings';
+import { useLang, useText } from './Lang';
 import { sendJson, signInAgain } from './post';
 
 const COMMENT_MAX = 1000;
@@ -18,6 +19,8 @@ export function ReportDialog({
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const lang = useLang();
+  const t = useText();
   const [comment, setComment] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -35,7 +38,7 @@ export function ReportDialog({
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = comment.trim();
-    if (!text) return setError(reportError(400));
+    if (!text) return setError(reportError(400, lang));
     if (inFlight.current) return;
     inFlight.current = true;
     setSending(true);
@@ -49,7 +52,7 @@ export function ReportDialog({
     if (status === 201) return setSent(true);
     inFlight.current = false;
     if (status === 401) return signInAgain();
-    setError(reportError(status));
+    setError(reportError(status, lang));
   }
 
   return (
@@ -66,18 +69,18 @@ export function ReportDialog({
     >
       {sent ? (
         <div className="form">
-          <h2 id="report-title">Спасибо, посмотрим</h2>
-          <p className="muted">Мы прочитаем ваше сообщение о разделе «{section.title}».</p>
+          <h2 id="report-title">{t.report.thanks}</h2>
+          <p className="muted">{t.report.willRead(section.title)}</p>
           <button type="button" className="btn ghost" onClick={() => dialog.current?.close()}>
-            Закрыть
+            {t.common.close}
           </button>
         </div>
       ) : (
         <form className="form" onSubmit={submit} noValidate>
-          <h2 id="report-title">Что не так с разделом?</h2>
+          <h2 id="report-title">{t.report.question}</h2>
           <p className="muted">«{section.title}»</p>
           <div className="field">
-            <label htmlFor="report-comment">Опишите проблему</label>
+            <label htmlFor="report-comment">{t.report.describe}</label>
             <textarea
               id="report-comment"
               className="input"
@@ -93,10 +96,10 @@ export function ReportDialog({
           </div>
           <div className="row">
             <button className="btn" type="submit" disabled={sending}>
-              {sending ? 'Отправляем…' : 'Отправить'}
+              {sending ? t.common.sending : t.report.submit}
             </button>
             <button type="button" className="btn ghost" onClick={() => dialog.current?.close()}>
-              Отмена
+              {t.common.cancel}
             </button>
           </div>
           {error ? (

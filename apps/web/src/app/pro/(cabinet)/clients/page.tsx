@@ -2,9 +2,11 @@ import Link from 'next/link';
 import { type ClientRow, ClientSearch } from '@/components/pro/ClientSearch';
 import { birthLine, initial, type ProClient } from '@/lib/pro/birth';
 import { cabinetGet } from '@/lib/pro/current';
+import { proLang, titleOf } from '@/lib/pro/locale';
 import type { ReadingSummary } from '@/lib/pro/readings';
+import { textFor } from '@/lib/pro/text';
 
-export const metadata = { title: 'Клиенты' };
+export const generateMetadata = titleOf('clients');
 
 /** How many readings each client is in, as the client or as the partner. */
 function readingCounts(readings: ReadingSummary[]): Map<string, number> {
@@ -18,39 +20,41 @@ function readingCounts(readings: ReadingSummary[]): Map<string, number> {
 }
 
 export default async function Clients() {
-  const [clients, readings] = await Promise.all([
+  const [clients, readings, lang] = await Promise.all([
     cabinetGet<{ clients?: ProClient[] }>('/v1/pro/clients'),
     cabinetGet<{ readings?: ReadingSummary[] }>('/v1/pro/readings'),
+    proLang(),
   ]);
+  const t = textFor(lang).clients;
   if (clients.status !== 200) throw new Error(`clients → ${clients.status}`);
   const counts = readingCounts(readings.status === 200 ? (readings.data?.readings ?? []) : []);
   const rows: ClientRow[] = (clients.data?.clients ?? []).map((client) => ({
     id: client.id,
     name: client.name,
     initial: initial(client.name),
-    line: birthLine(client),
+    line: birthLine(client, lang),
     readings: counts.get(client.id) ?? 0,
   }));
 
   return (
     <>
       <div className="row">
-        <h1 className="grow">Клиенты</h1>
+        <h1 className="grow">{t.title}</h1>
         <Link href="/clients/new" className="btn small">
-          + Клиент
+          {t.add}
         </Link>
       </div>
       {rows.length > 0 ? (
         <ClientSearch clients={rows} />
       ) : (
         <div className="card">
-          <p className="muted">Пока нет клиентов. Добавьте первого — это займёт минуту.</p>
+          <p className="muted">{t.empty}</p>
           <Link href="/clients/new" className="btn ghost small start">
-            Добавить клиента
+            {textFor(lang).common.addClient}
           </Link>
         </div>
       )}
-      <p className="muted">Данные рождения хранятся зашифрованными и видны только вам.</p>
+      <p className="muted">{t.privacy}</p>
     </>
   );
 }

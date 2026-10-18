@@ -10,14 +10,8 @@ import {
   purchaseWatch,
   type PurchaseStatus as Status,
 } from '@/lib/pro/purchases';
+import { useText } from './Lang';
 import { sendJson, signInAgain } from './post';
-
-const TEXT: Record<PurchaseWatch, string> = {
-  waiting: 'Оплата обрабатывается…',
-  paid: 'Кредиты зачислены',
-  failed: 'Оплата не прошла. Кредиты не списаны, попробуйте ещё раз.',
-  timeout: 'Оплата ещё обрабатывается. Обновите страницу через минуту.',
-};
 
 /** Back from Stripe (`/credits?purchase=<id>`): asks every few seconds, for a minute at most,
  * whether the webhook has settled the purchase, then refreshes the page so the balance and the
@@ -25,6 +19,7 @@ const TEXT: Record<PurchaseWatch, string> = {
  * watch before it starts. */
 export function PurchaseStatus({ id, initial }: { id: string; initial?: Status }) {
   const router = useRouter();
+  const TEXT = useText().purchases.watch;
   const [watch, setWatch] = useState<PurchaseWatch>(() => purchaseWatch(initial, 0));
 
   useEffect(() => {

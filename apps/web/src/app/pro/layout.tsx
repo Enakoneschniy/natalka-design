@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from 'next';
+import { LangProvider } from '@/components/pro/Lang';
+import { proLang } from '@/lib/pro/locale';
 import '@/styles/pro.css';
 
-/** The seller cabinet's own root: none of the shop's chrome, marketing or locale machinery. */
+/** The seller cabinet's own root: none of the shop's chrome, marketing or locale machinery. It
+ * speaks Ukrainian or Russian (`lib/pro/lang.ts`), chosen per visitor, with no locale in the
+ * address. */
 export const metadata: Metadata = {
   title: { default: 'Chronika Pro', template: '%s — Chronika Pro' },
   robots: { index: false, follow: false },
@@ -10,9 +14,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: '#06091A', colorScheme: 'dark' };
 
-export default function ProLayout({ children }: { children: React.ReactNode }) {
+export default async function ProLayout({ children }: { children: React.ReactNode }) {
+  const lang = await proLang();
   return (
-    <html lang="ru">
+    <html lang={lang}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -21,7 +26,9 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body className="pro">{children}</body>
+      <body className="pro">
+        <LangProvider lang={lang}>{children}</LangProvider>
+      </body>
     </html>
   );
 }

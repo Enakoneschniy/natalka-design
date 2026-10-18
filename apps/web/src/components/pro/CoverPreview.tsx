@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { spacedName } from '@/lib/pro/brand';
+import { useText } from './Lang';
 
 /** A stand-in chart wheel on the night sky, the planets in the accent. Not a real chart: it only
  * shows where the wheel sits and how the colour reads. Same seed every time, so it never jumps. */
@@ -88,28 +89,29 @@ export function CoverPreview({
   date: string;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const t = useText();
 
   useEffect(() => {
     if (canvas.current) drawWheel(canvas.current, accent);
   }, [accent]);
 
-  const wordmark = spacedName(name) || 'В А Ш Е   И М Я';
+  const wordmark = spacedName(name) || spacedName(t.brand.cover.yourName);
   return (
     <figure
       className="cover"
       style={{ '--brand': accent } as React.CSSProperties}
-      aria-label="Предпросмотр обложки"
+      aria-label={t.brand.cover.label}
     >
       <canvas ref={canvas} width={400} height={565} />
       {logoSrc ? (
         // biome-ignore lint/performance/noImgElement: a private, uncached proxy stream; next/image cannot fetch it
-        <img className="logo" src={logoSrc} alt="Логотип" />
+        <img className="logo" src={logoSrc} alt={t.brand.logo} />
       ) : (
         <span className="bname">{wordmark}</span>
       )}
       <span className="rule" />
-      <span className="ttl">Натальная карта</span>
-      <span className="who">Анна</span>
+      <span className="ttl">{t.products.natal}</span>
+      <span className="who">{t.brand.cover.sampleClient}</span>
       <span className="ft">{contact ? `${date} · ${contact}` : date}</span>
     </figure>
   );

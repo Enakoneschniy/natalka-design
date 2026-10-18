@@ -18,6 +18,7 @@ import {
   roman,
   sectionsLabel,
 } from '@/lib/pro/readings';
+import { useLang, useText } from './Lang';
 import { sendJson, signInAgain } from './post';
 import { ReportDialog } from './ReportDialog';
 import { SectionText } from './SectionText';
@@ -31,6 +32,8 @@ type RowState = { busy: boolean; error?: string };
  * then «Собрать PDF», then the download. While the texts are written or the PDF assembled, the
  * page asks again every five seconds, with one timer at most, stopped when it unmounts. */
 export function Reading({ initial, title }: { initial: ReadingView; title: string }) {
+  const lang = useLang();
+  const t = useText();
   const [view, setView] = useState(initial);
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
@@ -97,11 +100,11 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
 
   useEffect(() => {
     if (pdfBuildFailed(lastPdf.current, view.pdf) && assembling.current) {
-      setDockError({ text: 'Не удалось собрать PDF, попробуйте ещё раз', brand: false });
+      setDockError({ text: t.reading.pdfFailed, brand: false });
     }
     if (view.pdf !== 'building') assembling.current = false;
     lastPdf.current = view.pdf;
-  }, [view.pdf]);
+  }, [view.pdf, t]);
 
   const setRow = (sectionId: string, state: RowState) =>
     setRows((current) => ({ ...current, [sectionId]: state }));
@@ -118,7 +121,7 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
     if (status === 401) return signInAgain();
     if (status !== 200 || !data?.section) {
       inFlight.current.delete(sectionId);
-      setRow(sectionId, { busy: false, error: rewriteError(status, data?.error) });
+      setRow(sectionId, { busy: false, error: rewriteError(status, data?.error, lang) });
       return;
     }
     const section = data.section;
@@ -145,7 +148,7 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
       return;
     }
     const error = status === 409 ? data?.error : undefined;
-    setDockError({ text: assembleError(error), brand: error === 'no_brand' });
+    setDockError({ text: assembleError(error, lang), brand: error === 'no_brand' });
   }
 
   const toggle = (sectionId: string) =>
@@ -159,9 +162,9 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
   if (gone) {
     return (
       <div className="card">
-        <p>Отчёт не найден</p>
+        <p>{t.reading.notFound}</p>
         <Link href="/" className="btn ghost small start">
-          К отчётам
+          {t.reading.toReports}
         </Link>
       </div>
     );
@@ -171,26 +174,26 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
   const building = view.pdf === 'building';
   const canRewrite = ready && !view.frozen && !building;
   const dock = dockState(view);
-  const pill = readingPill({ ...view, missing: view.missing.length });
+  const pill = readingPill({ ...view, missing: view.missing.length }, lang);
 
   return (
     <>
       <div className="row head">
-        <Link href="/" className="back" aria-label="Назад к отчётам">
+        <Link href="/" className="back" aria-label={t.common.backToReports}>
           ‹
         </Link>
         <div className="grow">
           <h1 className="clip">{title}</h1>
           <p className="muted">
-            {view.total > 0 ? `${sectionsLabel(view.total)} · ` : ''}
-            {editLine(view)}
+            {view.total > 0 ? `${sectionsLabel(view.total, lang)} · ` : ''}
+            {editLine(view, lang)}
           </p>
         </div>
         <span className={`pill ${pill.tone}`}>{pill.label}</span>
       </div>
 
       {ready && view.missing.length > 0 ? (
-        <ul className="sections" aria-label="Недописанные разделы">
+        <ul className="sections" aria-label={t.reading.missingList}>
           {view.missing.map((m) => {
             const row = rows[m.id];
             return (
@@ -201,13 +204,11 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
                   </span>
                   <h2>{m.title}</h2>
                 </div>
-                <p className="note">
-                  Этот раздел не удалось написать. Допишем бесплатно, это не тратит перегенерации.
-                </p>
+                <p className="note">{t.reading.missingText}</p>
                 <div className="acts">
                   {row?.busy ? (
                     <span className="spin" role="status">
-                      Дописываем… ~30 секунд
+                      {t.reading.filling}
                     </span>
                   ) : (
                     <button
@@ -216,7 +217,7 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
                       disabled={building}
                       onClick={() => regenerate(m.id)}
                     >
-                      Дописать
+                      {t.reading.fill}
                     </button>
                   )}
                 </div>
@@ -232,7 +233,7 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
       ) : null}
 
       {view.sections.length > 0 ? (
-        <ol className="sections" aria-label="Разделы">
+        <ol className="sections" aria-label={t.reading.sectionsList} lang={view.lang ?? 'ru'}>
           {view.sections.map((section, index) => {
             const row = rows[section.id];
             const expanded = open.has(section.id);
@@ -246,7 +247,7 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
                 </div>
                 {row?.busy ? (
                   <p className="spin" role="status">
-                    Переписываем… ~30 секунд
+                    {t.reading.rewriting}
                   </p>
                 ) : (
                   <SectionText text={section.text} preview={!expanded} />
@@ -258,7 +259,7 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
                     aria-expanded={expanded}
                     onClick={() => toggle(section.id)}
                   >
-                    {expanded ? 'Свернуть' : 'Читать'}
+                    {expanded ? t.reading.collapse : t.reading.read}
                   </button>
                   {canRewrite ? (
                     <button
@@ -267,14 +268,14 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
                       disabled={row?.busy || view.regenerations_left <= 0}
                       onClick={() => regenerate(section.id)}
                     >
-                      Переписать
+                      {t.reading.rewrite}
                     </button>
                   ) : null}
                   <button
                     type="button"
                     className="btn ghost small"
-                    aria-label={`Сообщить о проблеме в разделе «${section.title}»`}
-                    title="Сообщить о проблеме"
+                    aria-label={t.reading.reportLabel(section.title)}
+                    title={t.reading.reportTitle}
                     onClick={() => setReporting({ id: section.id, title: section.title })}
                   >
                     ⚑
@@ -295,9 +296,11 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
         {dock === 'writing' ? (
           <>
             <p>
-              Пишем разбор…{' '}
+              {t.reading.writingNow}{' '}
               <span className="num">
-                {view.total > 0 ? `${view.written} из ${view.total}` : 'готовим план'}
+                {view.total > 0
+                  ? t.reading.writtenOf(view.written, view.total)
+                  : t.reading.planning}
               </span>
             </p>
             <span className="progress" aria-hidden="true">
@@ -307,33 +310,31 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
                 }}
               />
             </span>
-            <p className="muted">Можно закрыть страницу: разбор допишется сам.</p>
+            <p className="muted">{t.reading.canLeave}</p>
           </>
         ) : null}
-        {dock === 'failed' ? (
-          <p className="field-error">Не удалось написать разбор. Кредиты вернулись на счёт.</p>
-        ) : null}
+        {dock === 'failed' ? <p className="field-error">{t.reading.failed}</p> : null}
         {dock === 'missing' ? (
           <>
             <button type="button" className="btn" disabled>
-              Собрать PDF
+              {t.reading.assemble}
             </button>
-            <p className="muted center">{missingNote(view.missing)}</p>
+            <p className="muted center">{missingNote(view.missing, lang)}</p>
           </>
         ) : null}
         {dock === 'assemble' ? (
           <button type="button" className="btn" disabled={dockBusy} onClick={assemble}>
-            {dockBusy ? 'Отправляем…' : 'Собрать PDF'}
+            {dockBusy ? t.common.sending : t.reading.assemble}
           </button>
         ) : null}
         {dock === 'building' ? (
           <button type="button" className="btn" disabled>
-            Собираем PDF…
+            {t.reading.building}
           </button>
         ) : null}
         {dock === 'download' ? (
           <a className="btn" href={`/api/pro/x/readings/${id}/pdf`} download>
-            Скачать PDF{view.pages ? ` · ${view.pages} стр.` : ''}
+            {t.reading.download(view.pages)}
           </a>
         ) : null}
         {dockError ? (
@@ -342,7 +343,7 @@ export function Reading({ initial, title }: { initial: ReadingView; title: strin
             {dockError.brand ? (
               <>
                 {' '}
-                <Link href="/brand">Открыть «Бренд»</Link>
+                <Link href="/brand">{t.reading.openBrand}</Link>
               </>
             ) : null}
           </p>

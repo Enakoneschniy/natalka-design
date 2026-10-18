@@ -8,10 +8,12 @@ import {
   overJsonCap,
   relay,
 } from '@/lib/pro/guard';
+import { requestLang as letterLang } from '@/lib/pro/lang';
 
 const text = (value: unknown) => (typeof value === 'string' ? value : '');
 
-/** The sign-up form: forwards the fields to the jobs worker, which validates them. */
+/** The sign-up form: forwards the fields to the jobs worker, which validates them, and the
+ * language the cabinet speaks to this visitor, for the letter. */
 export async function POST(request: Request) {
   const blocked = notOnProHost(request);
   if (blocked) return blocked;
@@ -27,6 +29,7 @@ export async function POST(request: Request) {
         name: text(body.name).trim(),
         ...(invite ? { invite } : {}),
         terms: body.terms === true,
+        lang: letterLang(request),
       },
       clientIp(request),
     ),

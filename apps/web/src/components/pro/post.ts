@@ -67,10 +67,6 @@ export function signInAgain(): void {
   window.location.assign('/login?expired=1');
 }
 
-export { TRY_LATER } from '@/lib/pro/messages';
-
-export const UNAVAILABLE = 'Сервис временно недоступен, попробуйте через минуту';
-
 /** What the confirm page makes of `/api/pro/session`'s answer: a dead link (400) and a service
  * that is down (503) read differently; anything else, offline included, is a plain retry. */
 export function confirmOutcome(status: number): 'signed-in' | 'expired' | 'unavailable' | 'failed' {

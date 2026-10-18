@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { postJson, TRY_LATER } from './post';
+import { useText } from './Lang';
+import { postJson } from './post';
 
 type State = 'idle' | 'sending' | 'sent';
 
@@ -10,6 +11,7 @@ type State = 'idle' | 'sending' | 'sent';
  * Above the field it says why the visitor is here, when the session ran out or the cabinet was
  * just closed. */
 export function LoginForm({ expired, closed = false }: { expired: boolean; closed?: boolean }) {
+  const t = useText();
   const [email, setEmail] = useState('');
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export function LoginForm({ expired, closed = false }: { expired: boolean; close
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!email.trim()) {
-      setError('Укажите электронную почту.');
+      setError(t.login.noEmail);
       return;
     }
     setError(null);
@@ -25,20 +27,20 @@ export function LoginForm({ expired, closed = false }: { expired: boolean; close
     const { status } = await postJson('/api/pro/login', { email: email.trim() });
     if (status === 202) return setState('sent');
     setState('idle');
-    setError(status === 400 ? 'Проверьте адрес почты.' : TRY_LATER);
+    setError(status === 400 ? t.login.badEmail : t.common.tryLater);
   }
 
   return (
     <form onSubmit={submit} noValidate>
       {closed ? (
         <div className="card notice" role="status">
-          <strong>Кабинет закрыт, данные удалены.</strong>
+          <strong>{t.login.closed}</strong>
         </div>
       ) : (
-        expired && <p className="muted">Сессия закончилась, войдите снова.</p>
+        expired && <p className="muted">{t.login.expired}</p>
       )}
       <div className="field">
-        <label htmlFor="login-email">Электронная почта</label>
+        <label htmlFor="login-email">{t.common.email}</label>
         <input
           id="login-email"
           className="input"
@@ -59,18 +61,15 @@ export function LoginForm({ expired, closed = false }: { expired: boolean; close
         )}
       </div>
       <button className="btn" type="submit" disabled={state === 'sending'}>
-        Прислать ссылку для входа
+        {t.login.submit}
       </button>
       <p className="muted alt">
-        Нет кабинета? <Link href="/signup">Зарегистрироваться</Link>
+        {t.login.noCabinet} <Link href="/signup">{t.login.signup}</Link>
       </p>
       {state === 'sent' && (
         <div className="card notice" role="status">
-          <strong>Проверьте почту</strong>
-          <span className="muted">
-            Если у этого адреса есть кабинет, ссылка придёт в течение минуты и будет действовать 15
-            минут.
-          </span>
+          <strong>{t.login.sentTitle}</strong>
+          <span className="muted">{t.login.sentText}</span>
         </div>
       )}
     </form>

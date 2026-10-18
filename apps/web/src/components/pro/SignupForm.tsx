@@ -2,22 +2,19 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { postJson, TRY_LATER } from './post';
+import { useText } from './Lang';
+import { postJson } from './post';
 
 type Field = 'email' | 'name' | 'terms';
 type Errors = Partial<Record<Field | 'form', string>>;
-
-const MESSAGES: Record<Field, string> = {
-  email: 'Укажите электронную почту.',
-  name: 'Укажите имя или название бренда, до 60 символов.',
-  terms: 'Чтобы открыть кабинет, примите условия.',
-};
 
 const isField = (value: string | undefined): value is Field =>
   value === 'email' || value === 'name' || value === 'terms';
 
 /** Email, name, optional invite and the terms box. The cabinet opens only after the letter. */
 export function SignupForm() {
+  const t = useText();
+  const MESSAGES = t.signup.errors;
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [invite, setInvite] = useState('');
@@ -44,7 +41,7 @@ export function SignupForm() {
     setSending(false);
     if (status === 202) return setSent(true);
     if (status === 400 && isField(error)) return setErrors({ [error]: MESSAGES[error] });
-    setErrors({ form: TRY_LATER });
+    setErrors({ form: t.common.tryLater });
   }
 
   const describe = (field: Field) => (errors[field] ? `signup-${field}-error` : undefined);
@@ -58,7 +55,7 @@ export function SignupForm() {
   return (
     <form onSubmit={submit} noValidate>
       <div className="field">
-        <label htmlFor="signup-email">Электронная почта</label>
+        <label htmlFor="signup-email">{t.common.email}</label>
         <input
           id="signup-email"
           className="input"
@@ -74,7 +71,7 @@ export function SignupForm() {
         {fieldError('email')}
       </div>
       <div className="field">
-        <label htmlFor="signup-name">Имя или название бренда</label>
+        <label htmlFor="signup-name">{t.signup.name}</label>
         <input
           id="signup-name"
           className="input"
@@ -89,7 +86,7 @@ export function SignupForm() {
         {fieldError('name')}
       </div>
       <div className="field">
-        <label htmlFor="signup-invite">Инвайт-код (если есть)</label>
+        <label htmlFor="signup-invite">{t.signup.invite}</label>
         <input
           id="signup-invite"
           className="input mono"
@@ -110,13 +107,15 @@ export function SignupForm() {
             aria-describedby={describe('terms')}
           />
           <span>
-            Принимаю <Link href="/terms">условия оферты</Link> и обработки данных
+            {t.signup.termsBefore}
+            <Link href="/terms">{t.signup.termsLink}</Link>
+            {t.signup.termsAfter}
           </span>
         </label>
         {fieldError('terms')}
       </div>
       <button className="btn" type="submit" disabled={sending}>
-        Зарегистрироваться
+        {t.signup.submit}
       </button>
       {errors.form && (
         <p className="field-error" role="alert">
@@ -125,14 +124,12 @@ export function SignupForm() {
       )}
       {sent && (
         <div className="card notice" role="status">
-          <strong>Подтвердите почту</strong>
-          <span className="muted">
-            Мы отправили письмо со ссылкой. Кабинет откроется после перехода по ней.
-          </span>
+          <strong>{t.signup.sentTitle}</strong>
+          <span className="muted">{t.signup.sentText}</span>
         </div>
       )}
       <p className="muted alt">
-        Уже есть кабинет? <Link href="/login">Войти</Link>
+        {t.signup.haveCabinet} <Link href="/login">{t.common.signIn}</Link>
       </p>
     </form>
   );

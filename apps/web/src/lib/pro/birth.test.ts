@@ -84,7 +84,7 @@ describe('GENDER_CODE', () => {
 
 describe('checkClient', () => {
   it('passes a complete form', () => {
-    expect(checkClient(draft(), today)).toEqual({});
+    expect(checkClient(draft(), 'ru', today)).toEqual({});
   });
 
   it('names each field that is wrong', () => {
@@ -98,18 +98,27 @@ describe('checkClient', () => {
         gender: 'male',
         consent: false,
       },
+      'ru',
       today,
     );
     expect(Object.keys(errors).sort()).toEqual(['city', 'consent', 'date', 'name', 'time']);
   });
 
   it('caps the name at 80 characters after trimming', () => {
-    expect(checkClient(draft({ name: `  ${'а'.repeat(80)}  ` }), today).name).toBeUndefined();
-    expect(checkClient(draft({ name: 'а'.repeat(81) }), today).name).toBeDefined();
+    expect(checkClient(draft({ name: `  ${'а'.repeat(80)}  ` }), 'ru', today).name).toBeUndefined();
+    expect(checkClient(draft({ name: 'а'.repeat(81) }), 'ru', today).name).toBeDefined();
+  });
+
+  it('says what is wrong in the cabinet’s language', () => {
+    expect(checkClient(draft({ city: null }), 'ru', today).city).toBe('Выберите город из списка.');
+    expect(checkClient(draft({ city: null }), 'uk', today).city).toBe('Оберіть місто зі списку.');
+    expect(checkClient(draft({ name: '' }), 'uk', today).name).toBe(
+      'Вкажіть ім’я, до 80 символів.',
+    );
   });
 
   it('ignores the time when it is unknown', () => {
-    expect(checkClient(draft({ time: '', unknownTime: true }), today)).toEqual({});
+    expect(checkClient(draft({ time: '', unknownTime: true }), 'ru', today)).toEqual({});
   });
 });
 
@@ -141,14 +150,17 @@ describe('clientBody', () => {
 
 describe('birthLine', () => {
   it('shows the date, the time and the place', () => {
-    expect(birthLine({ date: '1994-05-15', time: '15:25', place: 'Евпатория' })).toBe(
+    expect(birthLine({ date: '1994-05-15', time: '15:25', place: 'Евпатория' }, 'ru')).toBe(
       '15.05.1994 · 15:25 · Евпатория',
     );
   });
 
   it('says when the time is unknown', () => {
-    expect(birthLine({ date: '1988-03-19', time: null, place: 'Киев' })).toBe(
+    expect(birthLine({ date: '1988-03-19', time: null, place: 'Киев' }, 'ru')).toBe(
       '19.03.1988 · время неизвестно · Киев',
+    );
+    expect(birthLine({ date: '1988-03-19', time: null, place: 'Kyiv' }, 'uk')).toBe(
+      '19.03.1988 · час невідомий · Kyiv',
     );
   });
 });

@@ -170,7 +170,21 @@ describe('api/pro routes', () => {
       const res = await login(post('login', { email: 'a@b.co' }));
       expect(res.status).toBe(202);
       expect(await res.json()).toEqual({ ok: true });
-      expect(forwarded().body).toEqual({ email: 'a@b.co' });
+      expect(forwarded().body).toEqual({ email: 'a@b.co', lang: 'ru' });
+    });
+
+    it('asks for the letter in the language the cabinet speaks to the visitor', async () => {
+      fetchMock.mockResolvedValue(reply(202, { ok: true }));
+      await login(post('login', { email: 'a@b.co' }, undefined, { 'accept-language': 'uk-UA,uk' }));
+      expect(forwarded().body).toEqual({ email: 'a@b.co', lang: 'uk' });
+      fetchMock.mockClear();
+      await login(
+        post('login', { email: 'a@b.co' }, undefined, {
+          'accept-language': 'uk-UA',
+          cookie: 'chp_lang=ru',
+        }),
+      );
+      expect(forwarded().body).toEqual({ email: 'a@b.co', lang: 'ru' });
     });
 
     it('maps a jobs 503 to 503', async () => {

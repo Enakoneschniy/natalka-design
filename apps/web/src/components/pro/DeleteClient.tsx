@@ -2,12 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { sendJson, signInAgain, TRY_LATER } from './post';
+import { useText } from './Lang';
+import { sendJson, signInAgain } from './post';
 
 /** «Удалить клиента», with a confirm step on the page itself: the client goes with every
  * reading they are in, and that cannot be undone. */
 export function DeleteClient({ id }: { id: string }) {
   const router = useRouter();
+  const t = useText();
   const [asking, setAsking] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,23 +32,23 @@ export function DeleteClient({ id }: { id: string }) {
       return;
     }
     setDeleting(false);
-    setError(TRY_LATER);
+    setError(t.common.tryLater);
   }
 
   if (!asking) {
     return (
       <button type="button" className="btn ghost danger start" onClick={() => setAsking(true)}>
-        Удалить клиента
+        {t.client.delete}
       </button>
     );
   }
 
   return (
     <div className="card confirm" role="alertdialog" aria-labelledby="delete-client-question">
-      <p id="delete-client-question">Удалить клиента и все его отчёты? Это нельзя отменить.</p>
+      <p id="delete-client-question">{t.client.deleteQuestion}</p>
       <div className="row">
         <button type="button" className="btn danger" onClick={remove} disabled={deleting}>
-          {deleting ? 'Удаляем…' : 'Удалить'}
+          {deleting ? t.common.deleting : t.common.delete}
         </button>
         <button
           ref={cancel}
@@ -55,7 +57,7 @@ export function DeleteClient({ id }: { id: string }) {
           onClick={() => setAsking(false)}
           disabled={deleting}
         >
-          Отмена
+          {t.common.cancel}
         </button>
       </div>
       {error && (

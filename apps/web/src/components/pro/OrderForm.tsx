@@ -4,8 +4,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { creditsLabel } from '@/lib/pro/credits';
-import { CREDIT_COST, orderLabel, PRODUCT_LABEL, PRODUCTS, type Product } from '@/lib/pro/readings';
-import { sendJson, signInAgain, TRY_LATER } from './post';
+import { PRO_LANGS, type ProLang } from '@/lib/pro/lang';
+import {
+  CREDIT_COST,
+  orderLabel,
+  PRODUCTS,
+  type Product,
+  productLabel,
+  productNote,
+} from '@/lib/pro/readings';
+import { useLang, useText } from './Lang';
+import { sendJson, signInAgain } from './post';
 
 export interface OrderClient {
   id: string;
@@ -14,16 +23,11 @@ export interface OrderClient {
   line: string;
 }
 
-const REFUSED: Record<string, string> = {
-  client: 'Выберите клиента.',
-  partner: 'Для синастрии выберите партнёра: другого клиента.',
-  product: 'Выберите, что подготовить.',
-};
-
 type Problem = { kind: 'credits' } | { kind: 'text'; text: string };
 
-/** The order: a client, a product (a synastry also needs a partner), what it costs and what is
- * left after. The button holds still while the order is on its way, so a double tap orders once. */
+/** The order: a client, a product (a synastry also needs a partner), the language it is written
+ * in (the cabinet's to begin with), what it costs and what is left after. The button holds still
+ * while the order is on its way, so a double tap orders once. */
 export function OrderForm({
   clients,
   balance,
@@ -34,6 +38,9 @@ export function OrderForm({
   initialClient?: string;
 }) {
   const router = useRouter();
+  const cabinetLang = useLang();
+  const t = useText();
+  const [readingLang, setReadingLang] = useState<ProLang>(cabinetLang);
   const [clientId, setClientId] = useState(initialClient ?? clients[0]?.id ?? '');
   const [partnerId, setPartnerId] = useState('');
   const [product, setProduct] = useState<Product>('natal');
@@ -52,7 +59,7 @@ export function OrderForm({
     event.preventDefault();
     if (inFlight.current) return;
     if (needsPartner && !partnerId) {
-      setProblem({ kind: 'text', text: REFUSED.partner as string });
+      setProblem({ kind: 'text', text: t.order.refused.partner as string });
       return;
     }
     inFlight.current = true;
@@ -63,6 +70,7 @@ export function OrderForm({
       'POST',
       {
         product,
+        lang: readingLang,
         client_id: clientId,
         ...(needsPartner ? { partner_client_id: partnerId } : {}),
       },
@@ -78,16 +86,18 @@ export function OrderForm({
     if (status === 401) return signInAgain();
     if (status === 402) return setProblem({ kind: 'credits' });
     if (status === 400) {
-      const text = (data?.error && REFUSED[data.error]) || data?.error || TRY_LATER;
+      const refused = data?.error && Object.hasOwn(t.order.refused, data.error);
+      const text =
+        (refused ? t.order.refused[data.error as string] : data?.error) || t.common.tryLater;
       return setProblem({ kind: 'text', text });
     }
-    setProblem({ kind: 'text', text: TRY_LATER });
+    setProblem({ kind: 'text', text: t.common.tryLater });
   }
 
   return (
     <form className="form" onSubmit={submit} noValidate>
       <div className="field">
-        <label htmlFor="order-client">Клиент</label>
+        <label htmlFor="order-client">{t.order.client}</label>
         <div className="item">
           <span className="av" aria-hidden="true">
             {client?.initial ?? '·'}
@@ -113,28 +123,47 @@ export function OrderForm({
         </div>
       </div>
       <fieldset className="field">
-        <legend className="label">Что подготовить</legend>
+        <legend className="label">{t.order.what}</legend>
         <div className="products">
-          {PRODUCTS.map((p) => (
+          {PRODUCTS.map((p) => {
+            const note = productNote(p, cabinetLang);
+            return (
+              <button
+                key={p}
+                type="button"
+                className={`prod${p === 'bundle' ? ' wide' : ''}`}
+                aria-pressed={product === p}
+                onClick={() => setProduct(p)}
+              >
+                <b>{productLabel(p, cabinetLang)}</b>
+                <span>
+                  {creditsLabel(CREDIT_COST[p], cabinetLang)}
+                  {note ? ` · ${note}` : ''}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+      <fieldset className="field">
+        <legend className="label">{t.order.language}</legend>
+        <div className="seg">
+          {PRO_LANGS.map((option) => (
             <button
-              key={p.product}
+              key={option}
               type="button"
-              className={`prod${p.product === 'bundle' ? ' wide' : ''}`}
-              aria-pressed={product === p.product}
-              onClick={() => setProduct(p.product)}
+              lang={option}
+              aria-pressed={readingLang === option}
+              onClick={() => setReadingLang(option)}
             >
-              <b>{PRODUCT_LABEL[p.product]}</b>
-              <span>
-                {creditsLabel(CREDIT_COST[p.product])}
-                {p.note ? ` · ${p.note}` : ''}
-              </span>
+              {t.lang.name[option]}
             </button>
           ))}
         </div>
       </fieldset>
       {needsPartner ? (
         <div className="field">
-          <label htmlFor="order-partner">Партнёр</label>
+          <label htmlFor="order-partner">{t.order.partner}</label>
           {partners.length > 0 ? (
             <select
               id="order-partner"
@@ -142,7 +171,7 @@ export function OrderForm({
               value={partnerId}
               onChange={(event) => setPartnerId(event.target.value)}
             >
-              <option value="">Выберите клиента</option>
+              <option value="">{t.order.choosePartner}</option>
               {partners.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -151,32 +180,32 @@ export function OrderForm({
             </select>
           ) : (
             <p className="muted">
-              Для синастрии нужен второй клиент. <Link href="/clients/new">Добавить клиента</Link>
+              {t.order.partnerNeeded}
+              <Link href="/clients/new">{t.common.addClient}</Link>
             </p>
           )}
         </div>
       ) : null}
       <div className="card">
         <div className="row">
-          <span className="grow muted">{left >= 0 ? 'После заказа останется' : 'Не хватает'}</span>
-          <span className="num strong">{creditsLabel(Math.abs(left))}</span>
+          <span className="grow muted">{left >= 0 ? t.order.left : t.order.short}</span>
+          <span className="num strong">{creditsLabel(Math.abs(left), cabinetLang)}</span>
         </div>
-        <span className="muted">
-          Пишется 10–15 минут. Можно закрыть страницу, отчёт появится в списке.
-        </span>
+        <span className="muted">{t.order.timing}</span>
       </div>
       {left >= 0 ? (
         <button className="btn" type="submit" disabled={sending}>
-          {sending ? 'Заказываем…' : orderLabel(cost)}
+          {sending ? t.order.submitting : orderLabel(cost, cabinetLang)}
         </button>
       ) : (
         <Link href="/credits" className="btn">
-          Пополнить кредиты
+          {t.order.topUp}
         </Link>
       )}
       {problem?.kind === 'credits' ? (
         <p className="field-error" role="alert">
-          Недостаточно кредитов. <Link href="/credits">Пополнить</Link>
+          {t.order.noCredits}
+          <Link href="/credits">{t.order.topUpShort}</Link>
         </p>
       ) : null}
       {problem?.kind === 'text' ? (

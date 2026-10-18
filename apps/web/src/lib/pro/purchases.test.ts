@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { TRY_LATER } from './messages';
 import {
   buyError,
   checkoutTarget,
   inviteOutcome,
   money,
   PACKS,
-  PAYMENT_UNAVAILABLE,
   PURCHASE_WAIT_MS,
   type Purchase,
+  perReading,
   purchaseId,
   purchaseLine,
   purchasePill,
@@ -16,6 +15,9 @@ import {
   refundLine,
   signupInviteNotice,
 } from './purchases';
+import { TEXT } from './text';
+
+const TRY_LATER = TEXT.ru.common.tryLater;
 
 describe('money', () => {
   it('shows whole euros without cents and cents with a comma', () => {
@@ -38,7 +40,12 @@ describe('PACKS', () => {
       ['p30', 30, '€249'],
       ['p100', 100, '€690'],
     ]);
-    expect(PACKS.map((p) => p.per)).toEqual(['€9,90 за отчёт', '€8,30 за отчёт', '€6,90 за отчёт']);
+    expect(PACKS.map((p) => perReading(p, 'ru'))).toEqual([
+      '€9,90 за отчёт',
+      '€8,30 за отчёт',
+      '€6,90 за отчёт',
+    ]);
+    expect(perReading(PACKS[0] as (typeof PACKS)[number], 'uk')).toBe('€9,90 за звіт');
     expect(PACKS.filter((p) => p.best).map((p) => p.id)).toEqual(['p30']);
   });
 });
@@ -57,32 +64,34 @@ const paid: Purchase = {
 
 describe('purchase history', () => {
   it('names each status with a pill', () => {
-    expect(purchasePill('paid')).toEqual({ label: 'оплачено', tone: 'ok' });
-    expect(purchasePill('pending')).toEqual({ label: 'ожидает оплаты', tone: 'wr' });
-    expect(purchasePill('failed')).toEqual({ label: 'не прошла', tone: 'bad' });
-    expect(purchasePill('refunded')).toEqual({ label: 'возвращено', tone: 'gold' });
+    expect(purchasePill('paid', 'ru')).toEqual({ label: 'оплачено', tone: 'ok' });
+    expect(purchasePill('pending', 'ru')).toEqual({ label: 'ожидает оплаты', tone: 'wr' });
+    expect(purchasePill('failed', 'ru')).toEqual({ label: 'не прошла', tone: 'bad' });
+    expect(purchasePill('refunded', 'ru')).toEqual({ label: 'возвращено', tone: 'gold' });
+    expect(purchasePill('paid', 'uk')).toEqual({ label: 'оплачено', tone: 'ok' });
+    expect(purchasePill('pending', 'uk')).toEqual({ label: 'очікує оплати', tone: 'wr' });
   });
 
   it('titles a purchase by its credits and price', () => {
-    expect(purchaseLine(paid)).toBe('30 кредитов · €249');
+    expect(purchaseLine(paid, 'ru')).toBe('30 кредитов · €249');
   });
 
   it('says until when a refundable pack can be returned: 14 days after payment', () => {
-    expect(refundLine(paid)).toBe('можно вернуть до 15 окт');
+    expect(refundLine(paid, 'ru')).toBe('можно вернуть до 15 окт');
   });
 
   it('says nothing about a refund when the pack is not refundable', () => {
-    expect(refundLine({ ...paid, refundable: false })).toBeNull();
-    expect(refundLine({ ...paid, paid_at: null })).toBeNull();
+    expect(refundLine({ ...paid, refundable: false }, 'ru')).toBeNull();
+    expect(refundLine({ ...paid, paid_at: null }, 'ru')).toBeNull();
   });
 });
 
 describe('buying', () => {
   it('tells a payment outage from any other failure', () => {
-    expect(buyError(503)).toBe(PAYMENT_UNAVAILABLE);
-    expect(PAYMENT_UNAVAILABLE).toBe('Оплата временно недоступна');
-    expect(buyError(502)).toBe(TRY_LATER);
-    expect(buyError(0)).toBe(TRY_LATER);
+    expect(buyError(503, 'ru')).toBe('Оплата временно недоступна');
+    expect(buyError(503, 'uk')).toBe('Оплата тимчасово недоступна');
+    expect(buyError(502, 'ru')).toBe(TRY_LATER);
+    expect(buyError(0, 'ru')).toBe(TRY_LATER);
   });
 
   it('goes only to Stripe Checkout over https or a page of the cabinet itself', () => {
@@ -133,30 +142,30 @@ describe('purchaseWatch', () => {
 
 describe('inviteOutcome', () => {
   it('reports the credits added, or why the code was refused', () => {
-    expect(inviteOutcome(200, { credits: 3 })).toEqual({ ok: true, text: '+3 кредита' });
-    expect(inviteOutcome(200, null)).toEqual({ ok: true, text: 'Код принят' });
-    expect(inviteOutcome(404, null)).toEqual({ ok: false, text: 'Код не найден' });
-    expect(inviteOutcome(409, null)).toEqual({
+    expect(inviteOutcome(200, { credits: 3 }, 'ru')).toEqual({ ok: true, text: '+3 кредита' });
+    expect(inviteOutcome(200, null, 'ru')).toEqual({ ok: true, text: 'Код принят' });
+    expect(inviteOutcome(404, null, 'ru')).toEqual({ ok: false, text: 'Код не найден' });
+    expect(inviteOutcome(409, null, 'ru')).toEqual({
       ok: false,
       text: 'Вы уже активировали инвайт-код',
     });
-    expect(inviteOutcome(502, null)).toEqual({ ok: false, text: TRY_LATER });
+    expect(inviteOutcome(502, null, 'ru')).toEqual({ ok: false, text: TRY_LATER });
   });
 });
 
 describe('signupInviteNotice', () => {
   it('says the sign-up code did not apply, until a code is taken', () => {
-    expect(signupInviteNotice('refused', false)).toEqual({
+    expect(signupInviteNotice('refused', false, 'ru')).toEqual({
       title: 'Инвайт-код не подошёл',
       text: 'Он уже использован или введён с ошибкой, кредиты по нему не начислены. Если у вас есть другой код, введите его ниже.',
     });
-    expect(signupInviteNotice('failed', false)).toEqual({
+    expect(signupInviteNotice('failed', false, 'ru')).toEqual({
       title: 'Инвайт-код не удалось применить',
       text: 'Кредиты по нему не начислены. Введите код ещё раз ниже.',
     });
-    expect(signupInviteNotice('refused', true)).toBeNull();
-    expect(signupInviteNotice(undefined, false)).toBeNull();
-    expect(signupInviteNotice(['refused', 'refused'], false)).toBeNull();
-    expect(signupInviteNotice('granted', false)).toBeNull();
+    expect(signupInviteNotice('refused', true, 'ru')).toBeNull();
+    expect(signupInviteNotice(undefined, false, 'ru')).toBeNull();
+    expect(signupInviteNotice(['refused', 'refused'], false, 'ru')).toBeNull();
+    expect(signupInviteNotice('granted', false, 'ru')).toBeNull();
   });
 });

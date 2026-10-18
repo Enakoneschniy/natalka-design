@@ -2,8 +2,9 @@
  * client components share it. */
 
 import { creditsLabel } from './credits';
-import { TRY_LATER } from './messages';
+import type { ProLang } from './lang';
 import { dayMonth, type Pill } from './readings';
+import { textFor } from './text';
 
 export type PackId = 'p10' | 'p30' | 'p100';
 export type PurchaseStatus = 'pending' | 'paid' | 'failed' | 'refunded';
@@ -34,8 +35,6 @@ export interface Pack {
   id: PackId;
   credits: number;
   amount_minor: number;
-  /** «€8,30 за отчёт». */
-  per: string;
   /** The pack the tab points out as the better deal. */
   best: boolean;
 }
@@ -44,9 +43,12 @@ const pack = (id: PackId, credits: number, amount_minor: number, best = false): 
   id,
   credits,
   amount_minor,
-  per: `${money(Math.round(amount_minor / credits), 'EUR')} за отчёт`,
   best,
 });
+
+/** «€8,30 за отчёт». */
+export const perReading = (p: Pick<Pack, 'credits' | 'amount_minor'>, lang: ProLang): string =>
+  textFor(lang).purchases.per(money(Math.round(p.amount_minor / p.credits), 'EUR'));
 
 /** The packs for sale, the same as jobs `PACKS` (the price charged is always the jobs one). */
 export const PACKS: Pack[] = [
@@ -55,20 +57,24 @@ export const PACKS: Pack[] = [
   pack('p100', 100, 69000),
 ];
 
-const PILL: Record<PurchaseStatus, Pill> = {
-  paid: { label: 'оплачено', tone: 'ok' },
-  pending: { label: 'ожидает оплаты', tone: 'wr' },
-  failed: { label: 'не прошла', tone: 'bad' },
-  refunded: { label: 'возвращено', tone: 'gold' },
+const PILL_TONE: Record<PurchaseStatus, Pill['tone']> = {
+  paid: 'ok',
+  pending: 'wr',
+  failed: 'bad',
+  refunded: 'gold',
 };
 
-export function purchasePill(status: PurchaseStatus): Pill {
-  return PILL[status] ?? PILL.pending;
+export function purchasePill(status: PurchaseStatus, lang: ProLang): Pill {
+  const known = Object.hasOwn(PILL_TONE, status) ? status : 'pending';
+  return { label: textFor(lang).purchases.pill[known], tone: PILL_TONE[known] };
 }
 
 /** «30 кредитов · €249». */
-export function purchaseLine(p: Pick<Purchase, 'credits' | 'amount_minor' | 'currency'>): string {
-  return `${creditsLabel(p.credits)} · ${money(p.amount_minor, p.currency)}`;
+export function purchaseLine(
+  p: Pick<Purchase, 'credits' | 'amount_minor' | 'currency'>,
+  lang: ProLang,
+): string {
+  return `${creditsLabel(p.credits, lang)} · ${money(p.amount_minor, p.currency)}`;
 }
 
 /** A paid pack may be returned for this many days (jobs `REFUND_DAYS`). */
@@ -76,18 +82,21 @@ export const REFUND_DAYS = 14;
 
 /** «можно вернуть до 15 окт» while jobs says the pack is refundable; null otherwise. A hint for
  * the seller: the refund itself is made by hand in Stripe. */
-export function refundLine(p: Pick<Purchase, 'refundable' | 'paid_at'>): string | null {
+export function refundLine(
+  p: Pick<Purchase, 'refundable' | 'paid_at'>,
+  lang: ProLang,
+): string | null {
   if (!p.refundable || !p.paid_at) return null;
   const paid = Date.parse(p.paid_at);
   if (Number.isNaN(paid)) return null;
-  return `можно вернуть до ${dayMonth(new Date(paid + REFUND_DAYS * 86_400_000).toISOString())}`;
+  const until = dayMonth(new Date(paid + REFUND_DAYS * 86_400_000).toISOString(), lang);
+  return textFor(lang).purchases.refundUntil(until);
 }
 
-export const PAYMENT_UNAVAILABLE = 'Оплата временно недоступна';
-
 /** What a failed `POST purchases` tells the seller. */
-export function buyError(status: number): string {
-  return status === 503 ? PAYMENT_UNAVAILABLE : TRY_LATER;
+export function buyError(status: number, lang: ProLang): string {
+  const t = textFor(lang);
+  return status === 503 ? t.purchases.paymentUnavailable : t.common.tryLater;
 }
 
 const STRIPE_CHECKOUT = 'checkout.stripe.com';
@@ -137,15 +146,17 @@ export function purchaseWatch(
 export function inviteOutcome(
   status: number,
   data: { credits?: number } | null,
+  lang: ProLang,
 ): { ok: boolean; text: string } {
+  const t = textFor(lang);
   if (status === 200) {
     return typeof data?.credits === 'number'
-      ? { ok: true, text: `+${creditsLabel(data.credits)}` }
-      : { ok: true, text: 'Код принят' };
+      ? { ok: true, text: `+${creditsLabel(data.credits, lang)}` }
+      : { ok: true, text: t.invite.accepted };
   }
-  if (status === 404) return { ok: false, text: 'Код не найден' };
-  if (status === 409) return { ok: false, text: 'Вы уже активировали инвайт-код' };
-  return { ok: false, text: TRY_LATER };
+  if (status === 404) return { ok: false, text: t.invite.notFound };
+  if (status === 409) return { ok: false, text: t.invite.already };
+  return { ok: false, text: t.common.tryLater };
 }
 
 /** What Кредиты says on arrival from a sign-up whose code did not apply (`?invite=`): nothing once
@@ -153,19 +164,11 @@ export function inviteOutcome(
 export function signupInviteNotice(
   param: string | string[] | undefined,
   redeemed: boolean,
+  lang: ProLang,
 ): { title: string; text: string } | null {
   if (redeemed) return null;
-  if (param === 'refused') {
-    return {
-      title: 'Инвайт-код не подошёл',
-      text: 'Он уже использован или введён с ошибкой, кредиты по нему не начислены. Если у вас есть другой код, введите его ниже.',
-    };
-  }
-  if (param === 'failed') {
-    return {
-      title: 'Инвайт-код не удалось применить',
-      text: 'Кредиты по нему не начислены. Введите код ещё раз ниже.',
-    };
-  }
+  const t = textFor(lang).invite;
+  if (param === 'refused') return { title: t.refusedTitle, text: t.refusedText };
+  if (param === 'failed') return { title: t.failedTitle, text: t.failedText };
   return null;
 }

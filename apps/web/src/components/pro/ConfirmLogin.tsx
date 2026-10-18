@@ -2,15 +2,17 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { afterSignIn, confirmOutcome, postJson, TRY_LATER, UNAVAILABLE } from './post';
+import { useText } from './Lang';
+import { afterSignIn, confirmOutcome, postJson } from './post';
 
 /** A link that no longer signs anyone in, and the way to a new one. */
 export function LinkExpired() {
+  const t = useText();
   return (
     <div className="card notice bad" role="alert">
-      <strong>Ссылка устарела или уже использована</strong>
+      <strong>{t.confirm.expired}</strong>
       <span className="muted">
-        <Link href="/login">Запросите новую ссылку для входа</Link>
+        <Link href="/login">{t.confirm.newLink}</Link>
       </span>
     </div>
   );
@@ -18,6 +20,7 @@ export function LinkExpired() {
 
 /** The one button that spends the emailed token. Opening the link alone spends nothing. */
 export function ConfirmLogin({ token }: { token: string }) {
+  const t = useText();
   const [state, setState] = useState<'idle' | 'sending' | 'expired' | 'unavailable' | 'failed'>(
     'idle',
   );
@@ -35,11 +38,11 @@ export function ConfirmLogin({ token }: { token: string }) {
   return (
     <>
       <button className="btn" type="button" onClick={enter} disabled={state === 'sending'}>
-        Войти
+        {t.common.signIn}
       </button>
       {(state === 'failed' || state === 'unavailable') && (
         <p className="field-error" role="alert">
-          {state === 'unavailable' ? UNAVAILABLE : TRY_LATER}
+          {state === 'unavailable' ? t.common.unavailable : t.common.tryLater}
         </p>
       )}
     </>

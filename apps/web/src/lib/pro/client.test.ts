@@ -52,7 +52,7 @@ describe('pro client', () => {
 
     it.each([301, 302, 303, 307, 308])('%s is an outage for every call', async (status) => {
       fetchMock.mockResolvedValue(redirect(status));
-      await expect(requestLogin('a@b.co')).rejects.toThrow(`redirect → ${status}`);
+      await expect(requestLogin('a@b.co', 'ru')).rejects.toThrow(`redirect → ${status}`);
       await expect(startSession('t-1')).rejects.toThrow(`redirect → ${status}`);
       await expect(peekLogin('t-1')).rejects.toThrow(`redirect → ${status}`);
     });
@@ -77,21 +77,24 @@ describe('pro client', () => {
     expect(out).toEqual({ status: 401, data: null });
   });
 
-  it('requestLogin posts the email to /v1/pro/login', async () => {
+  it('requestLogin posts the email and the letter language to /v1/pro/login', async () => {
     fetchMock.mockResolvedValue(reply(202));
-    await requestLogin('a@b.co');
+    await requestLogin('a@b.co', 'uk');
     const [url, init] = sent();
     expect(url).toBe('https://jobs.test/v1/pro/login');
     expect(init?.method).toBe('POST');
-    expect(JSON.parse(String(init?.body))).toEqual({ email: 'a@b.co' });
+    expect(JSON.parse(String(init?.body))).toEqual({ email: 'a@b.co', lang: 'uk' });
     expect(headersOf(init).authorization).toBeUndefined();
   });
 
   describe('the visitor address for the sign-in throttle', () => {
     it('goes along as x-client-ip with sign-in, sign-up and the session', async () => {
       fetchMock.mockResolvedValue(reply(202));
-      await requestLogin('a@b.co', '203.0.113.7');
-      await requestSignup({ email: 'a@b.co', name: 'Мария', terms: true }, '2001:db8::1');
+      await requestLogin('a@b.co', 'ru', '203.0.113.7');
+      await requestSignup(
+        { email: 'a@b.co', name: 'Мария', terms: true, lang: 'ru' },
+        '2001:db8::1',
+      );
       fetchMock.mockResolvedValue(reply(200, { session: 's-1', account: {} }));
       await startSession('t-1', '198.51.100.4');
       const ips = fetchMock.mock.calls.map(([, init]) => headersOf(init)['x-client-ip']);
@@ -100,8 +103,8 @@ describe('pro client', () => {
 
     it('is left out when it is not known', async () => {
       fetchMock.mockResolvedValue(reply(202));
-      await requestLogin('a@b.co', null);
-      await requestLogin('a@b.co');
+      await requestLogin('a@b.co', 'ru', null);
+      await requestLogin('a@b.co', 'ru');
       for (const [, init] of fetchMock.mock.calls) {
         expect(headersOf(init)).not.toHaveProperty('x-client-ip');
       }

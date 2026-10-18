@@ -9,6 +9,16 @@ vi.mock('@/lib/pro/client', async (original) => ({
 }));
 vi.mock('@/lib/pro/current', () => ({ liveSeller: () => liveSeller() }));
 
+const pageLang: { current: 'ru' | 'uk' } = { current: 'ru' };
+vi.mock('@/lib/pro/locale', async () => {
+  const { textFor } = await import('@/lib/pro/text');
+  return {
+    proLang: async () => pageLang.current,
+    proText: async () => textFor(pageLang.current),
+    titleOf: () => async () => ({ title: '' }),
+  };
+});
+
 const { default: ConfirmLoginPage } = await import('./page');
 
 const render = async (token = 't-1') =>

@@ -9,6 +9,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { City } from '@/app/api/cities/route';
 import { cityLabel } from '@/lib/birth-input';
 import { coordinatesLine } from '@/lib/pro/birth';
+import { useText } from './Lang';
 
 /** The birth city, from the site's own city search: picking one gives the coordinates and the
  * time zone. Typing again clears the pick, so a half-edited name never passes as a city. */
@@ -26,6 +27,7 @@ export function CitySearch({
   describedBy?: string;
 }) {
   const listId = useId();
+  const t = useText();
   const box = useRef<HTMLDivElement>(null);
   const [text, setText] = useState(value ? cityLabel(value) : '');
   const [options, setOptions] = useState<City[]>([]);
@@ -114,7 +116,7 @@ export function CitySearch({
         }}
         onKeyDown={onKeyDown}
         onFocus={() => options.length > 0 && setOpen(true)}
-        placeholder="Начните вводить название"
+        placeholder={t.clientForm.cityPlaceholder}
         autoComplete="off"
         role="combobox"
         aria-expanded={open}
@@ -125,7 +127,7 @@ export function CitySearch({
         aria-describedby={describedBy}
       />
       {open && options.length > 0 ? (
-        <ul className="options" id={listId} role="listbox" aria-label="Города">
+        <ul className="options" id={listId} role="listbox" aria-label={t.clientForm.cities}>
           {options.map((city, index) => (
             <li
               key={city.id}

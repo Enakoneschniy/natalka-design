@@ -349,6 +349,55 @@ body.pro {
   border-color: var(--line-strong);
 }
 
+/* «UA · RU»: the cabinet's language, two small letters in a pill, the chosen one in the accent. A
+   fieldset, so it carries no browser margin, padding or minimum width. */
+.lang-switch {
+  display: inline-flex;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.lang-switch button {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 5px 7px;
+  cursor: pointer;
+}
+
+.lang-switch button:hover {
+  color: var(--text);
+}
+
+.lang-switch button[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* On a phone the bar has no room for it next to the name, the balance and «Выйти»: there the
+   language is chosen on the sign-in pages and on the account page. Wider screens show it. */
+@media (max-width: 719.98px) {
+  .shell .bar .lang-switch {
+    display: none;
+  }
+}
+
+/* On the sign-in pages the switch sits on the eyebrow's line, at its end. */
+.eyebrow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* A bar inside a padded screen (the public terms page) brings no side padding of its own. */
 .bar.flush {
   padding: 14px 0 10px;
@@ -533,8 +582,14 @@ body.pro {
     margin: 4px 12px;
   }
 
-  .side .signout {
+  .side .lang-switch {
     order: 4;
+    align-self: flex-start;
+    margin: 4px 12px 0;
+  }
+
+  .side .signout {
+    order: 5;
     align-self: flex-start;
     margin: 4px 12px 0;
   }
@@ -904,6 +959,13 @@ fieldset.field {
   border: 1px solid var(--line-strong);
   border-radius: var(--r-field);
   overflow: hidden;
+}
+
+/* The language choice on the account page is a fieldset of its own. */
+fieldset.seg {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
 }
 
 .seg button {

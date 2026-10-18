@@ -1,7 +1,8 @@
 /** The seller's brand as the cabinet's form holds it, and the rules the jobs worker applies to it
  * (apps/jobs/src/pro/brand.ts), checked here first so a refusal reads in plain words. */
 
-import { TRY_LATER } from './messages';
+import type { ProLang } from './lang';
+import { textFor } from './text';
 
 export type Tone = 'vy' | 'ty';
 
@@ -63,21 +64,24 @@ export const ACCENTS = [DEFAULT_ACCENT, '#8E7CC3', '#D98CA6', '#7FB8C9', '#9BC48
 /** Below this relative luminance an accent is hard to see on the dark cover. */
 export const LOW_LUMINANCE = 0.18;
 
-export const LOW_CONTRAST_WARNING = 'Плохо видно на тёмной обложке';
-
-export const TONE_SAMPLE: Record<Tone, string> = {
-  vy: 'Ваша Луна в Раке говорит о том, что вам важно чувствовать опору дома.',
-  ty: 'Твоя Луна в Раке говорит о том, что тебе важно чувствовать опору дома.',
-};
-
-export const BRAND_FIELD_ERROR: Record<BrandField, string> = {
-  name: `Имя: от 1 до ${NAME_MAX} символов`,
-  contacts: `Контакты: не больше ${CONTACTS_MAX} строк, каждая до ${CONTACT_MAX} символов`,
-  accent: 'Цвет в формате #RRGGBB, например #E7B75C',
-  intro: `Вступление: не больше ${TEXT_MAX} символов`,
-  outro: `Заключение: не больше ${TEXT_MAX} символов`,
-  signature: `Подпись: не больше ${SIGNATURE_MAX} символов`,
-};
+/** What each field's rule says when it is broken, in the cabinet's language. */
+export function brandFieldError(field: BrandField, lang: ProLang): string {
+  const errors = textFor(lang).brand.errors;
+  switch (field) {
+    case 'name':
+      return errors.name(NAME_MAX);
+    case 'contacts':
+      return errors.contacts(CONTACTS_MAX, CONTACT_MAX);
+    case 'accent':
+      return errors.accent;
+    case 'intro':
+      return errors.intro(TEXT_MAX);
+    case 'outro':
+      return errors.outro(TEXT_MAX);
+    case 'signature':
+      return errors.signature(SIGNATURE_MAX);
+  }
+}
 
 const ACCENT = /^#[0-9A-Fa-f]{6}$/;
 
@@ -101,25 +105,32 @@ export const lowContrast = (accent: string): boolean =>
 const contactLines = (contacts: string[]): string[] =>
   contacts.map((line) => line.trim()).filter((line) => line.length > 0);
 
-/** Which fields break the jobs worker's rules, each with its message. Empty when all is well. */
-export function checkBrand(draft: BrandDraft): Partial<Record<BrandField, string>> {
-  const errors: Partial<Record<BrandField, string>> = {};
+/** Which fields break the jobs worker's rules. Empty when all is well. */
+export function brandProblems(draft: BrandDraft): BrandField[] {
+  const problems: BrandField[] = [];
   const name = draft.name.trim();
-  if (name.length < 1 || name.length > NAME_MAX) errors.name = BRAND_FIELD_ERROR.name;
+  if (name.length < 1 || name.length > NAME_MAX) problems.push('name');
   const contacts = contactLines(draft.contacts);
   if (contacts.length > CONTACTS_MAX || contacts.some((line) => line.length > CONTACT_MAX)) {
-    errors.contacts = BRAND_FIELD_ERROR.contacts;
+    problems.push('contacts');
   }
-  if (!isAccent(draft.accent.trim())) errors.accent = BRAND_FIELD_ERROR.accent;
-  if (draft.intro.trim().length > TEXT_MAX) errors.intro = BRAND_FIELD_ERROR.intro;
-  if (draft.outro.trim().length > TEXT_MAX) errors.outro = BRAND_FIELD_ERROR.outro;
-  if (draft.signature.trim().length > SIGNATURE_MAX) errors.signature = BRAND_FIELD_ERROR.signature;
-  return errors;
+  if (!isAccent(draft.accent.trim())) problems.push('accent');
+  if (draft.intro.trim().length > TEXT_MAX) problems.push('intro');
+  if (draft.outro.trim().length > TEXT_MAX) problems.push('outro');
+  if (draft.signature.trim().length > SIGNATURE_MAX) problems.push('signature');
+  return problems;
+}
+
+/** Which fields break the jobs worker's rules, each with its message. Empty when all is well. */
+export function checkBrand(draft: BrandDraft, lang: ProLang): Partial<Record<BrandField, string>> {
+  return Object.fromEntries(
+    brandProblems(draft).map((field) => [field, brandFieldError(field, lang)]),
+  );
 }
 
 /** The `PUT brand` body for a draft, or null when any field breaks the rules. */
 export function brandBody(draft: BrandDraft): BrandBody | null {
-  if (Object.keys(checkBrand(draft)).length > 0) return null;
+  if (brandProblems(draft).length > 0) return null;
   return {
     name: draft.name.trim(),
     contacts: contactLines(draft.contacts),
@@ -167,11 +178,11 @@ export function coverDate(date: Date): string {
 /** Why a chosen file cannot even be tried, or null when the browser may open it. Any picture is
  * welcome, whatever its size: it is shrunk and saved as PNG or JPEG before upload. A file without
  * a type (a HEIC on a desktop) is left for the browser to try. */
-export function imageProblem(file: { size: number; type: string }): string | null {
-  if (file.type !== '' && !file.type.startsWith('image/'))
-    return 'Нужна картинка: PNG, JPEG или фото';
-  if (file.size === 0) return 'Файл пустой';
-  if (file.size > SOURCE_MAX_BYTES) return 'Файл больше 25 МБ, выберите поменьше';
+export function imageProblem(file: { size: number; type: string }, lang: ProLang): string | null {
+  const t = textFor(lang).brand.image;
+  if (file.type !== '' && !file.type.startsWith('image/')) return t.notPicture;
+  if (file.size === 0) return t.empty;
+  if (file.size > SOURCE_MAX_BYTES) return t.tooBigSource;
   return null;
 }
 
@@ -188,24 +199,20 @@ export function fitWithin(
   };
 }
 
-/** The browser could not open the chosen file, or could not make it small enough. */
-export const UNREADABLE_IMAGE =
-  'Не получилось открыть картинку. Сохраните её как PNG или JPEG и попробуйте ещё раз';
-
-export const NO_BRAND = 'Сначала сохраните имя бренда';
-
 /** What an image upload's answer means for the seller. */
-export function imageError(status: number, error?: string): string {
-  if (status === 409 || error === 'no_brand') return NO_BRAND;
-  if (status === 413) return 'Файл больше 1 МБ, уменьшите его';
-  if (status === 415) return 'Нужен файл PNG или JPEG';
-  if (status === 400) return 'Не удалось прочитать картинку: нужен PNG или JPEG до 4000 px';
-  return TRY_LATER;
+export function imageError(status: number, error: string | undefined, lang: ProLang): string {
+  const t = textFor(lang);
+  if (status === 409 || error === 'no_brand') return t.brand.image.noBrand;
+  if (status === 413) return t.brand.image.tooBig;
+  if (status === 415) return t.brand.image.wrongType;
+  if (status === 400) return t.brand.image.refused;
+  return t.common.tryLater;
 }
 
 /** What a refused `PUT brand` means for the seller. */
-export function brandSaveError(status: number, error?: string): string {
-  if (status === 400 && error === 'tone') return 'Выберите обращение: на «вы» или на «ты»';
-  if (status === 400) return 'Проверьте поля: сервер их не принял';
-  return TRY_LATER;
+export function brandSaveError(status: number, error: string | undefined, lang: ProLang): string {
+  const t = textFor(lang);
+  if (status === 400 && error === 'tone') return t.brand.saveTone;
+  if (status === 400) return t.brand.saveRefused;
+  return t.common.tryLater;
 }

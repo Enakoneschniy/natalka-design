@@ -2,12 +2,22 @@
 
 import { useRef, useState } from 'react';
 import { creditsLabel } from '@/lib/pro/credits';
-import { buyError, checkoutTarget, money, PACKS, type PackId } from '@/lib/pro/purchases';
-import { sendJson, signInAgain, TRY_LATER } from './post';
+import {
+  buyError,
+  checkoutTarget,
+  money,
+  PACKS,
+  type PackId,
+  perReading,
+} from '@/lib/pro/purchases';
+import { useLang, useText } from './Lang';
+import { sendJson, signInAgain } from './post';
 
 /** The three packs. «Купить» opens a purchase and goes to its checkout page; every button holds
  * still while one purchase is on its way, so a double tap opens one checkout. */
 export function BuyPack() {
+  const lang = useLang();
+  const t = useText();
   const [buying, setBuying] = useState<PackId | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   // State lands on the next render; two taps in one frame both see `buying` null.
@@ -21,7 +31,7 @@ export function BuyPack() {
     const { status, data } = await sendJson<{ id?: string; checkout_url?: string }>(
       '/api/pro/x/purchases',
       'POST',
-      { pack },
+      { pack, lang },
     );
     const target =
       status === 201 ? checkoutTarget(data?.checkout_url, window.location.origin) : null;
@@ -33,18 +43,18 @@ export function BuyPack() {
     inFlight.current = false;
     setBuying(null);
     if (status === 401) return signInAgain();
-    setProblem(status === 201 ? TRY_LATER : buyError(status));
+    setProblem(status === 201 ? t.common.tryLater : buyError(status, lang));
   }
 
   return (
     <div className="packs">
       {PACKS.map((p) => (
         <div key={p.id} className={`pack${p.best ? ' best' : ''}`}>
-          <b>{creditsLabel(p.credits)}</b>
+          <b>{creditsLabel(p.credits, lang)}</b>
           <span className="price num">{money(p.amount_minor, 'EUR')}</span>
           <span className="per">
-            {p.per}
-            {p.best ? ' · выгоднее' : ''}
+            {perReading(p, lang)}
+            {p.best ? ` · ${t.purchases.better}` : ''}
           </span>
           <button
             type="button"
@@ -53,7 +63,7 @@ export function BuyPack() {
             aria-busy={buying === p.id}
             onClick={() => void buy(p.id)}
           >
-            {buying === p.id ? 'Переходим…' : 'Купить'}
+            {buying === p.id ? t.purchases.going : t.purchases.buy}
           </button>
         </div>
       ))}

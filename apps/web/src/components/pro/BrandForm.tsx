@@ -11,16 +11,15 @@ import {
   CONTACTS_MAX,
   checkBrand,
   isAccent,
-  LOW_CONTRAST_WARNING,
   lowContrast,
   NAME_MAX,
   SIGNATURE_MAX,
   TEXT_MAX,
-  TONE_SAMPLE,
   type Tone,
 } from '@/lib/pro/brand';
 import { CoverPreview } from './CoverPreview';
 import { ImageField } from './ImageField';
+import { useLang, useText } from './Lang';
 import { sendJson, signInAgain } from './post';
 
 type Errors = Partial<Record<BrandField | 'form', string>>;
@@ -30,10 +29,7 @@ interface Picture {
   version: number;
 }
 
-const TONES: { value: Tone; label: string }[] = [
-  { value: 'vy', label: 'на «вы»' },
-  { value: 'ty', label: 'на «ты»' },
-];
+const TONES: Tone[] = ['vy', 'ty'];
 
 /** The Бренд tab: a live cover preview over the brand form. Text fields are saved together with
  * «Сохранить»; the logo and photo upload on their own as soon as one is chosen. */
@@ -50,6 +46,8 @@ export function BrandForm({
   photo: boolean;
   date: string;
 }) {
+  const lang = useLang();
+  const t = useText();
   const [draft, setDraft] = useState<BrandDraft>(initial);
   const nextKey = useRef(initial.contacts.length);
   const [contactKeys, setContactKeys] = useState(() => initial.contacts.map((_, i) => i));
@@ -96,7 +94,7 @@ export function BrandForm({
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving.current) return;
-    const local = checkBrand(draft);
+    const local = checkBrand(draft, lang);
     const body = brandBody(draft);
     setErrors(local);
     if (!body) return;
@@ -115,7 +113,7 @@ export function BrandForm({
     }
     setStatus('idle');
     if (answer === 401) return signInAgain();
-    setErrors({ form: brandSaveError(answer, data?.error) });
+    setErrors({ form: brandSaveError(answer, data?.error, lang) });
   }
 
   const errorId = (field: BrandField) => `brand-${field}-error`;
@@ -143,7 +141,7 @@ export function BrandForm({
       />
 
       <div className="field">
-        <label htmlFor="brand-name">Имя или название</label>
+        <label htmlFor="brand-name">{t.brand.name}</label>
         <input
           id="brand-name"
           className="input"
@@ -158,14 +156,14 @@ export function BrandForm({
       </div>
 
       <fieldset className="field">
-        <legend className="label">Цвет акцента</legend>
+        <legend className="label">{t.brand.accent}</legend>
         <div className="swatches">
           {ACCENTS.map((colour) => (
             <button
               key={colour}
               type="button"
               style={{ background: colour }}
-              aria-label={`Цвет ${colour}`}
+              aria-label={t.brand.accentSwatch(colour)}
               aria-pressed={draft.accent.trim().toLowerCase() === colour.toLowerCase()}
               onClick={() => setAccent(colour)}
             />
@@ -180,7 +178,7 @@ export function BrandForm({
           <input
             id="brand-accent"
             className="input mono"
-            aria-label="Свой цвет, #RRGGBB"
+            aria-label={t.brand.ownAccent}
             placeholder="#RRGGBB"
             maxLength={7}
             spellCheck={false}
@@ -193,7 +191,7 @@ export function BrandForm({
         </div>
         {dim ? (
           <span id="brand-accent-dim" className="warn">
-            {LOW_CONTRAST_WARNING}
+            {t.brand.lowContrast}
           </span>
         ) : null}
         {fieldError('accent')}
@@ -201,8 +199,8 @@ export function BrandForm({
 
       <ImageField
         kind="logo"
-        label="Логотип"
-        hint="Любая картинка с телефона или компьютера, большую уменьшим сами. На обложке встанет вместо имени."
+        label={t.brand.logo}
+        hint={t.brand.logoHint}
         present={pictures.logo.present}
         version={pictures.logo.version}
         brandSaved={brandSaved}
@@ -210,33 +208,33 @@ export function BrandForm({
       />
 
       <fieldset className="field">
-        <legend className="label">Обращение к клиенту</legend>
+        <legend className="label">{t.brand.tone}</legend>
         <div className="seg">
           {TONES.map((option) => (
             <button
-              key={option.value}
+              key={option}
               type="button"
-              aria-pressed={draft.tone === option.value}
-              onClick={() => patch({ tone: option.value })}
+              aria-pressed={draft.tone === option}
+              onClick={() => patch({ tone: option })}
             >
-              {option.label}
+              {t.brand.tones[option]}
             </button>
           ))}
         </div>
         <p className="sample" aria-live="polite">
-          {TONE_SAMPLE[draft.tone]}
+          {t.brand.toneSample[draft.tone]}
         </p>
       </fieldset>
 
       <fieldset className="field">
-        <legend className="label">Контакты (до {CONTACTS_MAX} строк)</legend>
+        <legend className="label">{t.brand.contacts(CONTACTS_MAX)}</legend>
         <div className="contacts">
           {draft.contacts.map((line, index) => (
             <div className="contact" key={contactKeys[index]}>
               <input
                 className="input"
-                aria-label={`Контакт ${index + 1}`}
-                placeholder="@maria.stars, сайт или почта"
+                aria-label={t.brand.contact(index + 1)}
+                placeholder={t.brand.contactPlaceholder}
                 maxLength={CONTACT_MAX}
                 value={line}
                 onChange={(event) => setContact(index, event.target.value)}
@@ -246,7 +244,7 @@ export function BrandForm({
               <button
                 type="button"
                 className="btn ghost small"
-                aria-label={`Убрать контакт ${index + 1}`}
+                aria-label={t.brand.removeContact(index + 1)}
                 onClick={() => removeContact(index)}
               >
                 ×
@@ -256,7 +254,7 @@ export function BrandForm({
         </div>
         {draft.contacts.length < CONTACTS_MAX ? (
           <button type="button" className="btn ghost small start" onClick={addContact}>
-            + Контакт
+            {t.brand.addContact}
           </button>
         ) : null}
         {fieldError('contacts')}
@@ -264,8 +262,8 @@ export function BrandForm({
 
       <ImageField
         kind="photo"
-        label="Фото"
-        hint="Любое фото с телефона или компьютера, большое уменьшим сами. Встанет рядом со вступлением «От автора»."
+        label={t.brand.photo}
+        hint={t.brand.photoHint}
         present={pictures.photo.present}
         version={pictures.photo.version}
         brandSaved={brandSaved}
@@ -274,7 +272,7 @@ export function BrandForm({
 
       <TextArea
         field="intro"
-        label="Вступление «От автора»"
+        label={t.brand.intro}
         value={draft.intro}
         onChange={(intro) => patch({ intro })}
         error={fieldError('intro')}
@@ -283,7 +281,7 @@ export function BrandForm({
       />
       <TextArea
         field="outro"
-        label="Заключение"
+        label={t.brand.outro}
         value={draft.outro}
         onChange={(outro) => patch({ outro })}
         error={fieldError('outro')}
@@ -292,12 +290,12 @@ export function BrandForm({
       />
 
       <div className="field">
-        <label htmlFor="brand-signature">Подпись</label>
+        <label htmlFor="brand-signature">{t.brand.signature}</label>
         <input
           id="brand-signature"
           className="input"
           autoComplete="off"
-          placeholder="С теплом, Мария"
+          placeholder={t.brand.signaturePlaceholder}
           maxLength={SIGNATURE_MAX}
           value={draft.signature}
           onChange={(event) => patch({ signature: event.target.value })}
@@ -309,10 +307,10 @@ export function BrandForm({
 
       <div className="row">
         <button className="btn" type="submit" disabled={status === 'saving'}>
-          {status === 'saving' ? 'Сохраняем…' : 'Сохранить'}
+          {status === 'saving' ? t.common.saving : t.brand.save}
         </button>
         <span className={status === 'saved' ? 'pill ok' : undefined} role="status">
-          {status === 'saved' ? 'Сохранено' : ''}
+          {status === 'saved' ? t.brand.saved : ''}
         </span>
       </div>
       {errors.form ? (

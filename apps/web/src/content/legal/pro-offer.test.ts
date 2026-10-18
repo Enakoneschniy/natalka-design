@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isDraft, renderLegal } from '.';
 import { PRO_OFFER_VERSION, proOffer } from './pro-offer';
+import { PRO_OFFER_TRANSLATED_FROM, PRO_OFFER_VERSION_UK, proOfferUk } from './pro-offer-uk';
 
 /** The text of one part of the offer: from its heading to the next heading of any level. */
 const part = (heading: string) => {
@@ -44,5 +45,28 @@ describe('proOffer', () => {
     const html = renderLegal(proOffer, 'ru');
     expect(html.match(/<h1>/g)).toHaveLength(2);
     expect(html).not.toContain('<script');
+  });
+});
+
+describe('proOfferUk', () => {
+  it('follows the current Russian edition and says that one prevails', () => {
+    expect(PRO_OFFER_TRANSLATED_FROM).toBe(PRO_OFFER_VERSION);
+    expect(proOfferUk).toContain(`_Редакція від ${PRO_OFFER_VERSION_UK}.`);
+    expect(proOfferUk).toContain('переважає російська редакція');
+    expect(isDraft(proOfferUk)).toBe(false);
+  });
+
+  it('has every part the Russian text has', () => {
+    const headings = (text: string) => text.match(/^#{1,2} .*$/gm) ?? [];
+    expect(headings(proOfferUk)).toHaveLength(headings(proOffer).length);
+    expect(proOfferUk.match(/^- /gm)?.length).toBe(proOffer.match(/^- /gm)?.length);
+  });
+
+  it('keeps the numbers, the deadlines and the button names of the cabinet', () => {
+    expect(proOfferUk).toContain('«Натал + прогноз» коштує 2 кредити');
+    expect(proOfferUk).toContain('протягом 14 днів з його покупки, якщо жоден кредит');
+    expect(proOfferUk).toContain('кнопкою «Закрити кабінет» на сторінці акаунта');
+    expect(proOfferUk).toContain('Кнопка «Видалити клієнта»');
+    expect(proOfferUk).toContain('не пізніше ніж за 72 години');
   });
 });

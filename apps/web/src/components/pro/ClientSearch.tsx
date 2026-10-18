@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useLang, useText } from './Lang';
 
 export interface ClientRow {
   id: string;
@@ -14,10 +15,12 @@ export interface ClientRow {
 /** The client list with its search box. Names are encrypted on the server, so the filtering
  * happens here, over the rows the page already rendered. */
 export function ClientSearch({ clients }: { clients: ClientRow[] }) {
+  const lang = useLang();
+  const t = useText();
   const [query, setQuery] = useState('');
-  const needle = query.trim().toLocaleLowerCase('ru');
+  const needle = query.trim().toLocaleLowerCase(lang);
   const shown = needle
-    ? clients.filter((client) => client.name.toLocaleLowerCase('ru').includes(needle))
+    ? clients.filter((client) => client.name.toLocaleLowerCase(lang).includes(needle))
     : clients;
 
   return (
@@ -25,14 +28,14 @@ export function ClientSearch({ clients }: { clients: ClientRow[] }) {
       <input
         type="search"
         className="input"
-        placeholder="Найти по имени"
-        aria-label="Найти клиента"
+        placeholder={t.clients.search}
+        aria-label={t.clients.searchLabel}
         autoComplete="off"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
       {shown.length > 0 ? (
-        <ul className="list" aria-label="Клиенты">
+        <ul className="list" aria-label={t.clients.title}>
           {shown.map((client) => (
             <li key={client.id}>
               <Link href={`/clients/${client.id}`} className="item link">
@@ -42,7 +45,7 @@ export function ClientSearch({ clients }: { clients: ClientRow[] }) {
                 <span className="grow">
                   <span className="t">{client.name}</span>
                   <span className="s num">{client.line}</span>
-                  <span className="s">отчётов: {client.readings}</span>
+                  <span className="s">{t.clients.readings(client.readings)}</span>
                 </span>
               </Link>
             </li>
@@ -50,7 +53,7 @@ export function ClientSearch({ clients }: { clients: ClientRow[] }) {
         </ul>
       ) : (
         <p className="muted" role="status">
-          Никого с таким именем.
+          {t.clients.nobody}
         </p>
       )}
     </>

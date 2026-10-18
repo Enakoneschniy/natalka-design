@@ -4,6 +4,8 @@
  * The key and the seller's session never reach the browser; pages and route handlers call this.
  */
 
+import type { ProLang } from './lang';
+
 export class ProUnauthorized extends Error {
   constructor() {
     super('The seller session is missing or expired');
@@ -89,6 +91,8 @@ export interface SignupInput {
   name: string;
   invite?: string;
   terms: boolean;
+  /** The language the letter is written in: the page's. */
+  lang: ProLang;
 }
 
 /** `ok` when the API accepted the request; otherwise its status and the reason it gave. */
@@ -109,9 +113,13 @@ const accepted = async (
   return { ok: false, status, error: data?.error ?? 'invalid' };
 };
 
-/** Asks for a sign-in letter. The answer is the same whoever the address belongs to. */
-export function requestLogin(email: string, clientIp?: string | null): Promise<Accepted> {
-  return accepted('/v1/pro/login', { email }, clientIp);
+/** Asks for a sign-in letter, in `lang`. The answer is the same whoever the address belongs to. */
+export function requestLogin(
+  email: string,
+  lang: ProLang,
+  clientIp?: string | null,
+): Promise<Accepted> {
+  return accepted('/v1/pro/login', { email, lang }, clientIp);
 }
 
 /** Asks for a confirmation letter (or a sign-in letter, when the address already has a cabinet). */

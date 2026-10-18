@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { closeOutcome, sameAddress } from '@/lib/pro/account';
-import { sendJson, signInAgain, TRY_LATER } from './post';
-
-const MISMATCH = 'Адрес не совпадает с почтой кабинета.';
+import { useText } from './Lang';
+import { sendJson, signInAgain } from './post';
 
 /** «Закрыть кабинет»: what goes, said plainly, then a confirm step on the page itself that asks
  * for the cabinet's address. The proxy clears the session cookies with its answer; sign-in then
@@ -14,6 +13,7 @@ export function CloseCabinet({ email }: { email: string }) {
   const [typed, setTyped] = useState('');
   const [closing, setClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useText();
   const field = useRef<HTMLInputElement>(null);
   // State lands on the next render; two taps in one frame both see `closing` false.
   const inFlight = useRef(false);
@@ -27,7 +27,7 @@ export function CloseCabinet({ email }: { email: string }) {
     event.preventDefault();
     if (inFlight.current) return;
     if (!sameAddress(typed, email)) {
-      setError(MISMATCH);
+      setError(t.close.mismatch);
       return;
     }
     inFlight.current = true;
@@ -40,7 +40,7 @@ export function CloseCabinet({ email }: { email: string }) {
     inFlight.current = false;
     setClosing(false);
     if (outcome === 'signed-out') return signInAgain();
-    setError(outcome === 'mismatch' ? MISMATCH : TRY_LATER);
+    setError(outcome === 'mismatch' ? t.close.mismatch : t.common.tryLater);
   }
 
   function cancel() {
@@ -51,18 +51,17 @@ export function CloseCabinet({ email }: { email: string }) {
 
   return (
     <section className="close-cabinet" aria-labelledby="close-cabinet-title">
-      <h2 id="close-cabinet-title">Закрыть кабинет</h2>
-      <p>Это нельзя отменить. Вместе с кабинетом удалятся:</p>
+      <h2 id="close-cabinet-title">{t.close.title}</h2>
+      <p>{t.close.warning}</p>
       <ul>
-        <li>клиенты и их данные рождения;</li>
-        <li>все разборы, карты и PDF;</li>
-        <li>ваш бренд: логотип, фото и тексты.</li>
+        {t.close.items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
       </ul>
       <p className="muted">
-        Неиспользованные кредиты сгорят, записи о покупках останутся: их требует бухгалтерия. Если
-        хотите вернуть деньги за пакет, из которого не потрачено ни одного кредита, напишите на{' '}
-        <a href="mailto:help@chronika.me">help@chronika.me</a> до закрытия. На эту почту можно будет
-        зарегистрироваться снова: кабинет откроется пустым.
+        {t.close.refundBefore}
+        <a href="mailto:help@chronika.me">help@chronika.me</a>
+        {t.close.refundAfter}
       </p>
       {asking ? (
         <form
@@ -71,10 +70,11 @@ export function CloseCabinet({ email }: { email: string }) {
           noValidate
           aria-labelledby="close-cabinet-question"
         >
-          <p id="close-cabinet-question">Закрыть кабинет и удалить все данные?</p>
+          <p id="close-cabinet-question">{t.close.question}</p>
           <div className="field">
             <label htmlFor="close-cabinet-email">
-              Чтобы подтвердить, введите почту кабинета: <span className="wrap">{email}</span>
+              {t.close.confirmLabel}
+              <span className="wrap">{email}</span>
             </label>
             <input
               ref={field}
@@ -87,7 +87,7 @@ export function CloseCabinet({ email }: { email: string }) {
               spellCheck={false}
               value={typed}
               onChange={(event) => setTyped(event.target.value)}
-              aria-invalid={error === MISMATCH ? true : undefined}
+              aria-invalid={error === t.close.mismatch ? true : undefined}
               aria-describedby={error ? 'close-cabinet-error' : undefined}
             />
             {error ? (
@@ -98,16 +98,16 @@ export function CloseCabinet({ email }: { email: string }) {
           </div>
           <div className="row">
             <button type="submit" className="btn danger" disabled={closing}>
-              {closing ? 'Закрываем…' : 'Закрыть навсегда'}
+              {closing ? t.close.closing : t.close.submit}
             </button>
             <button type="button" className="btn ghost" onClick={cancel} disabled={closing}>
-              Отмена
+              {t.common.cancel}
             </button>
           </div>
         </form>
       ) : (
         <button type="button" className="btn ghost danger start" onClick={() => setAsking(true)}>
-          Закрыть кабинет
+          {t.close.title}
         </button>
       )}
     </section>

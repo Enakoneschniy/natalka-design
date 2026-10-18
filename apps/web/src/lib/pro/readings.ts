@@ -2,8 +2,8 @@
  * the date, the order button, the reading page's dock and its messages. Pure; the Отчёты list,
  * the client card, the order form and the reading page share it. */
 
-import { creditsLabel } from './credits';
-import { TRY_LATER } from './messages';
+import type { ProLang } from './lang';
+import { textFor } from './text';
 
 export type Product = 'natal' | 'forecast' | 'synastry' | 'child' | 'bundle';
 export type ReadingStatus = 'writing' | 'ready' | 'failed';
@@ -12,6 +12,8 @@ export type ReadingStatus = 'writing' | 'ready' | 'failed';
 export interface ReadingSummary {
   id: string;
   product: Product;
+  /** The language it is written in. Optional: older workers omit it (they wrote Russian only). */
+  lang?: ProLang;
   client_id: string;
   partner_client_id: string | null;
   status: ReadingStatus;
@@ -32,6 +34,7 @@ export interface ReadingSection {
 export interface ReadingView {
   id: string;
   product: Product;
+  lang?: ProLang;
   client_id: string;
   partner_client_id: string | null;
   status: ReadingStatus;
@@ -51,13 +54,9 @@ export interface ReadingView {
 
 export const REGENERATIONS_PER_READING = 10;
 
-export const PRODUCT_LABEL: Record<Product, string> = {
-  natal: 'Натальная карта',
-  forecast: 'Прогноз на год',
-  synastry: 'Синастрия',
-  child: 'Детская карта',
-  bundle: 'Натал + прогноз',
-};
+/** «Натальная карта», «Натальна карта». */
+export const productLabel = (product: Product, lang: ProLang): string =>
+  textFor(lang).products[product] ?? product;
 
 export type PillTone = 'ok' | 'wr' | 'bad' | 'gold';
 
@@ -68,17 +67,21 @@ export interface Pill {
 
 /** The status pill. The list says `missing` as a count and `pdf_ready`; the full reading says
  * `missing` as a list (pass its length) and `pdf`. A failed reading had its credits returned. */
-export function readingPill(reading: {
-  status: ReadingStatus;
-  missing?: number;
-  pdf?: 'none' | 'building' | 'ready';
-  pdf_ready?: boolean;
-}): Pill {
-  if (reading.status === 'failed') return { label: 'не удалось, кредиты вернулись', tone: 'bad' };
-  if (reading.status === 'writing') return { label: 'пишется', tone: 'wr' };
-  if ((reading.missing ?? 0) > 0) return { label: 'раздел не дописан', tone: 'bad' };
-  if (reading.pdf === 'ready' || reading.pdf_ready) return { label: 'PDF готов', tone: 'ok' };
-  return { label: 'готов', tone: 'gold' };
+export function readingPill(
+  reading: {
+    status: ReadingStatus;
+    missing?: number;
+    pdf?: 'none' | 'building' | 'ready';
+    pdf_ready?: boolean;
+  },
+  lang: ProLang,
+): Pill {
+  const label = textFor(lang).reading.pill;
+  if (reading.status === 'failed') return { label: label.failed, tone: 'bad' };
+  if (reading.status === 'writing') return { label: label.writing, tone: 'wr' };
+  if ((reading.missing ?? 0) > 0) return { label: label.missing, tone: 'bad' };
+  if (reading.pdf === 'ready' || reading.pdf_ready) return { label: label.pdf, tone: 'ok' };
+  return { label: label.ready, tone: 'gold' };
 }
 
 /** What each product costs in credits (jobs `CREDIT_COST`). */
@@ -90,74 +93,77 @@ export const CREDIT_COST: Record<Product, number> = {
   bundle: 2,
 };
 
-/** The products in the order the form shows them, with a word on what each needs or gives. */
-export const PRODUCTS: { product: Product; note?: string }[] = [
-  { product: 'natal' },
-  { product: 'forecast' },
-  { product: 'synastry', note: 'нужен партнёр' },
-  { product: 'child' },
-  { product: 'bundle', note: 'два документа в одном' },
-];
+/** The products in the order the form shows them; synastry and bundle carry a note on what they
+ * need or give (`productNotes` in the catalogues). */
+export const PRODUCTS: Product[] = ['natal', 'forecast', 'synastry', 'child', 'bundle'];
+
+/** What the form says under a product beside its price, if anything. */
+export function productNote(product: Product, lang: ProLang): string | undefined {
+  const notes: Partial<Record<Product, string>> = textFor(lang).productNotes;
+  return notes[product];
+}
 
 /** «Заказать за 1 кредит», «… за 2 кредита», «… за 5 кредитов». */
-export function orderLabel(cost: number): string {
-  return `Заказать за ${creditsLabel(cost)}`;
-}
-
-const plural = new Intl.PluralRules('ru');
+export const orderLabel = (cost: number, lang: ProLang): string => textFor(lang).order.submit(cost);
 
 /** «7 из 20 разделов», «0 из 21 раздела»: after «из» the noun is genitive. */
-export function progressLabel(written: number, total: number): string {
-  if (total <= 0) return 'готовим план';
-  const noun = plural.select(total) === 'one' ? 'раздела' : 'разделов';
-  return `${written} из ${total} ${noun}`;
-}
+export const progressLabel = (written: number, total: number, lang: ProLang): string =>
+  textFor(lang).reading.progress(written, total);
 
 /** «1 раздел», «3 раздела», «20 разделов». */
-export function sectionsLabel(n: number): string {
-  const form = plural.select(n);
-  const noun = form === 'one' ? 'раздел' : form === 'few' ? 'раздела' : 'разделов';
-  return `${n} ${noun}`;
-}
+export const sectionsLabel = (n: number, lang: ProLang): string =>
+  textFor(lang).reading.sections(n);
 
-export function firstName(name: string | undefined): string {
-  return name?.trim().split(/\s+/)[0] || 'Клиент';
+export function firstName(name: string | undefined, lang: ProLang): string {
+  return name?.trim().split(/\s+/)[0] || textFor(lang).reading.someone;
 }
 
 /** «Анна · Натальная карта», «Оксана и Игорь · Синастрия». */
-export function readingTitle(product: Product, client?: string, partner?: string): string {
-  const who = partner ? `${firstName(client)} и ${firstName(partner)}` : firstName(client);
-  return `${who} · ${PRODUCT_LABEL[product] ?? product}`;
+export function readingTitle(
+  product: Product,
+  lang: ProLang,
+  client?: string,
+  partner?: string,
+): string {
+  const who = partner
+    ? `${firstName(client, lang)} ${textFor(lang).reading.and} ${firstName(partner, lang)}`
+    : firstName(client, lang);
+  return `${who} · ${productLabel(product, lang)}`;
 }
 
-const MONTHS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-
 /** «сегодня», «вчера», «2 окт», «29 сен 2025». Calendar days in UTC, the server's clock. */
-export function readingDate(iso: string, now: Date = new Date()): string {
+export function readingDate(iso: string, lang: ProLang, now: Date = new Date()): string {
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return '';
+  const t = textFor(lang).reading;
   const day = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   const days = Math.round((day(now) - day(at)) / 86_400_000);
-  if (days === 0) return 'сегодня';
-  if (days === 1) return 'вчера';
-  const short = `${at.getUTCDate()} ${MONTHS[at.getUTCMonth()]}`;
+  if (days === 0) return t.today;
+  if (days === 1) return t.yesterday;
+  const short = `${at.getUTCDate()} ${t.months[at.getUTCMonth()]}`;
   return at.getUTCFullYear() === now.getUTCFullYear() ? short : `${short} ${at.getUTCFullYear()}`;
 }
 
 /** «18 окт»: a day and a month, in UTC like the rest. */
-export function dayMonth(iso: string): string {
+export function dayMonth(iso: string, lang: ProLang): string {
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return '';
-  return `${at.getUTCDate()} ${MONTHS[at.getUTCMonth()]}`;
+  return `${at.getUTCDate()} ${textFor(lang).reading.months[at.getUTCMonth()]}`;
 }
 
 /** The reading header's second line: rewrites left and the last day of edits, or that edits are
  * closed. */
 export function editLine(
   view: Pick<ReadingView, 'frozen' | 'regenerations_left' | 'editable_until'>,
+  lang: ProLang,
 ): string {
-  if (view.frozen) return 'правки закрыты';
-  return `переписать: ${view.regenerations_left} из ${REGENERATIONS_PER_READING} до ${dayMonth(view.editable_until)}`;
+  const t = textFor(lang).reading;
+  if (view.frozen) return t.frozen;
+  return t.editLine(
+    view.regenerations_left,
+    REGENERATIONS_PER_READING,
+    dayMonth(view.editable_until, lang),
+  );
 }
 
 export type DockState = 'writing' | 'failed' | 'missing' | 'assemble' | 'building' | 'download';
@@ -178,41 +184,42 @@ export function needsPolling(view: Pick<ReadingView, 'status' | 'pdf'>): boolean
 }
 
 /** «Сначала допишите: «Солнце», «Луна»». */
-export function missingNote(missing: readonly { id?: string; title: string }[]): string {
-  return `Сначала допишите: ${missing.map((m) => `«${m.title}»`).join(', ')}`;
+export function missingNote(
+  missing: readonly { id?: string; title: string }[],
+  lang: ProLang,
+): string {
+  return textFor(lang).reading.missingNote(missing.map((m) => `«${m.title}»`).join(', '));
 }
-
-const REWRITE_REFUSED: Record<string, string> = {
-  limit: `Переписывать больше нельзя: использованы все ${REGENERATIONS_PER_READING} попыток`,
-  frozen: 'Срок правок закончился',
-  busy: 'Раздел уже переписывается, подождите',
-  not_ready: 'Сейчас собирается PDF. Подождите пару минут.',
-};
 
 /** Why a rewrite or a fill did not happen, from the proxy's status and `error`. */
-export function rewriteError(status: number, error?: string): string {
-  if (status === 409 && error && REWRITE_REFUSED[error]) return REWRITE_REFUSED[error];
-  if (status === 503) return 'Не получилось переписать раздел. Попробуйте ещё раз.';
-  if (status === 404) return 'Раздел не найден. Обновите страницу.';
-  return TRY_LATER;
+export function rewriteError(status: number, error: string | undefined, lang: ProLang): string {
+  const t = textFor(lang);
+  const refused = t.reading.rewriteRefused;
+  if (status === 409 && error === 'limit') return refused.limit(REGENERATIONS_PER_READING);
+  if (status === 409 && (error === 'frozen' || error === 'busy' || error === 'not_ready')) {
+    return refused[error];
+  }
+  if (status === 503) return t.reading.rewriteFailed;
+  if (status === 404) return t.reading.sectionGone;
+  return t.common.tryLater;
 }
 
-const ASSEMBLE_REFUSED: Record<string, string> = {
-  incomplete: 'Сначала допишите все разделы',
-  no_brand: 'Сначала заполните бренд: он нужен для обложки PDF',
-  not_ready: 'Разбор ещё пишется',
-};
-
 /** Why «Собрать PDF» was refused (409 `error`). */
-export function assembleError(error: string | undefined): string {
-  return (error && ASSEMBLE_REFUSED[error]) || TRY_LATER;
+export function assembleError(error: string | undefined, lang: ProLang): string {
+  const t = textFor(lang);
+  return (
+    (error && Object.hasOwn(t.reading.assembleRefused, error)
+      ? t.reading.assembleRefused[error]
+      : undefined) ?? t.common.tryLater
+  );
 }
 
 /** Why a report did not go. */
-export function reportError(status: number): string {
-  if (status === 400) return 'Напишите, что не так: до 1000 символов';
-  if (status === 429) return 'Слишком много сообщений. Попробуйте через час.';
-  return TRY_LATER;
+export function reportError(status: number, lang: ProLang): string {
+  const t = textFor(lang);
+  if (status === 400) return t.reading.reportEmpty;
+  if (status === 429) return t.reading.reportTooMany;
+  return t.common.tryLater;
 }
 
 export interface Run {

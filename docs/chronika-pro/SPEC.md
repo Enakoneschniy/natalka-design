@@ -11,7 +11,13 @@ brand** and resells them however they like. A parallel sales channel next to the
 his share.
 
 **Pilot goal:** 5–10 paying sellers and €300–500/month, judged 3 months after the first paying
-seller. **Pilot language:** Russian only, same markets as B2C (never RU).
+seller. **Languages:** Ukrainian and Russian (Ukrainian added 2026-10-18), same markets as B2C
+(never RU). The cabinet speaks the visitor's choice (`chp_lang` cookie, the switch on the sign-in
+pages, the account page and the desktop rail), else the first of uk/ru their browser asks for, else
+Ukrainian in Ukraine, else Russian; sign-in letters and the pack checkout follow it. Each reading's
+language is chosen when it is ordered (the cabinet's to begin with) and kept on it
+(`orders.locale` and the chart's `lang`). The offer has a Ukrainian translation that names the
+Russian edition as the one that prevails.
 
 ## Product
 
@@ -85,7 +91,8 @@ seller. **Pilot language:** Russian only, same markets as B2C (never RU).
   error), the cabinet still opens, on «Кредиты», saying so above the code field.
 - The invite code is also where a seller came from (no commission accounting).
 - **Demo**: one pre-generated sample reading (var `PRO_DEMO_ORDER_ID`) that every signed-in seller
-  can open; it replaces trial credits for sellers without an invite code.
+  can open; it replaces trial credits for sellers without an invite code. A Ukrainian cabinet sees
+  the one named by `PRO_DEMO_ORDER_ID_UK`, and the Russian one, saying so, while that is unset.
 
 ## Data
 
@@ -166,6 +173,7 @@ Phase 2: apply migration `0009_pro_readings.sql` (`pnpm --filter @natalka/jobs m
 production write) **before** deploying the worker — the nightly sweep reads `orders.pro_account_id`.
 Demo: once the cabinet exists, order a natal reading for a sample chart of a fictional person (the section texts address the client by name, and every seller will read them) from the owner's seller
 account, then set `PRO_DEMO_ORDER_ID` to its id in `apps/jobs/wrangler.jsonc` vars and deploy.
+The Ukrainian sample is made the same way, ordered in Ukrainian, and named by `PRO_DEMO_ORDER_ID_UK`.
 
 Phase 3: apply migration `0010_pro_brand.sql` (a production write) before deploying the jobs
 worker. Deploy the API container (worker + document + texts) before the jobs worker. An old

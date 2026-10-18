@@ -2,19 +2,23 @@ import Link from 'next/link';
 import { type ReadingDetail, ReadingItem } from '@/components/pro/ReadingItem';
 import type { ProClient } from '@/lib/pro/birth';
 import { cabinetGet } from '@/lib/pro/current';
+import { proLang, titleOf } from '@/lib/pro/locale';
 import type { ReadingSummary, ReadingView } from '@/lib/pro/readings';
+import { textFor } from '@/lib/pro/text';
 
-export const metadata = { title: 'Отчёты' };
+export const generateMetadata = titleOf('reports');
 
 /** How many readings being written get their progress looked up; more than this is rare. */
 const PROGRESS_LOOKUPS = 5;
 
 /** The home tab: every reading, newest first, with a sample to look at before ordering. */
 export default async function Reports() {
+  const lang = await proLang();
+  const t = textFor(lang);
   const [list, clients, demo] = await Promise.all([
     cabinetGet<{ readings?: ReadingSummary[] }>('/v1/pro/readings'),
     cabinetGet<{ clients?: ProClient[] }>('/v1/pro/clients'),
-    cabinetGet<{ sections?: unknown[] }>('/v1/pro/demo'),
+    cabinetGet<{ sections?: unknown[] }>(`/v1/pro/demo?lang=${lang}`),
   ]);
   if (list.status !== 200) throw new Error(`readings → ${list.status}`);
   const readings = list.data?.readings ?? [];
@@ -37,13 +41,13 @@ export default async function Reports() {
   return (
     <>
       <div className="row">
-        <h1 className="grow">Отчёты</h1>
+        <h1 className="grow">{t.reports.title}</h1>
         <Link href="/readings/new" className="btn small">
-          + Новый
+          {t.reports.add}
         </Link>
       </div>
       {readings.length > 0 ? (
-        <ul className="list" aria-label="Отчёты">
+        <ul className="list" aria-label={t.reports.title}>
           {readings.map((reading) => (
             <li key={reading.id}>
               <ReadingItem
@@ -52,30 +56,31 @@ export default async function Reports() {
                 partner={
                   reading.partner_client_id ? names.get(reading.partner_client_id) : undefined
                 }
+                lang={lang}
               />
             </li>
           ))}
         </ul>
       ) : (
         <div className="card">
-          <p className="muted">Здесь будут ваши разборы. Начните с клиента.</p>
+          <p className="muted">{t.reports.empty}</p>
           <Link href="/clients" className="btn ghost small start">
-            К клиентам
+            {t.reports.toClients}
           </Link>
         </div>
       )}
       {hasDemo ? (
         <div className="card">
-          <h3>Пример готового разбора</h3>
-          <p className="muted">Посмотрите, как выглядит отчёт, прежде чем заказывать свой.</p>
+          <h3>{t.reports.demoTitle}</h3>
+          <p className="muted">{t.reports.demoText}</p>
           <Link href="/example" className="btn ghost small start">
-            Открыть пример
+            {t.reports.demoOpen}
           </Link>
         </div>
       ) : (
         <div className="card disabled" aria-disabled="true">
-          <h3>Пример готового разбора</h3>
-          <p className="muted">Пример появится скоро.</p>
+          <h3>{t.reports.demoTitle}</h3>
+          <p className="muted">{t.reports.demoSoon}</p>
         </div>
       )}
     </>

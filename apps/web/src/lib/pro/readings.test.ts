@@ -9,8 +9,8 @@ import {
   missingNote,
   needsPolling,
   orderLabel,
-  PRODUCT_LABEL,
   pdfBuildFailed,
+  productLabel,
   progressLabel,
   type ReadingView,
   readingDate,
@@ -23,59 +23,67 @@ import {
   sectionsLabel,
 } from './readings';
 
-describe('PRODUCT_LABEL', () => {
-  it('names every product in Russian', () => {
-    expect(PRODUCT_LABEL).toEqual({
-      natal: 'Натальная карта',
-      forecast: 'Прогноз на год',
-      synastry: 'Синастрия',
-      child: 'Детская карта',
-      bundle: 'Натал + прогноз',
-    });
+describe('productLabel', () => {
+  it('names every product in Russian and in Ukrainian', () => {
+    const products = ['natal', 'forecast', 'synastry', 'child', 'bundle'] as const;
+    expect(products.map((p) => productLabel(p, 'ru'))).toEqual([
+      'Натальная карта',
+      'Прогноз на год',
+      'Синастрия',
+      'Детская карта',
+      'Натал + прогноз',
+    ]);
+    expect(products.map((p) => productLabel(p, 'uk'))).toEqual([
+      'Натальна карта',
+      'Прогноз на рік',
+      'Синастрія',
+      'Дитяча карта',
+      'Натал + прогноз',
+    ]);
   });
 });
 
 describe('readingPill', () => {
   it('shows a reading being written', () => {
-    expect(readingPill({ status: 'writing' })).toEqual({ label: 'пишется', tone: 'wr' });
+    expect(readingPill({ status: 'writing' }, 'ru')).toEqual({ label: 'пишется', tone: 'wr' });
   });
 
   it('shows a ready reading, and one whose PDF is ready', () => {
-    expect(readingPill({ status: 'ready' })).toEqual({ label: 'готов', tone: 'gold' });
-    expect(readingPill({ status: 'ready', missing: 0, pdf: 'none' })).toEqual({
+    expect(readingPill({ status: 'ready' }, 'ru')).toEqual({ label: 'готов', tone: 'gold' });
+    expect(readingPill({ status: 'ready', missing: 0, pdf: 'none' }, 'ru')).toEqual({
       label: 'готов',
       tone: 'gold',
     });
-    expect(readingPill({ status: 'ready', pdf: 'ready' })).toEqual({
+    expect(readingPill({ status: 'ready', pdf: 'ready' }, 'ru')).toEqual({
       label: 'PDF готов',
       tone: 'ok',
     });
   });
 
   it('flags a section left unwritten before anything else about a ready reading', () => {
-    expect(readingPill({ status: 'ready', missing: 2, pdf: 'ready' })).toEqual({
+    expect(readingPill({ status: 'ready', missing: 2, pdf: 'ready' }, 'ru')).toEqual({
       label: 'раздел не дописан',
       tone: 'bad',
     });
   });
 
   it('says a failed reading was refunded', () => {
-    expect(readingPill({ status: 'failed', missing: 3 })).toEqual({
+    expect(readingPill({ status: 'failed', missing: 3 }, 'ru')).toEqual({
       label: 'не удалось, кредиты вернулись',
       tone: 'bad',
     });
   });
 
   it("reads the list's own flags: a missing count and pdf_ready", () => {
-    expect(readingPill({ status: 'ready', missing: 0, pdf_ready: true })).toEqual({
+    expect(readingPill({ status: 'ready', missing: 0, pdf_ready: true }, 'ru')).toEqual({
       label: 'PDF готов',
       tone: 'ok',
     });
-    expect(readingPill({ status: 'ready', missing: 1, pdf_ready: true })).toEqual({
+    expect(readingPill({ status: 'ready', missing: 1, pdf_ready: true }, 'ru')).toEqual({
       label: 'раздел не дописан',
       tone: 'bad',
     });
-    expect(readingPill({ status: 'ready', missing: 0, pdf_ready: false })).toEqual({
+    expect(readingPill({ status: 'ready', missing: 0, pdf_ready: false }, 'ru')).toEqual({
       label: 'готов',
       tone: 'gold',
     });
@@ -88,9 +96,9 @@ describe('ordering', () => {
   });
 
   it('agrees the credit word on the order button for 1, 2 and 5', () => {
-    expect(orderLabel(1)).toBe('Заказать за 1 кредит');
-    expect(orderLabel(2)).toBe('Заказать за 2 кредита');
-    expect(orderLabel(5)).toBe('Заказать за 5 кредитов');
+    expect(orderLabel(1, 'ru')).toBe('Заказать за 1 кредит');
+    expect(orderLabel(2, 'ru')).toBe('Заказать за 2 кредита');
+    expect(orderLabel(5, 'ru')).toBe('Заказать за 5 кредитов');
   });
 });
 
@@ -115,11 +123,11 @@ const view = (over: Partial<ReadingView> = {}): ReadingView => ({
 
 describe('editLine', () => {
   it('says how many rewrites are left and until when', () => {
-    expect(editLine(view())).toBe('переписать: 9 из 10 до 18 окт');
+    expect(editLine(view(), 'ru')).toBe('переписать: 9 из 10 до 18 окт');
   });
 
   it('says edits are closed once frozen', () => {
-    expect(editLine(view({ frozen: true }))).toBe('правки закрыты');
+    expect(editLine(view({ frozen: true }), 'ru')).toBe('правки закрыты');
   });
 });
 
@@ -141,40 +149,47 @@ describe('dockState and needsPolling', () => {
   });
 
   it('names the sections to fill first', () => {
-    expect(missingNote([{ id: 'b', title: 'Солнце' }])).toBe('Сначала допишите: «Солнце»');
+    expect(missingNote([{ id: 'b', title: 'Солнце' }], 'ru')).toBe('Сначала допишите: «Солнце»');
     expect(
-      missingNote([
-        { id: 'b', title: 'Солнце' },
-        { id: 'c', title: 'Луна' },
-      ]),
+      missingNote(
+        [
+          { id: 'b', title: 'Солнце' },
+          { id: 'c', title: 'Луна' },
+        ],
+        'ru',
+      ),
     ).toBe('Сначала допишите: «Солнце», «Луна»');
   });
 });
 
 describe('messages', () => {
   it('explains a refused rewrite', () => {
-    expect(rewriteError(409, 'limit')).toBe(
+    expect(rewriteError(409, 'limit', 'ru')).toBe(
       'Переписывать больше нельзя: использованы все 10 попыток',
     );
-    expect(rewriteError(409, 'frozen')).toBe('Срок правок закончился');
-    expect(rewriteError(409, 'busy')).toBe('Раздел уже переписывается, подождите');
-    expect(rewriteError(503, 'failed')).toBe(
+    expect(rewriteError(409, 'frozen', 'ru')).toBe('Срок правок закончился');
+    expect(rewriteError(409, 'busy', 'ru')).toBe('Раздел уже переписывается, подождите');
+    expect(rewriteError(503, 'failed', 'ru')).toBe(
       'Не получилось переписать раздел. Попробуйте ещё раз.',
     );
-    expect(rewriteError(0)).toBe('Не получилось отправить. Попробуйте ещё раз через минуту.');
+    expect(rewriteError(0, undefined, 'ru')).toBe(
+      'Не получилось отправить. Попробуйте ещё раз через минуту.',
+    );
   });
 
   it('explains a refused PDF', () => {
-    expect(assembleError('incomplete')).toBe('Сначала допишите все разделы');
-    expect(assembleError('no_brand')).toBe('Сначала заполните бренд: он нужен для обложки PDF');
-    expect(assembleError(undefined)).toBe(
+    expect(assembleError('incomplete', 'ru')).toBe('Сначала допишите все разделы');
+    expect(assembleError('no_brand', 'ru')).toBe(
+      'Сначала заполните бренд: он нужен для обложки PDF',
+    );
+    expect(assembleError(undefined, 'ru')).toBe(
       'Не получилось отправить. Попробуйте ещё раз через минуту.',
     );
   });
 
   it('explains a refused report', () => {
-    expect(reportError(400)).toBe('Напишите, что не так: до 1000 символов');
-    expect(reportError(429)).toBe('Слишком много сообщений. Попробуйте через час.');
+    expect(reportError(400, 'ru')).toBe('Напишите, что не так: до 1000 символов');
+    expect(reportError(429, 'ru')).toBe('Слишком много сообщений. Попробуйте через час.');
   });
 });
 
@@ -229,19 +244,19 @@ describe('roman', () => {
 
 describe('progressLabel', () => {
   it('agrees the noun with the total', () => {
-    expect(progressLabel(7, 20)).toBe('7 из 20 разделов');
-    expect(progressLabel(0, 21)).toBe('0 из 21 раздела');
-    expect(progressLabel(1, 3)).toBe('1 из 3 разделов');
+    expect(progressLabel(7, 20, 'ru')).toBe('7 из 20 разделов');
+    expect(progressLabel(0, 21, 'ru')).toBe('0 из 21 раздела');
+    expect(progressLabel(1, 3, 'ru')).toBe('1 из 3 разделов');
   });
 
   it('says nothing useful is known before the plan exists', () => {
-    expect(progressLabel(0, 0)).toBe('готовим план');
+    expect(progressLabel(0, 0, 'ru')).toBe('готовим план');
   });
 });
 
 describe('sectionsLabel', () => {
   it('agrees the noun with the count', () => {
-    expect([1, 3, 20, 21].map(sectionsLabel)).toEqual([
+    expect([1, 3, 20, 21].map((n) => sectionsLabel(n, 'ru'))).toEqual([
       '1 раздел',
       '3 раздела',
       '20 разделов',
@@ -252,19 +267,19 @@ describe('sectionsLabel', () => {
 
 describe('firstName and readingTitle', () => {
   it('takes the first word of a name', () => {
-    expect(firstName('  Анна  Коваль ')).toBe('Анна');
-    expect(firstName('')).toBe('Клиент');
+    expect(firstName('  Анна  Коваль ', 'ru')).toBe('Анна');
+    expect(firstName('', 'ru')).toBe('Клиент');
   });
 
   it('joins the person and the product', () => {
-    expect(readingTitle('natal', 'Анна Коваль')).toBe('Анна · Натальная карта');
-    expect(readingTitle('synastry', 'Оксана Мельник', 'Игорь Мельник')).toBe(
+    expect(readingTitle('natal', 'ru', 'Анна Коваль')).toBe('Анна · Натальная карта');
+    expect(readingTitle('synastry', 'ru', 'Оксана Мельник', 'Игорь Мельник')).toBe(
       'Оксана и Игорь · Синастрия',
     );
   });
 
   it('copes with a client that is gone', () => {
-    expect(readingTitle('natal', undefined)).toBe('Клиент · Натальная карта');
+    expect(readingTitle('natal', 'ru', undefined)).toBe('Клиент · Натальная карта');
   });
 });
 
@@ -272,17 +287,17 @@ describe('readingDate', () => {
   const now = new Date('2026-10-04T12:00:00Z');
 
   it('says today and yesterday in words', () => {
-    expect(readingDate('2026-10-04T01:00:00.000Z', now)).toBe('сегодня');
-    expect(readingDate('2026-10-03T23:00:00.000Z', now)).toBe('вчера');
+    expect(readingDate('2026-10-04T01:00:00.000Z', 'ru', now)).toBe('сегодня');
+    expect(readingDate('2026-10-03T23:00:00.000Z', 'ru', now)).toBe('вчера');
   });
 
   it('gives a short date this year and the year otherwise', () => {
-    expect(readingDate('2026-10-02T10:00:00.000Z', now)).toBe('2 окт');
-    expect(readingDate('2025-09-29T10:00:00.000Z', now)).toBe('29 сен 2025');
+    expect(readingDate('2026-10-02T10:00:00.000Z', 'ru', now)).toBe('2 окт');
+    expect(readingDate('2025-09-29T10:00:00.000Z', 'ru', now)).toBe('29 сен 2025');
   });
 
   it('keeps quiet about a date it cannot read', () => {
-    expect(readingDate('nonsense', now)).toBe('');
+    expect(readingDate('nonsense', 'ru', now)).toBe('');
   });
 });
 
@@ -328,5 +343,37 @@ describe('pdfBuildFailed', () => {
     expect(pdfBuildFailed('building', 'none')).toBe(true);
     expect(pdfBuildFailed('building', 'ready')).toBe(false);
     expect(pdfBuildFailed('none', 'none')).toBe(false);
+  });
+});
+
+describe('in Ukrainian', () => {
+  it('counts sections with the genitive after «з»', () => {
+    expect(progressLabel(7, 20, 'uk')).toBe('7 з 20 розділів');
+    expect(progressLabel(0, 21, 'uk')).toBe('0 з 21 розділу');
+    expect(progressLabel(0, 0, 'uk')).toBe('готуємо план');
+    expect([1, 3, 20].map((n) => sectionsLabel(n, 'uk'))).toEqual([
+      '1 розділ',
+      '3 розділи',
+      '20 розділів',
+    ]);
+  });
+
+  it('titles a reading and dates it', () => {
+    expect(readingTitle('synastry', 'uk', 'Оксана Мельник', 'Ігор Мельник')).toBe(
+      'Оксана і Ігор · Синастрія',
+    );
+    expect(readingTitle('natal', 'uk', undefined)).toBe('Клієнт · Натальна карта');
+    const now = new Date('2026-10-04T12:00:00.000Z');
+    expect(readingDate('2026-10-04T01:00:00.000Z', 'uk', now)).toBe('сьогодні');
+    expect(readingDate('2026-10-02T10:00:00.000Z', 'uk', now)).toBe('2 жовт.');
+    expect(readingDate('2025-09-29T10:00:00.000Z', 'uk', now)).toBe('29 вер. 2025');
+  });
+
+  it('speaks of rewrites, refusals and the order button', () => {
+    expect(editLine(view(), 'uk')).toBe('переписати: 9 з 10 до 18 жовт.');
+    expect(rewriteError(409, 'limit', 'uk')).toMatch(/всі 10 спроб/);
+    expect(assembleError('no_brand', 'uk')).toMatch(/^Спершу заповніть бренд/);
+    expect(orderLabel(2, 'uk')).toBe('Замовити за 2 кредити');
+    expect(readingPill({ status: 'ready', pdf: 'ready' }, 'uk').label).toBe('PDF готовий');
   });
 });

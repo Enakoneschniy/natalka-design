@@ -4,14 +4,13 @@
 
 import type { City } from '@/app/api/cities/route';
 import { cityLabel } from '@/lib/birth-input';
+import type { ProLang } from './lang';
+import { textFor } from './text';
 
 export type Gender = 'female' | 'male' | 'neutral';
 
-export const GENDERS: { value: Gender; label: string }[] = [
-  { value: 'female', label: 'Женский' },
-  { value: 'male', label: 'Мужской' },
-  { value: 'neutral', label: 'Не указывать' },
-];
+/** The gender choices in the order the form shows them (labels: `clientForm.genders`). */
+export const GENDERS: Gender[] = ['female', 'male', 'neutral'];
 
 /** The web's labels to the codes the jobs worker stores. */
 export const GENDER_CODE: Record<Gender, 'f' | 'm' | 'n'> = {
@@ -85,27 +84,33 @@ export function parseBirthTime(text: string): string | null {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(trimmed) ? trimmed : null;
 }
 
-export const FIELD_ERROR: Record<ClientField, string> = {
-  name: `Укажите имя, до ${NAME_MAX} символов.`,
-  date: 'Укажите дату в виде дд.мм.гггг — не раньше 1900 года и не позже сегодняшнего дня.',
-  time: 'Укажите время в виде чч:мм или отметьте, что оно неизвестно.',
-  city: 'Выберите город из списка.',
-  consent: 'Без согласия клиента сохранить его данные нельзя.',
-};
+/** What a field's rule says when it is broken, in the cabinet's language. */
+export function clientFieldError(field: ClientField, lang: ProLang): string {
+  const errors = textFor(lang).clientForm.errors;
+  return field === 'name' ? errors.name(NAME_MAX) : errors[field];
+}
+
+/** Which fields are wrong; empty when the form can be sent. */
+export function clientProblems(draft: ClientDraft, today: Date = new Date()): ClientField[] {
+  const problems: ClientField[] = [];
+  const name = draft.name.trim();
+  if (name.length === 0 || name.length > NAME_MAX) problems.push('name');
+  if (!parseBirthDate(draft.date, today)) problems.push('date');
+  if (!draft.unknownTime && !parseBirthTime(draft.time)) problems.push('time');
+  if (!draft.city) problems.push('city');
+  if (!draft.consent) problems.push('consent');
+  return problems;
+}
 
 /** What is wrong with the form, field by field; empty when it can be sent. */
 export function checkClient(
   draft: ClientDraft,
+  lang: ProLang,
   today: Date = new Date(),
 ): Partial<Record<ClientField, string>> {
-  const errors: Partial<Record<ClientField, string>> = {};
-  const name = draft.name.trim();
-  if (name.length === 0 || name.length > NAME_MAX) errors.name = FIELD_ERROR.name;
-  if (!parseBirthDate(draft.date, today)) errors.date = FIELD_ERROR.date;
-  if (!draft.unknownTime && !parseBirthTime(draft.time)) errors.time = FIELD_ERROR.time;
-  if (!draft.city) errors.city = FIELD_ERROR.city;
-  if (!draft.consent) errors.consent = FIELD_ERROR.consent;
-  return errors;
+  return Object.fromEntries(
+    clientProblems(draft, today).map((field) => [field, clientFieldError(field, lang)]),
+  );
 }
 
 /** The `POST clients` body for a form that passes `checkClient`, else null. */
@@ -113,7 +118,7 @@ export function clientBody(draft: ClientDraft, today: Date = new Date()): Client
   const date = parseBirthDate(draft.date, today);
   const time = draft.unknownTime ? null : parseBirthTime(draft.time);
   const { city } = draft;
-  if (Object.keys(checkClient(draft, today)).length > 0 || !date || !city) return null;
+  if (clientProblems(draft, today).length > 0 || !date || !city) return null;
   return {
     name: draft.name.trim(),
     date,
@@ -131,8 +136,12 @@ export function clientBody(draft: ClientDraft, today: Date = new Date()): Client
 export const displayDate = (iso: string): string => iso.split('-').reverse().join('.');
 
 /** «15.05.1994 · 15:25 · Евпатория», or «время неизвестно» in the middle. */
-export function birthLine(client: Pick<ProClient, 'date' | 'time' | 'place'>): string {
-  return [displayDate(client.date), client.time ?? 'время неизвестно', client.place].join(' · ');
+export function birthLine(
+  client: Pick<ProClient, 'date' | 'time' | 'place'>,
+  lang: ProLang,
+): string {
+  const time = client.time ?? textFor(lang).clientForm.unknownTimeLine;
+  return [displayDate(client.date), time, client.place].join(' · ');
 }
 
 /** «45.20° N · 33.36° E · Europe/Simferopol», shown under the city once it is picked. */

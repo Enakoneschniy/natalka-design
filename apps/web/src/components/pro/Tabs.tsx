@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useText } from './Lang';
 
 /** Line icons for the phone's bottom bar, drawn in the link's own colour. */
 const ICONS = {
@@ -32,10 +33,10 @@ const ICONS = {
 };
 
 const TABS = [
-  { href: '/', label: 'Отчёты', icon: 'document' },
-  { href: '/clients', label: 'Клиенты', icon: 'person' },
-  { href: '/brand', label: 'Бренд', icon: 'star' },
-  { href: '/credits', label: 'Кредиты', icon: 'coin' },
+  { href: '/', key: 'reports', icon: 'document' },
+  { href: '/clients', key: 'clients', icon: 'person' },
+  { href: '/brand', key: 'brand', icon: 'star' },
+  { href: '/credits', key: 'credits', icon: 'coin' },
 ] as const;
 
 /** The public path of the page, whether Next reports the address bar or the internal `/pro` tree. */
@@ -49,8 +50,9 @@ const isActive = (path: string, href: string) =>
 
 export function Tabs() {
   const path = publicPath(usePathname() ?? '/');
+  const t = useText().shell;
   return (
-    <nav className="tabs" aria-label="Разделы кабинета">
+    <nav className="tabs" aria-label={t.tabsLabel}>
       {TABS.map((tab) => (
         <Link
           key={tab.href}
@@ -71,7 +73,7 @@ export function Tabs() {
           >
             {ICONS[tab.icon]}
           </svg>
-          {tab.label}
+          {t.tabs[tab.key]}
         </Link>
       ))}
     </nav>

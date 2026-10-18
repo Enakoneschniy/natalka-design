@@ -4,6 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const currentSeller = vi.fn();
 vi.mock('@/lib/pro/current', () => ({ currentSeller: () => currentSeller() }));
 
+const pageLang: { current: 'ru' | 'uk' } = { current: 'ru' };
+vi.mock('@/lib/pro/locale', async () => {
+  const { textFor } = await import('@/lib/pro/text');
+  return {
+    proLang: async () => pageLang.current,
+    proText: async () => textFor(pageLang.current),
+    titleOf: () => async () => ({ title: '' }),
+  };
+});
+
 const { default: Account } = await import('./page');
 
 const render = async () => renderToStaticMarkup(await Account());

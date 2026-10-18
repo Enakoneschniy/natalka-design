@@ -188,6 +188,7 @@ function view(r) {
   return {
     id: r.id,
     product: r.product,
+    lang: r.lang ?? 'ru',
     client_id: r.client_id,
     partner_client_id: r.partner_client_id,
     status: r.status,
@@ -212,6 +213,7 @@ function summary(r) {
   return {
     id: v.id,
     product: v.product,
+    lang: v.lang,
     client_id: v.client_id,
     partner_client_id: v.partner_client_id,
     status: v.status,
@@ -477,6 +479,7 @@ async function route(req, res, path) {
         reading({
           id,
           product: body.product,
+          lang: body.lang === 'uk' ? 'uk' : 'ru',
           client_id: body.client_id,
           partner_client_id: body.product === 'synastry' ? body.partner_client_id : null,
           status: 'writing',
@@ -539,7 +542,7 @@ async function route(req, res, path) {
   }
   if (m === 'GET' && path === '/v1/pro/demo') {
     const demo = readings.find((r) => r.id === 'r-ready');
-    return send(res, 200, { product: 'natal', sections: view(demo).sections });
+    return send(res, 200, { product: 'natal', lang: 'ru', sections: view(demo).sections });
   }
 
   // brand
