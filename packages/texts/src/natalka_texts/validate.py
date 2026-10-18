@@ -50,6 +50,8 @@ IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
         "ти казала",
         "як ти знаєш",
         "як ти сам",
+        "ти згадував",
+        "ти згадувала",
         "з твого листа",
     ),
     "en": (
@@ -113,7 +115,11 @@ CLICHES: dict[str, tuple[str, ...]] = {
 #: and a plain `in` check turns both into false accusations.
 INFORMAL = {
     "ru": re.compile(r"\b(ты|теб[яе]|тобой|тво[йяёеи]\w*)\b", re.IGNORECASE),
-    "uk": re.compile(r"\b(ти|тоб[іи]|тебе|тобою|тво[їяєё]\w*)\b", re.IGNORECASE),
+    # «твій» and every form of it — «твого», «твому», «твою», «твоя», «твоє…», «твої…» — but not
+    # «творчість» or «твори».
+    "uk": re.compile(
+        r"\b(ти|тоб[іи]|тебе|тобою|тві[йм]|тво(?:го|му|я|ю|[їєё]\w*))\b", re.IGNORECASE
+    ),
 }
 
 #: A section written *about* the reader instead of *to* them reads like a horoscope column and

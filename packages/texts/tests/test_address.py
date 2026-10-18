@@ -104,3 +104,46 @@ def test_titles_follow_the_address_form() -> None:
     assert title(ground, "ru") == "Почва вашей карты"
     assert title(ground, "ru", "ty") == "Почва твоей карты"
     assert title(ground, "uk", "ty") == "Ґрунт твоєї карти"
+
+
+# A Ukrainian «ти» section can name the reader through «твій» and its forms alone: «твій»,
+# «твого», «твому», «твою» do not start with «тво» + «ї/є/я», and were missed.
+UK_TY_POSSESSIVE = "\n\n".join(
+    [
+        "Твій Місяць у Раку шукає опору вдома, і саме там найкраще відновлюються сили. " * 3,
+        "Для твого Сонця в Тельці важливі спокій, сталість і речі, які можна торкнутися. " * 3,
+        "Твому Асценденту в Діві властиво помічати деталі, а твою уважність цінують інші. " * 3,
+    ]
+)
+UK_VY_TEXT = "\n\n".join(
+    [
+        "Ваш Місяць у Раку шукає опору вдома, і саме там найкраще відновлюються ваші сили. " * 3,
+        "Для вашого Сонця в Тельці важливі спокій, сталість і творчість, яку можна торкнутися. "
+        * 3,
+        "Вашому Асценденту в Діві властиво помічати деталі, а вашу уважність цінують інші. " * 3,
+    ]
+)
+
+
+def test_ukrainian_ty_section_may_address_the_reader_through_tviy_alone() -> None:
+    report = check(UK_TY_POSSESSIVE, lang="uk", min_paragraphs=3, max_paragraphs=3, address="ty")
+    assert not _addr(report.problems)
+
+
+def test_ukrainian_vy_section_catches_a_slip_into_tviy() -> None:
+    assert not _addr(check(UK_VY_TEXT, lang="uk", min_paragraphs=3, max_paragraphs=3).problems)
+    slipped = UK_VY_TEXT.replace("Ваш Місяць", "Твій Місяць", 1)
+    assert _addr(check(slipped, lang="uk", min_paragraphs=3, max_paragraphs=3).problems)
+
+
+def test_ukrainian_tvorchist_is_not_an_informal_word() -> None:
+    # «творчість», «твори», «творець»: «тво» + «р» is not the reader's possessive.
+    text = UK_VY_TEXT + "\n\nВаші твори й ваша творчість — це ваш шлях."
+    report = check(text, lang="uk", min_paragraphs=3, max_paragraphs=4)
+    assert not _addr(report.problems)
+
+
+def test_ukrainian_ty_reading_bans_ty_zgaduvala() -> None:
+    text = UK_TY_POSSESSIVE + "\n\nЯк ти згадувала, усе повторюється."
+    report = check(text, lang="uk", min_paragraphs=3, max_paragraphs=4, address="ty")
+    assert any("ти згадувала" in p for p in report.problems)
