@@ -55,17 +55,27 @@ const localDay = (now: Date): string =>
     .map((part) => String(part).padStart(2, '0'))
     .join('-');
 
-/** dd.mm.yyyy → ISO, or null when the date does not exist (31.02), is before 1900 or is still to
- * come — the range an order accepts. */
-export function parseDate(value: string, now = new Date()): string | null {
+/** Why a typed date is not one an order accepts: not typed in full as dd.mm.yyyy, a day the
+ * calendar does not have (31.02), before 1900, or still to come. */
+export type DateProblem = 'format' | 'missing' | 'early' | 'future';
+
+/** dd.mm.yyyy → ISO, or what is wrong with it: each problem gets its own answer, since «format
+ * dd.mm.yyyy» under a date typed exactly so tells the visitor nothing. */
+export function readDate(
+  value: string,
+  now = new Date(),
+): { iso: string } | { problem: DateProblem } {
   const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value.trim());
-  if (!match) return null;
+  if (!match) return { problem: 'format' };
   const [, dd, mm, yyyy] = match as unknown as [string, string, string, string];
   const iso = `${yyyy}-${mm}-${dd}`;
   const date = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(date.getTime()) || date.getUTCDate() !== Number(dd)) return null;
-  if (iso < EARLIEST_BIRTH || iso > localDay(now)) return null;
-  return iso;
+  if (Number.isNaN(date.getTime()) || date.getUTCDate() !== Number(dd)) {
+    return { problem: 'missing' };
+  }
+  if (iso < EARLIEST_BIRTH) return { problem: 'early' };
+  if (iso > localDay(now)) return { problem: 'future' };
+  return { iso };
 }
 
 /** h:mm or hh:mm → hh:mm, or null when it is not a time of day. */

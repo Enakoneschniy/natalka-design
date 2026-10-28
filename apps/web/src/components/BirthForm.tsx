@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { cityLabel, emptyPerson, PersonFields, type PersonState } from '@/components/PersonFields';
-import { parseDate, parseTime } from '@/lib/birth-input';
+import { type DateProblem, parseTime, readDate } from '@/lib/birth-input';
 
 const GENDER_CODE: Record<string, string> = { female: 'f', male: 'm', neutral: 'n' };
 
@@ -17,6 +17,14 @@ const ERROR_SOURCES: Record<string, (keyof PersonState)[]> = {
   date: ['date'],
   time: ['time', 'unknownTime'],
   city: ['city', 'cityQuery'],
+};
+
+/** What the date field says for each way a date can be wrong. */
+const DATE_ERRORS: Record<DateProblem, string> = {
+  format: 'errors.date',
+  missing: 'errors.dateMissing',
+  early: 'errors.dateEarly',
+  future: 'errors.dateFuture',
 };
 
 export function BirthForm({ locale, product = 'natal' }: { locale: string; product?: string }) {
@@ -48,10 +56,11 @@ export function BirthForm({ locale, product = 'natal' }: { locale: string; produ
 
   /** Everything a chart needs, or the reasons it cannot be built yet. */
   const validate = (person: PersonState) => {
-    const iso = parseDate(person.date);
+    const date = readDate(person.date);
+    const iso = 'iso' in date ? date.iso : null;
     const hhmm = person.unknownTime ? null : parseTime(person.time);
     const problems: Record<string, string> = {};
-    if (!iso) problems.date = t('errors.date');
+    if ('problem' in date) problems.date = t(DATE_ERRORS[date.problem]);
     if (!person.unknownTime && !hhmm) problems.time = t('errors.time');
     if (!person.city) problems.city = t('errors.city');
     return { iso, hhmm, problems };

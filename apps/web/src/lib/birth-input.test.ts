@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { City } from '@/app/api/cities/route';
-import { cityLabel, maskDate, maskTime, parseDate, parseTime, remask } from './birth-input';
+import { cityLabel, maskDate, maskTime, parseTime, readDate, remask } from './birth-input';
 
 describe('birth input', () => {
   it('masks a date and a time as they are typed', () => {
@@ -24,15 +24,19 @@ describe('birth input', () => {
     expect(remask(maskDate, '', 0)).toEqual({ value: '', caret: 0 });
   });
 
-  it('reads a typed date only if it exists, from 1900 up to today', () => {
+  it('reads a typed date only if it exists, from 1900 up to today, and says why not', () => {
     const now = new Date(2026, 9, 6, 12);
-    expect(parseDate('15.05.1994', now)).toBe('1994-05-15');
-    expect(parseDate(' 01.01.1900 ', now)).toBe('1900-01-01');
-    expect(parseDate('06.10.2026', now)).toBe('2026-10-06');
-    expect(parseDate('31.02.1994', now)).toBeNull();
-    expect(parseDate('31.12.1899', now)).toBeNull();
-    expect(parseDate('07.10.2026', now)).toBeNull();
-    expect(parseDate('1994-05-15', now)).toBeNull();
+    expect(readDate('15.05.1994', now)).toEqual({ iso: '1994-05-15' });
+    expect(readDate(' 01.01.1900 ', now)).toEqual({ iso: '1900-01-01' });
+    expect(readDate('06.10.2026', now)).toEqual({ iso: '2026-10-06' });
+    expect(readDate('', now)).toEqual({ problem: 'format' });
+    expect(readDate('15.05.94', now)).toEqual({ problem: 'format' });
+    expect(readDate('1994-05-15', now)).toEqual({ problem: 'format' });
+    expect(readDate('31.02.1994', now)).toEqual({ problem: 'missing' });
+    expect(readDate('15.13.1994', now)).toEqual({ problem: 'missing' });
+    expect(readDate('00.05.1994', now)).toEqual({ problem: 'missing' });
+    expect(readDate('31.12.1899', now)).toEqual({ problem: 'early' });
+    expect(readDate('07.10.2026', now)).toEqual({ problem: 'future' });
   });
 
   it('reads a typed time of day', () => {
