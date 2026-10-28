@@ -10,6 +10,7 @@ import { SynastryPreview } from '@/components/SynastryPreview';
 import { Wheel } from '@/components/Wheel';
 import { type BirthInput, calcChart, calcSynastry, calcTransits } from '@/lib/api';
 import { type ChartFacts, MAJOR_ASPECTS, monthLabel } from '@/lib/chart';
+import { reportView } from '@/lib/conversions';
 import demo from '@/lib/demo-chart.json';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { signedPreview } from '@/lib/preview';
@@ -149,6 +150,12 @@ export default async function PreviewPage({
       second_name: names[1],
     });
     const price = priceFor('synastry', country);
+    await reportView({
+      product: 'synastry',
+      locale,
+      amount_minor: price.amount,
+      currency: price.currency,
+    });
     const checkoutHref = `/${locale}/checkout?${new URLSearchParams(
       Object.fromEntries(
         Object.entries(search).flatMap(([k, v]) => {
@@ -221,6 +228,11 @@ export default async function PreviewPage({
   // how many of those reach the offer at the end of it.
   await count('preview', { variant });
   await count('paywall', { variant });
+  // The sample chart is nobody's own: only a visitor's chart is reported as a view.
+  if (!isDemo) {
+    const shown = product === 'bundle' ? bundle : priceFor(product, country);
+    await reportView({ product, locale, amount_minor: shown.amount, currency: shown.currency });
+  }
   // The order screen needs the same birth data; carrying the query string keeps it stateless.
   const checkout = (product: string) => {
     const params = new URLSearchParams();

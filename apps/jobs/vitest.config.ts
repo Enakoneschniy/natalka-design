@@ -41,6 +41,9 @@ export default defineConfig({
           RESEND_API_KEY: 're_test_fake',
           MAIL_LOG_LINKS: '1',
           ALERT_EMAIL: 'owner@alerts.test',
+          // Meta's Conversions API goes to the fake Graph API in test/fakes.ts.
+          META_PIXEL_ID: 'test-pixel',
+          META_CAPI_TOKEN: 'test-capi-token',
         },
       },
     }),

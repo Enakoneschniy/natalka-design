@@ -73,4 +73,13 @@ export interface Env {
   PRO_DEMO_ORDER_ID?: string;
   /** The Ukrainian sample reading, shown to a Ukrainian cabinet; the Russian one while unset. */
   PRO_DEMO_ORDER_ID_UK?: string;
+  /** Meta's dataset (pixel) the Conversions API reports to. A var: it is public, the pixel on the
+   * landing carries the same id. */
+  META_PIXEL_ID?: string;
+  /** The Conversions API access token from Events Manager. Worker secret. With either of the two
+   * unset nothing is reported and no browser is kept with an order (meta.ts). */
+  META_CAPI_TOKEN?: string;
+  /** Sends every event to Events Manager's Test Events tab instead of counting it. Set it only
+   * while checking the setup, then delete it. */
+  META_TEST_EVENT_CODE?: string;
 }

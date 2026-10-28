@@ -60,6 +60,10 @@
     // then a reading can be had without paying, and that is not a thing to be found by.
     "SITE_INDEXABLE": "true",
     // Hosts (comma-separated) that show the seller cabinet instead of the public site.
-    "PRO_HOSTS": "pro.chronika.me"
+    "PRO_HOSTS": "pro.chronika.me",
+    // Meta's pixel (src/components/Marketing.tsx): loads only after a yes to the cookie question,
+    // and only on the landing, the documents and the empty form. Public by design. It sets the
+    // _fbp/_fbc cookies the jobs worker's Conversions API reports match on.
+    "META_PIXEL_ID": "1005542205920375"
   }
 }

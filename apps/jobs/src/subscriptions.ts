@@ -208,12 +208,17 @@ async function letterAllowed(env: Env, email: string): Promise<boolean> {
 
 /** Starts a pending subscription: computes its chart, starts the free month and queues the first
  * horoscope, once however often the link is used. Returns the management link's token, also for a
- * subscription confirmed before; null when the link is not valid. */
-export async function confirmSubscription(env: Env, token: string): Promise<string | null> {
+ * subscription confirmed before, and — only on the confirmation that started the free month — the
+ * subscription it started; null when the link is not valid. */
+export async function confirmSubscription(
+  env: Env,
+  token: string,
+): Promise<{ manage: string; started: { id: string; email: string | null; locale: string } | null } | null> {
   const claims = await readLink('subconfirm', token, env.LINK_KEY);
   if (!claims) return null;
   const sub = await getSubscription(env.DB, claims.sub);
   if (!sub) return null;
+  let started = false;
   if (subscriptionStatus(sub) === 'pending') {
     const birth = await subscriptionBirth(env, sub);
     if (!birth) return null;
@@ -225,7 +230,7 @@ export async function confirmSubscription(env: Env, token: string): Promise<stri
     const chart: StoredChart = { positions: facts.positions, houses: facts.houses ?? null, name: birth.name };
     const sealed = await encryptJson(chart, env.DATA_KEY);
     const ts = now();
-    const started = await env.DB.prepare(
+    const update = await env.DB.prepare(
       `UPDATE subscriptions SET status = 'active', confirmed_at = ?, trial_ends_at = ?, next_send_at = ?,
               birth_expires_at = ?, chart_ciphertext = ?, chart_nonce = ?, chart_json = '', updated_at = ?
        WHERE id = ? AND ${PENDING}`,
@@ -234,9 +239,15 @@ export async function confirmSubscription(env: Env, token: string): Promise<stri
       .run();
     // The first horoscope goes out at once: a subscription that says "see you next week" gives
     // nothing to judge it by.
-    if (started.meta.changes) await env.JOBS.send({ subscriptionId: sub.id });
+    if (update.meta.changes) {
+      started = true;
+      await env.JOBS.send({ subscriptionId: sub.id });
+    }
   }
-  return manageToken(env, sub.id);
+  return {
+    manage: await manageToken(env, sub.id),
+    started: started ? { id: sub.id, email: sub.email, locale: sub.locale } : null,
+  };
 }
 
 export async function updateSubscription(

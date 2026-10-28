@@ -21,6 +21,9 @@ export interface OrderRow {
   consent: string | null;
   /** Where they came from: utm_source, as it arrived. */
   source: string | null;
+  /** The buyer's browser, encrypted, for the Purchase reported to Meta; absent without consent. */
+  browser_ct?: ArrayBuffer | null;
+  browser_nonce?: ArrayBuffer | null;
   created_at: string;
 }
 
@@ -59,8 +62,8 @@ export async function insertOrder(db: D1Database, order: OrderRow): Promise<void
   await db
     .prepare(
       `INSERT INTO orders (id, email, product, locale, country, amount_minor, currency, status,
-                            variant, consent, source, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            variant, consent, source, browser_ct, browser_nonce, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       order.id,
@@ -74,9 +77,51 @@ export async function insertOrder(db: D1Database, order: OrderRow): Promise<void
       order.variant,
       order.consent,
       order.source,
+      order.browser_ct ?? null,
+      order.browser_nonce ?? null,
       order.created_at,
     )
     .run();
+}
+
+/** What a paid order's Purchase is reported with, taken once: the browser is cleared in the same
+ * step, so a webhook delivered twice cannot report twice, and nothing outlives its use. Null when
+ * the order kept no browser (no consent, or it was taken already). */
+export async function takeOrderBrowser(
+  db: D1Database,
+  orderId: string,
+): Promise<{
+  browser_ct: Blobish;
+  browser_nonce: Blobish;
+  email: string;
+  locale: string;
+  country: string | null;
+  product: string;
+  amount_minor: number;
+  currency: string;
+} | null> {
+  const row = await db
+    .prepare(
+      `SELECT browser_ct, browser_nonce, email, locale, country, product, amount_minor, currency
+       FROM orders WHERE id = ? AND browser_ct IS NOT NULL`,
+    )
+    .bind(orderId)
+    .first<{
+      browser_ct: Blobish;
+      browser_nonce: Blobish;
+      email: string;
+      locale: string;
+      country: string | null;
+      product: string;
+      amount_minor: number;
+      currency: string;
+    }>();
+  if (!row) return null;
+  const taken = await db
+    .prepare('UPDATE orders SET browser_ct = NULL, browser_nonce = NULL WHERE id = ? AND browser_ct IS NOT NULL')
+    .bind(orderId)
+    .run();
+  return taken.meta.changes ? row : null;
 }
 
 export async function insertChart(

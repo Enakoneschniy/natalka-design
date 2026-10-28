@@ -20,6 +20,7 @@ Set with `wrangler secret put <NAME>` in the app's directory, from a generated v
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY` | natalka-jobs | the providers |
 | `NATALKA_MODEL_API_KEY` (still read under its old name `NATALKA_ANTHROPIC_API_KEY`), `NATALKA_AI_GATEWAY_TOKEN` | natalka-api | the model provider; the AI Gateway's run token |
 | `TELEGRAM_BOT_TOKEN`, `SETUP_KEY` | natalka-bot | the bot; `SETUP_KEY` only while re-pointing the webhook |
+| `META_CAPI_TOKEN` | natalka-jobs | Meta's Conversions API; generated in Events Manager, not with openssl (see below) |
 
 A route whose key is missing answers 503 rather than running unprotected. To rotate a pair, put
 the new value on the caller and the callee one right after the other.
@@ -36,11 +37,38 @@ the new value on the caller and the callee one right after the other.
 
 The jobs worker rolls forward only: rows it has encrypted cannot be read by an older build.
 
+The Meta Conversions API (2026-10-28) is jobs-first as well: migration `0024_order_browser`, then
+natalka-jobs (with `META_CAPI_TOKEN`), then natalka-web, which starts sending the browser and
+calling `/v1/conversions/view`. Setting `META_PIXEL_ID` on the web also turns the cookie banner
+on: it is shown whenever any advertising tag is configured.
+
 A release in which the web starts sending something the worker must act on goes the other way:
 jobs first, then web. The Ukrainian cabinet (2026-10-18) is one: an older worker ignores the
 reading's `lang` and would charge for a Russian reading the seller ordered in Ukrainian. Its order
 is: push `main` (the API container brings the texts check that knows «твій»), then natalka-jobs,
 then natalka-web. No migration.
+
+## Meta Conversions API
+
+The jobs worker reports four events to Meta's dataset `META_PIXEL_ID` (a var in both wrangler
+configs; the site's pixel uses the same id): `ViewContent` (a visitor's own preview),
+`InitiateCheckout` (an order going to Stripe), `Purchase` (the webhook settled it) and
+`StartTrial` (a subscription confirmed). Only for a visitor whose `chr_consent` cookie says
+`granted`; what each event carries is in `apps/jobs/src/meta.ts` and in the privacy policy, and
+the two change together. Nothing about the birth ever goes.
+
+- **Token.** Events Manager → the dataset → Settings → Conversions API → *Generate access token*.
+  Then `wrangler secret put META_CAPI_TOKEN` in `apps/jobs`, pasting the token at the prompt.
+  Without it nothing is reported and no browser is kept with an order.
+- **Checking.** Events Manager → *Test events* gives a code; `wrangler secret put
+  META_TEST_EVENT_CODE` with it sends every event there instead of counting it. Open your own
+  preview with cookies allowed and watch `ViewContent` arrive. Delete the secret afterwards
+  (`wrangler secret delete META_TEST_EVENT_CODE`) — while it is set, real sales are not counted.
+  A Purchase cannot be checked without paying: Stripe is live.
+- **Failures** are logged by the jobs worker as `meta event refused <event> <id> <status> <code>`;
+  code 190 is the token (expired or revoked), 100 a parameter.
+- **Dedup.** Event ids are `checkout-<order>`, `purchase-<order>`, `trial-<subscription>`: a
+  repeated webhook reports once. The pixel itself only sends `PageView`, so nothing overlaps.
 
 ## Cloudflare settings
 

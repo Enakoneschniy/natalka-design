@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { browserFrom } from '@/lib/conversions';
 import { confirmSubscription } from '@/lib/jobs';
 import { invalid, notSameOrigin, readJson, relayFailure, unavailable } from '@/lib/route';
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   let result: Awaited<ReturnType<typeof confirmSubscription>>;
   try {
-    result = await confirmSubscription(token);
+    result = await confirmSubscription(token, browserFrom(request.headers, request.cookies));
   } catch (error) {
     return unavailable('subscription confirm failed', error);
   }

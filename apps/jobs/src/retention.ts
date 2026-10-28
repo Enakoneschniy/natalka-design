@@ -18,6 +18,8 @@ import { dropExpiredBirths, sealLegacyCharts, sweepSubscriptions } from './subsc
 const UNPAID_DAYS = 7;
 /** How long a paid order keeps the address it was paid from. */
 const ADDRESS_DAYS = 180;
+/** How long an order keeps the browser it was placed from: Meta takes no event older than this. */
+const BROWSER_DAYS = 7;
 /** Rows touched per statement, and the most statements a step runs in one night. */
 const BATCH = 500;
 const ROUNDS = 40;
@@ -43,6 +45,7 @@ export async function sweep(env: Env, options: SweepOptions = {}): Promise<Recor
     ['previews', () => run(env, 'DELETE FROM previews WHERE expires_at < ?', now())],
     ['unpaid orders', () => unpaidOrders(env, batch)],
     ['order addresses', () => orderAddresses(env)],
+    ['order browsers', () => run(env, 'UPDATE orders SET browser_ct = NULL, browser_nonce = NULL WHERE browser_ct IS NOT NULL AND created_at < ?', expiryFrom(-BROWSER_DAYS))],
     ['telegram links', () => run(env, 'DELETE FROM telegram_links WHERE created_at < ?', expiryFrom(-TELEGRAM_LINK_DAYS))],
     ['job errors', () => run(env, 'UPDATE jobs SET last_error = NULL WHERE last_error IS NOT NULL AND updated_at < ?', expiryFrom(-days))],
     ['sign-in links', () => signInLinks(env)],

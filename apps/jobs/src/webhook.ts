@@ -5,6 +5,7 @@
  * dispute that overtakes the completion of its payment leaves a tombstone the completion finds.
  * The owner is told by email about anything a person has to act on; the alerts carry ids only. */
 
+import { decryptJson } from './crypto';
 import {
   bumpStat,
   dropDispute,
@@ -14,10 +15,13 @@ import {
   refundOrder,
   setDisputeHold,
   settleOrderPayment,
+  takeOrderBrowser,
 } from './db';
 import type { Env } from './env';
+import { errorCode } from './errors';
 import { json } from './http';
 import { sendAlert } from './mail';
+import { type Browser, reportToMeta } from './meta';
 import { disputePurchase, disputeWon, markFailed, markPaid, markRefunded } from './pro/purchases';
 import { type StripeEvent, verifyWebhook } from './stripe';
 
@@ -82,6 +86,7 @@ async function orderPaid(env: Env, session: StripeObject): Promise<Response> {
         amountMinor: facts.amount_minor,
       });
     }
+    await reportPurchase(env, orderId);
     return json({ received: true, queued: true });
   }
 
@@ -104,6 +109,32 @@ async function orderPaid(env: Env, session: StripeObject): Promise<Response> {
     await sendAlert(env, 'A payment for an order that does not exist: refund it', ids);
   }
   return json({ received: true, queued: false, order: result });
+}
+
+/** The sale, reported to Meta from the browser the order was placed from — kept with the order
+ * only when the buyer agreed to the cookies, and cleared here whether or not the report goes out. */
+async function reportPurchase(env: Env, orderId: string): Promise<void> {
+  try {
+    const kept = await takeOrderBrowser(env.DB, orderId);
+    if (!kept) return;
+    const browser = await decryptJson<Browser>(kept.browser_ct, kept.browser_nonce, env.DATA_KEY);
+    await reportToMeta(env, {
+      name: 'Purchase',
+      id: `purchase-${orderId}`,
+      url: `${env.SITE_URL}/${kept.locale}/checkout`,
+      browser,
+      email: kept.email,
+      externalId: orderId,
+      country: kept.country,
+      product: kept.product,
+      amountMinor: kept.amount_minor,
+      currency: kept.currency,
+      orderId,
+    });
+  } catch (error) {
+    // The payment is settled and the job queued; a lost report is not a reason to fail Stripe.
+    console.error('purchase report', orderId, errorCode(error));
+  }
 }
 
 /** A paid order (not held) whose job has not had a single run. */

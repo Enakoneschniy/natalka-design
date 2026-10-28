@@ -54,6 +54,8 @@ import { type CheckoutSession, createCheckoutSession, expireCheckoutSession } fr
 import { json, readJson } from './http';
 import {
   InvalidField,
+  isLocale,
+  isProduct,
   type OrderInput,
   parseOrder,
   parsePreview,
@@ -62,6 +64,7 @@ import {
   type SubscriptionInput,
 } from './validate';
 import { consumeJob, DEAD_LETTER_QUEUE, deadLetter } from './consumer';
+import { metaEnabled, parseBrowser, reportToMeta } from './meta';
 import { errorCode } from './errors';
 import { apiFetch, loadBirth, openPayload } from './pipeline';
 import { sweep } from './retention';
@@ -136,7 +139,7 @@ const ORDER_LIMIT = 16 * 1024;
 const orderPage = (env: Env, locale: string, token: string): string =>
   `${env.SITE_URL}/${locale}/generating?t=${token}`;
 
-async function createOrder(request: Request, env: Env): Promise<Response> {
+async function createOrder(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const read = await readJson(request, ORDER_LIMIT);
   if (!read.ok) return read.response;
   let order: OrderInput;
@@ -158,6 +161,10 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
   const orderId = crypto.randomUUID();
   const jobId = crypto.randomUUID();
   const retention = Number(env.RETENTION_DAYS ?? '30');
+  // Kept for the Purchase reported once the webhook says the money is in; a test order is never
+  // reported, and nothing is kept while Meta is not configured.
+  const browser = !test && metaEnabled(env) ? order.browser : null;
+  const sealedBrowser = browser ? await encryptJson(browser, env.DATA_KEY) : null;
 
   await insertOrder(env.DB, {
     id: orderId,
@@ -171,6 +178,8 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     variant: order.variant,
     consent: order.consent,
     source: order.source,
+    browser_ct: sealedBrowser?.ciphertext ?? null,
+    browser_nonce: sealedBrowser?.nonce ?? null,
     created_at: now(),
   });
 
@@ -227,6 +236,23 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
     return json({ error: 'checkout' }, 502);
   }
   await setOrderSession(env.DB, orderId, session.id);
+  if (browser) {
+    ctx.waitUntil(
+      reportToMeta(env, {
+        name: 'InitiateCheckout',
+        id: `checkout-${orderId}`,
+        url: `${env.SITE_URL}/${order.locale}/checkout`,
+        browser,
+        email: order.email,
+        externalId: orderId,
+        country: order.country,
+        product: order.product,
+        amountMinor: order.amount_minor,
+        currency: order.currency,
+        orderId,
+      }),
+    );
+  }
   // The job waits in the table, not in the queue, until the webhook says the money is in.
   return json({ order_id: orderId, job_id: jobId, token, checkout_url: session.url }, 201);
 }
@@ -397,21 +423,70 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
   return json({ status: 'pending' }, 202);
 }
 
-/** Confirms from the letter's link, by POST only: mail scanners open links with GET. */
-async function subscriptionConfirm(request: Request, env: Env): Promise<Response> {
+/** Confirms from the letter's link, by POST only: mail scanners open links with GET. The site
+ * sends the confirming browser along only when it said yes to the cookie question; the free month
+ * it starts is then reported to Meta, once. */
+async function subscriptionConfirm(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const read = await readJson(request, SMALL_LIMIT);
   if (!read.ok) return read.response;
   const token = read.body.token;
   if (typeof token !== 'string') return json({ error: 'not found' }, 404);
-  let manage: string | null;
+  let confirmed: Awaited<ReturnType<typeof confirmSubscription>>;
   try {
-    manage = await confirmSubscription(env, token);
+    confirmed = await confirmSubscription(env, token);
   } catch (error) {
     // The chart could not be computed; the link still works, so the subscriber can try again.
     console.error('confirming a subscription', errorCode(error));
     return json({ error: 'unavailable' }, 503);
   }
-  return manage ? json({ token: manage }) : json({ error: 'not found' }, 404);
+  if (!confirmed) return json({ error: 'not found' }, 404);
+  const browser = parseBrowser(read.body.browser);
+  const { started } = confirmed;
+  if (started && browser) {
+    ctx.waitUntil(
+      reportToMeta(env, {
+        name: 'StartTrial',
+        id: `trial-${started.id}`,
+        url: `${env.SITE_URL}/${started.locale}/subscription/confirm`,
+        browser,
+        email: started.email,
+        externalId: started.id,
+        product: 'horoscope',
+      }),
+    );
+  }
+  return json({ token: confirmed.manage });
+}
+
+/** The site's server says a visitor who agreed to the cookies is looking at their own chart. The
+ * answer is the same 202 whether anything was reported: the report runs after it. */
+async function viewedContent(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const read = await readJson(request, SMALL_LIMIT);
+  if (!read.ok) return read.response;
+  const { body } = read;
+  const browser = parseBrowser(body.browser);
+  if (!isProduct(body.product)) return json({ error: 'invalid', field: 'product' }, 400);
+  if (!isLocale(body.locale)) return json({ error: 'invalid', field: 'locale' }, 400);
+  const amount = body.amount_minor;
+  const priced =
+    typeof amount === 'number' && Number.isInteger(amount) && amount > 0 && amount <= 1_000_000 &&
+    typeof body.currency === 'string' && /^[A-Za-z]{3}$/.test(body.currency);
+  if (browser) {
+    ctx.waitUntil(
+      reportToMeta(env, {
+        name: 'ViewContent',
+        // A page view has nothing to be deduplicated against: the pixel is not on that page.
+        id: `view-${crypto.randomUUID()}`,
+        url: `${env.SITE_URL}/${body.locale}/preview`,
+        browser,
+        country: typeof body.country === 'string' && /^[A-Za-z]{2}$/.test(body.country) ? body.country : null,
+        product: body.product,
+        amountMinor: priced ? (amount as number) : null,
+        currency: priced ? (body.currency as string) : null,
+      }),
+    );
+  }
+  return json({ status: 'accepted' }, 202);
 }
 
 async function subscriptionView(env: Env, token: string): Promise<Response> {
@@ -574,7 +649,7 @@ export default {
       return subscribe(request, env);
     }
     if (url.pathname === '/v1/subscriptions/confirm' && request.method === 'POST') {
-      return subscriptionConfirm(request, env);
+      return subscriptionConfirm(request, env, ctx);
     }
     const subscription = url.pathname.match(/^\/v1\/subscriptions\/([^/]+)$/);
     if (subscription?.[1]) {
@@ -583,7 +658,10 @@ export default {
       if (request.method === 'DELETE') return subscriptionDelete(env, subscription[1]);
     }
     if (url.pathname === '/v1/orders' && request.method === 'POST') {
-      return createOrder(request, env);
+      return createOrder(request, env, ctx);
+    }
+    if (url.pathname === '/v1/conversions/view' && request.method === 'POST') {
+      return viewedContent(request, env, ctx);
     }
     if (url.pathname === '/v1/preview' && request.method === 'POST') {
       return previewText(request, env);

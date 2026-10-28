@@ -147,6 +147,18 @@ export async function fakeApi(request: Request): Promise<Response> {
  * (read either through the API binding's /__last). Anything else is a 404. */
 export async function fakeOutbound(request: Request): Promise<Response> {
   const url = new URL(request.url);
+  if (request.method === 'POST' && url.origin === 'https://graph.facebook.com') {
+    // Meta's Conversions API: every event is kept under "meta|<event_id>" and under "meta|*", with
+    // the path it was posted to and the rest of the body, so a test can see what Meta was told.
+    const body = (await request.json()) as { data: { event_id: string }[] } & Record<string, unknown>;
+    for (const event of body.data) {
+      const record = { path: url.pathname, search: url.search, body: { ...body, data: [event] } };
+      for (const key of [`meta|${event.event_id}`, 'meta|*']) {
+        lastSeen.set(key, [...((lastSeen.get(key) as unknown[] | undefined) ?? []), record]);
+      }
+    }
+    return json({ events_received: body.data.length, fbtrace_id: 'fake' });
+  }
   if (request.method === 'POST' && url.origin === 'https://api.resend.com' && url.pathname === '/emails') {
     // Every letter is kept under "mail|<recipient>", oldest first. An address starting with
     // "fail-mail@" is refused, with a body that quotes it back and must never be logged.

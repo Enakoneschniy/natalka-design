@@ -198,6 +198,34 @@ describe('shop API routes and the jobs worker', () => {
       expect(body.birth_second.name).toBe('Борис');
     });
 
+    it('sends the browser along only after a yes to the cookies, for the reports to Meta', async () => {
+      const browser = {
+        'user-agent': 'Mozilla/5.0 Chrome/130.0',
+        'cf-connecting-ip': '203.0.113.7',
+      };
+      fetchMock.mockResolvedValueOnce(reply(201, created));
+      await order(
+        send('/api/orders', validOrder, 'POST', {
+          ...browser,
+          cookie: 'chr_consent=granted; _fbp=fb.1.1761600000000.42; _fbc=fb.1.1761600000000.IwAR',
+        }),
+      );
+      expect(forwarded().body.browser).toEqual({
+        ip: '203.0.113.7',
+        ua: 'Mozilla/5.0 Chrome/130.0',
+        fbp: 'fb.1.1761600000000.42',
+        fbc: 'fb.1.1761600000000.IwAR',
+      });
+      fetchMock.mockResolvedValueOnce(reply(201, created));
+      await order(
+        send('/api/orders', validOrder, 'POST', {
+          ...browser,
+          cookie: 'chr_consent=denied; _fbp=fb.1.1761600000000.42',
+        }),
+      );
+      expect(forwarded(1).body).not.toHaveProperty('browser');
+    });
+
     it('keeps the campaign only as a clean label', async () => {
       fetchMock.mockResolvedValueOnce(reply(201, created));
       await order(send('/api/orders', validOrder, 'POST', { cookie: 'chr_src=Meta<b>(x)' }));
@@ -510,6 +538,27 @@ describe('shop API routes and the jobs worker', () => {
       expect(call.url).toBe('https://jobs.test/v1/subscriptions/confirm');
       expect(call.body).toEqual({ token: 'confirm.t.x' });
       expect(call.headers.get('x-site-key')).toBe('site-key-123');
+    });
+
+    it('sends the confirming browser along only after a yes to the cookies', async () => {
+      const headers = {
+        'user-agent': 'Mozilla/5.0 Chrome/130.0',
+        'cf-connecting-ip': '203.0.113.7',
+      };
+      fetchMock.mockResolvedValueOnce(reply(200, { token: 'manage.token.x' }));
+      await confirm(
+        send('/api/subscriptions/confirm', { token: 'confirm.t.x' }, 'POST', {
+          ...headers,
+          cookie: 'chr_consent=granted',
+        }),
+      );
+      expect(forwarded().body).toEqual({
+        token: 'confirm.t.x',
+        browser: { ip: '203.0.113.7', ua: 'Mozilla/5.0 Chrome/130.0', fbp: null, fbc: null },
+      });
+      fetchMock.mockResolvedValueOnce(reply(200, { token: 'manage.token.x' }));
+      await confirm(send('/api/subscriptions/confirm', { token: 'confirm.t.x' }, 'POST', headers));
+      expect(forwarded(1).body).toEqual({ token: 'confirm.t.x' });
     });
 
     it('says when the letter’s link is no good', async () => {

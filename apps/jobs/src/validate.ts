@@ -5,6 +5,7 @@
  * and nothing else. */
 
 import type { Product } from './db';
+import { type Browser, parseBrowser } from './meta';
 
 export const PRODUCTS: readonly Product[] = ['natal', 'forecast', 'synastry', 'child', 'bundle'];
 export const LOCALES = ['ru', 'uk', 'en'] as const;
@@ -114,6 +115,9 @@ export interface OrderInput {
   variant: string | null;
   consent: 'granted' | 'denied' | null;
   source: string | null;
+  /** The buyer's browser, for the conversions reported to Meta (meta.ts); null unless they said
+   * yes to the cookie question. */
+  browser: Browser | null;
   birth: Birth;
   /** The partner; only a synastry has one, and anything else ignores it. */
   birth_second: Birth | null;
@@ -137,6 +141,7 @@ export function parseOrder(body: Record<string, unknown>): OrderInput {
     throw new InvalidField('birth_second');
   }
   const birthSecond = product === 'synastry' ? parseBirth(body.birth_second, 'birth_second') : null;
+  const consent = body.consent === 'granted' || body.consent === 'denied' ? body.consent : null;
   return {
     email,
     product,
@@ -145,8 +150,10 @@ export function parseOrder(body: Record<string, unknown>): OrderInput {
     amount_minor: amount,
     currency: body.currency.toUpperCase(),
     variant: typeof body.variant === 'string' && /^[a-z0-9_-]{1,16}$/i.test(body.variant) ? body.variant : null,
-    consent: body.consent === 'granted' || body.consent === 'denied' ? body.consent : null,
+    consent,
     source: cleanSource(body.source),
+    // Without a yes, whatever the site sent about the browser is not even read.
+    browser: consent === 'granted' ? parseBrowser(body.browser) : null,
     birth,
     birth_second: birthSecond,
   };

@@ -1,3 +1,5 @@
+import type { Browser } from '@/lib/conversions';
+
 /** Server-side client for the jobs Worker.
  *
  * The browser never sees this address: orders carry birth data and the pipeline spends money, so
@@ -18,6 +20,8 @@ export interface OrderRequest {
   /** Their answer to the cookie question, and the campaign that brought them. */
   consent?: string | null;
   source?: string | null;
+  /** Their browser, for the conversions reported to Meta; only with a yes (lib/conversions). */
+  browser?: Browser;
   birth: BirthInput;
   /** The partner; only a synastry has one. */
   birth_second?: BirthInput;
@@ -231,9 +235,19 @@ export async function createSubscription(
 }
 
 /** The confirmation link's token, traded for the subscription's management token: the first
- * confirmation starts it, a repeated one answers the same; 404 for a link that is not good. */
-export async function confirmSubscription(token: string): Promise<Outcome<{ token?: unknown }>> {
-  return outcome(await jobsFetch('/v1/subscriptions/confirm', postJson({ token })));
+ * confirmation starts it, a repeated one answers the same; 404 for a link that is not good. The
+ * confirming browser goes along only when it agreed to the cookies: the free month it starts is
+ * reported to Meta. */
+export async function confirmSubscription(
+  token: string,
+  browser: Browser | null = null,
+): Promise<Outcome<{ token?: unknown }>> {
+  return outcome(
+    await jobsFetch(
+      '/v1/subscriptions/confirm',
+      postJson(browser ? { token, browser } : { token }),
+    ),
+  );
 }
 
 export async function subscriptionView(token: string): Promise<SubscriptionView | null> {

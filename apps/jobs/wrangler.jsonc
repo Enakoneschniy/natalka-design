@@ -27,10 +27,14 @@
     // Елена, 14.05.1991 07:40, Kyiv), ordered from the house cabinet help@chronika.me. Deleting
     // that client there takes the sample away.
     "PRO_DEMO_ORDER_ID": "afa2476f-e4f7-41a4-b15f-fe8744592369",
-    "PRO_DEMO_ORDER_ID_UK": "4c429dda-989f-451c-8bc1-3b093ee2fad7"
+    "PRO_DEMO_ORDER_ID_UK": "4c429dda-989f-451c-8bc1-3b093ee2fad7",
+    // Meta's dataset the Conversions API reports to (src/meta.ts); the site's pixel uses the same
+    // id. Nothing is reported until the META_CAPI_TOKEN secret is set as well.
+    "META_PIXEL_ID": "1005542205920375"
     // Secrets, set with `wrangler secret put` and never here: DATA_KEY, LINK_KEY, SESSION_KEY,
     // PRO_API_KEY, SITE_KEY, NATALKA_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
-    // RESEND_API_KEY, TEST_ORDER_KEY (optional).
+    // RESEND_API_KEY, TEST_ORDER_KEY (optional), META_CAPI_TOKEN (optional),
+    // META_TEST_EVENT_CODE (optional, only while checking the setup).
   },
   // Worker-to-worker over a service binding, not a public fetch: Cloudflare refuses the latter
   // between two workers on the same zone (error 1042), and this keeps the call private and fast.

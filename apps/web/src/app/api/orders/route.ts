@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { browserFrom } from '@/lib/conversions';
 import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { createOrder, isStripeCheckout } from '@/lib/jobs';
 import { CONSENT_COOKIE, readConsent, readSource, SOURCE_COOKIE } from '@/lib/marketing';
@@ -36,6 +37,8 @@ export async function POST(request: NextRequest) {
   // the only moment at which either of these is knowable.
   const consent = readConsent(request.cookies.get(CONSENT_COOKIE)?.value);
   const source = readSource(request.cookies.get(SOURCE_COOKIE)?.value);
+  // The checkout and the payment are reported to Meta from the jobs worker, from this browser.
+  const browser = browserFrom(request.headers, request.cookies);
   const price = product === 'bundle' ? bundlePrice(country, variant) : priceFor(product, country);
 
   let result: Awaited<ReturnType<typeof createOrder>>;
@@ -48,6 +51,7 @@ export async function POST(request: NextRequest) {
       variant,
       consent,
       source,
+      ...(browser ? { browser } : {}),
     });
   } catch (error) {
     return unavailable('order failed', error);

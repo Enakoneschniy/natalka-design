@@ -17,7 +17,7 @@ import { readSource, SOURCE_COOKIE } from '@/lib/marketing';
 export type StatEvent = 'landing' | 'start' | 'preview' | 'paywall' | 'checkout';
 
 /** Crawlers would otherwise be most of the top of the funnel. */
-const LOOKS_AUTOMATED = /bot|crawl|spider|slurp|headless|preview|fetch|monitor|curl|python/i;
+export const LOOKS_AUTOMATED = /bot|crawl|spider|slurp|headless|preview|fetch|monitor|curl|python/i;
 
 export async function count(
   event: StatEvent,
