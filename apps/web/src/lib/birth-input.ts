@@ -14,6 +14,38 @@ export function maskTime(value: string): string {
   return digits.length <= 2 ? digits : `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
+/** A masked value and where its caret goes: just after as many digits as stood before the caret
+ * in what was typed. The masks re-flow digits across the separators, and a controlled input whose
+ * value changes under it puts the caret at the end — so a digit erased in the middle, the way a
+ * typo gets fixed on a phone, sent the next one to the end and left a date that never parses. */
+export function remask(
+  mask: (value: string) => string,
+  typed: string,
+  caret: number,
+): { value: string; caret: number } {
+  const value = mask(typed);
+  let digits = typed.slice(0, caret).replace(/\D/g, '').length;
+  let at = 0;
+  while (digits > 0 && at < value.length) {
+    if (/\d/.test(value.charAt(at))) digits -= 1;
+    at += 1;
+  }
+  return { value, caret: at };
+}
+
+/** onChange for a masked field: writes the masked value and its caret into the input before React
+ * renders the same value, which then leaves the caret alone. */
+export function maskInput(
+  input: HTMLInputElement,
+  mask: (value: string) => string,
+  set: (value: string) => void,
+): void {
+  const { value, caret } = remask(mask, input.value, input.selectionStart ?? input.value.length);
+  input.value = value;
+  input.setSelectionRange(caret, caret);
+  set(value);
+}
+
 /** The earliest birth an order accepts; nobody it could be for was born before. */
 export const EARLIEST_BIRTH = '1900-01-01';
 

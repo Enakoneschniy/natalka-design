@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
-import { maskDate, maskTime } from '@/lib/birth-input';
+import { maskDate, maskInput, maskTime } from '@/lib/birth-input';
 import {
   type ClientDraft,
   type ClientField,
@@ -103,7 +103,9 @@ export function ClientForm() {
             inputMode="numeric"
             placeholder={t.clientForm.datePlaceholder}
             value={draft.date}
-            onChange={(event) => patch({ date: maskDate(event.target.value) })}
+            onChange={(event) =>
+              maskInput(event.currentTarget, maskDate, (date) => patch({ date }))
+            }
             aria-invalid={errors.date ? true : undefined}
             aria-describedby={describe('date')}
           />
@@ -117,7 +119,9 @@ export function ClientForm() {
             placeholder={t.clientForm.timePlaceholder}
             value={draft.unknownTime ? '' : draft.time}
             disabled={draft.unknownTime}
-            onChange={(event) => patch({ time: maskTime(event.target.value) })}
+            onChange={(event) =>
+              maskInput(event.currentTarget, maskTime, (time) => patch({ time }))
+            }
             aria-invalid={errors.time ? true : undefined}
             aria-describedby={describe('time')}
           />

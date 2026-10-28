@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { City } from '@/app/api/cities/route';
-import { cityLabel, maskDate, maskTime, parseDate, parseTime } from './birth-input';
+import { cityLabel, maskDate, maskTime, parseDate, parseTime, remask } from './birth-input';
 
 describe('birth input', () => {
   it('masks a date and a time as they are typed', () => {
@@ -9,6 +9,19 @@ describe('birth input', () => {
     expect(maskDate('1505199400')).toBe('15.05.1994');
     expect(maskTime('1525')).toBe('15:25');
     expect(maskTime('15')).toBe('15');
+  });
+
+  it('keeps the caret where a digit was fixed in the middle', () => {
+    // 31.02.1990 → the 2 erased: the digits re-flow, and the caret stays after "31.0".
+    expect(remask(maskDate, '31.0.1990', 4)).toEqual({ value: '31.01.990', caret: 4 });
+    // …so the 3 typed next lands where the 2 was.
+    expect(remask(maskDate, '31.031.990', 5)).toEqual({ value: '31.03.1990', caret: 5 });
+    // Typing at the end steps over the separator the mask adds.
+    expect(remask(maskDate, '310', 3)).toEqual({ value: '31.0', caret: 4 });
+    // Erasing a separator steps back over it instead of being undone in place.
+    expect(remask(maskDate, '31.021990', 5)).toEqual({ value: '31.02.1990', caret: 5 });
+    expect(remask(maskTime, '1:30', 1)).toEqual({ value: '13:0', caret: 1 });
+    expect(remask(maskDate, '', 0)).toEqual({ value: '', caret: 0 });
   });
 
   it('reads a typed date only if it exists, from 1900 up to today', () => {

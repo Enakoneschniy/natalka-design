@@ -9,7 +9,7 @@
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { City } from '@/app/api/cities/route';
-import { cityLabel, maskDate, maskTime } from '@/lib/birth-input';
+import { cityLabel, maskDate, maskInput, maskTime } from '@/lib/birth-input';
 
 export { cityLabel, maskDate, maskTime };
 
@@ -178,7 +178,7 @@ export function PersonFields({
             className={`input mono${errors.date ? ' is-error' : ''}`}
             id={`${idPrefix}-date`}
             value={value.date}
-            onChange={(e) => patch({ date: maskDate(e.target.value) })}
+            onChange={(e) => maskInput(e.currentTarget, maskDate, (date) => patch({ date }))}
             inputMode="numeric"
             placeholder={t('datePlaceholder')}
             aria-invalid={Boolean(errors.date)}
@@ -193,7 +193,7 @@ export function PersonFields({
             className={`input mono${errors.time ? ' is-error' : ''}`}
             id={`${idPrefix}-time`}
             value={value.unknownTime ? '' : value.time}
-            onChange={(e) => patch({ time: maskTime(e.target.value) })}
+            onChange={(e) => maskInput(e.currentTarget, maskTime, (time) => patch({ time }))}
             inputMode="numeric"
             placeholder={t('timePlaceholder')}
             disabled={value.unknownTime}
@@ -251,6 +251,7 @@ export function PersonFields({
             aria-controls={listId}
             aria-autocomplete="list"
             placeholder={t('cityPlaceholder')}
+            aria-invalid={Boolean(errors.city)}
           />
           <svg
             className="input-icon"

@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { cityLabel, emptyPerson, PersonFields, type PersonState } from '@/components/PersonFields';
 import { parseDate, parseTime } from '@/lib/birth-input';
 
@@ -9,6 +10,14 @@ const GENDER_CODE: Record<string, string> = { female: 'f', male: 'm', neutral: '
 
 /** Which products need a second person. Only compatibility, for now. */
 const PAIRED = new Set(['synastry']);
+
+/** What each error is about: an edit to any of these clears it, so a field being fixed stops
+ * saying it is wrong. */
+const ERROR_SOURCES: Record<string, (keyof PersonState)[]> = {
+  date: ['date'],
+  time: ['time', 'unknownTime'],
+  city: ['city', 'cityQuery'],
+};
 
 export function BirthForm({ locale, product = 'natal' }: { locale: string; product?: string }) {
   const t = useTranslations('form');
@@ -19,9 +28,23 @@ export function BirthForm({ locale, product = 'natal' }: { locale: string; produ
   );
   const [errors, setErrors] = useState<Record<string, string>[]>([{}, {}]);
   const [pending, setPending] = useState(false);
+  const form = useRef<HTMLFormElement>(null);
 
-  const update = (index: number, next: PersonState) =>
+  const update = (index: number, next: PersonState) => {
+    const previous = people[index];
     setPeople((current) => current.map((person, i) => (i === index ? next : person)));
+    setErrors((current) =>
+      current.map((own, i) =>
+        i !== index || !previous
+          ? own
+          : Object.fromEntries(
+              Object.entries(own).filter(
+                ([field]) => !ERROR_SOURCES[field]?.some((key) => previous[key] !== next[key]),
+              ),
+            ),
+      ),
+    );
+  };
 
   /** Everything a chart needs, or the reasons it cannot be built yet. */
   const validate = (person: PersonState) => {
@@ -37,8 +60,16 @@ export function BirthForm({ locale, product = 'natal' }: { locale: string; produ
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     const checked = people.map(validate);
-    setErrors(checked.map((c) => c.problems));
-    if (checked.some((c) => Object.keys(c.problems).length > 0)) return;
+    // Rendered now, so the first field marked wrong can be found and brought to the visitor: on a
+    // phone the button sits a screen below the date, and an error out of sight reads as a button
+    // that does nothing.
+    flushSync(() => setErrors(checked.map((c) => c.problems)));
+    if (checked.some((c) => Object.keys(c.problems).length > 0)) {
+      const wrong = form.current?.querySelector<HTMLInputElement>('[aria-invalid="true"]');
+      wrong?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      wrong?.focus({ preventScroll: true });
+      return;
+    }
 
     const params = new URLSearchParams({ p: product });
     checked.forEach((check, index) => {
@@ -94,7 +125,7 @@ export function BirthForm({ locale, product = 'natal' }: { locale: string; produ
   };
 
   return (
-    <form className="form" onSubmit={submit} noValidate>
+    <form className="form" ref={form} onSubmit={submit} noValidate>
       {people.map((person, index) => (
         <PersonFields
           // The list is fixed at one or two entries and never reordered.
