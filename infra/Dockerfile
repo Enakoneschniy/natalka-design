@@ -8,7 +8,7 @@
 # of each digest for readers and for Dependabot, which moves both together. Resolved 2026-10-06:
 #   python:3.12-slim-bookworm            sha256:7753c33391fc…
 #   ghcr.io/astral-sh/uv:0.12 (0.12.23)  sha256:61d393e44e24…
-FROM python:3.12-slim-bookworm@sha256:7753c33391fc9f01d1984375bf375eb6686d52ba10db6043a86634a5ccf90dcf AS builder
+FROM python:3.15-slim-bookworm@sha256:4e03260adeeebafccd084f3584e6b84823aba5651cfb53ef8a078ed441ddf9cd AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev \
     && find /app/.venv -name '*.pyc' -delete
 
 
-FROM python:3.12-slim-bookworm@sha256:7753c33391fc9f01d1984375bf375eb6686d52ba10db6043a86634a5ccf90dcf
+FROM python:3.15-slim-bookworm@sha256:4e03260adeeebafccd084f3584e6b84823aba5651cfb53ef8a078ed441ddf9cd
 
 # Which commit this image was built from. Without it there is no way to tell from the outside
 # whether a deploy has actually reached the running container.
