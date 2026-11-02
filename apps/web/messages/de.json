@@ -690,7 +690,7 @@
     "submit": "Widerruf bestätigen",
     "sending": "Wird gesendet…",
     "doneTitle": "Widerruf eingegangen",
-    "doneBody": "Wir haben Ihre Erklärung am {when} erhalten. Die Bestätigung ist an {email} unterwegs; wir melden uns innerhalb von zwei Werktagen.",
+    "doneBody": "Wir haben Ihre Erklärung am {when} erhalten. Gehört zu {email} eine Bestellung, ist die Eingangsbestätigung dorthin unterwegs; wir melden uns innerhalb von zwei Werktagen.",
     "note": "Ob für Ihre Bestellung ein Widerrufsrecht besteht oder bereits erloschen ist, prüfen wir und teilen es Ihnen mit. Die Einzelheiten stehen in der Widerrufsbelehrung.",
     "nameInvalid": "Bitte geben Sie Ihren Namen an",
     "emailInvalid": "Bitte prüfen Sie die E-Mail-Adresse",

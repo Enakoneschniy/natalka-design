@@ -113,6 +113,7 @@ const withdraw = (body: unknown, headers: Record<string, string> = SITE) =>
 describe('a withdrawal declared on the site', () => {
   it('gets the buyer a receipt with its content and the moment it arrived, and tells the owner', async () => {
     const email = 'widerruf@confirm.test';
+    await pendingOrder(email, 'de');
     const response = await withdraw({
       locale: 'de',
       name: 'Anna Beispiel',
@@ -132,6 +133,30 @@ describe('a withdrawal declared on the site', () => {
     const told = (await letters('owner@alerts.test')).filter((l) => l.text.includes(email));
     expect(told).toHaveLength(1);
     expect(told[0]?.subject).toContain('Withdrawal from a contract');
+  });
+
+  it('mails nothing to an address that never ordered, and answers the same', async () => {
+    const email = 'fremd@confirm.test';
+    const response = await withdraw({ locale: 'de', name: 'Jemand', email, message: 'https://evil.example/login' });
+    expect(response.status).toBe(202);
+    expect(await letters(email)).toEqual([]);
+    const told = (await letters('owner@alerts.test')).filter((l) => l.text.includes(email));
+    expect(told[0]?.text).toContain('not sent: no order from this address');
+  });
+
+  it('quotes no link back, and sends one order at most three receipts a day', async () => {
+    const email = 'viermal@confirm.test';
+    await pendingOrder(email, 'de');
+    for (let i = 0; i < 4; i++) {
+      expect(
+        (await withdraw({ locale: 'de', name: 'Anna', email, message: `Bitte hier klicken: https://evil.example/${i} oder evil.com` }))
+          .status,
+      ).toBe(202);
+    }
+    const receipts = await letters(email);
+    expect(receipts).toHaveLength(3);
+    expect(receipts[0]?.text).not.toContain('evil');
+    expect(receipts[0]?.text).toContain('Bitte hier klicken: […] oder […]');
   });
 
   it('refuses a declaration without a name or an address, and one without the site key', async () => {

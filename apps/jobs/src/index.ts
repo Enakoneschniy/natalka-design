@@ -10,6 +10,9 @@ import { canonicalJson, encryptJson, LINK_TTL_SECONDS, readLink, sameSecret, sha
 import {
   cachePreview,
   claimTelegramLink,
+  insertEmailEvent,
+  latestOrderFor,
+  lettersSince,
   deliverable,
   forgetTelegramChat,
   markTelegramDelivered,
@@ -409,9 +412,22 @@ const CADENCES = new Set<string>(['week', 'month']);
 const SUBSCRIPTION_LIMIT = 16 * 1024;
 const SMALL_LIMIT = 4 * 1024;
 
+/** Receipts one order may be sent in a day: a buyer who sends the form twice gets two, a stranger
+ * who knows a buyer's address cannot fill their inbox. */
+const RECEIPTS_PER_DAY = 3;
+
+/** Links in what a visitor typed are taken out before the text is quoted back in a letter from
+ * us: the form must not be a way to mail someone a link under our name. */
+const neutralise = (text: string): string =>
+  text.replace(/\b(?:https?:\/\/|www\.)\S+/gi, '[…]').replace(/\b\S+\.(?:com|net|org|ru|de|io|me|info|xyz|top|link|click)\b\S*/gi, '[…]');
+
 /** A withdrawal from a contract, declared with the site's button. The buyer is owed a receipt at
  * once — its content and the moment it arrived — and the owner decides on the refund: whether the
- * right had already lapsed is a question for a person, not for this route. */
+ * right had already lapsed is a question for a person, not for this route.
+ *
+ * The receipt goes only to an address that placed an order here, at most a few times a day, with
+ * any link in the visitor's words removed: otherwise the form would mail anyone anything from our
+ * address. The answer is the same either way, so it does not tell who bought here. */
 async function withdraw(request: Request, env: Env): Promise<Response> {
   const read = await readJson(request, SMALL_LIMIT);
   if (!read.ok) return read.response;
@@ -423,10 +439,34 @@ async function withdraw(request: Request, env: Env): Promise<Response> {
     throw error;
   }
   const receivedAt = new Date().toISOString();
-  const sent = await sendWithdrawalReceipt(env, { ...input, receivedAt }).catch((error: unknown) => {
-    console.error('withdrawal receipt', errorCode(error));
-    return null;
-  });
+  const order = await latestOrderFor(env.DB, input.email);
+  const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+  let receipt: string;
+  if (!order) {
+    receipt = 'not sent: no order from this address';
+  } else if ((await lettersSince(env.DB, order.id, 'withdrawal', dayAgo)) >= RECEIPTS_PER_DAY) {
+    receipt = 'not sent: the day\'s receipts for this order are used up';
+  } else {
+    const sent = await sendWithdrawalReceipt(env, {
+      ...input,
+      name: neutralise(input.name),
+      order: neutralise(input.order),
+      message: neutralise(input.message),
+      receivedAt,
+    }).catch((error: unknown) => {
+      console.error('withdrawal receipt', errorCode(error));
+      return null;
+    });
+    if (sent) {
+      await insertEmailEvent(env.DB, {
+        order_id: order.id,
+        kind: 'withdrawal',
+        provider_id: sent.providerId,
+        status: sent.status,
+      });
+    }
+    receipt = sent ? `${sent.status} (order ${order.id})` : 'failed — send it by hand';
+  }
   await sendAlert(
     env,
     'Withdrawal from a contract: reply within two working days',
@@ -437,7 +477,7 @@ async function withdraw(request: Request, env: Env): Promise<Response> {
       `order ${input.order || '-'}`,
       `locale ${input.locale}`,
       `message ${input.message || '-'}`,
-      `receipt ${sent?.status ?? 'failed — send it by hand'}`,
+      `receipt ${receipt}`,
     ].join('\n'),
   );
   return json({ status: 'received', received_at: receivedAt }, 202);
