@@ -67,7 +67,7 @@ describe('POST /v1/preview', () => {
       [{ facts: undefined }, 'facts'],
       [{ facts: [] }, 'facts'],
       [{ facts: { planets: [] } }, 'facts'],
-      [{ lang: 'de' }, 'lang'],
+      [{ lang: 'fr' }, 'lang'],
       [{ gender: 'x' }, 'gender'],
       [{ product: 'tarot' }, 'product'],
       [{ first_name: 'И'.repeat(81) }, 'first_name'],

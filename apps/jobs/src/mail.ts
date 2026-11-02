@@ -53,6 +53,16 @@ const COPY: Record<string, Copy> = {
     manage: 'Manage subscription',
     unsubscribe: 'You are receiving this because you subscribed to Chronika horoscopes. Unsubscribe or change the cadence at the link above.',
   },
+  de: {
+    subject: 'Ihre Deutung ist fertig',
+    ready: 'Das Dokument ist fertig. Sie öffnen es über den Link unten.',
+    open: 'Deutung öffnen',
+    keeps: 'Der Link gilt dreißig Tage; danach werden das Dokument und die Geburtsdaten gelöscht.',
+    sign: 'Chronika · chronika.me',
+    window: 'Horoskop für',
+    manage: 'Abo verwalten',
+    unsubscribe: 'Sie erhalten diese E-Mail, weil Sie die Horoskope von Chronika abonniert haben. Abbestellen oder den Rhythmus ändern können Sie über den Link oben.',
+  },
 };
 
 const escape = (text: string) =>
@@ -308,6 +318,12 @@ const CONFIRM_COPY: Record<string, Copy> = {
     'Confirm subscription',
     'The link works for 7 days. If you did not subscribe, simply ignore this letter: the data is deleted on its own.',
   ),
+  de: simple(
+    'Bitte bestätigen Sie Ihr Horoskop-Abo',
+    'Klicken Sie auf die Schaltfläche, um Ihr Abo der Horoskope von Chronika zu bestätigen. Solange es nicht bestätigt ist, senden wir nichts.',
+    'Abo bestätigen',
+    'Der Link gilt 7 Tage. Wenn Sie nichts abonniert haben, ignorieren Sie diese E-Mail einfach: Die Daten werden von selbst gelöscht.',
+  ),
 };
 
 export async function sendSubscriptionConfirm(env: Env, to: string, locale: string, link: string): Promise<Sent> {
@@ -342,6 +358,12 @@ const TRIAL_ENDED_COPY: Record<string, Copy> = {
     'Your free month of Chronika horoscopes has ended, and no more horoscopes will come. There is nothing to pay: the subscription simply stopped.',
     'Open subscription',
     'The subscription data is deleted in 30 days. You can delete it sooner on the subscription page.',
+  ),
+  de: simple(
+    'Ihr kostenloser Monat ist vorbei',
+    'Ihr kostenloser Monat mit den Horoskopen von Chronika ist vorbei, weitere Horoskope kommen nicht. Sie müssen nichts bezahlen: Das Abo endet einfach.',
+    'Abo öffnen',
+    'Die Daten des Abos werden in 30 Tagen gelöscht. Auf der Seite des Abos können Sie sie schon früher löschen.',
   ),
 };
 

@@ -90,10 +90,26 @@ const COPY = {
       'Done: your horoscopes will arrive here. Manage the subscription at the link in your email; /stop unbinds this chat.',
     stopped: 'All right, nothing more will be sent here.',
   },
+  de: {
+    hello:
+      'Hier ist Chronika. Um Ihr Dokument hier zu erhalten, öffnen Sie auf der Seite Ihrer Bestellung den Link „In Telegram erhalten“.',
+    unknown:
+      'Diesen Code gibt es nicht, oder der Link ist abgelaufen. Öffnen Sie die Seite Ihrer Bestellung noch einmal und tippen Sie auf „In Telegram erhalten“.',
+    waiting:
+      'Ihre Deutung wird noch geschrieben — meist dauert das zehn bis fünfzehn Minuten. Sobald das Dokument fertig ist, schicke ich es hierher.',
+    failed:
+      'Bei dieser Bestellung ist etwas schiefgegangen. Wir sehen den Fehler und versuchen es erneut; ändert sich innerhalb einer Stunde nichts, schreiben Sie an help@chronika.me.',
+    here: 'Ihre Deutung ist fertig.',
+    caption: 'Chronika · das Dokument wird dreißig Tage aufbewahrt',
+    subscribed:
+      'Erledigt: Ihre Horoskope kommen ab jetzt hierher. Das Abo verwalten Sie über den Link in Ihrer E-Mail; /stop trennt diesen Chat.',
+    stopped: 'In Ordnung, hierher wird nichts mehr geschickt.',
+  },
 } as const;
 
 type Lang = keyof typeof COPY;
-const lang = (code?: string | null): Lang => (code === 'uk' || code === 'ru' ? code : 'en');
+const lang = (code?: string | null): Lang =>
+  code === 'uk' || code === 'ru' || code === 'de' ? code : 'en';
 
 /* Telegram authenticates its webhook calls with a secret we choose. Derived from the token rather
  * than stored as a second secret: it is only ever compared here. */
@@ -234,7 +250,7 @@ async function setup(token: string, origin: string): Promise<Response> {
     body: JSON.stringify({
       commands: [
         { command: 'start', description: 'Chronika' },
-        { command: 'stop', description: 'Stop / Зупинити / Остановить' },
+        { command: 'stop', description: 'Stop / Stopp / Зупинити / Остановить' },
       ],
     }),
   });

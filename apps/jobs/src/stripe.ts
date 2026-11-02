@@ -16,6 +16,18 @@ const TOLERANCE_SECONDS = 5 * 60;
 /** Stripe Checkout speaks these; anything else falls back to the browser's language. */
 const CHECKOUT_LOCALES = new Set(['en', 'ru', 'pl', 'cs', 'ro', 'bg', 'de', 'sk']);
 
+/** The consent the payment page asks for: the document is made at once, and its delivery ends the
+ * right of withdrawal. The German wording follows § 356 (5) BGB, which is what a German buyer's
+ * consent has to say for the right to lapse. */
+const WITHDRAWAL_CONSENT_EN =
+  'The document is created right after payment; the right of withdrawal ends with its delivery.';
+const WITHDRAWAL_CONSENT: Record<string, string> = {
+  uk: 'Документ створюється одразу після оплати; з його доставкою право на відмову припиняється.',
+  ru: 'Документ создаётся сразу после оплаты; с его доставкой право на отказ прекращается.',
+  en: WITHDRAWAL_CONSENT_EN,
+  de: 'Ich stimme ausdrücklich zu, dass das Dokument sofort nach der Zahlung erstellt wird, und weiß, dass ich mit seiner Bereitstellung mein Widerrufsrecht verliere.',
+};
+
 /** What the payment page and the receipt call each product. Fixed here: of what the browser sent,
  * only the address reaches Stripe. */
 const PRODUCT_NAMES: Record<string, Record<Product, string>> = {
@@ -39,6 +51,13 @@ const PRODUCT_NAMES: Record<string, Record<Product, string>> = {
     synastry: 'Compatibility',
     child: "Child's chart",
     bundle: 'Birth chart and forecast',
+  },
+  de: {
+    natal: 'Geburtshoroskop',
+    forecast: 'Prognose für 12 Monate',
+    synastry: 'Partnerschaftshoroskop',
+    child: 'Kinderhoroskop',
+    bundle: 'Geburtshoroskop und Prognose',
   },
 };
 
@@ -90,11 +109,7 @@ export async function createCheckoutSession(env: Env, input: CheckoutInput): Pro
     // and knows the right of withdrawal ends with it (see the refund policy). Stripe shows the
     // consent line on the payment page as well.
     'consent_collection[terms_of_service]': 'required',
-    'custom_text[terms_of_service_acceptance][message]': input.locale === 'uk'
-      ? 'Документ створюється одразу після оплати; з його доставкою право на відмову припиняється.'
-      : input.locale === 'ru'
-        ? 'Документ создаётся сразу после оплаты; с его доставкой право на отказ прекращается.'
-        : 'The document is created right after payment; the right of withdrawal ends with its delivery.',
+    'custom_text[terms_of_service_acceptance][message]': WITHDRAWAL_CONSENT[input.locale] ?? WITHDRAWAL_CONSENT_EN,
     // Only kept for the payment; the birth data never goes to Stripe.
     'payment_intent_data[description]': `Chronika · ${name}`,
   };

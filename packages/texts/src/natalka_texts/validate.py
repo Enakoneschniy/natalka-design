@@ -63,6 +63,22 @@ IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
         "you are going through",
         "in your message",
     ),
+    "de": (
+        "sie schrieben",
+        "sie haben geschrieben",
+        "sie erzählten",
+        "sie haben erzählt",
+        "sie erwähnten",
+        "sie haben erwähnt",
+        "wie sie wissen",
+        "wie sie selbst",
+        "wie sie sagten",
+        "sie gehen gerade durch",
+        "in ihrer nachricht",
+        "aus ihrem brief",
+        "du hast geschrieben",
+        "wie du weißt",
+    ),
 }
 
 #: Machine-writing tells from the style guide.
@@ -106,6 +122,22 @@ CLICHES: dict[str, tuple[str, ...]] = {
         "it's worth noting",
         "it's important to understand",
     ),
+    "de": (
+        "in der heutigen welt",
+        "in unserer schnelllebigen zeit",
+        "ein schlüsselaspekt",
+        "ist ein zeugnis",
+        "zeugt davon",
+        "unterstreicht die bedeutung",
+        "lassen sie uns eintauchen",
+        "tauchen wir ein",
+        "lassen sie uns betrachten",
+        "abschließend lässt sich",
+        "zusammenfassend lässt sich",
+        "es ist erwähnenswert",
+        "es ist wichtig zu verstehen",
+        "es sei darauf hingewiesen",
+    ),
 }
 
 #: The reading is written on formal terms. A model that slips into «ты» has not made a stylistic
@@ -120,6 +152,7 @@ INFORMAL = {
     "uk": re.compile(
         r"\b(ти|тоб[іи]|тебе|тобою|тві[йм]|тво(?:го|му|я|ю|[їєё]\w*))\b", re.IGNORECASE
     ),
+    "de": re.compile(r"\b(du|dich|dir|dein\w*)\b", re.IGNORECASE),
 }
 
 #: A section written *about* the reader instead of *to* them reads like a horoscope column and
@@ -128,7 +161,19 @@ SECOND_PERSON = {
     "ru": re.compile(r"\b(вы|вас|вам|вами|ваш\w*)\b", re.IGNORECASE),
     "uk": re.compile(r"\b(ви|вас|вам|вами|ваш\w*)\b", re.IGNORECASE),
     "en": re.compile(r"\b(you|your|yours)\b", re.IGNORECASE),
+    # Case matters here and only here: «sie» and «ihr» in lower case are "she", "they" and "her".
+    # At the start of a sentence the capital says nothing, so only a «Sie», «Ihnen» or «Ihr…»
+    # inside a sentence — after a lower-case word or a comma — counts as speaking to the reader.
+    "de": re.compile(r"(?<=[a-zäöüß,;:–—] )(Sie|Ihnen|Ihr\w*)\b"),
 }
+
+#: The two forms of address by name, for the problems the model is given back.
+ADDRESS_NAMES = {"de": ("«Sie»", "«du»")}
+DEFAULT_ADDRESS_NAMES = ("«вы»", "«ты»")
+
+#: Two people addressed together on informal terms. In Russian and Ukrainian that is the formal
+#: plural; German has its own: «ihr», «euch», «euer».
+INFORMAL_PLURAL = {"de": re.compile(r"\b(ihr|euch|euer\w*)\b", re.IGNORECASE)}
 #: Below this a section is an opening or a closing line, where an impersonal sentence is fine.
 ADDRESS_MIN_CHARS = 400
 
@@ -206,26 +251,29 @@ def _found(text: str, needles: tuple[str, ...]) -> list[str]:
 def _address_problems(
     text: str, lang: str, *, impersonal_ok: bool, address: Address, pair: bool
 ) -> list[_Problem]:
-    """The form of address: «вы» by default, «ты» when the seller asked for it."""
+    """The form of address: «вы» / «Sie» by default, «ты» / «du» when the seller asked for it."""
     problems: list[_Problem] = []
+    formal_name, informal_name = ADDRESS_NAMES.get(lang, DEFAULT_ADDRESS_NAMES)
     informal_re = INFORMAL.get(lang)
     informal = informal_re.search(text) if informal_re else None
     if informal and address == "vy":
         problems.append(
             (
                 "informal_address",
-                f"addresses the reader informally ({informal.group(0)}); the reading is on «вы»",
+                f"addresses the reader informally ({informal.group(0)}); "
+                f"the reading is on {formal_name}",
             )
         )
 
     if not impersonal_ok and len(text) > ADDRESS_MIN_CHARS:
         if address == "ty" and informal_re:
-            plural = SECOND_PERSON.get(lang)
+            plural = INFORMAL_PLURAL.get(lang) or SECOND_PERSON.get(lang)
             if not informal and not (pair and plural and plural.search(text)):
                 problems.append(
                     (
                         "not_addressed",
-                        "the section talks about the reader instead of addressing them as «ты»",
+                        "the section talks about the reader instead of addressing them as "
+                        f"{informal_name}",
                     )
                 )
         else:

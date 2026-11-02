@@ -313,7 +313,7 @@ UI: Final[dict[str, dict[str, str]]] = {
     },
     "de": {
         "contents": "Inhalt",
-        "from_author": "Vom Autor",
+        "from_author": "Vorwort",
         "positions": "Planetenpositionen",
         "planet": "Planet",
         "sign": "Zeichen",

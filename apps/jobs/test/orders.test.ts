@@ -97,6 +97,20 @@ describe('POST /v1/orders', () => {
     expect(fields['line_items[0][price_data][product_data][name]']).toBe('Compatibility');
   });
 
+  it('takes a German order, with the payment page, the name and the consent in German', async () => {
+    const response = await post({ ...ORDER, product: 'bundle', locale: 'de', variant: 'XMAS30' });
+    expect(response.status).toBe(201);
+    const created = (await response.json()) as Created;
+    const { fields } = (await lastRequest(`stripe|checkout|${created.order_id}`)) as { fields: Record<string, string> };
+    expect(fields.locale).toBe('de');
+    expect(fields['line_items[0][price_data][product_data][name]']).toBe('Geburtshoroskop und Prognose');
+    expect(fields['custom_text[terms_of_service_acceptance][message]']).toMatch(/Widerrufsrecht verliere\.$/);
+    const row = await testEnv.DB.prepare('SELECT locale, variant FROM orders WHERE id = ?')
+      .bind(created.order_id)
+      .first();
+    expect(row).toEqual({ locale: 'de', variant: 'XMAS30' });
+  });
+
   it('refuses each malformed field by name', async () => {
     const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
     const cases: [Record<string, unknown>, string][] = [
@@ -104,7 +118,7 @@ describe('POST /v1/orders', () => {
       [{ email: `${'a'.repeat(250)}@x.io` }, 'email'],
       [{ email: 42 }, 'email'],
       [{ product: 'tarot' }, 'product'],
-      [{ locale: 'de' }, 'locale'],
+      [{ locale: 'fr' }, 'locale'],
       [{ currency: 'EURO' }, 'currency'],
       [{ currency: 'E1R' }, 'currency'],
       [{ amount_minor: 49 }, 'amount_minor'],

@@ -125,7 +125,7 @@ describe('checkOrder', () => {
   it('names the first field that is wrong', () => {
     expect(field(checkOrder({ ...order, email: 'nope' }, TODAY))).toBe('email');
     expect(field(checkOrder({ ...order, product: 'tarot' }, TODAY))).toBe('product');
-    expect(field(checkOrder({ ...order, locale: 'de' }, TODAY))).toBe('locale');
+    expect(field(checkOrder({ ...order, locale: 'fr' }, TODAY))).toBe('locale');
     expect(field(checkOrder({ ...order, birth: { ...person, zone: '' } }, TODAY))).toBe(
       'birth.zone',
     );

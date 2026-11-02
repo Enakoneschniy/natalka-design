@@ -39,8 +39,18 @@ GENDER = {
         "uk": "стать не вказана — будуй фрази так, щоб рід не був потрібен",
         "ru": "пол не указан — строй фразы так, чтобы род не был нужен",
         "en": "unspecified — write so that gendered forms are not needed",
+        "de": (
+            "Geschlecht nicht angegeben — formuliere so, dass keine Personenbezeichnung ein "
+            "Geschlecht braucht (nicht „Kämpferin“ oder „Kämpfer“, kein Gendersternchen)"
+        ),
     },
 }
+GENDER["f"]["de"] = (
+    "eine Frau — Personenbezeichnungen in der weiblichen Form (die Kämpferin, die Gestalterin)"
+)
+GENDER["m"]["de"] = (
+    "ein Mann — Personenbezeichnungen in der männlichen Form (der Kämpfer, der Gestalter)"
+)
 
 #: A child's chart is read by the parent, so the whole address changes: "you" is the parent and the
 #: chart belongs to someone else. Getting this wrong produces a document that talks to a four-year-old.
@@ -59,8 +69,9 @@ ADDRESSEE = {
         "greeting, do not explain what a transit is, and do not repeat the natal chart back to "
         "them. Start with the week or the month itself. Planet names are capitalised and carry "
         "grammatical gender: in Russian and Ukrainian, Солнце/Сонце is neuter, Луна/Місяць and "
-        "Венера are not the same gender as Марс — agree every adjective with the name you use, "
-        "not with the English word behind it."
+        "Венера are not the same gender as Марс; in German, die Sonne and die Venus are feminine, "
+        "der Mond and der Mars masculine — agree every article and adjective with the name you "
+        "use, not with the English word behind it."
     ),
     "forecast": (
         "This is a twelve-month forecast. The natal chart is background; the subject is what the "
@@ -84,8 +95,7 @@ often…".
 LANGUAGE
 The chart is written in English shorthand because that is how an ephemeris labels things. The
 reading itself must contain no English at all — translate every term, including the names of
-planets, signs and aspects. The only Latin characters allowed are the chart abbreviations AC, MC,
-IC, DC and the degree figures.
+planets, signs and aspects. {script_rule}
 
 ACCURACY
 Every claim must be traceable to the fact sheet. Do not invent placements, aspects, degrees or
@@ -126,13 +136,54 @@ ADDRESS_RULE: dict[str, str] = {
         "never «вы» / «ви» to this one person. In a synastry the two of them together may be «вы» / «ви»."
     ),
 }
-SYSTEM = _SYSTEM_TEMPLATE.replace("{address_rule}", ADDRESS_RULE["vy"])
+
+#: German has its own pair, and its formal one is capitalised: a lower-case «sie» or «ihr» is
+#: "she", "they" or "her", and a reading that slips into it talks about the reader instead.
+ADDRESS_RULE_DE: dict[str, str] = {
+    "vy": (
+        "In German this is the formal\n«Sie» throughout — «Sie», «Ihnen», «Ihr», always "
+        "capitalised — never «du», in any sentence, however warm the moment. In a synastry the "
+        "two of them together are «Sie» as well."
+    ),
+    "ty": (
+        "In German this is the informal\n«du» throughout — «du», «dich», «dir», «dein» — warm and "
+        "direct, never «Sie» to this one person. In a synastry the two of them together are «ihr» "
+        "(«euch», «euer»)."
+    ),
+}
+
+#: What the reading may contain besides its own alphabet. A Cyrillic reading allows no Latin
+#: letters but the chart's abbreviations; a German one is written in Latin letters and has to
+#: be told what that does not license.
+SCRIPT_RULE: dict[str, str] = {
+    "de": (
+        "Write natural German, not German translated from English: no anglicisms where a German "
+        "word exists (no «Mindset», «Challenge», «Timing»), German quotation marks „…“, the "
+        "German names for planets, signs and aspects (Aszendent, Quadrat, Trigon, Opposition). "
+        "The chart abbreviations AC, MC, IC and DC stay as they are."
+    ),
+    "en": "The chart abbreviations AC, MC, IC and DC stay as they are.",
+}
+CYRILLIC_SCRIPT_RULE = (
+    "The only Latin characters allowed are the chart abbreviations AC, MC,\nIC, DC and the degree "
+    "figures."
+)
+
+SYSTEM = _SYSTEM_TEMPLATE.replace("{address_rule}", ADDRESS_RULE["vy"]).replace(
+    "{script_rule}", CYRILLIC_SCRIPT_RULE
+)
 
 
 def system_prompt(lang: str, gender: str, product: str = "natal", address: Address = "vy") -> str:
     language = LANGUAGE.get(lang, f"in {lang}")
     who = GENDER.get(gender, GENDER["n"]).get(lang) or GENDER[gender]["en"]
-    parts = [_SYSTEM_TEMPLATE.replace("{address_rule}", ADDRESS_RULE[address])]
+    address_rule = (ADDRESS_RULE_DE if lang == "de" else ADDRESS_RULE)[address]
+    script_rule = SCRIPT_RULE.get(lang, CYRILLIC_SCRIPT_RULE)
+    parts = [
+        _SYSTEM_TEMPLATE.replace("{address_rule}", address_rule).replace(
+            "{script_rule}", script_rule
+        )
+    ]
     if product in ADDRESSEE:
         parts.append(ADDRESSEE[product])
     parts.append(f"Write {language}. The person the chart belongs to is {who}.")

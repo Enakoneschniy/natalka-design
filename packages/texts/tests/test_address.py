@@ -36,8 +36,11 @@ def test_formal_prompt_is_unchanged() -> None:
     assert prompts.SYSTEM in text
     # The template with the formal rule filled in is exactly the pre-existing prompt.
     filled = prompts._SYSTEM_TEMPLATE.replace("{address_rule}", prompts.ADDRESS_RULE["vy"])
+    filled = filled.replace("{script_rule}", prompts.CYRILLIC_SCRIPT_RULE)
     assert filled == prompts.SYSTEM
     assert "{address_rule}" not in text
+    assert "{script_rule}" not in text
+    assert "The only Latin characters allowed are the chart abbreviations AC, MC,\nIC, DC" in text
     assert prompts.ADDRESS_RULE["vy"] == FORMAL_RULE
 
 
@@ -147,3 +150,18 @@ def test_ukrainian_ty_reading_bans_ty_zgaduvala() -> None:
     text = UK_TY_POSSESSIVE + "\n\nЯк ти згадувала, усе повторюється."
     report = check(text, lang="uk", min_paragraphs=3, max_paragraphs=4, address="ty")
     assert any("ти згадувала" in p for p in report.problems)
+
+
+def test_a_german_reading_is_on_sie_and_may_use_its_own_alphabet() -> None:
+    text = system_prompt("de", "f", "natal")
+    assert "«Sie» throughout" in text
+    assert "never «du»" in text
+    assert "The only Latin characters allowed" not in text
+    assert "„…“" in text
+    assert text.endswith(
+        "Write auf Deutsch. The person the chart belongs to is eine Frau — "
+        "Personenbezeichnungen in der weiblichen Form (die Kämpferin, die Gestalterin)."
+    )
+    du = system_prompt("de", "m", "synastry", address="ty")
+    assert "«du» throughout" in du and "«ihr»" in du
+    assert "{" not in du

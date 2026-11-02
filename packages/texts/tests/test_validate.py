@@ -160,3 +160,46 @@ def test_every_problem_has_a_code_that_quotes_nothing() -> None:
 def test_a_clean_russian_section_passes_the_language_check() -> None:
     text = "Ваше Солнце в Тельце, в девятом доме.\n\nЭто даёт вам устойчивость и упрямство."
     assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok
+
+
+GERMAN = (
+    "Ihre Sonne steht im Stier, im neunten Haus. Sie haben es nicht eilig, und das ist keine "
+    "Langsamkeit, sondern eine Art, Dinge gut zu machen. Was Sie beginnen, führen Sie zu Ende.\n\n"
+    "Das neunte Haus trägt das in den sichtbaren Teil Ihres Lebens: Ihr Ruf wächst Schicht für "
+    "Schicht, und wer mit Ihnen arbeitet, merkt das früher als Sie selbst. Ein Quadrat zu Saturn "
+    "macht daraus keine Last, sondern einen Maßstab."
+)
+
+
+def test_a_german_reading_on_sie_passes() -> None:
+    report = check(GERMAN, lang="de", min_paragraphs=2, max_paragraphs=3)
+    assert report.ok, report.problems
+
+
+def test_du_in_a_german_reading_on_sie_is_caught() -> None:
+    slipped = GERMAN.replace("Was Sie beginnen", "Was du beginnst")
+    report = check(slipped, lang="de", min_paragraphs=2, max_paragraphs=3)
+    assert "informal_address" in report.codes
+    assert any("«Sie»" in p for p in report.problems)
+
+
+def test_a_german_section_about_her_instead_of_to_you_is_caught() -> None:
+    # Lower-case «sie» and «ihr» are "she" and "her": this talks about the reader, not to her.
+    about = (
+        "Ihre Sonne steht im Stier. Sie hat es nicht eilig, und ihr Tempo ist kein Zögern. "
+        "Was sie beginnt, führt sie zu Ende, und ihr Ruf wächst langsam. " * 3
+    ).replace("Ihre Sonne", "Die Sonne")
+    report = check(f"{about}\n\n{about}", lang="de", min_paragraphs=2, max_paragraphs=3)
+    assert "not_addressed" in report.codes
+
+
+def test_german_cliches_and_invented_knowledge_are_caught() -> None:
+    text = GERMAN + " Zusammenfassend lässt sich sagen, wie Sie wissen, alles ist gut."
+    report = check(text, lang="de", min_paragraphs=2, max_paragraphs=3)
+    assert "cliche" in report.codes
+    assert "implies_knowledge" in report.codes
+
+
+def test_cyrillic_in_a_german_reading_is_caught() -> None:
+    report = check(GERMAN + " Das ist Ваша Sonne.", lang="de", min_paragraphs=2, max_paragraphs=3)
+    assert "foreign_script" in report.codes
