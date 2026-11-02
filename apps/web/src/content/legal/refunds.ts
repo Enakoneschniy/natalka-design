@@ -106,4 +106,78 @@ By law you have 14 days to withdraw from a distance purchase. For digital conten
 
 help@chronika.me — give the order's email address and, if you have it, the date. We answer within two working days.
 `,
+  de: `
+# Erstattung und Widerruf
+
+_Anbieter: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, Identifikationsnummer (IČO) 57 339 368, Handelsregister des Stadtgerichts Bratislava III, Abteilung Sro, Einlage 194301/B. Kontakt: help@chronika.me._
+
+## Was wir verkaufen
+
+Eine Deutung ist ein digitales Produkt, das individuell für Ihre Bestellung erstellt und sofort nach Fertigstellung bereitgestellt wird. Man kann sie nicht „zurückgeben“, wie man eine Sache zurückgibt: Nach der Zustellung ist sie bereits bei Ihnen. Die folgenden Regeln betreffen deshalb die Fälle, in denen auf unserer Seite etwas schiefgegangen ist, und einen fairen Schutz vor Fehlern. Ihre gesetzlichen Rechte bei Mängeln bleiben davon unberührt.
+
+## Volle Erstattung, ohne Rückfragen
+
+- Das Dokument wurde nicht innerhalb von 24 Stunden nach der Zahlung zugestellt.
+- Das Dokument ist beschädigt, lässt sich nicht öffnen oder ist unvollständig (leere Abschnitte, abgebrochener Text).
+- Das Dokument ist in einer anderen Sprache geschrieben als der, die Sie gewählt haben.
+- Das Dokument wurde aus anderen Daten erstellt als denen, die Sie eingegeben haben (unser Fehler).
+- Die Zahlung wurde doppelt abgebucht.
+
+Schreiben Sie an help@chronika.me, von der Adresse, mit der Sie bestellt haben. Das Geld wird auf demselben Weg erstattet, auf dem Sie bezahlt haben, innerhalb von 5 Arbeitstagen auf unserer Seite; Ihre Bank kann dafür eigene Zeit benötigen.
+
+## Ein Fehler in Ihren Daten
+
+Haben Sie ein falsches Datum, eine falsche Uhrzeit oder einen falschen Ort eingegeben, ist das daraus erstellte Dokument nicht mangelhaft – es ist das richtige Dokument für einen anderen Menschen. In diesem Fall erstatten wir den Preis nicht, erstellen das Dokument aber einmal kostenlos mit den korrigierten Daten neu, wenn Sie uns innerhalb von 7 Tagen nach der Bestellung schreiben.
+
+## „Gefällt mir nicht“ oder „passt nicht zu mir“
+
+Eine Deutung ist eine Auslegung, keine Messung; wir können nicht versprechen, dass sie mit Ihrem Bild von sich selbst übereinstimmt. Eine Erstattung aus diesem Grund ist nicht vorgesehen; das gesetzliche Widerrufsrecht im folgenden Abschnitt bleibt davon unberührt. Lesen Sie vor dem Kauf die kostenlose Vorschau – es ist dieselbe Methode und dieselbe Stimme.
+
+## Widerrufsbelehrung (für Verbraucher in der EU und im Vereinigten Königreich)
+
+Das Widerrufsrecht steht Ihnen zu, wenn Sie Verbraucher sind, den Vertrag also zu Zwecken schließen, die überwiegend weder Ihrer gewerblichen noch Ihrer selbständigen beruflichen Tätigkeit zugerechnet werden können.
+
+**Widerrufsrecht**
+
+Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen.
+
+Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.
+
+Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, E-Mail: help@chronika.me) mittels einer eindeutigen Erklärung (z. B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.
+
+Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Widerrufsfrist absenden. Am einfachsten widerrufen Sie per E-Mail an help@chronika.me.
+
+**Folgen des Widerrufs**
+
+Wenn Sie diesen Vertrag widerrufen, haben wir Ihnen alle Zahlungen, die wir von Ihnen erhalten haben, einschließlich der Lieferkosten (mit Ausnahme der zusätzlichen Kosten, die sich daraus ergeben, dass Sie eine andere Art der Lieferung als die von uns angebotene, günstigste Standardlieferung gewählt haben), unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag zurückzuzahlen, an dem die Mitteilung über Ihren Widerruf dieses Vertrags bei uns eingegangen ist. Für diese Rückzahlung verwenden wir dasselbe Zahlungsmittel, das Sie bei der ursprünglichen Transaktion eingesetzt haben, es sei denn, mit Ihnen wurde ausdrücklich etwas anderes vereinbart; in keinem Fall werden Ihnen wegen dieser Rückzahlung Entgelte berechnet.
+
+**Erlöschen des Widerrufsrechts**
+
+Bei einem Vertrag über die Bereitstellung von nicht auf einem körperlichen Datenträger befindlichen digitalen Inhalten erlischt Ihr Widerrufsrecht (§ 356 Abs. 6 BGB), wenn
+
+- wir mit der Vertragserfüllung begonnen haben,
+- Sie ausdrücklich zugestimmt haben, dass wir vor Ablauf der Widerrufsfrist mit der Vertragserfüllung beginnen,
+- Sie Ihre Kenntnis davon bestätigt haben, dass durch diese Zustimmung mit Beginn der Vertragserfüllung Ihr Widerrufsrecht erlischt, und
+- wir Ihnen eine Bestätigung des Vertrags (§ 312f BGB) zur Verfügung gestellt haben.
+
+Diese Zustimmung und Bestätigung geben Sie auf der Bestellseite und noch einmal auf der Zahlungsseite, bevor Sie bezahlen: Sie stimmen zu, dass wir vor Ablauf der Widerrufsfrist mit der Erstellung des Dokuments beginnen, und bestätigen, dass Sie dadurch mit Beginn der Vertragserfüllung Ihr Widerrufsrecht verlieren. Die Erstellung beginnt unmittelbar nach der Zahlung.
+
+**Muster-Widerrufsformular**
+
+(Wenn Sie den Vertrag widerrufen wollen, dann füllen Sie bitte dieses Formular aus und senden Sie es zurück.)
+
+- An coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, E-Mail: help@chronika.me:
+- Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der folgenden Dienstleistung (*)
+- Bestellt am (*)/erhalten am (*)
+- Name des/der Verbraucher(s)
+- Anschrift des/der Verbraucher(s)
+- Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier)
+- Datum
+
+(*) Unzutreffendes streichen.
+
+## Kontakt
+
+help@chronika.me – geben Sie die E-Mail-Adresse der Bestellung und, falls vorhanden, das Datum an. Wir antworten innerhalb von zwei Arbeitstagen.
+`,
 };

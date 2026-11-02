@@ -19,8 +19,19 @@ COPY = {
         "с датами",
         "35 страниц личного разбора и прогноз по месяцам.",
         "Бесплатное превью, PDF на почту.",
+        "PDF · 35 страниц",
+    ),
+    "de": (
+        "Ihr Geburtshoroskop —",
+        "auf den Monat genau",
+        "35 Seiten persönliche Deutung, Prognose nach Monaten.",
+        "Kostenlose Vorschau, PDF per E-Mail.",
+        "PDF · 35 Seiten",
     ),
 }
+
+#: Russian keeps the name it always had; other languages carry theirs.
+OUT = {"ru": "public/og.png", "de": "public/og-de.png"}
 
 mark_f = ImageFont.truetype(F + "PlayfairDisplay-Medium.ttf", 34)
 head_f = ImageFont.truetype(F + "PlayfairDisplay-Regular.ttf", 54)
@@ -40,7 +51,7 @@ fade = (
 )
 wheel_mask = Image.composite(circle, Image.new("L", wheel.size, 0), fade)
 
-for locale, (head1, head2, lead1, lead2) in COPY.items():
+for locale, (head1, head2, lead1, lead2, size) in COPY.items():
     bg = Image.new("RGB", (W, H), "#05070f")
     glow = Image.new("L", (W, H), 0)
     ImageDraw.Draw(glow).ellipse((W * 0.30, -H * 0.55, W * 1.32, H * 1.55), fill=190)
@@ -62,10 +73,10 @@ for locale, (head1, head2, lead1, lead2) in COPY.items():
     d.text((x, 400), lead1, font=lead_f, fill="#aab3d0")
     d.text((x, 434), lead2, font=lead_f, fill="#aab3d0")
 
-    for i, part in enumerate(("chronika.me", "PDF · 35 страниц")):
+    for i, part in enumerate(("chronika.me", size)):
         left = x + i * 210
         d.text((left, 505), "◆", font=mono_f, fill="#e7b75c")
         d.text((left + 22, 505), part, font=mono_f, fill="#e7b75c")
 
-    bg.save("public/og.png", optimize=True)
-    print("public/og.png", locale)
+    bg.save(OUT[locale], optimize=True)
+    print(OUT[locale], locale)

@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
-import { routing } from '@/i18n/routing';
+import { localeFor, routing } from '@/i18n/routing';
 import { cleanSource, readSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { isProHost } from '@/lib/pro/host';
 import { activePromo, PROMO_COOKIE, promoMaxAge } from '@/lib/promo';
@@ -42,6 +42,13 @@ export async function middleware(request: NextRequest) {
   if (gone) {
     const url = new URL(`/ru${gone[2] ?? ''}${request.nextUrl.search}`, request.url);
     return NextResponse.redirect(url, 308);
+  }
+
+  // The bare address: German for a browser that asks for German first, Russian otherwise. The
+  // query goes along — a promo code or an advert's tags arrive on links to the front page too.
+  if (pathname === '/') {
+    const locale = localeFor(request.headers.get('accept-language'));
+    return NextResponse.redirect(new URL(`/${locale}${search}`, request.url), 307);
   }
 
   const response = intl(request);

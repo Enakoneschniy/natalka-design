@@ -1,3 +1,5 @@
+import { defaultLocale, type Locale, locales } from '@/i18n/routing';
+
 /** Everything the site says about itself to a machine.
  *
  * Two audiences, one set of facts: search engines, which want canonical URLs, alternates and a
@@ -42,14 +44,19 @@ export const path = (locale: string, rest = ''): string => `/${locale}${rest}`;
 
 export const url = (locale: string, rest = ''): string => `${SITE_URL}${path(locale, rest)}`;
 
-/** Canonical only. With one language there is nothing to point at: hreflang describes a page
- * that exists in several, and a link to a translation we do not have is worse than none. */
+/** Canonical plus every translation of the same page, the way Google asks for it: each language
+ * points at all the others, and x-default takes a visitor whose language we do not have. */
 export function alternates(locale: string, rest = '') {
-  return { canonical: url(locale, rest) };
+  const languages: Record<string, string> = {};
+  for (const other of locales) languages[other] = url(other, rest);
+  languages['x-default'] = url(defaultLocale, rest);
+  return { canonical: url(locale, rest), languages };
 }
 
-/** The share card, composed by scripts/og.py. */
-const shareImage = () => `${SITE_URL}/og.png`;
+const OG_LOCALE: Record<Locale, string> = { ru: 'ru_RU', de: 'de_DE' };
+
+/** The share card in the page's language, composed by scripts/og.py. */
+const shareImage = (locale: string) => `${SITE_URL}${locale === 'de' ? '/og-de.png' : '/og.png'}`;
 
 export function openGraph(locale: string, rest: string, title: string, description: string) {
   return {
@@ -58,16 +65,16 @@ export function openGraph(locale: string, rest: string, title: string, descripti
     siteName: 'Chronika',
     title,
     description,
-    locale: 'ru_RU',
-    images: [{ url: shareImage(), width: 1200, height: 630, alt: 'Chronika' }],
+    locale: OG_LOCALE[locale as Locale] ?? 'ru_RU',
+    images: [{ url: shareImage(locale), width: 1200, height: 630, alt: 'Chronika' }],
   };
 }
 
-export const twitter = (title: string, description: string) => ({
+export const twitter = (locale: string, title: string, description: string) => ({
   card: 'summary_large_image' as const,
   title,
   description,
-  images: [shareImage()],
+  images: [shareImage(locale)],
 });
 
 /** `index: false` unless the shop is open and the page is one that belongs to everybody. */

@@ -17,15 +17,16 @@ const TOLERANCE_SECONDS = 5 * 60;
 const CHECKOUT_LOCALES = new Set(['en', 'ru', 'pl', 'cs', 'ro', 'bg', 'de', 'sk']);
 
 /** The consent the payment page asks for: the document is made at once, and its delivery ends the
- * right of withdrawal. The German wording follows § 356 (5) BGB, which is what a German buyer's
- * consent has to say for the right to lapse. */
+ * right of withdrawal. The German wording follows § 356 Abs. 6 BGB, which is what a German
+ * buyer's consent has to say for the right to lapse — the other condition there being the
+ * confirmation of the contract on a durable medium (§ 312f BGB). */
 const WITHDRAWAL_CONSENT_EN =
   'The document is created right after payment; the right of withdrawal ends with its delivery.';
 const WITHDRAWAL_CONSENT: Record<string, string> = {
   uk: 'Документ створюється одразу після оплати; з його доставкою право на відмову припиняється.',
   ru: 'Документ создаётся сразу после оплаты; с его доставкой право на отказ прекращается.',
   en: WITHDRAWAL_CONSENT_EN,
-  de: 'Ich stimme ausdrücklich zu, dass das Dokument sofort nach der Zahlung erstellt wird, und weiß, dass ich mit seiner Bereitstellung mein Widerrufsrecht verliere.',
+  de: 'Ich stimme ausdrücklich zu, dass Sie vor Ablauf der Widerrufsfrist mit der Erstellung des Dokuments beginnen, und mir ist bekannt, dass ich durch diese Zustimmung mit Beginn der Vertragserfüllung mein Widerrufsrecht verliere.',
 };
 
 /** What the payment page and the receipt call each product. Fixed here: of what the browser sent,

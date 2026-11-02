@@ -104,7 +104,7 @@ describe('POST /v1/orders', () => {
     const { fields } = (await lastRequest(`stripe|checkout|${created.order_id}`)) as { fields: Record<string, string> };
     expect(fields.locale).toBe('de');
     expect(fields['line_items[0][price_data][product_data][name]']).toBe('Geburtshoroskop und Prognose');
-    expect(fields['custom_text[terms_of_service_acceptance][message]']).toMatch(/Widerrufsrecht verliere\.$/);
+    expect(fields['custom_text[terms_of_service_acceptance][message]']).toMatch(/mein Widerrufsrecht verliere\.$/);
     const row = await testEnv.DB.prepare('SELECT locale, variant FROM orders WHERE id = ?')
       .bind(created.order_id)
       .first();

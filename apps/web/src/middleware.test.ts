@@ -117,6 +117,31 @@ describe('middleware: the cabinet host', () => {
     expect((await visit('?code=NOSUCH')).cookies.get('chr_promo')).toBeUndefined();
   });
 
+  it('sends the bare address to German for a German browser, Russian otherwise, query and all', async () => {
+    const go = async (language: string | undefined, query = '') =>
+      (
+        await middleware(
+          request(`https://chronika.me/${query}`, {
+            host: 'chronika.me',
+            ...(language ? { 'accept-language': language } : {}),
+          }),
+        )
+      ).headers.get('location');
+    expect(await go('de-DE,de;q=0.9,en;q=0.8')).toBe('https://chronika.me/de');
+    expect(await go('de')).toBe('https://chronika.me/de');
+    expect(await go('ru-RU,ru;q=0.9,de;q=0.8')).toBe('https://chronika.me/ru');
+    expect(await go('en-US')).toBe('https://chronika.me/ru');
+    expect(await go(undefined)).toBe('https://chronika.me/ru');
+    expect(await go('de-AT', '?code=testcode&utm_source=youtube')).toBe(
+      'https://chronika.me/de?code=testcode&utm_source=youtube',
+    );
+  });
+
+  it('serves German pages under /de without sending them anywhere', async () => {
+    const response = await middleware(request('https://chronika.me/de/start', { host: 'chronika.me' }));
+    expect(response.headers.get('location')).toBeNull();
+  });
+
   it('keeps Russia out of the cabinet too', async () => {
     const response = await middleware(
       request('https://pro.chronika.me/clients', {

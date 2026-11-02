@@ -143,4 +143,59 @@ A child's chart is built from the child's data entered by an adult. We do not co
 
 If this policy changes, the new version appears here with a new date. We will email you about material changes if we hold a current order with your address.
 `,
+  de: `
+# Datenschutzerklärung
+
+_Fassung vom 2. November 2026. Verantwortlicher im Sinne der DSGVO: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, Identifikationsnummer (IČO) 57 339 368, Handelsregister des Stadtgerichts Bratislava III, Abteilung Sro, Einlage 194301/B. Kontakt: help@chronika.me._
+
+## Welche Daten wir erhalten
+
+Damit wir Ihr Horoskop berechnen können, geben Sie **Geburtsdatum, Geburtszeit und Geburtsort** ein, einen Vornamen (freiwillig) und die Form, in der wir Sie ansprechen sollen. Für die Zustellung des Dokuments benötigen wir Ihre **E-Mail-Adresse**; wenn Sie die Zustellung über Telegram wählen, die Kennung Ihres Chats. Für ein Partnerschaftshoroskop werden die Daten zweier Personen eingegeben; für ein Kinderhoroskop die Daten des Kindes, die ein Elternteil oder ein Vormund eingibt. Für ein Horoskop-Abonnement benötigen wir Geburtsdaten und eine E-Mail-Adresse. Ohne Geburtsdaten und Zustelladresse können wir das Dokument nicht erstellen und nicht zustellen.
+
+Aus Ihrer IP-Adresse ermitteln wir automatisch Ihr Land – um Preise in Ihrer Währung anzuzeigen und keine Bestellungen dort anzunehmen, wo eine Zahlung nicht möglich ist. Dieselbe Adresse dient, nur im Moment der Anfrage, einem weiteren Zweck: zu begrenzen, wie oft die Website aufgerufen werden kann. Die IP-Adresse selbst speichern wir nicht – außer in dem Fall, der im Abschnitt über Werbung beschrieben ist, und nur mit Ihrer Einwilligung.
+
+## Wozu und auf welcher Rechtsgrundlage
+
+Geburtsdaten dienen einem einzigen Zweck: die Stellung der Planeten zu berechnen und daraus einen Text zu schreiben. E-Mail-Adresse und Telegram dienen dazu, das Dokument oder das Horoskop zuzustellen und Ihnen mitzuteilen, dass es fertig ist. Zu nichts anderem: Wir versenden keine Werbe-E-Mails und verkaufen keine Daten. Dem Werbedienst Meta melden wir Bestellungen nur mit Ihrer Einwilligung und nur das, was im Abschnitt über Werbung aufgeführt ist; Geburtsdaten gehören nie dazu.
+
+Ihre eigenen Geburtsdaten, Ihren Vornamen, die Anrede und die Zustelladresse verarbeiten wir, weil das zur Erfüllung des Vertrags oder Abonnements mit Ihnen oder zur Erstellung der von Ihnen angeforderten kostenlosen Vorschau erforderlich ist (Art. 6 Abs. 1 lit. b DSGVO). Die Daten einer anderen Person, die Sie für ein Partnerschafts- oder Kinderhoroskop eingeben, verarbeiten wir auf Grundlage des berechtigten Interesses, Ihren Auftrag auszuführen (Art. 6 Abs. 1 lit. f DSGVO). Auf unserem berechtigten Interesse (Art. 6 Abs. 1 lit. f DSGVO) beruhen außerdem: die Bestimmung des Landes aus der IP-Adresse (richtige Preise und Zahlungswege), die Begrenzung der Aufrufe (Schutz und Stabilität der Website), die Besucherzählung ohne Cookies, die Zwischenspeicherung der Vorschautexte und die Aufbewahrung der E-Mail-Adresse für Rückfragen und Erstattungen. Die Werbe-Tags und die Meldungen an Meta beruhen auf Ihrer Einwilligung (Abschnitt „Cookies und Werbung“). Den Bestelldatensatz bewahren wir auf, weil Buchführungs- und Steuerrecht es verlangen (Art. 6 Abs. 1 lit. c DSGVO).
+
+## Cookies und Werbung
+
+Die Website setzt eigene technische Cookies: Ihre Antwort auf die Cookie-Frage (für ein Jahr), einen Promo-Code – wenn Sie ihn eingegeben haben oder über einen Link mit Code gekommen sind (bis zum Ende seiner Gültigkeit) – und den Namen der Werbekampagne, über die Sie gekommen sind (ohne Kennungen, bis zum Schließen des Browsers). Besuche zählen wir selbst und mit Cloudflare Web Analytics, ohne Cookies.
+
+Werbe-Tags (Meta, Google, TikTok) werden nur geladen, wenn Sie „Zulassen“ gewählt haben, und nur auf Seiten ohne personenbezogene Daten: auf der Startseite, in den Rechtstexten und auf dem leeren Formular. Die Seiten mit Ihrem Horoskop, Ihrer Bestellung, der Zahlung, dem Warten auf das Dokument und Ihrem Abonnement enthalten keine – dorthin gelangen weder Geburtsdaten noch Links zum Dokument.
+
+Wenn Sie „Zulassen“ gewählt haben, meldet die Website Meta außerdem von ihrem eigenen Server vier Ereignisse: Sie haben die Vorschau Ihres Horoskops geöffnet, sind zur Zahlung übergegangen, haben eine Bestellung bezahlt, haben ein Horoskop-Abonnement bestätigt – damit wir sehen, welche Werbung dazu geführt hat. Mit jedem Ereignis werden übermittelt: Ihre E-Mail-Adresse und Ihr Land als Hash (ein nicht umkehrbarer Fingerabdruck), Ihre IP-Adresse und Angaben zu Ihrem Browser (User-Agent), die Werbe-Cookies von Meta, sofern sie bereits gesetzt sind, die Bestell- oder Abonnementnummer, das Produkt und der Preis. Geburtsdaten, Namen, Geburtsort und Geschlecht werden nie übermittelt. Um eine Zahlung zu melden, die erst später eingeht, werden IP-Adresse, Browserangaben und die Cookies von Meta verschlüsselt mit der Bestellung gespeichert – bis zur Zahlung und höchstens 7 Tage. Haben Sie „Nur notwendige“ gewählt oder nicht geantwortet, wird nichts davon übermittelt oder gespeichert.
+
+Rechtsgrundlage der Werbe-Tags und der Meldungen an Meta ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO); für das Speichern und Auslesen von Informationen auf Ihrem Endgerät zusätzlich die nationale Umsetzung von Art. 5 Abs. 3 der Richtlinie 2002/58/EG, in Deutschland § 25 Abs. 1 TDDDG.
+
+## Wer die Daten verarbeitet
+
+Wir machen nicht alles selbst. Die Verarbeitung läuft auf Servern von **Cloudflare** (Hosting, Datenbank, Dokumentenspeicher). Zahlungen nimmt **Stripe** entgegen: Stripe erhält Ihre E-Mail-Adresse, den Produktnamen und den Preis – ohne Geburtsdaten; Ihre Kartendaten sieht nur Stripe. Den Text der Deutung und des Horoskops schreibt ein Sprachmodell: Der Anbieter des Modells (**Anthropic**, Claude-Modelle) erhält die Stellungen der Planeten, Aspekte und Häuser, Ihren Vornamen sowie Geburtsdatum und Geburtszeit – daraus werden Lebensalter und Planetenwiederkehren abgelesen. Koordinaten, Geburtsort, Zeitzone und E-Mail-Adresse erhält das Modell nicht. E-Mails versendet **Resend**, Nachrichten in Telegram **Telegram** – nur wenn Sie diesen Weg selbst gewählt haben. Jeder von ihnen ist vertraglich an uns gebunden und verarbeitet die Daten ausschließlich nach unseren Weisungen, als Auftragsverarbeiter im Sinne von Art. 28 DSGVO.
+
+## Wie und wie lange wir speichern
+
+Geburtsdaten werden verschlüsselt (AES-256-GCM), bevor sie in die Datenbank gelangen, und nur für die Dauer der Berechnung entschlüsselt. Geburtsdaten, die Texte der Deutung und das fertige Dokument werden **30 Tage nach der Bestellung gelöscht** – zusammen mit dem Download-Link. Eine unbezahlte Bestellung wird mit allen Daten nach 7 Tagen gelöscht. Die E-Mail-Adresse einer bezahlten Bestellung wird 180 Tage aufbewahrt – für Rückfragen und Erstattungen – und danach gelöscht. Der Bestelldatensatz ohne sie (was gekauft wurde, wann und zu welchem Preis) wird so lange aufbewahrt, wie Buchführungs- und Steuerrecht es verlangen.
+
+Ein Horoskop-Abonnement beginnt erst, wenn Sie es über den Link in unserer E-Mail bestätigt haben; eine unbestätigte Anmeldung wird nach 7 Tagen gelöscht. Für ein laufendes Abonnement speichern wir Ihre E-Mail-Adresse sowie das berechnete Horoskop und Ihren Vornamen in verschlüsselter Form; die Geburtsdaten selbst nur in den ersten 30 Tagen, falls sie korrigiert werden müssen. Nach der Kündigung oder dem Ende eines Abonnements werden seine Daten noch 30 Tage aufbewahrt und dann gelöscht.
+
+Die Texte der kostenlosen Vorschau werden bis zu 30 Tage gespeichert, damit derselbe Text nicht zweimal geschrieben wird; mit ihnen sind weder eine E-Mail-Adresse noch eine Bestellung verknüpft.
+
+## Ihre Rechte
+
+Sie haben das Recht auf Auskunft und eine Kopie Ihrer Daten (Art. 15 DSGVO), auf Berichtigung (Art. 16 DSGVO), auf Löschung auch vor Ablauf der genannten Fristen (Art. 17 DSGVO), auf Einschränkung der Verarbeitung (Art. 18 DSGVO) und auf Datenübertragbarkeit (Art. 20 DSGVO). Schreiben Sie dazu an help@chronika.me, von der Adresse, mit der die Bestellung oder das Abonnement abgeschlossen wurde. Werden die Geburtsdaten gelöscht, ist das Dokument nicht mehr verfügbar.
+
+**Widerspruchsrecht:** Soweit wir Daten auf Grundlage unseres berechtigten Interesses verarbeiten (Art. 6 Abs. 1 lit. f DSGVO), können Sie dieser Verarbeitung aus Gründen, die sich aus Ihrer besonderen Situation ergeben, jederzeit widersprechen (Art. 21 DSGVO).
+
+Eine Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen (Art. 7 Abs. 3 DSGVO). Für die Werbe-Cookies geht das so: Löschen Sie die Cookies der Website in Ihrem Browser – die Frage erscheint dann erneut, und bis zu Ihrer Antwort werden keine Tags geladen. Wenn Sie der Ansicht sind, dass wir Ihre Daten nicht rechtmäßig verarbeiten, haben Sie das Recht auf Beschwerde bei einer Datenschutz-Aufsichtsbehörde, insbesondere bei der Aufsichtsbehörde Ihres Landes (Art. 77 DSGVO).
+
+## Kinder
+
+Ein Kinderhoroskop wird aus den Daten des Kindes erstellt, die ein Erwachsener eingibt. Wir schließen keinen Vertrag mit dem Kind und nehmen keinen Kontakt zu ihm auf. Der Dienst ist nicht zur eigenständigen Nutzung durch Personen unter 18 Jahren bestimmt.
+
+## Änderungen
+
+Ändert sich diese Erklärung, erscheint die neue Fassung auf dieser Seite mit neuem Datum. Über wesentliche Änderungen informieren wir Sie per E-Mail, wenn bei uns eine laufende Bestellung mit Ihrer Adresse vorliegt.
+`,
 };

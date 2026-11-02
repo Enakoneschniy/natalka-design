@@ -18,6 +18,9 @@ import type { BundlePrice } from '@/lib/pricing';
  * landing work. Everything below the headline is the same in all three.
  */
 
+/** The languages the sample pages under "what is inside" are in. */
+const SAMPLE_LOCALES: ReadonlySet<string> = new Set(['ru']);
+
 export type Angle = 'dates' | 'home' | 'love';
 export const ANGLES: readonly Angle[] = ['dates', 'home', 'love'];
 
@@ -111,9 +114,14 @@ export function Landing({
           </div>
           <p className="caption l-note">{t('inside.note')}</p>
 
-          {/* Four real pages of a finished document, generated from test birth data. */}
-          <SampleGallery labels={[0, 1, 2, 3].map((i) => t(`inside.pages.${i}`))} />
-          <p className="caption l-gallery-note">{t('inside.galleryNote')}</p>
+          {/* Four real pages of a finished document, generated from test birth data. They are
+              Russian pages, so a page in another language goes without them until it has its own. */}
+          {SAMPLE_LOCALES.has(locale) ? (
+            <>
+              <SampleGallery labels={[0, 1, 2, 3].map((i) => t(`inside.pages.${i}`))} />
+              <p className="caption l-gallery-note">{t('inside.galleryNote')}</p>
+            </>
+          ) : null}
         </div>
       </section>
 

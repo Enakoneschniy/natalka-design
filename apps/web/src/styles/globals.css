@@ -469,8 +469,12 @@
   /* Nothing but the logo may catch a tap: the rest of this strip is the page underneath. */
   pointer-events: none;
 }
-.site-mark .logo {
+.site-mark .logo,
+.site-mark .lang-drop {
   pointer-events: auto;
+}
+.site-mark .lang-drop {
+  margin-left: auto;
 }
 /* Pages start below the mark; the hero starts under it, because there the logo belongs to the
    composition rather than to a bar above it. */

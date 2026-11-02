@@ -41,7 +41,7 @@ export async function StructuredData({ locale, price }: { locale: string; price:
       '@type': 'ContactPoint',
       contactType: 'customer support',
       email: SELLER.email,
-      availableLanguage: ['ru'],
+      availableLanguage: ['ru', 'de'],
     },
   };
 

@@ -142,4 +142,57 @@ These terms are governed by the law of the Slovak Republic. A dispute is first t
 
 These terms may change; the version shown at the time of payment applies to your order.
 `,
+  de: `
+# Allgemeine Geschäftsbedingungen
+
+_Anbieter: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, Identifikationsnummer (IČO) 57 339 368, Handelsregister des Stadtgerichts Bratislava III, Abteilung Sro, Einlage 194301/B. Kontakt: help@chronika.me._
+
+## Worum es geht
+
+Chronika ist ein Dienst, der aus Geburtsdatum, Geburtszeit und Geburtsort ein astrologisches Horoskop berechnet und dazu eine schriftliche Deutung im PDF-Format erstellt. Die Stellungen der Planeten werden nach Ephemeriden berechnet; den Text schreibt ein Sprachmodell auf Grundlage dieser Berechnungen und der redaktionellen Regeln des Dienstes. Mit der Bezahlung einer Bestellung nehmen Sie diese Bedingungen an.
+
+## Was Sie erhalten
+
+Ein Dokument im PDF-Format in der gewählten Sprache und in dem Umfang, der in der Produktbeschreibung angegeben ist. Es wird individuell aus Ihren Daten erstellt, in der Regel innerhalb von 10–20 Minuten, und ist 30 Tage ab der Bestellung über seinen Link abrufbar. Der Link wird an die angegebene E-Mail-Adresse gesendet und, wenn Sie das gewählt haben, an Telegram. Die kostenlose Vorschau des Horoskops steht ohne Zahlung und ohne Verpflichtung zur Verfügung.
+
+## Preis und Zahlung
+
+Der Preis wird vor der Zahlung in Ihrer Währung angezeigt und enthält alle Steuern. Die Zahlung ist einmalig, ohne Abonnement, und läuft über den Zahlungsdienstleister Stripe; Ihre Kartendaten sehen und speichern wir nicht. Den Beleg erhalten Sie per E-Mail.
+
+## Ihre Daten und Ihre Verantwortung
+
+Das Dokument ist nur so genau wie die Daten, aus denen es entsteht. Prüfen Sie Datum, Uhrzeit und Ort vor der Zahlung: Ein Dokument, das aus falschen Daten erstellt wurde, ist das richtige Dokument für einen anderen Menschen. Haben Sie sich vertan, schreiben Sie uns innerhalb von 7 Tagen – einmal erstellen wir das Dokument kostenlos mit den korrigierten Daten neu.
+
+Wenn Sie die Daten einer anderen Person eingeben (Partnerschaftshoroskop, Kinderhoroskop), bestätigen Sie, dazu berechtigt zu sein.
+
+## Was es nicht ist
+
+Eine Deutung ist eine Auslegung der astrologischen Tradition, geschrieben zum Lesen. Sie ist keine medizinische, psychologische, rechtliche oder finanzielle Beratung und keine Vorhersage von Ereignissen. Treffen Sie auf ihrer Grundlage keine Entscheidungen über Gesundheit, Geld oder Beziehungen, ohne den Rat einer entsprechenden Fachperson einzuholen. Wir garantieren nicht, dass etwas eintritt, das im Dokument beschrieben ist.
+
+## Rechte am Text
+
+Das Dokument ist für Sie erstellt und für den persönlichen Gebrauch bestimmt. Sie dürfen es aufbewahren, ausdrucken und mit Menschen teilen, die Ihnen nahestehen. Eine vollständige Veröffentlichung oder eine gewerbliche Nutzung bedarf unserer Zustimmung. Alles Übrige auf der Website (Gestaltung, Texte, Software) gehört dem Anbieter.
+
+## Haftung
+
+Wir sind dafür verantwortlich, dass das Dokument geliefert wird und der Beschreibung entspricht. Unsere Haftung ist für jede Bestellung auf deren Preis begrenzt. Wir haften nicht für Entscheidungen, die auf Grundlage des Dokuments getroffen werden, und nicht dafür, dass der Dienst aus Gründen außerhalb unseres Einflusses nicht verfügbar ist.
+
+Diese Beschränkungen gelten nicht, soweit wir zwingend haften, insbesondere bei Vorsatz und grober Fahrlässigkeit sowie bei der Verletzung des Lebens, des Körpers oder der Gesundheit. Ihre gesetzlichen Rechte bei Mängeln des Dokuments bleiben unberührt.
+
+## Erstattung und Widerruf
+
+Das Verfahren und die Widerrufsbelehrung finden Sie unter [Erstattung und Widerruf](/[locale]/legal/refunds).
+
+## Anwendbares Recht und Streitigkeiten
+
+Für diese Bedingungen gilt das Recht der Slowakischen Republik. Sind Sie Verbraucher, gilt diese Rechtswahl nur so weit, wie Ihnen dadurch nicht der Schutz entzogen wird, den Ihnen die zwingenden Bestimmungen des Rechts des Staates gewähren, in dem Sie Ihren gewöhnlichen Aufenthalt haben (für Verbraucher in der EU: Art. 6 Abs. 2 Rom-I-VO).
+
+Eine Streitigkeit klären wir zunächst per E-Mail über help@chronika.me; gelingt innerhalb von 30 Tagen keine Einigung, entscheiden die Gerichte am Sitz des Anbieters, es sei denn, das Recht Ihres Landes gibt Ihnen Anspruch auf einen anderen Gerichtsstand.
+
+Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen (§ 36 VSBG).
+
+## Änderungen
+
+Diese Bedingungen können sich ändern; für Ihre Bestellung gilt die Fassung, die zum Zeitpunkt der Zahlung angezeigt wurde.
+`,
 };

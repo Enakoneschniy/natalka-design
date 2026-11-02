@@ -1,0 +1,685 @@
+{
+  "nav": {
+    "products": "Produkte",
+    "how": "So funktioniert es",
+    "sample": "Beispieldeutung",
+    "faq": "Fragen",
+    "start": "Horoskop erstellen",
+    "language": "Sprache",
+    "menu": "Menü"
+  },
+  "hero": {
+    "titleLead": "Ein Geburtshoroskop,",
+    "titleAccent": "das Sie lesen möchten",
+    "lead": "Geben Sie Datum, Uhrzeit und Ort Ihrer Geburt ein – nach einer Minute sehen Sie Ihr Horoskop kostenlos. Die vollständige Deutung mit 20–30 Seiten kommt als PDF per E-Mail.",
+    "cta": "Horoskop erstellen",
+    "secondary": "Beispiel ansehen",
+    "facts": {
+      "accuracy": "bis 1′",
+      "accuracyLabel": "Genauigkeit der Positionen",
+      "speed": "~10 Min.",
+      "speedLabel": "von Zahlung bis PDF",
+      "count": "12.400",
+      "countLabel": "Deutungen verschickt"
+    },
+    "film": {
+      "line": "Jeder wurde unter\nseinem eigenen Himmel geboren.",
+      "quote": "Sonne im Stier im neunten Haus: Ihnen genügt es nicht, etwas zu wissen – Sie wollen es ganz verstehen, und Sie glauben selten einfach aufs Wort. Der Mond im Wassermann im sechsten Haus macht Ihren Tagesablauf zu einer Frage der Freiheit, nicht der Disziplin.",
+      "quoteFrom": "Auszug aus einer Deutung",
+      "cta": "Eigenes Horoskop erstellen"
+    }
+  },
+  "products": {
+    "title": "Produkte",
+    "lead": "Fester Preis, einmalige Zahlung. Ihre Daten geben Sie nur vor der ersten Bestellung ein – alle weiteren Dokumente entstehen aus demselben Horoskop.",
+    "choose": "Auswählen",
+    "natal": {
+      "title": "Geburtshoroskop",
+      "meta": "20–30 Seiten",
+      "items": [
+        "Sonne, Mond, Aszendent",
+        "Planeten in Zeichen und Häusern",
+        "Aspekte und wie sie sich zeigen",
+        "Beziehungen, Beruf, Geld"
+      ]
+    },
+    "forecast": {
+      "title": "Prognose für 12 Monate",
+      "meta": "20–30 Seiten",
+      "items": [
+        "Transite zu Ihrem Horoskop",
+        "Ereigniskalender Monat für Monat",
+        "Günstige und schwierige Phasen",
+        "Was in jeder Phase zu tun ist"
+      ]
+    },
+    "synastry": {
+      "title": "Partnerschaftshoroskop",
+      "meta": "20–30 Seiten · zwei Horoskope",
+      "items": [
+        "Synastrie zweier Horoskope",
+        "Wo Sie einander stärken",
+        "Wo es reibt – und warum",
+        "Wie Sie sich einigen"
+      ]
+    },
+    "child": {
+      "title": "Kinderhoroskop",
+      "meta": "20–30 Seiten · für Eltern",
+      "items": [
+        "Temperament und Bedürfnisse Ihres Kindes",
+        "Wie es lernt und sich erholt",
+        "Was es verletzt, was es begeistert",
+        "Wie Sie es wirklich erreichen"
+      ]
+    },
+    "once": "einmalig, ohne Abo",
+    "bundle": {
+      "title": "Geburtshoroskop und Prognose",
+      "meta": "35 Seiten · PDF per E-Mail"
+    }
+  },
+  "how": {
+    "title": "So funktioniert es",
+    "steps": [
+      {
+        "title": "Geburtsdaten eingeben",
+        "text": "Name, Datum, Uhrzeit und Ort. Kennen Sie die genaue Uhrzeit nicht, geht es trotzdem – nur ohne Häuser und Aszendent."
+      },
+      {
+        "title": "Kostenlose Vorschau ansehen",
+        "text": "Horoskopkreis, Positionstabelle, Aspekte und ein kurzer Text zu Sonne, Mond und Aszendent – sofort."
+      },
+      {
+        "title": "PDF erhalten",
+        "text": "Das Dokument kommt in 5–15 Minuten per E-Mail und bleibt über den Link abrufbar."
+      }
+    ]
+  },
+  "faq": {
+    "title": "Fragen",
+    "contact": "Keine Antwort gefunden? Schreiben Sie an",
+    "contactAfter": ", wir antworten innerhalb eines Werktags.",
+    "items": [
+      {
+        "q": "Was, wenn ich meine genaue Geburtszeit nicht kenne?",
+        "a": "Dann erstellen wir das Horoskop für 12 Uhr mittags. Die Positionen von Sonne und Planeten und die meisten Aspekte bleiben genau, aber Häuser und Aszendent lassen sich nicht berechnen – die entsprechenden Abschnitte entfallen. Die Uhrzeit steht oft in der Geburtsurkunde oder in den Unterlagen der Geburtsklinik."
+      },
+      {
+        "q": "Was unterscheidet das vom Zeitungshoroskop?",
+        "a": "Ein Zeitungshoroskop beschreibt ein Zwölftel der Menschheit nach dem Sonnenzeichen. Ein Geburtshoroskop ist der Stand der zehn Planeten, des Aszendenten und der Häuser im Moment Ihrer Geburt – und die Winkel zwischen ihnen. Zwei Menschen mit demselben Sternzeichen bekommen bei uns zwei verschiedene Texte."
+      },
+      {
+        "q": "Wer schreibt den Text der Deutung?",
+        "a": "Die Planetenstände berechnet ein Programm nach astronomischen Ephemeriden, auf die Bogenminute genau. Den Text verfasst ein Sprachmodell nach einem Leitfaden, den die Astrologen von Chronika geschrieben haben; jeder Absatz bezieht sich auf eine bestimmte Position oder einen Aspekt Ihres Horoskops."
+      },
+      {
+        "q": "Wie speichern Sie meine Daten?",
+        "a": "Datum, Uhrzeit und Ort Ihrer Geburt werden nur gespeichert, um Ihre Dokumente zu erstellen, und nach 30 Tagen gelöscht. Wir geben sie nicht an Dritte weiter."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Sehen Sie Ihr Horoskop in einer Minute",
+    "lead": "Kostenlose Vorschau – ohne Anmeldung und ohne Kreditkarte.",
+    "button": "Horoskop erstellen"
+  },
+  "footer": {
+    "about": "Automatisch erstellte Geburtshoroskope. Berechnet nach astronomischen Ephemeriden, der Text richtet sich nach Ihrem Horoskop – nicht nach dem Sonnenzeichen.",
+    "products": "Produkte",
+    "documents": "Dokumente",
+    "contacts": "Kontakt",
+    "terms": "AGB",
+    "privacy": "Datenschutzerklärung",
+    "refunds": "Rückerstattung",
+    "hours": "Mo.–Fr., 10:00–19:00 Uhr MEZ",
+    "disclaimer": "Die Deutung dient der Unterhaltung und der Selbsterkenntnis und ist keine medizinische, psychologische oder finanzielle Beratung.",
+    "seller": "coremind s. r. o. · IČO 57 339 368 · Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei"
+  },
+  "unavailable": {
+    "title": "Der Dienst ist in Ihrer Region nicht verfügbar",
+    "text": "Chronika steht Nutzern aus der Russischen Föderation nicht zur Verfügung. Zahlungen aus dieser Region nehmen wir nicht an, Dokumente versenden wir nicht."
+  },
+  "form": {
+    "title": "Geburtsdaten",
+    "lead": "Je genauer die Angaben, desto genauer das Horoskop. Alles außer der Uhrzeit ist Pflicht.",
+    "steps": {
+      "data": "Geburtsdaten",
+      "preview": "Kostenlose Vorschau",
+      "payment": "Vollständige Deutung"
+    },
+    "name": "Vorname",
+    "nameHint": "So sprechen wir Sie in der Deutung an",
+    "date": "Geburtsdatum",
+    "datePlaceholder": "TT.MM.JJJJ",
+    "time": "Geburtszeit",
+    "timePlaceholder": "hh:mm",
+    "timeHint": "Ortszeit am Geburtsort",
+    "unknownTime": "Ich kenne die genaue Geburtszeit nicht",
+    "unknownTimeTitle": "Was sich ohne Uhrzeit ändert.",
+    "unknownTimeBody": "Wir erstellen das Horoskop für 12 Uhr mittags: Planetenpositionen und Aspekte bleiben genau, aber Häuser und Aszendent lassen sich nicht berechnen – die entsprechenden Abschnitte entfallen. Die Uhrzeit steht oft in der Geburtsurkunde oder in den Unterlagen der Geburtsklinik.",
+    "city": "Geburtsort",
+    "cityPlaceholder": "Ortsnamen eingeben",
+    "cityHint": "Koordinaten und Zeitzone ermitteln wir automatisch, einschließlich der Sommerzeitregeln im Geburtsjahr",
+    "gender": "Wie wir im Text über Sie schreiben",
+    "genderHint": "Ändert nur die Wortformen in der Deutung: „Kämpferin“ oder „Kämpfer“. Sonst nichts",
+    "genders": {
+      "female": "Weiblich",
+      "male": "Männlich",
+      "neutral": "Neutral"
+    },
+    "submit": "Horoskop erstellen",
+    "submitPending": "Wird erstellt…",
+    "free": "Horoskop und Vorschau sind kostenlos. Sie zahlen nur für die vollständige Deutung.",
+    "north": "n. Br.",
+    "south": "s. Br.",
+    "east": "ö. L.",
+    "west": "w. L.",
+    "errors": {
+      "date": "Geben Sie das Datum im Format TT.MM.JJJJ ein",
+      "dateMissing": "Dieses Datum gibt es nicht – prüfen Sie Tag und Monat",
+      "dateEarly": "Das Datum darf nicht vor 1900 liegen",
+      "dateFuture": "Dieses Datum liegt in der Zukunft – prüfen Sie das Jahr",
+      "time": "Geben Sie die Uhrzeit im Format hh:mm ein oder markieren Sie, dass Sie sie nicht kennen",
+      "city": "Wählen Sie einen Ort aus der Liste"
+    },
+    "you": "Sie",
+    "partner": "Partner/in",
+    "partnerNameHint": "So nennen wir die zweite Person in der Deutung",
+    "childName": "Vorname des Kindes",
+    "childNameHint": "So nennen wir das Kind in der Deutung",
+    "childGender": "Geschlecht des Kindes",
+    "childGenderHint": "Ändert nur die Wortformen im Text",
+    "titles": {
+      "natal": "Geburtsdaten",
+      "forecast": "Geburtsdaten",
+      "bundle": "Geburtsdaten",
+      "child": "Geburtsdaten des Kindes",
+      "synastry": "Geburtsdaten beider Personen",
+      "horoscope": "Horoskop im Abo"
+    },
+    "leads": {
+      "synastry": "Wir brauchen beide Horoskope. Je genauer die Uhrzeiten, desto genauer ihre Verbindungen.",
+      "child": "Je genauer die Angaben, desto genauer das Horoskop. Alles außer der Uhrzeit ist Pflicht.",
+      "horoscope": "Aus Ihren Geburtsdaten berechnen wir Ihr Geburtshoroskop und schreiben Ihnen jede Woche oder jeden Monat ein Horoskop, das genau darauf beruht – nach den tatsächlichen Transiten mit Datum, nicht nach dem Sonnenzeichen."
+    },
+    "submitSubscribe": "Abonnieren",
+    "edit": "Daten ändern",
+    "timeUnknown": "Uhrzeit unbekannt"
+  },
+  "preview": {
+    "title": "{name}, hier ist Ihr Horoskop",
+    "titleAnonymous": "Hier ist Ihr Horoskop",
+    "edit": "Daten ändern",
+    "unknownTime": "Uhrzeit unbekannt · für 12 Uhr berechnet",
+    "aspectsTitle": "Aspekte",
+    "aspectsLead": "Winkel zwischen den Planeten. Harmonische schenken Leichtigkeit, gespannte geben Energie, die irgendwohin muss. In Ihrem Horoskop gibt es {harmonious} harmonische und {tense} gespannte Aspekte.",
+    "legend": {
+      "conjunction": "Konjunktion – die Planeten wirken gemeinsam",
+      "trine": "Trigon – ein leichter, natürlicher Fluss",
+      "sextile": "Sextil – eine Chance, die Sie ergreifen müssen",
+      "square": "Quadrat – innere Reibung, ein Antrieb",
+      "opposition": "Opposition – zwei Seiten, die es zu verbinden gilt"
+    },
+    "noHouses": "Häuser und Aszendent sind nicht berechnet: Ohne genaue Geburtszeit wären sie unzuverlässig.",
+    "soonTitle": "Vollständige Deutung",
+    "soonBody": "Ein PDF mit 20–30 Seiten und einer ausführlichen Deutung der Planeten, Häuser und Aspekte. Wir arbeiten gerade daran – das Horoskop oben beruht bereits auf denselben Berechnungen.",
+    "soonCta": "Demnächst",
+    "errorTitle": "Das Horoskop konnte nicht erstellt werden",
+    "errorBody": "Prüfen Sie die Geburtsdaten und versuchen Sie es noch einmal.",
+    "back": "Zurück zum Formular",
+    "positionsTitle": "Planetenpositionen",
+    "coreTitle": "Kern des Horoskops",
+    "coreLead": "Drei Punkte, mit denen jede Deutung beginnt: was Sie tun, was Sie fühlen und wie andere Sie sehen.",
+    "wheelHint": "Zeigen oder tippen Sie auf einen Planeten – seine Aspekte leuchten auf.",
+    "writing": "Wir schreiben…",
+    "readingTitle": "Erster Eindruck",
+    "readingLead": "Drei Auszüge aus Ihrem Horoskop – kostenlos, vor der Zahlung. Die vollständige Deutung geht deutlich tiefer.",
+    "synastryTitle": "Zwei Horoskope nebeneinander",
+    "personOne": "Erste Person",
+    "personTwo": "Zweite Person",
+    "contactsTitle": "Verbindungen der Horoskope",
+    "contactsLead": "Aspekte von den Planeten des einen Horoskops zu denen des anderen. Insgesamt {total}, davon {harmonious} harmonische und {tense} gespannte. Unten die exaktesten."
+  },
+  "chart": {
+    "planets": {
+      "sun": "Sonne",
+      "moon": "Mond",
+      "mercury": "Merkur",
+      "venus": "Venus",
+      "mars": "Mars",
+      "jupiter": "Jupiter",
+      "saturn": "Saturn",
+      "uranus": "Uranus",
+      "neptune": "Neptun",
+      "pluto": "Pluto",
+      "chiron": "Chiron",
+      "north_node": "Nördl. Mondknoten",
+      "south_node": "Südl. Mondknoten",
+      "lilith": "Lilith",
+      "pars_fortunae": "Glückspunkt",
+      "vertex": "Vertex",
+      "asc": "Aszendent",
+      "mc": "MC",
+      "dsc": "Deszendent",
+      "ic": "IC"
+    },
+    "signs": {
+      "aries": "Widder",
+      "taurus": "Stier",
+      "gemini": "Zwillinge",
+      "cancer": "Krebs",
+      "leo": "Löwe",
+      "virgo": "Jungfrau",
+      "libra": "Waage",
+      "scorpio": "Skorpion",
+      "sagittarius": "Schütze",
+      "capricorn": "Steinbock",
+      "aquarius": "Wassermann",
+      "pisces": "Fische"
+    },
+    "in": {
+      "aries": "im Widder",
+      "taurus": "im Stier",
+      "gemini": "in den Zwillingen",
+      "cancer": "im Krebs",
+      "leo": "im Löwen",
+      "virgo": "in der Jungfrau",
+      "libra": "in der Waage",
+      "scorpio": "im Skorpion",
+      "sagittarius": "im Schützen",
+      "capricorn": "im Steinbock",
+      "aquarius": "im Wassermann",
+      "pisces": "in den Fischen"
+    },
+    "aspects": {
+      "conjunction": "Konjunktion",
+      "opposition": "Opposition",
+      "trine": "Trigon",
+      "square": "Quadrat",
+      "sextile": "Sextil",
+      "quincunx": "Quinkunx",
+      "semisextile": "Halbsextil",
+      "semisquare": "Halbquadrat",
+      "sesquiquadrate": "Anderthalbquadrat"
+    },
+    "table": {
+      "planet": "Planet",
+      "sign": "Zeichen",
+      "degree": "Grad",
+      "house": "Haus",
+      "retro": "R"
+    },
+    "houseShort": "{n}. Haus"
+  },
+  "paywall": {
+    "title": "Jetzt kommt das Wichtigste: was und wann",
+    "lead": "Sie haben über drei Punkte Ihres Horoskops gelesen. Die vollständige Deutung behandelt alle übrigen – auf 35 Seiten:",
+    "items": [
+      "Wer Sie laut Horoskop sind: Ihre Stärken, was Ihnen Kraft gibt und was sie Ihnen nimmt",
+      "Liebesleben: wen Sie laut Horoskop suchen sollten und welche Phasen dieses Thema öffnen",
+      "Beruf und Geld: womit Sie sich beschäftigen sollten und was jetzt zu tun ist",
+      "Ihre Jahre Monat für Monat: der Rest dieses Jahres, ganz {next}, {year} – und die wichtigsten Daten auf einer Seite"
+    ],
+    "cta": "Ganze Deutung freischalten – {price}",
+    "note": "35 Seiten · PDF per E-Mail in 20–30 Minuten · einmalige Zahlung",
+    "pages": [
+      {
+        "section": "3 · Planeten in Zeichen und Häusern",
+        "page": "14",
+        "title": "Venus in den Zwillingen, 11. Haus",
+        "body": [
+          "In der Liebe brauchen Sie das Gespräch. Keine Komplimente – ein echtes Gespräch, das Sie fesselt. Beziehungen, in denen es nichts zu reden gibt, enden bei Ihnen, bevor Ihr Gegenüber es merkt.",
+          "Das elfte Haus macht Freunde und Partner zu benachbarten Kategorien: Viele Ihrer Beziehungen haben als Freundschaft begonnen – und das ist kein Zufall, sondern Ihr Weg."
+        ]
+      },
+      {
+        "section": "4 · Aspekte",
+        "page": "23",
+        "title": "Mond Quadrat Mars",
+        "body": [
+          "Die schnellste Reaktion in Ihrem Horoskop. Wenn etwas Wichtiges berührt wird, antwortet der Körper vor dem Gedanken. Das gibt Ihnen Mut – und ein paar Worte zu viel, die Sie später bereuen.",
+          "Was Sie damit tun können: nicht unterdrücken, sondern umlenken. Körperliche Bewegung in den ersten Minuten fängt den ersten Impuls auf und lässt Klarheit zurück."
+        ]
+      },
+      {
+        "section": "5 · Beziehungen, Beruf, Geld",
+        "page": "31",
+        "title": "Geld: Stier und das zweite Haus",
+        "body": [
+          "Sie gehen mit Geld um wie mit Essen: Wichtig ist nicht die Menge, sondern das Gefühl, einen Vorrat zu haben. Ein leeres Konto beunruhigt Sie mehr, als es sollte, ein volles beruhigt Sie mehr, als es angemessen wäre.",
+          "Saturn im achten Haus bringt Vorsicht bei gemeinsamem Geld und Krediten mit."
+        ]
+      }
+    ],
+    "leadSynastry": "20–30 Seiten über Sie beide: was Sie anzieht, wo es reibt und wie Sie damit leben. Das PDF kommt 5–15 Minuten nach der Zahlung per E-Mail.",
+    "sticky": "Weiterlesen – {price}",
+    "datesTitle": "Die nächsten starken Phasen in Ihrem Horoskop",
+    "datesNote": "Was jedes Datum bedeutet, steht in der vollständigen Deutung."
+  },
+  "checkout": {
+    "title": "Bestellung",
+    "steps": "Zahlung",
+    "summary": "Ihre Bestellung",
+    "total": "Gesamt",
+    "email": "PDF senden an",
+    "emailHint": "Der Link zum Dokument gilt 30 Tage",
+    "emailPlaceholder": "name@beispiel.de",
+    "back": "Zurück zum Horoskop",
+    "chart": "Horoskop",
+    "unknownTime": "Uhrzeit unbekannt",
+    "start": "Deutung erstellen",
+    "starting": "Wird gestartet…",
+    "startNote": "Zahlung per Karte oder Apple Pay/Google Pay. Das Dokument kommt in 10–20 Minuten per E-Mail.",
+    "startFailed": "Der Start hat nicht geklappt. Versuchen Sie es noch einmal.",
+    "tooMany": "Zu viele Versuche hintereinander. Warten Sie eine Minute und versuchen Sie es erneut.",
+    "emailInvalid": "Prüfen Sie die E-Mail-Adresse",
+    "consent": "Ich stimme ausdrücklich zu, dass Sie vor Ablauf der Widerrufsfrist mit der Erstellung des Dokuments beginnen, und mir ist bekannt, dass ich durch diese Zustimmung mit Beginn der Vertragserfüllung mein Widerrufsrecht verliere. AGB und Erstattungsregeln finden Sie in der Fußzeile.",
+    "pay": "Bezahlen",
+    "regionBlocked": "Leider können wir in Ihrem Land keine Zahlung annehmen.",
+    "howTitle": "So läuft die Zahlung",
+    "howBody": "Per Karte oder Apple Pay/Google Pay auf einer sicheren Seite von Stripe. Kartendaten sehen und speichern wir nicht. Direkt nach der Zahlung beginnt die Erstellung; der Link zum Dokument kommt in 10–20 Minuten per E-Mail."
+  },
+  "generating": {
+    "title": "Wir bereiten Ihre Deutung vor",
+    "lead": "Das dauert meist zehn bis fünfzehn Minuten. Der Fortschritt aktualisiert sich von selbst – lassen Sie die Seite einfach geöffnet.",
+    "starting": "Wird gestartet…",
+    "noToken": "Der Link ist veraltet oder unvollständig. Gehen Sie zurück zum Formular und erstellen Sie das Horoskop neu.",
+    "stepCalc": "Horoskop wird berechnet",
+    "stepTexts": "Deutung wird geschrieben: {written} von {total} Abschnitten",
+    "stepPdf": "PDF wird erstellt",
+    "readyTitle": "Fertig",
+    "readyBody": "Ihre Deutung umfasst {pages, plural, one {# Seite} other {# Seiten}}.",
+    "open": "PDF öffnen",
+    "failedTitle": "Etwas ist schiefgegangen",
+    "failedBody": "Wir sehen den Fehler und starten die Erstellung erneut. Ändert sich innerhalb einer Stunde nichts, schreiben Sie uns.",
+    "back": "Zur Startseite",
+    "goneTitle": "Der Link funktioniert nicht",
+    "stage": {
+      "calc": "Horoskop",
+      "texts": "Deutung",
+      "pdf": "PDF"
+    },
+    "telegram": "In Telegram erhalten",
+    "awaitingPayment": "Wir warten auf die Zahlungsbestätigung…",
+    "unpaidTitle": "Zahlung nicht abgeschlossen",
+    "unpaidBody": "Die Bestellung ist gespeichert und wartet auf die Zahlung. Sie können sie auf der sicheren Seite von Stripe abschließen.",
+    "unpaidPay": "Zur Zahlung",
+    "unpaidPending": "Zahlung wird geöffnet…",
+    "unpaidNote": "Wenn Sie schon bezahlt haben, warten Sie eine Minute – die Seite aktualisiert sich von selbst.",
+    "unpaidFailed": "Die Zahlungsseite ließ sich nicht öffnen. Versuchen Sie es in einer Minute noch einmal.",
+    "tooMany": "Zu viele Versuche hintereinander. Warten Sie eine Minute und versuchen Sie es erneut.",
+    "refundedTitle": "Zahlung erstattet",
+    "refundedBody": "Das Geld für diese Bestellung ist auf Ihre Karte zurückgegangen. Das Dokument lässt sich über diesen Link nicht mehr öffnen.",
+    "disputedTitle": "Zahlung wird angefochten",
+    "disputedBody": "Die Bank prüft einen Einspruch gegen diese Zahlung. Bis er geklärt ist, ist das Dokument nicht verfügbar. Fragen an help@chronika.me.",
+    "declinedTitle": "Zahlung fehlgeschlagen",
+    "declinedBody": "Die Bestellung wurde nicht abgeschlossen. Wurde trotzdem Geld abgebucht, schreiben Sie an help@chronika.me – wir erstatten es."
+  },
+  "legal": {
+    "draft": "Entwurf: Das Dokument ist noch nicht unterzeichnet und enthält noch keine Firmenangaben. Bis zum Start der Zahlungen ist es nicht wirksam."
+  },
+  "subscription": {
+    "sectionTitle": "Ihr persönliches Horoskop – jede Woche",
+    "sectionLead": "Nicht nach dem Sonnenzeichen, sondern nach Ihrem ganzen Geburtshoroskop: welche Transite genau Ihre Planeten treffen und an welchen Tagen. Der erste Monat ist kostenlos, danach {price} im Monat, jederzeit kündbar.",
+    "sectionItems": [
+      "Genaue Daten für die Woche oder den Monat",
+      "Transite zu Ihren Planeten und Häusern",
+      "Per E-Mail und in Telegram",
+      "Das erste Horoskop direkt nach der E-Mail-Bestätigung"
+    ],
+    "sectionCta": "Abonnieren",
+    "trial": "erster Monat kostenlos",
+    "then": "danach {price} im Monat",
+    "title": "Horoskop-Abo",
+    "lead": "Wählen Sie, wie oft und wohin. Wir schicken Ihnen eine E-Mail zur Bestätigung – das erste Horoskop schreiben wir gleich danach.",
+    "cadence": "Wie oft",
+    "week": "Jede Woche",
+    "weekHint": "Ein kurzer Text für sieben Tage mit genauen Daten.",
+    "month": "Jeden Monat",
+    "monthHint": "Ein ausführlicher Text für den Monat, Woche für Woche.",
+    "email": "E-Mail",
+    "emailHint": "Hierher kommen das Horoskop und der Link zur Verwaltung Ihres Abos.",
+    "consent": "Mir ist klar, dass der erste Monat kostenlos ist, das Abo danach {price} im Monat kostet und ich es jederzeit über den Link in der E-Mail kündigen kann.",
+    "submit": "Abonnieren",
+    "submitPending": "Wird eingerichtet…",
+    "failed": "Das Abo konnte nicht eingerichtet werden. Versuchen Sie es noch einmal.",
+    "emailInvalid": "Prüfen Sie die E-Mail-Adresse",
+    "tooMany": "Zu viele Versuche hintereinander. Warten Sie eine Minute und versuchen Sie es erneut.",
+    "checkMailTitle": "Prüfen Sie Ihr Postfach",
+    "checkMailBody": "Wir haben eine E-Mail an {email} geschickt. Öffnen Sie sie und bestätigen Sie das Abo – sonst kommen keine Horoskope. Der Link in der E-Mail gilt sieben Tage.",
+    "checkMailNote": "Keine E-Mail? Sehen Sie im Spam-Ordner nach oder schließen Sie das Abo erneut ab.",
+    "confirmTitle": "Abo bestätigen",
+    "confirmLead": "Klicken Sie auf die Schaltfläche, und das Abo beginnt: Das erste Horoskop kommt sofort, der erste Monat ist kostenlos.",
+    "confirm": "Abo bestätigen",
+    "confirmPending": "Wird bestätigt…",
+    "confirmGone": "Der Link ist veraltet oder nicht mehr gültig. Schließen Sie das Abo neu ab – Sie bekommen dann eine neue E-Mail.",
+    "confirmFailed": "Die Bestätigung hat nicht geklappt. Versuchen Sie es in einer Minute noch einmal.",
+    "endedBody": "Neue Horoskope kommen nicht mehr.",
+    "manageTitle": "Ihr Abo",
+    "statusActive": "Aktiv",
+    "statusPaused": "Pausiert",
+    "statusCancelled": "Gekündigt",
+    "statusEnded": "Kostenloser Monat vorbei",
+    "nextSend": "Nächstes Horoskop: {date}",
+    "trialUntil": "Kostenlos bis {date}",
+    "writing": "Das erste Horoskop wird geschrieben – meist dauert das keine Minute.",
+    "latestFor": "Horoskop für {start} – {end}",
+    "telegramTitle": "Auch in Telegram erhalten",
+    "telegramBody": "Öffnen Sie den Bot und tippen Sie auf „Start“ – dann kommen die Horoskope auch dorthin.",
+    "telegramOpen": "Bot öffnen",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "cancel": "Abo kündigen",
+    "delete": "Abo und Daten löschen",
+    "deleteConfirm": "Abo und alle Daten löschen? Das lässt sich nicht rückgängig machen.",
+    "deleted": "Abo und Daten wurden gelöscht.",
+    "birth": "Geburtsdaten",
+    "birthKept": "Gespeichert bis {date}, falls Sie etwas korrigieren möchten; danach bleibt nur das Geburtshoroskop.",
+    "birthGone": "Geburtsdaten gelöscht; gespeichert ist nur noch das Geburtshoroskop.",
+    "gone": "Der Link ist veraltet. Einen aktuellen finden Sie in der letzten E-Mail mit Ihrem Horoskop.",
+    "contact": "Geburtsdaten korrigieren: help@chronika.me",
+    "foot": "Der erste Monat ist kostenlos. Danach {price} im Monat, jederzeit kündbar.",
+    "nextLabel": "Nächstes",
+    "trialLabel": "Kostenlos bis",
+    "birthGoneShort": "gelöscht"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Geburtshoroskop und Prognose bis {year}",
+      "dates": {
+        "title": "Wann ändert sich etwas in Ihrem Leben? Ihr Horoskop nennt die Zeitpunkte",
+        "lead": "35 Seiten über Sie: Charakter, Beruf und Geld, Beziehungen, Zuhause und Ihr Platz im Leben. Dazu ein Kalender der Phasen für {from}–{year}: wann Sie beginnen, wann Sie abwarten, wann Sie sich entscheiden sollten."
+      },
+      "home": {
+        "title": "Hier zu Hause – oder nur Zwischenstation?",
+        "lead": "Das Horoskop wählt kein Land für Sie aus. Aber es zeigt, wo Ihr Halt liegt, welche Phase Sie gerade durchleben und wann die Zeit für Veränderungen kommt – mit Daten bis {year}."
+      },
+      "love": {
+        "title": "Wann in der Liebe etwas wagen – und wann abwarten?",
+        "lead": "Warum Sie sich zu den einen hingezogen fühlen, aber bei anderen bleiben, welcher Mensch wirklich zu Ihnen passt und welche Phasen {from}–{year} dieses Thema öffnen. Ohne Urteile und ohne „Hochzeitsdatum“ – mit konkreten Monaten."
+      },
+      "cta": "Horoskop kostenlos erstellen",
+      "under": "Vorschau in einer Minute · ohne Anmeldung, ohne Kreditkarte",
+      "quote": "Ihr Horoskop ist, das sage ich gleich, ungewöhnlich geschlossen gebaut. Rührt man an die Arbeit, meldet sich das Zuhause; rührt man an die Beziehungen, meldet sich das Geld. Das ist keine Einbildung, das ist Bauweise.",
+      "quoteFrom": "Auszug aus einer Deutung",
+      "line": "Jeder wurde unter\nseinem eigenen Himmel geboren.",
+      "facts": ["35 Seiten", "PDF per E-Mail", "eine Zahlung, kein Abo"]
+    },
+    "asks": {
+      "title": "Mit diesen Fragen kommen Menschen zu uns",
+      "items": [
+        "Ist das mein Ort – oder laufe ich vor mir selbst weg?",
+        "Seit Jahren denke ich an einen Umzug und zögere",
+        "Eigentlich habe ich alles, und trotzdem geht es nicht voran. Warum?",
+        "Wann soll ich in der Liebe handeln und wann lieber abwarten?",
+        "Was soll ich beruflich tun, wenn das Alte nicht mehr funktioniert?",
+        "Was erwartet mich im Jahr {next}?"
+      ],
+      "note": "Das Horoskop antwortet nicht mit <em>„Ja“</em> oder <em>„Nein“</em> und fällt kein Urteil. Es zeigt, welche Phase Sie gerade durchleben und wann sich das nächste Fenster öffnet. Mit so einer Antwort lässt sich etwas anfangen.",
+      "cta": "Eigenes Horoskop ansehen"
+    },
+    "inside": {
+      "title": "35 Seiten über Ihr Horoskop – nicht über Ihr Sternzeichen",
+      "lead": "Ein Zeitungshoroskop schreibt dasselbe für jeden zwölften Menschen. Hier geht es um alle Planeten, Häuser und Aspekte Ihres Horoskops. Zwei Stiere bekommen zwei verschiedene Dokumente.",
+      "cards": [
+        {
+          "title": "Wer Sie laut Horoskop sind",
+          "text": "Wo Ihre Stärken liegen, was Ihnen Kraft gibt und was sie Ihnen unbemerkt nimmt. Aszendent, Mond, die wichtigsten Aspekte – in einfacher Sprache, ohne Fachbegriffe um ihrer selbst willen."
+        },
+        {
+          "title": "Liebesleben",
+          "text": "Wie Ihre Beziehungen funktionieren, wen Sie laut Horoskop suchen sollten und welche Phasen {from}–{year} dieses Thema öffnen."
+        },
+        {
+          "title": "Beruf und Geld",
+          "text": "Womit Sie sich laut Horoskop beschäftigen sollten, warum das Geld so zu Ihnen kommt und nicht anders, und was jetzt zu tun ist."
+        },
+        {
+          "title": "Ihre Jahre Monat für Monat",
+          "text": "Ein Blick zurück, der Rest dieses Jahres und ganz {next} Monat für Monat, {year} im Überblick. Am Ende alle wichtigen Daten auf einer Seite."
+        }
+      ],
+      "note": "Dazu Horoskopkreis, Tabelle der Positionen und Häuser und zum Schluss „Das Wichtigste“ – zum Wiederlesen in einem halben Jahr.",
+      "galleryNote": "So sieht eine Deutung aus. Ihre handelt von Ihnen.",
+      "pages": ["Titelseite", "Inhalt", "Seite der Deutung", "Die wichtigsten Daten"]
+    },
+    "steps": {
+      "title": "Erst ansehen – dann entscheiden",
+      "items": [
+        {
+          "title": "Geburtsdaten eingeben",
+          "text": "Datum, Uhrzeit und Ort. Sie kennen die genaue Uhrzeit nicht? Geht auch – nur ohne Häuser und Aszendent."
+        },
+        {
+          "title": "Den Anfang kostenlos lesen",
+          "text": "Nach einer Minute: Ihr Horoskop, die Planetenpositionen und die ersten Seiten der Deutung. Sie merken, ob es um Sie geht oder nicht."
+        },
+        {
+          "title": "Vollständige Deutung erhalten",
+          "text": "Wenn Sie weiterlesen möchten, kommt das PDF mit 35 Seiten in 20–30 Minuten per E-Mail."
+        }
+      ],
+      "note": "Bezahlen müssen Sie nur, wenn Sie weiterlesen möchten. Für die Vorschau brauchen Sie weder Anmeldung noch Kreditkarte.",
+      "cta": "Horoskop kostenlos erstellen"
+    },
+    "offer": {
+      "title": "Ein Dokument. Eine Zahlung.",
+      "product": "Geburtshoroskop und Prognose bis {year}",
+      "meta": "Vorschau kostenlos · vollständige Deutung mit einer Zahlung, ohne Abo",
+      "items": [
+        "35 Seiten über Ihr Horoskop",
+        "Charakter, Beziehungen, Beruf und Geld",
+        "Kalender der Phasen: Rest dieses Jahres und {next} nach Monaten, {year} im Überblick",
+        "Alle wichtigen Daten auf einer Seite",
+        "PDF per E-Mail und ein Link, der Ihnen bleibt"
+      ],
+      "cta": "Mit der kostenlosen Vorschau beginnen",
+      "under": "Findet sich ein Fehler in der Berechnung, korrigieren wir ihn oder erstatten das Geld."
+    },
+    "honest": {
+      "title": "Ganz ehrlich: So entsteht die Deutung",
+      "items": [
+        {
+          "title": "Die Berechnung ist exakt",
+          "text": "Planetenstände und Transitdaten berechnet ein Programm nach der Schweizer Ephemeride (Swiss Ephemeris) – den astronomischen Tabellen, mit denen professionelle Astrologieprogramme arbeiten. Nichts ist erfunden: Jede Position können Sie mit jedem beliebigen Astrologie-Rechner abgleichen."
+        },
+        {
+          "title": "Den Text schreibt eine künstliche Intelligenz",
+          "text": "Dafür wird sie auf Seite dreißig nicht müde und schreibt keine Floskeln. Die KI arbeitet nach einer Methode, die die Astrologen von Chronika entwickelt haben, und jeder Absatz bezieht sich auf eine bestimmte Position oder einen Aspekt Ihres Horoskops – das merkt man am Text."
+        },
+        {
+          "title": "Wir sagen keine Ereignisse voraus",
+          "text": "Wir nennen kein Hochzeitsdatum und fällen keine Urteile. Das Horoskop zeigt Phasen und Tendenzen, die Entscheidungen treffen Sie."
+        }
+      ],
+      "note": "Astrologie ist keine Wissenschaft, sondern eine Sprache, in der man gut über sich selbst und die eigene Zeit nachdenken kann."
+    },
+    "faq": {
+      "title": "Fragen und Antworten",
+      "items": [
+        {
+          "q": "Was unterscheidet das vom Zeitungshoroskop?",
+          "a": "Ein Zeitungshoroskop schreibt dasselbe für alle Menschen eines Sternzeichens. Ein Geburtshoroskop ist der Stand aller Planeten, des Aszendenten und der Häuser im Moment Ihrer Geburt. Ein solches Horoskop wiederholt sich erst nach mehreren tausend Jahren."
+        },
+        {
+          "q": "Was heißt „Prognose“? Sagen Sie Ereignisse voraus?",
+          "a": "Nein. Wir zeigen, wann die laufenden Planeten Ihr Horoskop berühren und welche Themen in diesen Phasen in den Vordergrund treten: Beruf, Beziehungen, Zuhause. Wie sich das konkret zeigt, hängt von Ihnen ab."
+        },
+        {
+          "q": "Ich möchte wissen, in welchem Land ich leben soll. Beantwortet die Deutung das?",
+          "a": "Nein, die Wahl des Landes ist eine eigene Technik. Aber die Deutung zeigt, was Zuhause und Halt für Sie bedeuten und welche Phasen {from}–{year} sich für große Veränderungen eignen."
+        },
+        {
+          "q": "Ich lebe nicht an meinem Geburtsort. Ist das wichtig?",
+          "a": "Nein. Das Horoskop wird für den Geburtsort berechnet, und die Phasen der Prognose gelten, wo auch immer Sie leben."
+        },
+        {
+          "q": "Ich kenne meine genaue Geburtszeit nicht.",
+          "a": "Dann erstellen wir das Horoskop für 12 Uhr mittags. Die Planeten und die meisten Aspekte bleiben genau, aber ohne Häuser und Aszendent fällt ein Teil der Deutung kürzer aus. Die Uhrzeit steht oft in der Geburtsurkunde oder in den Unterlagen der Geburtsklinik."
+        },
+        {
+          "q": "Wer schreibt den Text?",
+          "a": "Die Berechnung übernimmt ein Programm nach der Schweizer Ephemeride, den Text ein Sprachmodell nach einer Methode, die die Astrologen von Chronika entwickelt haben. Jeder Absatz stützt sich auf eine bestimmte Position oder einen Aspekt Ihres Horoskops."
+        },
+        {
+          "q": "Ist das ein Abo?",
+          "a": "Nein. Eine Zahlung – ein Dokument. Keine automatischen Abbuchungen."
+        },
+        {
+          "q": "Wie lange dauert es?",
+          "a": "Die Vorschau etwa eine Minute. Die vollständige Deutung kommt 20–30 Minuten nach der Zahlung per E-Mail."
+        },
+        {
+          "q": "Was, wenn es mir nicht gefällt?",
+          "a": "Lesen Sie zuerst die kostenlose Vorschau: Die vollständige Deutung ist im selben Stil geschrieben. Findet sich ein Fehler in der Berechnung, schreiben Sie an help@chronika.me – wir korrigieren ihn oder erstatten das Geld."
+        },
+        {
+          "q": "Kann ich das verschenken?",
+          "a": "Ja. Geben Sie die Geburtsdaten der Person und Ihre E-Mail ein und leiten Sie ihr das PDF weiter."
+        },
+        {
+          "q": "Wie gehen Sie mit meinen Daten um?",
+          "a": "Datum, Uhrzeit und Ort Ihrer Geburt verwenden wir nur für Ihr Dokument. Den Ort brauchen wir für die Berechnung des Horoskops; das Sprachmodell erhält die Planetenstände, den Namen, das Datum und die Uhrzeit – ohne Geburtsort und ohne E-Mail-Adresse. Der Zahlungsdienst erhält keine Geburtsdaten. Wir löschen sie nach 30 Tagen oder auf Ihren Wunsch."
+        }
+      ]
+    },
+    "final": {
+      "title": "Ihr Horoskop – in einer Minute",
+      "text": "Lesen Sie den Anfang Ihrer Deutung kostenlos. Erkennen Sie sich wieder, lesen Sie weiter. Wenn nicht, haben Sie nichts verloren.",
+      "cta": "Horoskop kostenlos erstellen",
+      "under": "Ohne Anmeldung und ohne Kreditkarte"
+    }
+  },
+  "meta": {
+    "title": "Geburtshoroskop: Deutung und Prognose mit genauen Zeitpunkten",
+    "description": "Persönliche Deutung Ihres Geburtshoroskops auf 35 Seiten und ein Kalender der Phasen bis {year}: wann Sie beginnen, wann Sie abwarten, wann Sie sich entscheiden sollten. Kostenlose Vorschau in einer Minute, PDF per E-Mail.",
+    "productName": "Geburtshoroskop und Prognose bis {year}",
+    "productDescription": "PDF mit 35 Seiten: Charakter laut Horoskop, Beziehungen, Beruf und Geld, Prognose Monat für Monat und eine Seite mit genauen Daten. Einmalige Zahlung, ohne Abo.",
+    "subscribeTitle": "Ihr persönliches Horoskop – für die Woche oder den Monat",
+    "subscribeDescription": "Eine kurze Deutung nach Ihrem Geburtshoroskop: welche Phase vor Ihnen liegt und was sie berührt. Per E-Mail oder in Telegram, einmal pro Woche oder einmal im Monat."
+  },
+  "offer": {
+    "tag": "−{percent} % bis {until}",
+    "hero": "−{percent} % auf die vollständige Deutung bis {until}",
+    "promo": "Rabattcode {code}: −{percent} % bis {until}",
+    "promoHero": "Rabattcode {code}: −{percent} % auf die vollständige Deutung bis {until}",
+    "was": "Ohne Rabatt:",
+    "field": "Rabattcode",
+    "apply": "Einlösen",
+    "applying": "Wird geprüft…",
+    "applied": "Rabattcode {code} eingelöst",
+    "remove": "Entfernen",
+    "unknown": "Diesen Rabattcode gibt es nicht – prüfen Sie die Schreibweise",
+    "early": "Dieser Rabattcode gilt noch nicht",
+    "expired": "Dieser Rabattcode ist abgelaufen",
+    "failed": "Der Rabattcode konnte nicht geprüft werden. Versuchen Sie es noch einmal.",
+    "outdone": "Gerade gilt ein höherer Rabatt – er wurde angewendet."
+  },
+  "consent": {
+    "title": "Cookies",
+    "text": "Wir verwenden Cookies von Werbediensten, um zu verstehen, welche Werbung zu einem Kauf geführt hat. Ohne Ihre Einwilligung werden sie nicht geladen: Die Website funktioniert und erfasst ihre eigenen Kennzahlen auch ohne sie.",
+    "allow": "Zulassen",
+    "deny": "Nur notwendige"
+  }
+}
