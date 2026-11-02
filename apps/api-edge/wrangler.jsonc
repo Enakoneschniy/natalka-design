@@ -9,10 +9,13 @@
   // Errors and console output are kept; the per-request log line is not.
   "observability": { "enabled": true, "logs": { "invocation_logs": false } },
   "vars": {
-    "NATALKA_AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/f63eebad9e3bd39565a3129188e84a47/natalka/openrouter"
+    "NATALKA_AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/f63eebad9e3bd39565a3129188e84a47/natalka/openrouter",
+    "NATALKA_ANTHROPIC_BASE_URL": "https://gateway.ai.cloudflare.com/v1/f63eebad9e3bd39565a3129188e84a47/natalka/anthropic"
   },
   // Secrets, set with `wrangler secret put`: ACCESS_KEY (the jobs Worker's NATALKA_API_KEY),
-  // NATALKA_MODEL_API_KEY and, once the gateway requires it, NATALKA_AI_GATEWAY_TOKEN.
+  // NATALKA_MODEL_API_KEY (OpenRouter; in production still under its old name
+  // NATALKA_ANTHROPIC_API_KEY), ANTHROPIC_API_KEY (the owner's own Anthropic key, which makes
+  // OpenRouter the backup) and, once the gateway requires it, NATALKA_AI_GATEWAY_TOKEN.
   "containers": [
     {
       "class_name": "ApiContainer",

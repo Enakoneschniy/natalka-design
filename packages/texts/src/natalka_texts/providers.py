@@ -1,31 +1,43 @@
 """Model access.
 
-Calls go to OpenRouter (one account, any model) through Cloudflare AI Gateway rather than to the
-provider directly: the gateway gives per-request logs, token and cost figures and retries without
-letting a second analytics vendor see birth data. Only the base URL changes — the protocol is
-OpenRouter's, which is OpenAI-compatible.
+Every call goes through Cloudflare AI Gateway: it gives per-request logs, token and cost figures
+and retries without letting a second analytics vendor see birth data.
+
+Behind the gateway there are two routes to the same Claude models. Anthropic directly, on the
+owner's own API credits, when ANTHROPIC_API_KEY is set (since 2026-11-02); and OpenRouter, which
+is what ran before and stays as the backup — credits that run out in the middle of a month, or
+an Anthropic outage, would otherwise stop every paid reading until somebody noticed.
 """
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
+import anthropic
 import httpx
+
+log = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-5"
 OPENROUTER_DIRECT = "https://openrouter.ai/api"
+ANTHROPIC_DIRECT = "https://api.anthropic.com"
 #: Cloudflare AI Gateway. An authenticated gateway wants its own token beside the model key.
 GATEWAY_HOST = "gateway.ai.cloudflare.com"
 
-#: USD per million tokens, as listed by OpenRouter. Only a fallback: OpenRouter returns the real
-#: cost of each generation in `usage`, and that is what we store — it includes their markup and
-#: any cache discount. This table is what keeps the numbers sane if the field ever goes missing.
+#: USD per million tokens, under OpenRouter's names and Anthropic's own. OpenRouter returns the
+#: real cost of each generation in `usage`, and that is what we store — it includes their markup
+#: and any cache discount; this table is what keeps the numbers sane if the field goes missing.
+#: Anthropic reports no cost at all, so for its calls this table is the figure.
 PRICES: dict[str, tuple[float, float]] = {
     "anthropic/claude-sonnet-5": (2.0, 10.0),
     "anthropic/claude-opus-5": (5.0, 25.0),
     "anthropic/claude-haiku-4.5": (1.0, 5.0),
+    "claude-sonnet-5": (2.0, 10.0),
+    "claude-opus-5": (5.0, 25.0),
+    "claude-haiku-4-5": (1.0, 5.0),
 }
 
 
@@ -161,6 +173,121 @@ class OpenRouterProvider:
             model=payload.get("model") or self.model,
             reported_cost_micros=round(float(cost) * 1_000_000) if cost else 0,
         )
+
+
+def anthropic_model(name: str) -> str:
+    """Anthropic's id for a model named the OpenRouter way: `anthropic/claude-haiku-4.5` is
+    `claude-haiku-4-5` there. A name that is already Anthropic's comes back as it is."""
+    return name.removeprefix("anthropic/").replace(".", "-")
+
+
+class AnthropicProvider:
+    """Claude through Anthropic's own API, billed to the owner's credits.
+
+    The same model OpenRouter was asked for, and the same request: a system prompt, one user
+    message, no extended thinking — a section that spends its output budget on reasoning comes
+    back empty, and we pay for the silence.
+    """
+
+    def __init__(
+        self,
+        *,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
+        timeout: float = 300.0,
+        gateway_token: str | None = None,
+    ) -> None:
+        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
+        self.base_url = (
+            base_url or os.environ.get("NATALKA_ANTHROPIC_BASE_URL") or ANTHROPIC_DIRECT
+        ).rstrip("/")
+        self.model = anthropic_model(model or os.environ.get("NATALKA_MODEL") or DEFAULT_MODEL)
+        token = (
+            gateway_token
+            if gateway_token is not None
+            else os.environ.get("NATALKA_AI_GATEWAY_TOKEN", "")
+        )
+        # Only the gateway itself is given its token; Anthropic, called directly, never sees it.
+        url = httpx.URL(self.base_url)
+        headers = (
+            {"cf-aig-authorization": f"Bearer {token}"}
+            if token and url.scheme == "https" and url.host == GATEWAY_HOST
+            else {}
+        )
+        # Without a key there is no client: the SDK would go looking for credentials elsewhere.
+        self.client = (
+            anthropic.Anthropic(
+                api_key=self.api_key,
+                base_url=self.base_url,
+                timeout=timeout,
+                default_headers=headers,
+            )
+            if self.api_key
+            else None
+        )
+
+    def complete(self, system: str, user: str, *, max_tokens: int = 4096) -> Completion:
+        if self.client is None:
+            raise ModelUnavailableError("ANTHROPIC_API_KEY is not set")
+        try:
+            message = self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+                thinking={"type": "disabled"},
+            )
+        # A failure is described by its status, never by its text: an error body can quote the
+        # request back — a name, a date — and this message travels on to the caller's logs.
+        except anthropic.APIStatusError as exc:
+            raise ModelUnavailableError(f"the provider answered {exc.status_code}") from exc
+        except anthropic.APIConnectionError as exc:  # network, DNS, timeout
+            raise ModelUnavailableError(
+                f"the provider could not be reached ({type(exc).__name__})"
+            ) from exc
+
+        text = "".join(block.text for block in message.content if block.type == "text")
+        # As with OpenRouter: an empty answer, a refusal or one cut off at the ceiling is a failed
+        # call, not a bad draft for the editor.
+        if message.stop_reason == "refusal":
+            raise ModelUnavailableError("the model declined to write this section")
+        if not text.strip():
+            raise ModelUnavailableError("the model returned no text")
+        if message.stop_reason == "max_tokens":
+            raise ModelUnavailableError("the answer was cut off at max_tokens")
+        return Completion(
+            text=text.strip(),
+            tokens_in=message.usage.input_tokens,
+            tokens_out=message.usage.output_tokens,
+            model=message.model,
+        )
+
+
+class FallbackProvider:
+    """The first provider, and the second one whenever the first cannot answer."""
+
+    def __init__(self, first: Provider, second: Provider) -> None:
+        self.first = first
+        self.second = second
+
+    def complete(self, system: str, user: str, *, max_tokens: int = 4096) -> Completion:
+        try:
+            return self.first.complete(system, user, max_tokens=max_tokens)
+        except ModelUnavailableError as exc:
+            # The reason carries a status and nothing of the request, so it can be logged.
+            log.warning("model call moved to the backup provider: %s", exc)
+            return self.second.complete(system, user, max_tokens=max_tokens)
+
+
+def default_provider() -> Provider:
+    """Anthropic directly when its key is set, with OpenRouter behind it when that key is set
+    too; OpenRouter alone otherwise, which is how the site ran before."""
+    openrouter = OpenRouterProvider()
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return openrouter
+    direct = AnthropicProvider()
+    return FallbackProvider(direct, openrouter) if openrouter.api_key else direct
 
 
 class ScriptedProvider:

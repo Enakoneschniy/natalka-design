@@ -16,7 +16,7 @@ THREE = "Перший абзац.\n\nДругий абзац.\n\nТретій а
 @pytest.fixture
 def scripted(monkeypatch: pytest.MonkeyPatch) -> None:
     """No test may reach a real model, whatever the environment holds."""
-    monkeypatch.setattr(api, "OpenRouterProvider", lambda: ScriptedProvider(THREE))
+    monkeypatch.setattr(api, "default_provider", lambda: ScriptedProvider(THREE))
 
 
 def test_health() -> None:

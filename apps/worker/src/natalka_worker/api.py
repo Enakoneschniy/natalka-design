@@ -26,7 +26,7 @@ from natalka_texts import (
     PREVIEW_TITLES_NO_TIME,
     PREVIEW_TITLES_SYNASTRY,
     ModelUnavailableError,
-    OpenRouterProvider,
+    default_provider,
     fact_sheet,
     specs,
     synastry_sheet,
@@ -107,7 +107,7 @@ def preview(req: PreviewRequest) -> dict[str, Any]:
         spec = PREVIEW_NO_TIME if unknown_time else PREVIEW
         sheet = fact_sheet(req.facts, None)
 
-    provider = OpenRouterProvider()
+    provider = default_provider()
     system = system_prompt(req.lang, req.gender, req.product)
     user = section_prompt(spec, name="", sheet=sheet, written_so_far=[])
     try:
@@ -166,7 +166,7 @@ def horoscope(req: HoroscopeRequest) -> dict[str, Any]:
     try:
         reading = write_horoscope(
             req.facts,
-            provider=OpenRouterProvider(),
+            provider=default_provider(),
             sky=req.sky,
             transits=req.transits,
             period=req.period,
@@ -244,7 +244,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
     if spec is None:
         raise HTTPException(404, f"unknown section: {req.section_id}")
 
-    provider = OpenRouterProvider()
+    provider = default_provider()
     system = system_prompt(req.lang, req.gender, req.product, req.address)
     if req.product == "synastry":
         sheet = synastry_sheet(req.facts, first_name=req.name, second_name=req.second_name or "—")

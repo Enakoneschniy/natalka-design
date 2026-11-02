@@ -16,12 +16,18 @@ const OPEN_PATHS = new Set(['/health', '/edge-health']);
 
 /** Worker secrets the Python process needs. */
 export interface ModelSecrets {
+  /** OpenRouter's key: the backup route to the model, and the only one before 2026-11-02. */
   NATALKA_MODEL_API_KEY?: string;
-  /** The name the key was first stored under; still accepted so it does not have to be re-entered. */
+  /** The name the OpenRouter key was first stored under, and still is in production — despite
+   * the name, not an Anthropic key. Accepted so it does not have to be re-entered. */
   NATALKA_ANTHROPIC_API_KEY?: string;
   NATALKA_AI_GATEWAY_URL?: string;
   /** Set once the AI Gateway requires authentication; sent only on calls to the gateway. */
   NATALKA_AI_GATEWAY_TOKEN?: string;
+  /** The owner's own Anthropic key: with it the model is called directly, OpenRouter behind. */
+  ANTHROPIC_API_KEY?: string;
+  /** The gateway's route to Anthropic. */
+  NATALKA_ANTHROPIC_BASE_URL?: string;
 }
 
 const refuse = (status: number, error: string): Response => Response.json({ error }, { status });
@@ -79,5 +85,9 @@ export function containerEnv(env: ModelSecrets): Record<string, string> {
     NATALKA_AI_GATEWAY_URL: env.NATALKA_AI_GATEWAY_URL ?? '',
   };
   if (env.NATALKA_AI_GATEWAY_TOKEN) vars.NATALKA_AI_GATEWAY_TOKEN = env.NATALKA_AI_GATEWAY_TOKEN;
+  if (env.ANTHROPIC_API_KEY) {
+    vars.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
+    vars.NATALKA_ANTHROPIC_BASE_URL = env.NATALKA_ANTHROPIC_BASE_URL ?? '';
+  }
   return vars;
 }

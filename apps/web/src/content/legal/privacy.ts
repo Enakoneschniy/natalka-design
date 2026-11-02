@@ -27,7 +27,7 @@ _Редакция от 2 ноября 2026 г. Оператор: coremind s. r. 
 
 ## Кто их обрабатывает
 
-Мы не делаем всё сами. Обработка происходит на серверах **Cloudflare** (хостинг, база данных, хранилище документов). Оплату принимает **Stripe**: ему передаются адрес почты, название продукта и цена — без данных рождения; данные карты видит только Stripe. Текст разбора и гороскопа пишет языковая модель: провайдеру модели (**OpenRouter**, модели Anthropic) передаются положения планет, аспекты и дома, имя, дата и время рождения — по ним определяются возраст и возвраты планет. Координаты, место рождения, часовой пояс и почта модели не передаются. Письма отправляет **Resend**. Сообщения в Telegram — **Telegram**, если вы сами выбрали этот способ. Каждый из них связан с нами договором и обрабатывает данные только по нашему поручению.
+Мы не делаем всё сами. Обработка происходит на серверах **Cloudflare** (хостинг, база данных, хранилище документов). Оплату принимает **Stripe**: ему передаются адрес почты, название продукта и цена — без данных рождения; данные карты видит только Stripe. Текст разбора и гороскопа пишет языковая модель: провайдеру модели (**Anthropic**, модели Claude; если он недоступен — те же модели через **OpenRouter**) передаются положения планет, аспекты и дома, имя, дата и время рождения — по ним определяются возраст и возвраты планет. Координаты, место рождения, часовой пояс и почта модели не передаются. Письма отправляет **Resend**. Сообщения в Telegram — **Telegram**, если вы сами выбрали этот способ. Каждый из них связан с нами договором и обрабатывает данные только по нашему поручению.
 
 ## Как храним и сколько
 
@@ -74,7 +74,7 @@ _Редакція від 2 листопада 2026 р. Оператор: coremin
 
 ## Хто їх обробляє
 
-Ми не робимо все самі. Обробка відбувається на серверах **Cloudflare** (хостинг, база даних, сховище документів). Оплату приймає **Stripe**: йому передаються адреса пошти, назва продукту і ціна — без даних народження; дані картки бачить лише Stripe. Текст розбору і гороскопа пише мовна модель: провайдеру моделі (**OpenRouter**, моделі Anthropic) передаються положення планет, аспекти й доми, ім'я, дата і час народження — за ними визначаються вік і повернення планет. Координати, місце народження, часовий пояс і пошта моделі не передаються. Листи надсилає **Resend**. Повідомлення в Telegram — **Telegram**, якщо ви самі обрали цей спосіб. Кожен із них пов'язаний з нами договором і обробляє дані лише за нашим дорученням.
+Ми не робимо все самі. Обробка відбувається на серверах **Cloudflare** (хостинг, база даних, сховище документів). Оплату приймає **Stripe**: йому передаються адреса пошти, назва продукту і ціна — без даних народження; дані картки бачить лише Stripe. Текст розбору і гороскопа пише мовна модель: провайдеру моделі (**Anthropic**, моделі Claude; якщо він недоступний — ті самі моделі через **OpenRouter**) передаються положення планет, аспекти й доми, ім'я, дата і час народження — за ними визначаються вік і повернення планет. Координати, місце народження, часовий пояс і пошта моделі не передаються. Листи надсилає **Resend**. Повідомлення в Telegram — **Telegram**, якщо ви самі обрали цей спосіб. Кожен із них пов'язаний з нами договором і обробляє дані лише за нашим дорученням.
 
 ## Як зберігаємо і скільки
 
@@ -121,7 +121,7 @@ If you pressed "Allow", the site also tells Meta, from its own server, about fou
 
 ## Who processes it
 
-We do not do everything ourselves. Processing runs on **Cloudflare** (hosting, database, document storage). Payments are taken by **Stripe**, which receives your email address, the product name and the price — no birth data; only Stripe sees your card details. The reading and the horoscope are written by a language model: the model provider (**OpenRouter**, Anthropic models) receives the planetary positions, aspects and houses, your first name, and the date and time of birth — ages and planetary returns are read from them. Coordinates, the place of birth, the time zone and your email are not sent to the model. Letters are sent by **Resend**. Telegram messages by **Telegram**, only if you chose that channel. Each is bound to us by contract and processes data on our instructions alone.
+We do not do everything ourselves. Processing runs on **Cloudflare** (hosting, database, document storage). Payments are taken by **Stripe**, which receives your email address, the product name and the price — no birth data; only Stripe sees your card details. The reading and the horoscope are written by a language model: the model provider (**Anthropic**, Claude models; when it is unavailable, the same models through **OpenRouter**) receives the planetary positions, aspects and houses, your first name, and the date and time of birth — ages and planetary returns are read from them. Coordinates, the place of birth, the time zone and your email are not sent to the model. Letters are sent by **Resend**. Telegram messages by **Telegram**, only if you chose that channel. Each is bound to us by contract and processes data on our instructions alone.
 
 ## How long we keep it
 

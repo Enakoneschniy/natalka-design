@@ -126,6 +126,15 @@ describe('container environment', () => {
     assert.equal(containerEnv({}).NATALKA_MODEL_API_KEY, '');
   });
 
+  test("the owner's Anthropic key and its route go in only together, and only when set", () => {
+    const without = containerEnv({ NATALKA_MODEL_API_KEY: 'm', NATALKA_ANTHROPIC_BASE_URL: 'a' });
+    assert.equal('ANTHROPIC_API_KEY' in without, false);
+    assert.equal('NATALKA_ANTHROPIC_BASE_URL' in without, false);
+    const direct = containerEnv({ ANTHROPIC_API_KEY: 'k', NATALKA_ANTHROPIC_BASE_URL: 'a' });
+    assert.equal(direct.ANTHROPIC_API_KEY, 'k');
+    assert.equal(direct.NATALKA_ANTHROPIC_BASE_URL, 'a');
+  });
+
   test('the access key never reaches the container', () => {
     const workerEnv = { NATALKA_MODEL_API_KEY: 'm', ACCESS_KEY: KEY };
     assert.equal(Object.values(containerEnv(workerEnv)).includes(KEY), false);
