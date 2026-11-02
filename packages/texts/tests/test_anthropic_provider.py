@@ -1,4 +1,4 @@
-"""The direct route to Anthropic, and the backup behind it, checked without leaving the process."""
+"""The direct route to Anthropic, checked without leaving the process."""
 
 import functools
 import json
@@ -10,10 +10,8 @@ import pytest
 from natalka_texts.providers import (
     AnthropicProvider,
     Completion,
-    FallbackProvider,
     ModelUnavailableError,
     OpenRouterProvider,
-    ScriptedProvider,
     default_provider,
 )
 
@@ -135,38 +133,12 @@ def test_an_unusable_answer_is_a_failed_call(wire: Wire) -> None:
     assert _failure(api_key="k") == "the model declined to write this section"
 
 
-class Down:
-    def complete(self, system: str, user: str, *, max_tokens: int = 4096) -> Completion:
-        raise ModelUnavailableError("the provider answered 400")
-
-
-def test_the_backup_answers_when_the_first_cannot() -> None:
-    backup = ScriptedProvider("Запасной текст.")
-    done = FallbackProvider(Down(), backup).complete("s", "u", max_tokens=10)
-    assert done.text == "Запасной текст."
-    assert backup.calls == [("s", "u")]
-
-
-def test_the_backup_is_not_asked_when_the_first_answers() -> None:
-    backup = ScriptedProvider("Запасной текст.")
-    done = FallbackProvider(ScriptedProvider("Текст."), backup).complete("s", "u")
-    assert done.text == "Текст."
-    assert backup.calls == []
-
-
-def test_a_failure_of_both_is_the_backups_to_report() -> None:
-    with pytest.raises(ModelUnavailableError):
-        FallbackProvider(Down(), Down()).complete("s", "u")
-
-
 def test_the_route_follows_the_keys_that_are_set(
     wire: Wire, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     assert isinstance(default_provider(), OpenRouterProvider)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "a")
     assert isinstance(default_provider(), AnthropicProvider)
+    # OpenRouter's key being there too changes nothing: there is no backup route.
     monkeypatch.setenv("NATALKA_MODEL_API_KEY", "o")
-    chosen = default_provider()
-    assert isinstance(chosen, FallbackProvider)
-    assert isinstance(chosen.first, AnthropicProvider)
-    assert isinstance(chosen.second, OpenRouterProvider)
+    assert isinstance(default_provider(), AnthropicProvider)

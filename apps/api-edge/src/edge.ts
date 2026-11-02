@@ -16,7 +16,8 @@ const OPEN_PATHS = new Set(['/health', '/edge-health']);
 
 /** Worker secrets the Python process needs. */
 export interface ModelSecrets {
-  /** OpenRouter's key: the backup route to the model, and the only one before 2026-11-02. */
+  /** OpenRouter's key: the route to the model before 2026-11-02, and whenever ANTHROPIC_API_KEY
+   * is not set. */
   NATALKA_MODEL_API_KEY?: string;
   /** The name the OpenRouter key was first stored under, and still is in production — despite
    * the name, not an Anthropic key. Accepted so it does not have to be re-entered. */
@@ -24,7 +25,8 @@ export interface ModelSecrets {
   NATALKA_AI_GATEWAY_URL?: string;
   /** Set once the AI Gateway requires authentication; sent only on calls to the gateway. */
   NATALKA_AI_GATEWAY_TOKEN?: string;
-  /** The owner's own Anthropic key: with it the model is called directly, OpenRouter behind. */
+  /** The owner's own Anthropic key: with it the model is called directly, and OpenRouter not at
+   * all. */
   ANTHROPIC_API_KEY?: string;
   /** The gateway's route to Anthropic. */
   NATALKA_ANTHROPIC_BASE_URL?: string;

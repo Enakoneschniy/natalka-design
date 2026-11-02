@@ -17,8 +17,8 @@ Set with `wrangler secret put <NAME>` in the app's directory, from a generated v
 | `PREVIEW_KEY` | natalka-web | signs the preview facts a page renders |
 | `DATA_KEY`, `LINK_KEY`, `SESSION_KEY` | natalka-jobs | encryption at rest, link tokens, cabinet sessions (three different values) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY` | natalka-jobs | the providers |
-| `NATALKA_MODEL_API_KEY` (in production still under its old name `NATALKA_ANTHROPIC_API_KEY` — an OpenRouter key despite the name), `NATALKA_AI_GATEWAY_TOKEN` | natalka-api | OpenRouter, the backup route to the model; the AI Gateway's run token |
-| `ANTHROPIC_API_KEY` | natalka-api | the owner's own Anthropic key: the model is called directly, OpenRouter behind it (see below); created in console.anthropic.com, not with openssl |
+| `NATALKA_MODEL_API_KEY` (in production still under its old name `NATALKA_ANTHROPIC_API_KEY` — an OpenRouter key despite the name), `NATALKA_AI_GATEWAY_TOKEN` | natalka-api | OpenRouter, the route to the model when `ANTHROPIC_API_KEY` is not set; the AI Gateway's run token |
+| `ANTHROPIC_API_KEY` | natalka-api | the owner's own Anthropic key: the model is called directly and OpenRouter not at all (see below); created in console.anthropic.com, not with openssl |
 | `TELEGRAM_BOT_TOKEN`, `SETUP_KEY` | natalka-bot | the bot; `SETUP_KEY` only while re-pointing the webhook |
 | `META_CAPI_TOKEN` | natalka-jobs | Meta's Conversions API; generated in Events Manager, not with openssl (see below) |
 
@@ -61,21 +61,22 @@ back. Another offer is a new `percent` and `ends` there, and a release of natalk
 
 ## The model
 
-Texts are written by `claude-sonnet-5`, reached through the AI Gateway `natalka` by one of two
-routes. With `ANTHROPIC_API_KEY` set on natalka-api (since 2026-11-02) the container calls
+Texts are written by `claude-sonnet-5`, reached through the AI Gateway `natalka` by one route at
+a time. With `ANTHROPIC_API_KEY` set on natalka-api (since 2026-11-02) the container calls
 Anthropic directly, on the owner's API credits, through the gateway's `/anthropic` route
-(`NATALKA_ANTHROPIC_BASE_URL` in `apps/api-edge/wrangler.jsonc`); any call Anthropic cannot
-answer — credits used up, an outage, a refusal — is made again through OpenRouter, logged by the
-container as `model call moved to the backup provider: <status>`. Without that secret OpenRouter
-is the only route, as before.
+(`NATALKA_ANTHROPIC_BASE_URL` in `apps/api-edge/wrangler.jsonc`), and OpenRouter is not called at
+all: the privacy policy and the seller offer name Anthropic alone. Without that secret OpenRouter
+is the route, as before.
 
 - **Switching on.** `wrangler secret put ANTHROPIC_API_KEY` in `apps/api-edge`, pasting the key at
   the prompt. The container reads its environment when it starts: instances already running keep
   the old route until they are replaced (or until the next deploy of natalka-api).
-- **Switching off.** `wrangler secret delete ANTHROPIC_API_KEY`.
+- **Credits.** There is no backup: when the credits run out every reading, preview and horoscope
+  fails until they are topped up. Switching back to OpenRouter is
+  `wrangler secret delete ANTHROPIC_API_KEY` — and the privacy policy and the seller offer then
+  name OpenRouter again.
 - **Cost.** Anthropic reports no price with a call; `cost_micros` for those calls comes from
-  `PRICES` in `packages/texts/src/natalka_texts/providers.py`. Many backup calls in a month mean
-  the credits ran out: the Anthropic console shows it.
+  `PRICES` in `packages/texts/src/natalka_texts/providers.py`.
 
 ## Meta Conversions API
 

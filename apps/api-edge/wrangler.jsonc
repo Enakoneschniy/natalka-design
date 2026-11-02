@@ -14,8 +14,8 @@
   },
   // Secrets, set with `wrangler secret put`: ACCESS_KEY (the jobs Worker's NATALKA_API_KEY),
   // NATALKA_MODEL_API_KEY (OpenRouter; in production still under its old name
-  // NATALKA_ANTHROPIC_API_KEY), ANTHROPIC_API_KEY (the owner's own Anthropic key, which makes
-  // OpenRouter the backup) and, once the gateway requires it, NATALKA_AI_GATEWAY_TOKEN.
+  // NATALKA_ANTHROPIC_API_KEY), ANTHROPIC_API_KEY (the owner's own Anthropic key; while it is
+  // set OpenRouter is not called) and, once the gateway requires it, NATALKA_AI_GATEWAY_TOKEN.
   "containers": [
     {
       "class_name": "ApiContainer",

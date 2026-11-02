@@ -36,8 +36,10 @@ describe('proOffer', () => {
     expect(storage).toContain('Данные рождения хранятся в зашифрованном виде (AES-GCM)');
   });
 
-  it('is dated by the edition that brought the button in', () => {
-    expect(PRO_OFFER_VERSION).toBe('6 октября 2026');
+  it('is dated by the edition that named Anthropic as the model provider', () => {
+    expect(PRO_OFFER_VERSION).toBe('2 ноября 2026');
+    expect(proOffer).toContain('провайдеру модели (**Anthropic**, модели Claude)');
+    expect(proOffer).not.toContain('OpenRouter');
     expect(proOffer).toContain(`_Редакция от ${PRO_OFFER_VERSION}.`);
   });
 

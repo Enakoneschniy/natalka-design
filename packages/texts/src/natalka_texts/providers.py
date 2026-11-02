@@ -3,23 +3,20 @@
 Every call goes through Cloudflare AI Gateway: it gives per-request logs, token and cost figures
 and retries without letting a second analytics vendor see birth data.
 
-Behind the gateway there are two routes to the same Claude models. Anthropic directly, on the
-owner's own API credits, when ANTHROPIC_API_KEY is set (since 2026-11-02); and OpenRouter, which
-is what ran before and stays as the backup — credits that run out in the middle of a month, or
-an Anthropic outage, would otherwise stop every paid reading until somebody noticed.
+Behind the gateway there are two routes to the same Claude models, and one is used at a time.
+Anthropic directly, on the owner's own API credits, when ANTHROPIC_API_KEY is set (since
+2026-11-02); OpenRouter, which is what ran before, only when it is not. The owner chose not to
+keep OpenRouter as a backup, so that the model provider named to buyers and sellers is one.
 """
 
 from __future__ import annotations
 
-import logging
 import os
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
 import anthropic
 import httpx
-
-log = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "anthropic/claude-sonnet-5"
 OPENROUTER_DIRECT = "https://openrouter.ai/api"
@@ -264,30 +261,12 @@ class AnthropicProvider:
         )
 
 
-class FallbackProvider:
-    """The first provider, and the second one whenever the first cannot answer."""
-
-    def __init__(self, first: Provider, second: Provider) -> None:
-        self.first = first
-        self.second = second
-
-    def complete(self, system: str, user: str, *, max_tokens: int = 4096) -> Completion:
-        try:
-            return self.first.complete(system, user, max_tokens=max_tokens)
-        except ModelUnavailableError as exc:
-            # The reason carries a status and nothing of the request, so it can be logged.
-            log.warning("model call moved to the backup provider: %s", exc)
-            return self.second.complete(system, user, max_tokens=max_tokens)
-
-
 def default_provider() -> Provider:
-    """Anthropic directly when its key is set, with OpenRouter behind it when that key is set
-    too; OpenRouter alone otherwise, which is how the site ran before."""
-    openrouter = OpenRouterProvider()
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        return openrouter
-    direct = AnthropicProvider()
-    return FallbackProvider(direct, openrouter) if openrouter.api_key else direct
+    """Anthropic directly when its key is set, and nothing behind it; OpenRouter otherwise, which
+    is how the site ran before."""
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return AnthropicProvider()
+    return OpenRouterProvider()
 
 
 class ScriptedProvider:

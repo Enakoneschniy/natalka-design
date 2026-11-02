@@ -5,7 +5,6 @@ from .generate import Reading, SectionText, write_horoscope, write_reading
 from .providers import (
     AnthropicProvider,
     Completion,
-    FallbackProvider,
     ModelUnavailableError,
     OpenRouterProvider,
     Provider,
@@ -34,7 +33,6 @@ __all__ = [
     "PREVIEW_TITLES_SYNASTRY",
     "AnthropicProvider",
     "Completion",
-    "FallbackProvider",
     "ModelUnavailableError",
     "OpenRouterProvider",
     "Provider",
