@@ -152,6 +152,29 @@ CYRILLIC_LANGS = frozenset({"ru", "uk", "bg"})
 LATIN_WORD = re.compile(r"\b[A-Za-z][A-Za-z'’-]{1,}\b")
 MIXED_WORD = re.compile(r"\b(?=\w*[А-Яа-яЁёІіЇїЄєҐґ])(?=\w*[A-Za-z])\w+\b")
 
+
+def _latin(ch: str) -> bool:
+    return ch.isascii() or "\u00aa" <= ch <= "\u024f" or "\u1e00" <= ch <= "\u1eff"
+
+
+def _cyrillic(ch: str) -> bool:
+    return "\u0400" <= ch <= "\u052f"
+
+
+def _foreign_script(text: str, lang: str) -> list[str]:
+    """Letters of a script the reading is not written in: a Chinese character in the middle of a
+    Russian sentence («меньше半 градуса»), Greek, Arabic. A model slips into one now and then, and
+    no reader can read it. Latin in a Cyrillic reading has its own, finer check above."""
+    cyrillic_ok = lang in CYRILLIC_LANGS
+    return sorted(
+        {
+            ch
+            for ch in text
+            if ch.isalpha() and not _latin(ch) and not (cyrillic_ok and _cyrillic(ch))
+        }
+    )
+
+
 #: Only these survive into the PDF; anything else means the model ignored the format rules.
 ALLOWED_TAGS = re.compile(r"</?(b|i|br\s*/?)>", re.IGNORECASE)
 ANY_TAG = re.compile(r"<[^>]+>")
@@ -248,6 +271,16 @@ def _language_problems(
             problems.append(
                 ("latin_word", f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
             )
+
+    script = _foreign_script(text, lang)
+    if script:
+        problems.append(
+            (
+                "foreign_script",
+                f"characters from another writing system: {' '.join(script[:5])} — "
+                "every word must be in the language of the reading",
+            )
+        )
 
     letters = FOREIGN_LETTERS.get(lang)
     if letters:

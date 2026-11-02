@@ -64,6 +64,27 @@ def test_a_latin_word_inside_a_russian_reading_is_caught() -> None:
     assert any("Latin" in p for p in report.problems)
 
 
+def test_a_character_from_another_script_is_caught() -> None:
+    # Seen in a live preview on 2026-11-02.
+    text = "Солнце соединено с Хироном почти точно — меньше半 градуса.\n\nВторой абзац для вас."
+    report = check(text, lang="ru", min_paragraphs=2, max_paragraphs=3)
+    assert "foreign_script" in report.codes
+    assert any("半" in p for p in report.problems)
+    greek = "The Sun meets Chiron within half a degree, και you feel it.\n\nYour second paragraph."
+    assert "foreign_script" in check(greek, lang="en", min_paragraphs=2, max_paragraphs=3).codes
+
+
+def test_the_scripts_a_reading_is_written_in_are_not_foreign() -> None:
+    for text, lang in (
+        ("Ґанок і їжак — це ваше. Ёлка, съезд, «ё» и ударе\u0301ние.\n\nДля вас.", "ru"),
+        ("Ваш Асцендент у Діві, MC у Близнюках.\n\nДругий абзац для вас.", "uk"),
+        ("Your Sun is in Taurus — café, naïve, Zürich.\n\nYour second paragraph.", "en"),
+    ):
+        assert (
+            "foreign_script" not in check(text, lang=lang, min_paragraphs=2, max_paragraphs=3).codes
+        )
+
+
 def test_chart_abbreviations_are_allowed() -> None:
     text = "Асцендент в Деве, MC в Близнецах.\n\nPDF придёт на почту."
     assert check(text, lang="ru", min_paragraphs=2, max_paragraphs=2).ok
