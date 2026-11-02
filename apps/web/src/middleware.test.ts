@@ -138,7 +138,9 @@ describe('middleware: the cabinet host', () => {
   });
 
   it('serves German pages under /de without sending them anywhere', async () => {
-    const response = await middleware(request('https://chronika.me/de/start', { host: 'chronika.me' }));
+    const response = await middleware(
+      request('https://chronika.me/de/start', { host: 'chronika.me' }),
+    );
     expect(response.headers.get('location')).toBeNull();
   });
 

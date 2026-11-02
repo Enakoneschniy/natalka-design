@@ -37,6 +37,13 @@ export function SiteFooter({ locale }: { locale: Locale }) {
               <li>
                 <Link href={`/${locale}/legal/refunds`}>{t('refunds')}</Link>
               </li>
+              {/* On every page, for as long as a withdrawal period may run (§ 356a BGB). */}
+              <li>
+                <Link href={`/${locale}/withdraw`}>{t('withdraw')}</Link>
+              </li>
+              <li>
+                <Link href={`/${locale}/legal/imprint`}>{t('imprint')}</Link>
+              </li>
             </ul>
           </div>
           <div>

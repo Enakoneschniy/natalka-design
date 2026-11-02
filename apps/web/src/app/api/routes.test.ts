@@ -15,6 +15,7 @@ import {
 import { POST as oneClick, GET as oneClickPage } from './subscriptions/[token]/unsubscribe/route';
 import { POST as confirm } from './subscriptions/confirm/route';
 import { POST as subscribe } from './subscriptions/route';
+import { POST as withdraw } from './withdrawals/route';
 
 /** One code that applies for as long as the tests run, larger than any offer. */
 vi.mock('@/lib/promo', async (importOriginal) => {
@@ -162,6 +163,52 @@ describe('shop API routes and the jobs worker', () => {
     const broken = await document(get('/api/documents/t'), token('t'));
     expect(broken.status).toBe(502);
     expect(await broken.text()).not.toContain('internal');
+  });
+
+  describe('withdrawals', () => {
+    it('passes a declaration on to the jobs worker and answers with the moment it arrived', async () => {
+      fetchMock.mockResolvedValueOnce(
+        reply(202, { status: 'received', received_at: '2026-11-02T20:00:00.000Z' }),
+      );
+      const answer = await withdraw(
+        send('/api/withdrawals', {
+          locale: 'de',
+          name: ' Anna Beispiel ',
+          email: 'Anna@Example.com',
+          order: '',
+          message: 'Ich widerrufe.',
+          extra: 'ignored',
+        }),
+      );
+      expect(answer.status).toBe(202);
+      expect(await answer.json()).toEqual({
+        status: 'received',
+        received_at: '2026-11-02T20:00:00.000Z',
+      });
+      const call = forwarded();
+      expect(call.url).toBe('https://jobs.test/v1/withdrawals');
+      expect(call.body).toEqual({
+        locale: 'de',
+        name: 'Anna Beispiel',
+        // Lower-cased by the jobs worker, as every address is.
+        email: 'Anna@Example.com',
+        order: '',
+        message: 'Ich widerrufe.',
+      });
+    });
+
+    it('names the field that is missing, and sends nothing', async () => {
+      const noName = await withdraw(
+        send('/api/withdrawals', { locale: 'de', name: '', email: 'a@b.co' }),
+      );
+      expect(noName.status).toBe(400);
+      expect(await noName.json()).toMatchObject({ field: 'name' });
+      const noMail = await withdraw(
+        send('/api/withdrawals', { locale: 'de', name: 'A', email: 'x' }),
+      );
+      expect(await noMail.json()).toMatchObject({ field: 'email' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 
   describe('promo codes', () => {

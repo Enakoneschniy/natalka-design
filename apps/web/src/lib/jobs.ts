@@ -1,4 +1,5 @@
 import type { Browser } from '@/lib/conversions';
+import type { CheckedWithdrawal } from '@/lib/validate';
 
 /** Server-side client for the jobs Worker.
  *
@@ -232,6 +233,14 @@ export async function createSubscription(
   input: SubscriptionRequest,
 ): Promise<Outcome<{ status?: unknown }>> {
   return outcome(await jobsFetch('/v1/subscriptions', postJson(input)));
+}
+
+/** A withdrawal declared with the site's button: the jobs worker mails the receipt the law asks
+ * for and tells the owner, and answers with the moment it arrived. */
+export async function declareWithdrawal(
+  input: CheckedWithdrawal,
+): Promise<Outcome<{ received_at?: unknown }>> {
+  return outcome(await jobsFetch('/v1/withdrawals', postJson(input)));
 }
 
 /** The confirmation link's token, traded for the subscription's management token: the first

@@ -4,7 +4,7 @@ export const refunds: Record<string, string> = {
   ru: `
 # Условия возврата
 
-_Редакция от [дата]. Исполнитель: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
+_Редакция от 2 ноября 2026 г. Исполнитель: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
 
 ## Что мы продаём
 
@@ -39,7 +39,7 @@ help@chronika.me — укажите адрес заказа и, если ест�
   uk: `
 # Умови повернення
 
-_Редакція від [дата]. Виконавець: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
+_Редакція від 2 листопада 2026 р. Виконавець: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
 
 ## Що ми продаємо
 
@@ -74,7 +74,7 @@ help@chronika.me — вкажіть адресу замовлення і, якщ
   en: `
 # Refund policy
 
-_Version of [date]. Provider: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
+_Version of 2 November 2026. Provider: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
 
 ## What we sell
 
@@ -109,7 +109,7 @@ help@chronika.me — give the order's email address and, if you have it, the dat
   de: `
 # Erstattung und Widerruf
 
-_Anbieter: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, Identifikationsnummer (IČO) 57 339 368, Handelsregister des Stadtgerichts Bratislava III, Abteilung Sro, Einlage 194301/B. Kontakt: help@chronika.me._
+_Fassung vom 2. November 2026. Anbieter: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, Identifikationsnummer (IČO) 57 339 368, Handelsregister des Stadtgerichts Bratislava III, Abteilung Sro, Einlage 194301/B. Kontakt: help@chronika.me._
 
 ## Was wir verkaufen
 
@@ -143,7 +143,7 @@ Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertr
 
 Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.
 
-Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, E-Mail: help@chronika.me) mittels einer eindeutigen Erklärung (z. B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.
+Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, E-Mail: help@chronika.me) mittels einer eindeutigen Erklärung (z. B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist. Sie können den Widerruf auch über die Schaltfläche [„Vertrag widerrufen“](/de/withdraw) auf unserer Website erklären; wir bestätigen Ihnen den Eingang sofort per E-Mail.
 
 Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Widerrufsfrist absenden. Am einfachsten widerrufen Sie per E-Mail an help@chronika.me.
 

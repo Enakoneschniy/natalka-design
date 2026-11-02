@@ -160,3 +160,31 @@ export function checkOrder(body: unknown, today = new Date()): Checked<CheckedOr
   }
   return { ok: true, value };
 }
+
+export interface CheckedWithdrawal {
+  locale: DocumentLocale;
+  name: string;
+  email: string;
+  order: string;
+  message: string;
+}
+
+/** A withdrawal declared on the site: a name and the order's address; the order's number or date
+ * and a message only if the visitor gives them. The jobs worker checks the same limits. */
+export function checkWithdrawal(body: unknown): Checked<CheckedWithdrawal> {
+  if (!body || typeof body !== 'object') return { ok: false, field: 'body' };
+  const b = body as Record<string, unknown>;
+  const locale = DOCUMENT_LOCALES.includes(b.locale as DocumentLocale)
+    ? (b.locale as DocumentLocale)
+    : null;
+  if (!locale) return { ok: false, field: 'locale' };
+  const name = typeof b.name === 'string' ? cleanText(b.name) : '';
+  if (name.length < 1 || name.length > 120) return { ok: false, field: 'name' };
+  const email = checkEmail(b.email);
+  if (!email.ok) return email;
+  const order = typeof b.order === 'string' ? cleanText(b.order) : '';
+  if (order.length > 120) return { ok: false, field: 'order' };
+  const message = typeof b.message === 'string' ? cleanText(b.message) : '';
+  if (message.length > 2000) return { ok: false, field: 'message' };
+  return { ok: true, value: { locale, name, email: email.value, order, message } };
+}

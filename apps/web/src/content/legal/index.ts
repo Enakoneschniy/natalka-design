@@ -1,8 +1,9 @@
+import { imprint } from './imprint';
 import { privacy } from './privacy';
 import { refunds } from './refunds';
 import { terms } from './terms';
 
-export const LEGAL = { privacy, terms, refunds } as const;
+export const LEGAL = { privacy, terms, refunds, imprint } as const;
 export type LegalDoc = keyof typeof LEGAL;
 
 /** A link leads within the site or to another site over https; anything else — another scheme, a

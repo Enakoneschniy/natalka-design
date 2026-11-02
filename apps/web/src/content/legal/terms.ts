@@ -4,7 +4,7 @@ export const terms: Record<string, string> = {
   ru: `
 # Условия использования
 
-_Редакция от [дата]. Исполнитель: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
+_Редакция от 2 ноября 2026 г. Исполнитель: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
 
 ## Что это
 
@@ -51,7 +51,7 @@ Chronika — сервис, который по дате, времени и ме�
   uk: `
 # Умови використання
 
-_Редакція від [дата]. Виконавець: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
+_Редакція від 2 листопада 2026 р. Виконавець: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
 
 ## Що це
 
@@ -98,7 +98,7 @@ Chronika — сервіс, який за датою, часом і місцем 
   en: `
 # Terms of service
 
-_Version of [date]. Provider: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
+_Version of 2 November 2026. Provider: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
 
 ## What this is
 
@@ -145,7 +145,7 @@ These terms may change; the version shown at the time of payment applies to your
   de: `
 # Allgemeine Geschäftsbedingungen
 
-_Anbieter: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, Identifikationsnummer (IČO) 57 339 368, Handelsregister des Stadtgerichts Bratislava III, Abteilung Sro, Einlage 194301/B. Kontakt: help@chronika.me._
+_Fassung vom 2. November 2026. Anbieter: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, Identifikationsnummer (IČO) 57 339 368, Handelsregister des Stadtgerichts Bratislava III, Abteilung Sro, Einlage 194301/B. Kontakt: help@chronika.me._
 
 ## Worum es geht
 

@@ -215,3 +215,24 @@ function cleanSource(value: unknown): string | null {
   const cleaned = value.toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 24);
   return cleaned || null;
 }
+
+/** A withdrawal declared on the site (§ 356a BGB): who, which order, and why if they say. The
+ * order may be given as a number or a date, or not at all — the address identifies it too. */
+export interface WithdrawalRequest {
+  locale: Locale;
+  name: string;
+  email: string;
+  order: string;
+  message: string;
+}
+
+export function parseWithdrawal(body: Record<string, unknown>): WithdrawalRequest {
+  if (!isLocale(body.locale)) throw new InvalidField('locale');
+  return {
+    locale: body.locale,
+    name: line(body.name, 'name', 120, 1),
+    email: parseEmail(body.email),
+    order: line(body.order ?? '', 'order', 120),
+    message: line(body.message ?? '', 'message', 2000),
+  };
+}

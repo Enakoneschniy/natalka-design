@@ -61,8 +61,11 @@ import {
   parsePreview,
   parseSubscription,
   type PreviewInput,
+  parseWithdrawal,
   type SubscriptionInput,
+  type WithdrawalRequest,
 } from './validate';
+import { sendAlert, sendWithdrawalReceipt } from './mail';
 import { consumeJob, DEAD_LETTER_QUEUE, deadLetter } from './consumer';
 import { metaEnabled, parseBrowser, reportToMeta } from './meta';
 import { errorCode } from './errors';
@@ -406,6 +409,40 @@ const CADENCES = new Set<string>(['week', 'month']);
 const SUBSCRIPTION_LIMIT = 16 * 1024;
 const SMALL_LIMIT = 4 * 1024;
 
+/** A withdrawal from a contract, declared with the site's button. The buyer is owed a receipt at
+ * once — its content and the moment it arrived — and the owner decides on the refund: whether the
+ * right had already lapsed is a question for a person, not for this route. */
+async function withdraw(request: Request, env: Env): Promise<Response> {
+  const read = await readJson(request, SMALL_LIMIT);
+  if (!read.ok) return read.response;
+  let input: WithdrawalRequest;
+  try {
+    input = parseWithdrawal(read.body);
+  } catch (error) {
+    if (error instanceof InvalidField) return json({ error: 'invalid', field: error.field }, 400);
+    throw error;
+  }
+  const receivedAt = new Date().toISOString();
+  const sent = await sendWithdrawalReceipt(env, { ...input, receivedAt }).catch((error: unknown) => {
+    console.error('withdrawal receipt', errorCode(error));
+    return null;
+  });
+  await sendAlert(
+    env,
+    'Withdrawal from a contract: reply within two working days',
+    [
+      `received ${receivedAt}`,
+      `name ${input.name}`,
+      `email ${input.email}`,
+      `order ${input.order || '-'}`,
+      `locale ${input.locale}`,
+      `message ${input.message || '-'}`,
+      `receipt ${sent?.status ?? 'failed — send it by hand'}`,
+    ].join('\n'),
+  );
+  return json({ status: 'received', received_at: receivedAt }, 202);
+}
+
 /** Always the same 202, whatever became of the request: the answer must not tell whether the
  * address has subscriptions, and it never carries a management link — that comes only by
  * confirming from the letter. */
@@ -665,6 +702,9 @@ export default {
     }
     if (url.pathname === '/v1/preview' && request.method === 'POST') {
       return previewText(request, env);
+    }
+    if (url.pathname === '/v1/withdrawals' && request.method === 'POST') {
+      return withdraw(request, env);
     }
 
     return new Response('not found', { status: 404 });

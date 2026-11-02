@@ -9,6 +9,8 @@ import { decryptJson } from './crypto';
 import {
   bumpStat,
   dropDispute,
+  insertEmailEvent,
+  orderContact,
   orderFacts,
   recordDispute,
   recordRefund,
@@ -17,10 +19,11 @@ import {
   settleOrderPayment,
   takeOrderBrowser,
 } from './db';
+import type { Product } from './db';
 import type { Env } from './env';
 import { errorCode } from './errors';
 import { json } from './http';
-import { sendAlert } from './mail';
+import { sendAlert, sendOrderConfirmation } from './mail';
 import { type Browser, reportToMeta } from './meta';
 import { disputePurchase, disputeWon, markFailed, markPaid, markRefunded } from './pro/purchases';
 import { type StripeEvent, verifyWebhook } from './stripe';
@@ -74,6 +77,9 @@ async function orderPaid(env: Env, session: StripeObject): Promise<Response> {
     currency: session.currency,
   });
   if (result === 'paid') {
+    // The confirmation of the contract goes before the work starts: it is what lets the right of
+    // withdrawal lapse once the document is being made (contract.ts).
+    await confirmOrder(env, orderId);
     await env.JOBS.send({ jobId });
     const facts = await orderFacts(env.DB, orderId);
     if (facts) {
@@ -109,6 +115,36 @@ async function orderPaid(env: Env, session: StripeObject): Promise<Response> {
     await sendAlert(env, 'A payment for an order that does not exist: refund it', ids);
   }
   return json({ received: true, queued: false, order: result });
+}
+
+/** Sends the confirmation of the contract. A failure does not hold the reading back — the buyer
+ * paid for it — but the owner is told, because the letter then has to go out by hand. */
+async function confirmOrder(env: Env, orderId: string): Promise<void> {
+  try {
+    const [contact, facts] = await Promise.all([orderContact(env.DB, orderId), orderFacts(env.DB, orderId)]);
+    if (!contact || !facts) return;
+    const sent = await sendOrderConfirmation(env, contact.email, {
+      orderId,
+      product: facts.product as Product,
+      locale: contact.locale,
+      amountMinor: facts.amount_minor,
+      currency: facts.currency,
+      paidAt: new Date().toISOString(),
+    });
+    await insertEmailEvent(env.DB, {
+      order_id: orderId,
+      kind: 'confirmation',
+      provider_id: sent.providerId,
+      status: sent.status,
+    });
+  } catch (error) {
+    console.error('order confirmation', orderId, errorCode(error));
+    await sendAlert(
+      env,
+      'Order confirmation not sent: send it by hand',
+      `order ${orderId}\nThe buyer has no confirmation of the contract; until they get one, the right of withdrawal does not lapse.`,
+    );
+  }
 }
 
 /** The sale, reported to Meta from the browser the order was placed from — kept with the order

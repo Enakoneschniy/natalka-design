@@ -4000,3 +4000,26 @@ main > .hero-film:first-child {
     width: 100%;
   }
 }
+
+/* ---------- withdrawal ---------- */
+.withdraw-form {
+  margin-top: 28px;
+  display: grid;
+  gap: 18px;
+}
+.withdraw-form textarea.input {
+  height: auto;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  resize: vertical;
+}
+.withdraw-done {
+  margin-top: 28px;
+}
+.withdraw-done h2 {
+  margin-bottom: 8px;
+}
+.withdraw-note {
+  display: block;
+  margin-top: 18px;
+}

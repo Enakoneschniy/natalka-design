@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEGAL, renderLegal } from '.';
+import { isDraft, LEGAL, renderLegal } from '.';
 
 describe('renderLegal', () => {
   it('escapes everything that could open a tag or leave an attribute', () => {
@@ -41,6 +41,16 @@ describe('renderLegal', () => {
         const html = renderLegal(source, locale);
         expect(html).not.toMatch(/<a href="(?!\/|https:\/\/)/);
         expect(html).not.toContain('<script');
+      }
+    }
+  });
+});
+
+describe('every published document', () => {
+  it('is dated and has no blank left, in every language', () => {
+    for (const [name, texts] of Object.entries(LEGAL)) {
+      for (const [lang, text] of Object.entries(texts as Record<string, string>)) {
+        expect(isDraft(text), `${name}/${lang}`).toBe(false);
       }
     }
   });

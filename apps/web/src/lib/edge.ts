@@ -116,9 +116,16 @@ export function rateGroup(method: string, path: string): RateGroup | null {
   if (/^\/api\/pro\/(login|signup|session)$/.test(path)) return 'auth';
   if (path === '/api/orders' || /^\/api\/jobs\/[^/]+\/checkout$/.test(path)) return 'orders';
   if (path === '/api/preview') return 'preview';
-  if (path === '/api/subscriptions' || path === '/api/subscriptions/confirm') {
+  // Each sends a letter: a subscription's confirmation, a withdrawal's receipt.
+  if (
+    path === '/api/subscriptions' ||
+    path === '/api/subscriptions/confirm' ||
+    path === '/api/withdrawals'
+  ) {
     return 'subscriptions';
   }
+  // A promo code is checked against a short list; trying them one after another is slowed.
+  if (path === '/api/promo') return 'preview';
   if (path.startsWith('/api/pro/x/')) return 'pro';
   return null;
 }

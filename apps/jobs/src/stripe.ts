@@ -1,3 +1,4 @@
+import { withdrawalConsent } from './contract';
 import type { Product } from './db';
 import type { Env } from './env';
 import { errorCode, UpstreamError } from './errors';
@@ -15,19 +16,6 @@ const TOLERANCE_SECONDS = 5 * 60;
 
 /** Stripe Checkout speaks these; anything else falls back to the browser's language. */
 const CHECKOUT_LOCALES = new Set(['en', 'ru', 'pl', 'cs', 'ro', 'bg', 'de', 'sk']);
-
-/** The consent the payment page asks for: the document is made at once, and its delivery ends the
- * right of withdrawal. The German wording follows § 356 Abs. 6 BGB, which is what a German
- * buyer's consent has to say for the right to lapse — the other condition there being the
- * confirmation of the contract on a durable medium (§ 312f BGB). */
-const WITHDRAWAL_CONSENT_EN =
-  'The document is created right after payment; the right of withdrawal ends with its delivery.';
-const WITHDRAWAL_CONSENT: Record<string, string> = {
-  uk: 'Документ створюється одразу після оплати; з його доставкою право на відмову припиняється.',
-  ru: 'Документ создаётся сразу после оплаты; с его доставкой право на отказ прекращается.',
-  en: WITHDRAWAL_CONSENT_EN,
-  de: 'Ich stimme ausdrücklich zu, dass Sie vor Ablauf der Widerrufsfrist mit der Erstellung des Dokuments beginnen, und mir ist bekannt, dass ich durch diese Zustimmung mit Beginn der Vertragserfüllung mein Widerrufsrecht verliere.',
-};
 
 /** What the payment page and the receipt call each product. Fixed here: of what the browser sent,
  * only the address reaches Stripe. */
@@ -110,7 +98,7 @@ export async function createCheckoutSession(env: Env, input: CheckoutInput): Pro
     // and knows the right of withdrawal ends with it (see the refund policy). Stripe shows the
     // consent line on the payment page as well.
     'consent_collection[terms_of_service]': 'required',
-    'custom_text[terms_of_service_acceptance][message]': WITHDRAWAL_CONSENT[input.locale] ?? WITHDRAWAL_CONSENT_EN,
+    'custom_text[terms_of_service_acceptance][message]': withdrawalConsent(input.locale),
     // Only kept for the payment; the birth data never goes to Stripe.
     'payment_intent_data[description]': `Chronika · ${name}`,
   };

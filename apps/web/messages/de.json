@@ -131,7 +131,9 @@
     "contacts": "Kontakt",
     "terms": "AGB",
     "privacy": "Datenschutzerklärung",
-    "refunds": "Rückerstattung",
+    "refunds": "Widerruf und Erstattung",
+    "withdraw": "Vertrag widerrufen",
+    "imprint": "Impressum",
     "hours": "Mo.–Fr., 10:00–19:00 Uhr MEZ",
     "disclaimer": "Die Deutung dient der Unterhaltung und der Selbsterkenntnis und ist keine medizinische, psychologische oder finanzielle Beratung.",
     "seller": "coremind s. r. o. · IČO 57 339 368 · Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei"
@@ -322,7 +324,7 @@
       "Ihre Jahre Monat für Monat: der Rest dieses Jahres, ganz {next}, {year} – und die wichtigsten Daten auf einer Seite"
     ],
     "cta": "Ganze Deutung freischalten – {price}",
-    "note": "35 Seiten · PDF per E-Mail in 20–30 Minuten · einmalige Zahlung",
+    "note": "35 Seiten · PDF per E-Mail in 20–30 Minuten · einmalige Zahlung · inkl. MwSt.",
     "pages": [
       {
         "section": "3 · Planeten in Zeichen und Häusern",
@@ -361,7 +363,7 @@
     "title": "Bestellung",
     "steps": "Zahlung",
     "summary": "Ihre Bestellung",
-    "total": "Gesamt",
+    "total": "Gesamt (inkl. MwSt.)",
     "email": "PDF senden an",
     "emailHint": "Der Link zum Dokument gilt 30 Tage",
     "emailPlaceholder": "name@beispiel.de",
@@ -566,7 +568,7 @@
     "offer": {
       "title": "Ein Dokument. Eine Zahlung.",
       "product": "Geburtshoroskop und Prognose bis {year}",
-      "meta": "Vorschau kostenlos · vollständige Deutung mit einer Zahlung, ohne Abo",
+      "meta": "Vorschau kostenlos · vollständige Deutung mit einer Zahlung, ohne Abo · Preise inkl. MwSt.",
       "items": [
         "35 Seiten über Ihr Horoskop",
         "Charakter, Beziehungen, Beruf und Geld",
@@ -675,6 +677,25 @@
     "expired": "Dieser Rabattcode ist abgelaufen",
     "failed": "Der Rabattcode konnte nicht geprüft werden. Versuchen Sie es noch einmal.",
     "outdone": "Gerade gilt ein höherer Rabatt – er wurde angewendet."
+  },
+  "withdraw": {
+    "title": "Vertrag widerrufen",
+    "lead": "Hier können Sie den Widerruf eines Vertrags mit uns erklären. Sie erhalten sofort per E-Mail eine Eingangsbestätigung mit dem Inhalt Ihrer Erklärung sowie Datum und Uhrzeit des Eingangs.",
+    "name": "Vor- und Nachname",
+    "email": "E-Mail-Adresse der Bestellung",
+    "order": "Bestellnummer oder Bestelldatum",
+    "orderHint": "Falls zur Hand – so finden wir die Bestellung schneller",
+    "message": "Nachricht",
+    "messageHint": "Optional",
+    "submit": "Widerruf bestätigen",
+    "sending": "Wird gesendet…",
+    "doneTitle": "Widerruf eingegangen",
+    "doneBody": "Wir haben Ihre Erklärung am {when} erhalten. Die Bestätigung ist an {email} unterwegs; wir melden uns innerhalb von zwei Werktagen.",
+    "note": "Ob für Ihre Bestellung ein Widerrufsrecht besteht oder bereits erloschen ist, prüfen wir und teilen es Ihnen mit. Die Einzelheiten stehen in der Widerrufsbelehrung.",
+    "nameInvalid": "Bitte geben Sie Ihren Namen an",
+    "emailInvalid": "Bitte prüfen Sie die E-Mail-Adresse",
+    "failed": "Das hat nicht geklappt. Bitte versuchen Sie es noch einmal oder schreiben Sie an help@chronika.me.",
+    "tooMany": "Zu viele Versuche in kurzer Zeit. Bitte warten Sie eine Minute und versuchen Sie es erneut."
   },
   "consent": {
     "title": "Cookies",

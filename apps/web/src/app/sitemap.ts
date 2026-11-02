@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 /** The pages that belong to everybody: the landing in each language, and the documents a buyer
  * is entitled to read before buying. Everything else is either one visitor's own page or a step
  * of a purchase, and has no business in a sitemap. */
-const PUBLIC_PAGES = ['', '/legal/terms', '/legal/privacy', '/legal/refunds'];
+const PUBLIC_PAGES = ['', '/legal/terms', '/legal/privacy', '/legal/refunds', '/legal/imprint'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (!INDEXABLE) return [];
