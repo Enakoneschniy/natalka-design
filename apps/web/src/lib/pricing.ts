@@ -6,7 +6,10 @@
  * will want when payments are wired up.
  *
  * Levels agreed with the owner on 2026-09-29: ₴790 / €19 / $21 for the natal chart. The euro
- * bundle is €35 since the price test ended on 2026-11-02: the higher of its two figures.
+ * bundle is €35 since the price test ended on 2026-11-02 — the higher of its two figures — and
+ * the other currencies' bundles were raised with it in the same proportion (×1.2, to figures
+ * that look like prices) the same day, at the owner's word: Poland had been paying a fifth less
+ * than Germany. Bulgaria pays in euro since it joined the eurozone on 2026-01-01.
  */
 
 import type { PromoCode } from './promo';
@@ -14,23 +17,23 @@ import type { PromoCode } from './promo';
 export const PRODUCTS = ['natal', 'forecast', 'synastry', 'child', 'bundle'] as const;
 export type ProductKey = (typeof PRODUCTS)[number];
 
-type Currency = 'UAH' | 'EUR' | 'USD' | 'PLN' | 'CZK' | 'RON' | 'BGN' | 'GBP';
+type Currency = 'UAH' | 'EUR' | 'USD' | 'PLN' | 'CZK' | 'RON' | 'GBP';
 
 /** Minor units (kopiyky, cents, grosze …), in PRODUCTS order. */
 const TABLE: Record<Currency, Record<ProductKey, number>> = {
-  UAH: { natal: 79000, forecast: 59000, synastry: 69000, child: 59000, bundle: 119000 },
+  UAH: { natal: 79000, forecast: 59000, synastry: 69000, child: 59000, bundle: 149000 },
   EUR: { natal: 1900, forecast: 1400, synastry: 1700, child: 1400, bundle: 3500 },
-  USD: { natal: 2100, forecast: 1500, synastry: 1800, child: 1500, bundle: 3200 },
-  PLN: { natal: 7900, forecast: 5900, synastry: 6900, child: 5900, bundle: 11900 },
-  CZK: { natal: 44900, forecast: 34900, synastry: 39900, child: 34900, bundle: 69900 },
-  RON: { natal: 8900, forecast: 6900, synastry: 7900, child: 6900, bundle: 13900 },
-  BGN: { natal: 3500, forecast: 2700, synastry: 3100, child: 2700, bundle: 5500 },
-  GBP: { natal: 1600, forecast: 1200, synastry: 1400, child: 1200, bundle: 2500 },
+  USD: { natal: 2100, forecast: 1500, synastry: 1800, child: 1500, bundle: 3900 },
+  PLN: { natal: 7900, forecast: 5900, synastry: 6900, child: 5900, bundle: 14900 },
+  CZK: { natal: 44900, forecast: 34900, synastry: 39900, child: 34900, bundle: 84900 },
+  RON: { natal: 8900, forecast: 6900, synastry: 7900, child: 6900, bundle: 16900 },
+  GBP: { natal: 1600, forecast: 1200, synastry: 1400, child: 1200, bundle: 2900 },
 };
 
 const EUROZONE = [
   'AT',
   'BE',
+  'BG',
   'CY',
   'DE',
   'EE',
@@ -56,7 +59,6 @@ const BY_COUNTRY: Record<string, Currency> = {
   PL: 'PLN',
   CZ: 'CZK',
   RO: 'RON',
-  BG: 'BGN',
   GB: 'GBP',
   ...Object.fromEntries(EUROZONE.map((country) => [country, 'EUR' as Currency])),
 };
@@ -84,7 +86,6 @@ const FORMAT_LOCALE: Record<Currency, string> = {
   PLN: 'pl-PL',
   CZK: 'cs-CZ',
   RON: 'ro-RO',
-  BGN: 'bg-BG',
   GBP: 'en-GB',
 };
 
@@ -112,7 +113,6 @@ const SUBSCRIPTION: Record<Currency, number> = {
   PLN: 1900,
   CZK: 9900,
   RON: 1900,
-  BGN: 800,
   GBP: 400,
 };
 

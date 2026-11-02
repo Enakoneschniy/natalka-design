@@ -51,8 +51,11 @@ then natalka-web. No migration.
 
 ## Prices and the offer
 
-The price test ended on 2026-11-02: the bundle costs €35 in the eurozone (its higher figure) and
-the table's price elsewhere. `EXPERIMENT_KEY` on natalka-web is no longer read
+The price test ended on 2026-11-02: the bundle costs €35 in the eurozone (its higher figure,
+Bulgaria included since it joined the euro) and the same raised in proportion elsewhere —
+149 zł, 849 Kč, ₴1490, $39, 169 lei, £29 (`TABLE` in `apps/web/src/lib/pricing.ts`). A
+payment in another currency reaches the account converted to euro, less Stripe's conversion fee
+of about 2% on top of the card fee. `EXPERIMENT_KEY` on natalka-web is no longer read
 (`wrangler secret delete EXPERIMENT_KEY` in `apps/web`), and the middleware takes back the `cx`
 cookie from anyone still carrying it.
 

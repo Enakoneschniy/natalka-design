@@ -44,7 +44,8 @@ describe('the offer', () => {
       expect(offer.amount).toBeGreaterThan((full.amount * (100 - OFFER.percent)) / 100 - 100);
     }
     expect(bundlePrice('DE', DURING)).toMatchObject({ amount: 1700, formatted: '17\u00a0€' });
-    expect(bundlePrice('PL', DURING).amount).toBe(5900);
+    expect(bundlePrice('PL', DURING).amount).toBe(7400);
+    expect(bundlePrice('CZ', DURING).amount).toBe(42400);
   });
 
   it('ends at midnight after 7 November, Central European time', () => {
@@ -83,6 +84,14 @@ describe('the offer', () => {
       full: null,
       discount: null,
     });
+  });
+
+  it('raises the other currencies with the euro, and charges Bulgaria in euro', () => {
+    expect(bundlePrice('PL', AFTER)).toMatchObject({ amount: 14900, currency: 'PLN' });
+    expect(bundlePrice('CZ', AFTER)).toMatchObject({ amount: 84900, currency: 'CZK' });
+    expect(bundlePrice('UA', AFTER)).toMatchObject({ amount: 149000, currency: 'UAH' });
+    expect(bundlePrice('US', AFTER)).toMatchObject({ amount: 3900, currency: 'USD' });
+    expect(bundlePrice('BG', AFTER)).toMatchObject({ amount: 3500, currency: 'EUR' });
   });
 
   it('leaves the other products alone', () => {
