@@ -239,7 +239,7 @@ SIGN_WITHOUT_ARTICLE = re.compile(
 
 #: English words a German reading slips in, alone or inside a compound («Timing-Wissen»).
 ANGLICISMS = re.compile(
-    r"\b(Timing|Mindset|Challenge|Commitment|Self-?Care|Lifestyle|Workflow|Feedback|Setting|Struggle)",
+    r"\b(Timing|Mindset|Challenge|Commitment|Self-?Care|Lifestyle|Workflow|Feedback|Setting|Struggle|Chart)",
     re.IGNORECASE,
 )
 

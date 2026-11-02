@@ -223,6 +223,15 @@ def test_a_chapter_that_greets_the_reader_again_is_caught() -> None:
 
 def test_a_german_sign_without_its_article_and_an_english_word_are_caught() -> None:
     slipped = GERMAN.replace("steht im Stier", "steht in Stier") + " Es ist Timing-Wissen für Sie."
+    assert (
+        "anglicism"
+        in check(
+            GERMAN + " Eine Chart-Architektur für Sie.",
+            lang="de",
+            min_paragraphs=2,
+            max_paragraphs=3,
+        ).codes
+    )
     report = check(slipped, lang="de", min_paragraphs=2, max_paragraphs=3)
     assert "sign_article" in report.codes
     assert "anglicism" in report.codes
