@@ -205,21 +205,20 @@ class AnthropicProvider:
             if gateway_token is not None
             else os.environ.get("NATALKA_AI_GATEWAY_TOKEN", "")
         )
+        # The key travels as `x-api-key`. The SDK sends it as `Authorization: Bearer`, which
+        # Anthropic accepts but the gateway's /anthropic route does not: it sees no key at all,
+        # and every call is refused. So the bearer header is left out and the key named instead.
+        self.headers: dict[str, str | anthropic.Omit] = {
+            "x-api-key": self.api_key,
+            "Authorization": anthropic.omit,
+        }
         # Only the gateway itself is given its token; Anthropic, called directly, never sees it.
         url = httpx.URL(self.base_url)
-        headers = (
-            {"cf-aig-authorization": f"Bearer {token}"}
-            if token and url.scheme == "https" and url.host == GATEWAY_HOST
-            else {}
-        )
+        if token and url.scheme == "https" and url.host == GATEWAY_HOST:
+            self.headers["cf-aig-authorization"] = f"Bearer {token}"
         # Without a key there is no client: the SDK would go looking for credentials elsewhere.
         self.client = (
-            anthropic.Anthropic(
-                api_key=self.api_key,
-                base_url=self.base_url,
-                timeout=timeout,
-                default_headers=headers,
-            )
+            anthropic.Anthropic(api_key=self.api_key, base_url=self.base_url, timeout=timeout)
             if self.api_key
             else None
         )
@@ -234,6 +233,7 @@ class AnthropicProvider:
                 system=system,
                 messages=[{"role": "user", "content": user}],
                 thinking={"type": "disabled"},
+                extra_headers=self.headers,
             )
         # A failure is described by its status, never by its text: an error body can quote the
         # request back — a name, a date — and this message travels on to the caller's logs.

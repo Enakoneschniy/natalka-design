@@ -76,7 +76,9 @@ def test_the_request_is_the_one_openrouter_was_sent(wire: Wire) -> None:
         "messages": [{"role": "user", "content": "user"}],
         "thinking": {"type": "disabled"},
     }
-    assert wire.requests[0].headers["authorization"] == "Bearer k"
+    # As the gateway's /anthropic route wants it: the key in x-api-key, and no bearer header.
+    assert wire.requests[0].headers["x-api-key"] == "k"
+    assert "authorization" not in wire.requests[0].headers
     assert done == Completion(
         text="Текст.", tokens_in=1000, tokens_out=500, model="claude-sonnet-5"
     )
