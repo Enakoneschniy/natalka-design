@@ -72,6 +72,14 @@ describe('the offer', () => {
     });
   });
 
+  it('gives a code as large as the offer the sale, so it is counted for the code', () => {
+    const even = { code: 'EVEN50', percent: 50, starts: new Date(0), ends: new Date('2100-01-01') };
+    expect(bundlePrice('DE', DURING, even)).toMatchObject({
+      amount: 1700,
+      discount: { code: 'EVEN50' },
+    });
+  });
+
   it('ignores a code outside its days', () => {
     const later = {
       code: 'LATER',

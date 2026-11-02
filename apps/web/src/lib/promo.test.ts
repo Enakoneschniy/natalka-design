@@ -38,3 +38,14 @@ describe('promo codes', () => {
     expect(promoMaxAge(XMAS, XMAS.ends)).toBe(0);
   });
 });
+
+describe('the codes on sale', () => {
+  it('include HIMMEL50: half off until the end of 24 December, Central European time', () => {
+    expect(activePromo('himmel50', new Date('2026-11-03T12:00:00Z'))).toMatchObject({
+      code: 'HIMMEL50',
+      percent: 50,
+    });
+    expect(activePromo('HIMMEL50', new Date('2026-12-24T22:59:59Z'))).not.toBeNull();
+    expect(activePromo('HIMMEL50', new Date('2026-12-24T23:00:00Z'))).toBeNull();
+  });
+});

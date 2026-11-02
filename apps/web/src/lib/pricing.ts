@@ -163,7 +163,8 @@ export interface BundlePrice extends Price {
 }
 
 /** What the reading costs this visitor: the full price, less the larger of the offer and their
- * promo code — the two do not add up. The paywall, the order screen and the order itself all ask
+ * promo code — the two do not add up, and a code as large as the offer wins, so that the sale is
+ * counted for whoever gave the code out. The paywall, the order screen and the order itself all ask
  * here, so the figure shown is the figure charged. A discounted price is rounded down to whole
  * units: every price on the site is a whole number, and rounding down keeps "−50%" true. */
 export function bundlePrice(
@@ -185,7 +186,7 @@ export function bundlePrice(
     candidates.push({ percent: promo.percent, ends: promo.ends, code: promo.code });
   }
   const discount = candidates.reduce<Discount | null>(
-    (best, next) => (best && best.percent >= next.percent ? best : next),
+    (best, next) => (best && best.percent > next.percent ? best : next),
     null,
   );
   if (!discount) return { ...full, full: null, discount: null };

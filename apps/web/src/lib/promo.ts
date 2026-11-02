@@ -26,7 +26,16 @@ export interface PromoCode {
 }
 
 /** Add a code here on the owner's word, with the dates it runs and where it was given out. */
-const CODES: readonly PromoCode[] = [];
+const CODES: readonly PromoCode[] = [
+  {
+    code: 'HIMMEL50',
+    percent: 50,
+    starts: new Date('2026-11-02T00:00:00+01:00'),
+    // "Bis Weihnachten": the last day is the 24th of December, Central European time.
+    ends: new Date('2026-12-25T00:00:00+01:00'),
+    note: "The owner's YouTube integration for a German audience, November 2026",
+  },
+];
 
 export const PROMO_COOKIE = 'chr_promo';
 
