@@ -203,3 +203,27 @@ def test_german_cliches_and_invented_knowledge_are_caught() -> None:
 def test_cyrillic_in_a_german_reading_is_caught() -> None:
     report = check(GERMAN + " Das ist Ваша Sonne.", lang="de", min_paragraphs=2, max_paragraphs=3)
     assert "foreign_script" in report.codes
+
+
+def test_a_chapter_that_greets_the_reader_again_is_caught() -> None:
+    # A German reading came back with «Liebe Lena,» at the start of twenty-five sections.
+    greeted = "Liebe Lena,\n\n" + GERMAN
+    report = check(greeted, lang="de", min_paragraphs=2, max_paragraphs=4)
+    assert "greeting" in report.codes
+    # The opening section is the one place a greeting belongs.
+    assert (
+        "greeting"
+        not in check(
+            greeted, lang="de", min_paragraphs=2, max_paragraphs=4, impersonal_ok=True
+        ).codes
+    )
+    ru = "Дорогая Оксана,\n\nВаше Солнце стоит в Тельце, и вы не спешите.\n\nЭто ваш способ делать хорошо."
+    assert "greeting" in check(ru, lang="ru", min_paragraphs=2, max_paragraphs=4).codes
+
+
+def test_a_german_sign_without_its_article_and_an_english_word_are_caught() -> None:
+    slipped = GERMAN.replace("steht im Stier", "steht in Stier") + " Es ist Timing-Wissen für Sie."
+    report = check(slipped, lang="de", min_paragraphs=2, max_paragraphs=3)
+    assert "sign_article" in report.codes
+    assert "anglicism" in report.codes
+    assert check(GERMAN, lang="de", min_paragraphs=2, max_paragraphs=3).ok

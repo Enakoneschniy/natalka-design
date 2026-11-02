@@ -220,6 +220,29 @@ def _foreign_script(text: str, lang: str) -> list[str]:
     )
 
 
+#: A section that opens like a letter. Only the opening section may greet: every other one is
+#: written on its own and tends to take itself for the start, so a reading greets its reader at
+#: every chapter.
+GREETING = {
+    "de": re.compile(r"^(Liebe|Lieber|Hallo|Guten Tag)\b[^\n.,!]{0,40}[,!]"),
+    "ru": re.compile(r"^(Дорогая|Дорогой|Здравствуйте|Привет)\b[^\n.,!]{0,40}[,!]"),
+    "uk": re.compile(r"^(Дорога|Дорогий|Вітаю|Привіт)\b[^\n.,!]{0,40}[,!]"),
+    "en": re.compile(r"^(Dear|Hello|Hi)\b[^\n.,!]{0,40}[,!]"),
+}
+
+#: A German sign without its article — «in Stier» for «im Stier», «in Jungfrau» for «in der
+#: Jungfrau». The model slips into it under the English "in Taurus".
+SIGN_WITHOUT_ARTICLE = re.compile(
+    r"\bin (Widder|Stier|Zwillingen?|Krebs|Löwen?|Jungfrau|Waage|Skorpion|Schützen?|Steinbock|"
+    r"Wassermann|Fischen?)\b"
+)
+
+#: English words a German reading slips in, alone or inside a compound («Timing-Wissen»).
+ANGLICISMS = re.compile(
+    r"\b(Timing|Mindset|Challenge|Commitment|Self-?Care|Lifestyle|Workflow|Feedback|Setting|Struggle)",
+    re.IGNORECASE,
+)
+
 #: Only these survive into the PDF; anything else means the model ignored the format rules.
 ALLOWED_TAGS = re.compile(r"</?(b|i|br\s*/?)>", re.IGNORECASE)
 ANY_TAG = re.compile(r"<[^>]+>")
@@ -319,6 +342,25 @@ def _language_problems(
             problems.append(
                 ("latin_word", f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
             )
+
+    greeting = GREETING.get(lang)
+    if greeting and not impersonal_ok and greeting.search(text):
+        problems.append(
+            ("greeting", "the section opens with a greeting; only the opening section greets")
+        )
+    if lang == "de":
+        bare = sorted({m.group(0) for m in SIGN_WITHOUT_ARTICLE.finditer(text)})
+        if bare:
+            problems.append(
+                (
+                    "sign_article",
+                    f"a sign without its article: {', '.join(bare[:3])} — write «im Stier», "
+                    "«in der Jungfrau», «in den Zwillingen»",
+                )
+            )
+        english = sorted({m.group(0) for m in ANGLICISMS.finditer(text)})
+        if english:
+            problems.append(("anglicism", f"English words: {', '.join(english[:3])}"))
 
     script = _foreign_script(text, lang)
     if script:

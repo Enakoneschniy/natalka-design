@@ -1,6 +1,6 @@
 from natalka_texts import prompts
-from natalka_texts.prompts import system_prompt
-from natalka_texts.sections import specs, title
+from natalka_texts.prompts import section_prompt, system_prompt
+from natalka_texts.sections import NATAL, specs, title
 from natalka_texts.validate import check
 
 FORMAL_RULE = (
@@ -165,3 +165,10 @@ def test_a_german_reading_is_on_sie_and_may_use_its_own_alphabet() -> None:
     du = system_prompt("de", "m", "synastry", address="ty")
     assert "«du» throughout" in du and "«ihr»" in du
     assert "{" not in du
+
+
+def test_only_the_opening_section_may_greet() -> None:
+    intro, overview = NATAL[0], NATAL[1]
+    assert intro.id == "intro"
+    assert "do not greet" not in section_prompt(intro, name="Lena", sheet="-", written_so_far=[])
+    assert "do not greet" in section_prompt(overview, name="Lena", sheet="-", written_so_far=[])

@@ -157,10 +157,14 @@ ADDRESS_RULE_DE: dict[str, str] = {
 #: be told what that does not license.
 SCRIPT_RULE: dict[str, str] = {
     "de": (
-        "Write natural German, not German translated from English: no anglicisms where a German "
-        "word exists (no «Mindset», «Challenge», «Timing»), German quotation marks „…“, the "
-        "German names for planets, signs and aspects (Aszendent, Quadrat, Trigon, Opposition). "
-        "The chart abbreviations AC, MC, IC and DC stay as they are."
+        "Write natural German, not German translated from English: no English word at all, not "
+        "even inside a compound (no «Mindset», «Challenge», «Timing», «Timing-Wissen»), German "
+        "quotation marks „…“, the en dash with spaces ( – ) rather than the em dash, the German "
+        "names for planets, signs and aspects (Aszendent, Quadrat, Trigon, Opposition). A sign "
+        "always takes its article: im Widder, im Stier, in den Zwillingen, im Krebs, im Löwen, "
+        "in der Jungfrau, in der Waage, im Skorpion, im Schützen, im Steinbock, im Wassermann, "
+        "in den Fischen — never «in Stier». An applying aspect is «zunehmend», a separating one "
+        "«abnehmend». The chart abbreviations AC, MC, IC and DC stay as they are."
     ),
     "en": "The chart abbreviations AC, MC, IC and DC stay as they are.",
 }
@@ -213,6 +217,14 @@ def section_prompt(
     else:
         parts += [
             "The person's name is not given: address them without a name and never invent one.",
+            "",
+        ]
+    # Each section is written on its own, so each one takes itself for the start of the letter:
+    # a German reading came back with «Liebe Lena,» twenty-five times.
+    if spec.id != "intro":
+        parts += [
+            "This is not the opening section: do not greet the reader and do not begin with "
+            "their name. Begin with the subject itself.",
             "",
         ]
     parts += [
