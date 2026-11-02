@@ -6,13 +6,21 @@
  * the only place with the database, the bucket and the keys.
  */
 
-import { canonicalJson, encryptJson, LINK_TTL_SECONDS, readLink, sameSecret, sha256Hex, signLink } from './crypto';
+import {
+  canonicalJson,
+  encryptJson,
+  hmacHex,
+  LINK_TTL_SECONDS,
+  readLink,
+  sameSecret,
+  sha256Hex,
+  signLink,
+} from './crypto';
 import {
   cachePreview,
   claimTelegramLink,
   insertEmailEvent,
-  latestOrderFor,
-  lettersSince,
+  latestPurchaseFor,
   deliverable,
   forgetTelegramChat,
   markTelegramDelivered,
@@ -412,14 +420,34 @@ const CADENCES = new Set<string>(['week', 'month']);
 const SUBSCRIPTION_LIMIT = 16 * 1024;
 const SMALL_LIMIT = 4 * 1024;
 
-/** Receipts one order may be sent in a day: a buyer who sends the form twice gets two, a stranger
- * who knows a buyer's address cannot fill their inbox. */
+/** Receipts one address may be sent in a day: a buyer who sends the form twice gets two, a
+ * stranger who knows a buyer's address cannot fill their inbox. */
 const RECEIPTS_PER_DAY = 3;
 
-/** Links in what a visitor typed are taken out before the text is quoted back in a letter from
- * us: the form must not be a way to mail someone a link under our name. */
+/** Books one of the address's receipts for the day, in one statement, so that two requests at
+ * once cannot both slip under the cap. The address is kept only as a keyed hash. */
+async function receiptAllowed(env: Env, email: string): Promise<boolean> {
+  const hash = await hmacHex(env.LINK_KEY, `withdrawal:${email}`);
+  const result = await env.DB.prepare(
+    `INSERT INTO mail_log (id, kind, email_hash, created_at)
+     SELECT ?, 'withdrawal', ?, ?
+     WHERE (SELECT COUNT(*) FROM mail_log WHERE kind = 'withdrawal' AND email_hash = ? AND created_at > ?) < ?`,
+  )
+    .bind(crypto.randomUUID(), hash, new Date().toISOString(), hash, expiryFrom(-1), RECEIPTS_PER_DAY)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+/** What a visitor typed as their name or order, made safe to quote in a letter from us: anything
+ * that could be read as an address — a scheme, a dotted host, an IP — is taken out, after the
+ * invisible characters that could hide one. The free message is not quoted at all. */
 const neutralise = (text: string): string =>
-  text.replace(/\b(?:https?:\/\/|www\.)\S+/gi, '[…]').replace(/\b\S+\.(?:com|net|org|ru|de|io|me|info|xyz|top|link|click)\b\S*/gi, '[…]');
+  text
+    .normalize('NFKC')
+    .replace(/[\u00ad\u200b-\u200f\u2060\ufeff]/g, '')
+    .replace(/\S*(?::\/\/|\b[a-z][a-z0-9+.-]*:(?=\S))\S*/gi, '[…]')
+    .replace(/\S*\d{1,3}(?:\.\d{1,3}){3}\S*/g, '[…]')
+    .replace(/\S+[.。．｡]\p{L}{2,}\S*/gu, '[…]');
 
 /** A withdrawal from a contract, declared with the site's button. The buyer is owed a receipt at
  * once — its content and the moment it arrived — and the owner decides on the refund: whether the
@@ -439,19 +467,19 @@ async function withdraw(request: Request, env: Env): Promise<Response> {
     throw error;
   }
   const receivedAt = new Date().toISOString();
-  const order = await latestOrderFor(env.DB, input.email);
-  const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+  const order = await latestPurchaseFor(env.DB, input.email);
   let receipt: string;
   if (!order) {
-    receipt = 'not sent: no order from this address';
-  } else if ((await lettersSince(env.DB, order.id, 'withdrawal', dayAgo)) >= RECEIPTS_PER_DAY) {
-    receipt = 'not sent: the day\'s receipts for this order are used up';
+    receipt = 'not sent: no paid order from this address';
+  } else if (!(await receiptAllowed(env, input.email))) {
+    receipt = "not sent: the day's receipts for this address are used up";
   } else {
     const sent = await sendWithdrawalReceipt(env, {
-      ...input,
+      locale: input.locale,
+      email: input.email,
       name: neutralise(input.name),
       order: neutralise(input.order),
-      message: neutralise(input.message),
+      hasMessage: input.message.length > 0,
       receivedAt,
     }).catch((error: unknown) => {
       console.error('withdrawal receipt', errorCode(error));

@@ -671,19 +671,13 @@ export async function bumpStat(db: D1Database, key: StatKey): Promise<void> {
     .run();
 }
 
-/** The latest paid-for or pending order placed from an address, if any: a withdrawal's receipt
- * goes only to an address that bought something here. */
-export const latestOrderFor = (db: D1Database, email: string) =>
+/** The latest order an address paid for, if any. A withdrawal's receipt goes only to an address
+ * that bought something here: a pending order costs nothing to make, so it does not count. */
+export const latestPurchaseFor = (db: D1Database, email: string) =>
   db
-    .prepare("SELECT id FROM orders WHERE email = ? AND email <> '' ORDER BY created_at DESC LIMIT 1")
+    .prepare(
+      `SELECT id FROM orders WHERE email = ? AND email <> '' AND status IN ('paid', 'refunded')
+       ORDER BY created_at DESC LIMIT 1`,
+    )
     .bind(email)
     .first<{ id: string }>();
-
-/** How many letters of one kind an order was sent since `since`. */
-export async function lettersSince(db: D1Database, orderId: string, kind: string, since: string): Promise<number> {
-  const row = await db
-    .prepare('SELECT COUNT(*) AS n FROM email_events WHERE order_id = ? AND kind = ? AND created_at >= ?')
-    .bind(orderId, kind, since)
-    .first<{ n: number }>();
-  return row?.n ?? 0;
-}

@@ -110,10 +110,17 @@ const SITE = { 'x-site-key': testEnv.SITE_KEY, 'content-type': 'application/json
 const withdraw = (body: unknown, headers: Record<string, string> = SITE) =>
   SELF.fetch('https://jobs.test/v1/withdrawals', { method: 'POST', headers, body: JSON.stringify(body) });
 
+/** An order `email` paid for. */
+async function paidOrder(email: string) {
+  const seeded = await pendingOrder(email, 'de');
+  await testEnv.DB.prepare("UPDATE orders SET status = 'paid' WHERE id = ?").bind(seeded.orderId).run();
+  return seeded;
+}
+
 describe('a withdrawal declared on the site', () => {
   it('gets the buyer a receipt with its content and the moment it arrived, and tells the owner', async () => {
     const email = 'widerruf@confirm.test';
-    await pendingOrder(email, 'de');
+    await paidOrder(email);
     const response = await withdraw({
       locale: 'de',
       name: 'Anna Beispiel',
@@ -127,36 +134,43 @@ describe('a withdrawal declared on the site', () => {
 
     const [receipt] = await letters(email);
     expect(receipt?.subject).toBe('Eingangsbestätigung Ihres Widerrufs');
-    for (const part of ['Anna Beispiel', email, 'Bestellung vom 2. November', 'Ich möchte den Vertrag widerrufen.', 'Eingegangen am']) {
+    for (const part of ['Anna Beispiel', email, 'Bestellung vom 2. November', 'Eingegangen am', 'liegt uns vor']) {
       expect(receipt?.text, part).toContain(part);
     }
+    // The visitor's own words go to the owner, never back out under our name.
+    expect(receipt?.text).not.toContain('Ich möchte den Vertrag widerrufen.');
     const told = (await letters('owner@alerts.test')).filter((l) => l.text.includes(email));
     expect(told).toHaveLength(1);
     expect(told[0]?.subject).toContain('Withdrawal from a contract');
+    expect(told[0]?.text).toContain('Ich möchte den Vertrag widerrufen.');
   });
 
-  it('mails nothing to an address that never ordered, and answers the same', async () => {
-    const email = 'fremd@confirm.test';
-    const response = await withdraw({ locale: 'de', name: 'Jemand', email, message: 'https://evil.example/login' });
-    expect(response.status).toBe(202);
-    expect(await letters(email)).toEqual([]);
-    const told = (await letters('owner@alerts.test')).filter((l) => l.text.includes(email));
-    expect(told[0]?.text).toContain('not sent: no order from this address');
-  });
-
-  it('quotes no link back, and sends one order at most three receipts a day', async () => {
-    const email = 'viermal@confirm.test';
-    await pendingOrder(email, 'de');
-    for (let i = 0; i < 4; i++) {
-      expect(
-        (await withdraw({ locale: 'de', name: 'Anna', email, message: `Bitte hier klicken: https://evil.example/${i} oder evil.com` }))
-          .status,
-      ).toBe(202);
+  it('mails nothing to an address that never paid — not even with a pending order — and answers the same', async () => {
+    const stranger = 'fremd@confirm.test';
+    const unpaid = 'offen@confirm.test';
+    await pendingOrder(unpaid, 'de');
+    for (const email of [stranger, unpaid]) {
+      const response = await withdraw({ locale: 'de', name: 'Jemand', email, message: 'Hallo' });
+      expect(response.status).toBe(202);
+      expect(await letters(email)).toEqual([]);
+      const told = (await letters('owner@alerts.test')).filter((l) => l.text.includes(email));
+      expect(told[0]?.text).toContain('not sent: no paid order from this address');
     }
+  });
+
+  it('quotes no link back, and sends one address at most three receipts a day', async () => {
+    const email = 'viermal@confirm.test';
+    await paidOrder(email);
+    const name = 'Anna https://evil.example/x evil.co hxxp:evil 192.168.0.1 ev\u200bil.com';
+    const sent = await Promise.all(
+      [0, 1, 2, 3].map(() => withdraw({ locale: 'de', name, email, order: 'Klick: evil.shop/login' })),
+    );
+    expect(sent.map((r) => r.status)).toEqual([202, 202, 202, 202]);
     const receipts = await letters(email);
     expect(receipts).toHaveLength(3);
-    expect(receipts[0]?.text).not.toContain('evil');
-    expect(receipts[0]?.text).toContain('Bitte hier klicken: […] oder […]');
+    expect(receipts[0]?.text).not.toMatch(/evil|192\.168/);
+    expect(receipts[0]?.text).toContain('Name: Anna […]');
+    expect(receipts[0]?.text).toContain('Bestellung: Klick: […]');
   });
 
   it('refuses a declaration without a name or an address, and one without the site key', async () => {

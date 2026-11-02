@@ -511,6 +511,7 @@ interface ReceiptCopy {
   email: string;
   order: string;
   message: string;
+  messageKept: string;
   next: string;
 }
 
@@ -523,6 +524,7 @@ const RECEIPT: Record<string, ReceiptCopy> = {
     email: 'Почта',
     order: 'Заказ',
     message: 'Сообщение',
+    messageKept: 'получено, мы его прочитаем',
     next: 'Мы ответим в течение двух рабочих дней. Если вам положен возврат, деньги вернутся тем же способом, которым вы платили.',
   },
   uk: {
@@ -533,6 +535,7 @@ const RECEIPT: Record<string, ReceiptCopy> = {
     email: 'Пошта',
     order: 'Замовлення',
     message: 'Повідомлення',
+    messageKept: 'отримано, ми його прочитаємо',
     next: 'Ми відповімо протягом двох робочих днів. Якщо вам належить повернення, гроші повернуться тим самим способом, яким ви платили.',
   },
   en: {
@@ -543,6 +546,7 @@ const RECEIPT: Record<string, ReceiptCopy> = {
     email: 'Email',
     order: 'Order',
     message: 'Message',
+    messageKept: 'received; we will read it',
     next: 'We will reply within two working days. If a refund is due, it goes back the way you paid.',
   },
   de: {
@@ -553,6 +557,7 @@ const RECEIPT: Record<string, ReceiptCopy> = {
     email: 'E-Mail',
     order: 'Bestellung',
     message: 'Nachricht',
+    messageKept: 'liegt uns vor; wir lesen sie',
     next: 'Wir melden uns innerhalb von zwei Werktagen. Steht Ihnen eine Rückzahlung zu, erfolgt sie über dasselbe Zahlungsmittel, mit dem Sie bezahlt haben.',
   },
 };
@@ -562,7 +567,9 @@ export interface WithdrawalInput {
   name: string;
   email: string;
   order: string;
-  message: string;
+  /** Whether the visitor wrote a message. Its words go to the owner, never back out in a letter
+   * from us: the receipt is not a way to mail someone a text of a stranger's choosing. */
+  hasMessage: boolean;
   receivedAt: string;
 }
 
@@ -578,7 +585,7 @@ export async function sendWithdrawalReceipt(env: Env, input: WithdrawalInput): P
     [copy.email, input.email],
   ];
   if (input.order) lines.push([copy.order, input.order]);
-  if (input.message) lines.push([copy.message, input.message]);
+  if (input.hasMessage) lines.push([copy.message, copy.messageKept]);
   const parts: Part[] = [{ paragraphs: [copy.intro] }, { lines }, { paragraphs: [copy.next, sellerLine(locale)] }];
   const sign = 'Chronika · chronika.me';
   return deliver(env, {
