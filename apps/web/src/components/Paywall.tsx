@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import { forecastYears } from '@/components/Landing';
 import { OfferPrice } from '@/components/OfferPrice';
 import { StickyBuy } from '@/components/StickyBuy';
+import type { Discount } from '@/lib/pricing';
 
 const PAGES = [0, 1, 2] as const;
 const ITEMS = [0, 1, 2, 3] as const;
@@ -39,12 +40,14 @@ export function Paywall({
   checkoutHref,
   price,
   full,
+  discount,
   dates,
 }: {
   checkoutHref: string;
   price: string;
   /** The price without the offer, while one runs. */
   full: string | null;
+  discount: Discount | null;
   dates: TransitHint[];
 }) {
   const t = useTranslations('paywall');
@@ -97,7 +100,7 @@ export function Paywall({
         </ul>
         {full ? (
           <p className="paywall-price">
-            <OfferPrice price={price} full={full} />
+            <OfferPrice price={price} full={full} discount={discount} />
           </p>
         ) : null}
         <Link className="btn btn-primary btn-lg" href={checkoutHref}>

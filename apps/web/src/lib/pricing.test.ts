@@ -53,6 +53,38 @@ describe('the offer', () => {
     expect(bundlePrice('DE', AFTER).full).toBeNull();
   });
 
+  it('is not added to a promo code: the larger of the two applies', () => {
+    const code = { code: 'XMAS30', percent: 30, starts: new Date(0), ends: new Date('2100-01-01') };
+    expect(bundlePrice('DE', DURING, code)).toMatchObject({
+      amount: 1700,
+      discount: { percent: 50, code: null },
+    });
+    expect(bundlePrice('DE', AFTER, code)).toMatchObject({
+      amount: 2400,
+      full: { amount: 3500 },
+      discount: { percent: 30, code: 'XMAS30' },
+    });
+    const bigger = { ...code, code: 'BIG60', percent: 60 };
+    expect(bundlePrice('DE', DURING, bigger)).toMatchObject({
+      amount: 1400,
+      discount: { code: 'BIG60' },
+    });
+  });
+
+  it('ignores a code outside its days', () => {
+    const later = {
+      code: 'LATER',
+      percent: 30,
+      starts: new Date('2100-01-01'),
+      ends: new Date('2100-02-01'),
+    };
+    expect(bundlePrice('DE', AFTER, later)).toMatchObject({
+      amount: 3500,
+      full: null,
+      discount: null,
+    });
+  });
+
   it('leaves the other products alone', () => {
     expect(priceFor('natal', 'DE').amount).toBe(1900);
   });

@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { forecastYears } from '@/components/Landing';
 import { locales } from '@/i18n/routing';
-import { type bundlePrice, OFFER } from '@/lib/pricing';
+import type { BundlePrice } from '@/lib/pricing';
 import { SELLER, SITE_URL, url } from '@/lib/seo';
 
 /** What the page says about itself in a machine's words.
@@ -16,13 +16,7 @@ import { SELLER, SITE_URL, url } from '@/lib/seo';
  */
 const FAQ_COUNT = 11;
 
-export async function StructuredData({
-  locale,
-  price,
-}: {
-  locale: string;
-  price: ReturnType<typeof bundlePrice>;
-}) {
+export async function StructuredData({ locale, price }: { locale: string; price: BundlePrice }) {
   const t = await getTranslations({ locale, namespace: 'landing' });
   const meta = await getTranslations({ locale, namespace: 'meta' });
   const years = forecastYears();
@@ -73,8 +67,10 @@ export async function StructuredData({
       '@type': 'Offer',
       price: price.amount / 100,
       priceCurrency: price.currency,
-      ...(price.full
-        ? { priceValidUntil: new Date(OFFER.ends.getTime() - 1).toISOString().slice(0, 10) }
+      ...(price.discount
+        ? {
+            priceValidUntil: new Date(price.discount.ends.getTime() - 1).toISOString().slice(0, 10),
+          }
         : {}),
       availability: 'https://schema.org/InStock',
       url: url(locale, '/start?p=bundle'),

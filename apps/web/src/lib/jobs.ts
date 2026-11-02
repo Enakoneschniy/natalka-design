@@ -14,6 +14,9 @@ export interface OrderRequest {
   country?: string;
   amount_minor: number;
   currency: string;
+  /** The promo code the price was worked out with; the jobs worker keeps it as the order's
+   * price variant. */
+  variant?: string | null;
   /** Their answer to the cookie question, and the campaign that brought them. */
   consent?: string | null;
   source?: string | null;

@@ -3,6 +3,7 @@ import { browserFrom } from '@/lib/conversions';
 import { createOrder, isStripeCheckout } from '@/lib/jobs';
 import { CONSENT_COOKIE, readConsent, readSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { bundlePrice, priceFor } from '@/lib/pricing';
+import { activePromo, PROMO_COOKIE } from '@/lib/promo';
 import { invalid, notSameOrigin, readJson, relayFailure, unavailable } from '@/lib/route';
 import { checkOrder } from '@/lib/validate';
 
@@ -34,9 +35,12 @@ export async function POST(request: NextRequest) {
   const source = readSource(request.cookies.get(SOURCE_COOKIE)?.value);
   // The checkout and the payment are reported to Meta from the jobs worker, from this browser.
   const browser = browserFrom(request.headers, request.cookies);
-  // The figure the paywall showed, offer and all, from the same table: a price that arrived in
-  // the request body would be a price the buyer chose.
-  const price = product === 'bundle' ? bundlePrice(country) : priceFor(product, country);
+  // The figure the paywall showed, offer or code and all, from the same table: a price that
+  // arrived in the request body would be a price the buyer chose. The code is read from its
+  // cookie and looked up again here, so an expired one is not honoured however it is carried.
+  const promo = activePromo(request.cookies.get(PROMO_COOKIE)?.value);
+  const bundle = product === 'bundle' ? bundlePrice(country, new Date(), promo) : null;
+  const price = bundle ?? priceFor(product, country);
 
   let result: Awaited<ReturnType<typeof createOrder>>;
   try {
@@ -45,6 +49,9 @@ export async function POST(request: NextRequest) {
       country: country ?? undefined,
       amount_minor: price.amount,
       currency: price.currency,
+      // The order's price variant: the code it was priced with, so a sale can be traced to the
+      // video or the letter that gave the code out.
+      variant: bundle?.discount?.code ?? null,
       consent,
       source,
       ...(browser ? { browser } : {}),

@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -14,6 +14,7 @@ import { reportView } from '@/lib/conversions';
 import demo from '@/lib/demo-chart.json';
 import { signedPreview } from '@/lib/preview';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
+import { activePromo, PROMO_COOKIE } from '@/lib/promo';
 import { count } from '@/lib/stats';
 
 /** One visitor's own page: never indexed, open shop or not. */
@@ -221,7 +222,8 @@ export default async function PreviewPage({
 
   // The price the paywall quotes and the price the order is charged at come from the same
   // function, so they cannot drift apart.
-  const bundle = bundlePrice(country);
+  const promo = activePromo((await cookies()).get(PROMO_COOKIE)?.value);
+  const bundle = bundlePrice(country, new Date(), promo);
   // Two events, because the gap between them is the question: how many read the preview, and
   // how many of those reach the offer at the end of it.
   await count('preview');
@@ -339,6 +341,7 @@ export default async function PreviewPage({
           checkoutHref={checkout('bundle')}
           price={bundle.formatted}
           full={bundle.full?.formatted ?? null}
+          discount={bundle.discount}
           dates={hints}
         />
       </div>

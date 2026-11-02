@@ -405,8 +405,14 @@
   margin-bottom: 16px;
   font-size: 22px;
 }
+.summary-card .item > div {
+  min-width: 0;
+}
+/* A code's terms can be longer than the column beside the price leaves. */
 .summary-card .item .offer-tag {
   margin-top: 8px;
+  white-space: normal;
+  border-radius: 10px;
 }
 /* In the order's narrow price column the two figures stand one above the other. */
 .summary-card .item .offer-price {
@@ -418,6 +424,9 @@
 .film-under .offer-tag {
   display: table;
   margin: 0 auto 8px 0;
+  /* A code's terms run longer than the offer's: they wrap rather than widen the screen. */
+  white-space: normal;
+  border-radius: 10px;
 }
 @media (max-width: 1000px), (orientation: portrait) {
   .film-under .offer-tag {
@@ -2611,6 +2620,50 @@ main > .hero-film:first-child {
   display: block;
   font-size: 14px;
   margin-top: 2px;
+}
+/* The promo code: a field and its button on one line, or the code that applies. */
+.promo-field,
+.promo-applied {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+.promo-field .label {
+  display: block;
+  margin-bottom: 8px;
+}
+.promo-row {
+  display: flex;
+  gap: 10px;
+}
+.promo-row .input {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-transform: uppercase;
+}
+.promo-row .btn {
+  flex: 0 0 auto;
+}
+.promo-field .hint {
+  display: block;
+  margin-top: 6px;
+}
+.promo-applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  font-size: 15px;
+  color: var(--color-accent);
+}
+.promo-applied .btn {
+  min-height: 0;
+  padding: 6px 14px;
+  font-size: 14px;
+}
+.promo-applied .caption {
+  flex-basis: 100%;
+  margin: 0;
 }
 .summary-card .total {
   display: flex;

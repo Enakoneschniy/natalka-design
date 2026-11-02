@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import { OfferTag } from '@/components/OfferPrice';
 import { Wheel } from '@/components/Wheel';
 import type { ChartFacts } from '@/lib/chart';
+import type { Discount } from '@/lib/pricing';
 
 /* The first screen.
  *
@@ -29,15 +30,15 @@ export function HeroFilm({
   locale,
   angle,
   years,
-  offer,
+  discount,
 }: {
   facts: ChartFacts;
   locale: string;
   /** Which of the three headlines this visitor's advert promised. */
   angle: 'dates' | 'home' | 'love';
   years: { from: number; next: number; year: number };
-  /** Whether the offer runs: the advert names it, so the first screen repeats it. */
-  offer: boolean;
+  /** The offer or the visitor's code: the advert names it, so the first screen repeats it. */
+  discount: Discount | null;
 }) {
   const t = useTranslations('landing');
 
@@ -82,7 +83,7 @@ export function HeroFilm({
             <span aria-hidden="true">→</span>
           </Link>
           <p className="caption film-under">
-            {offer ? <OfferTag long /> : null}
+            {discount ? <OfferTag discount={discount} long /> : null}
             {t('hero.under')}
           </p>
         </div>

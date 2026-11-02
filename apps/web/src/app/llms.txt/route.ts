@@ -1,5 +1,5 @@
 import { forecastYears } from '@/components/Landing';
-import { bundlePrice, OFFER, offerLastDay } from '@/lib/pricing';
+import { bundlePrice, lastDay } from '@/lib/pricing';
 import { INDEXABLE, SELLER, SITE_URL } from '@/lib/seo';
 import ru from '../../../messages/ru.json';
 
@@ -35,8 +35,8 @@ const asks = ru.landing.asks.items.map((item) => `- ${fill(item)}`).join('\n');
 /** The euro price, and the offer while it runs; other currencies are named as such. */
 const price = (): string => {
   const euro = bundlePrice('DE');
-  return euro.full
-    ? `${euro.formatted} вместо ${euro.full.formatted} — скидка ${OFFER.percent}% до ${offerLastDay('ru')}; в других странах — в местной валюте.`
+  return euro.full && euro.discount
+    ? `${euro.formatted} вместо ${euro.full.formatted} — скидка ${euro.discount.percent}% до ${lastDay(euro.discount.ends, 'ru')}; в других странах — в местной валюте.`
     : `${euro.formatted}; в других странах — в местной валюте.`;
 };
 

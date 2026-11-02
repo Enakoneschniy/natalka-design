@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { setRequestLocale } from 'next-intl/server';
 import { ANGLES, type Angle, Landing } from '@/components/Landing';
 import { Marketing } from '@/components/Marketing';
@@ -7,6 +7,7 @@ import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
 import { bundlePrice } from '@/lib/pricing';
+import { activePromo, PROMO_COOKIE } from '@/lib/promo';
 import { count } from '@/lib/stats';
 
 const facts = demo as unknown as ChartFacts;
@@ -22,10 +23,15 @@ export default async function LandingPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const asked = (await searchParams).h;
+  const search = await searchParams;
+  const asked = search.h;
   const angle = (Array.isArray(asked) ? asked[0] : asked) ?? '';
   // The price is the visitor's own, in their currency, and the same figure the paywall will show.
-  const price = bundlePrice((await headers()).get('cf-ipcountry'));
+  // A code in the link counts on this very visit: the cookie the middleware sets for it only
+  // arrives with the next request.
+  const linked = Array.isArray(search.code) ? search.code[0] : search.code;
+  const promo = activePromo(linked) ?? activePromo((await cookies()).get(PROMO_COOKIE)?.value);
+  const price = bundlePrice((await headers()).get('cf-ipcountry'), new Date(), promo);
   const chosen = (ANGLES as readonly string[]).includes(angle) ? (angle as Angle) : 'dates';
   await count('landing', { angle: chosen });
   return (

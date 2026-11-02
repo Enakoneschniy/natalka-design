@@ -9,6 +9,8 @@
  * bundle is €35 since the price test ended on 2026-11-02: the higher of its two figures.
  */
 
+import type { PromoCode } from './promo';
+
 export const PRODUCTS = ['natal', 'forecast', 'synastry', 'child', 'bundle'] as const;
 export type ProductKey = (typeof PRODUCTS)[number];
 
@@ -124,7 +126,7 @@ export function subscriptionPrice(country: string | null | undefined): {
   return { currency, amount, formatted: format(amount, currency) };
 }
 
-/* ---------- the offer ---------- */
+/* ---------- the offer and promo codes ---------- */
 
 /** Half off the reading while the first advertising runs, to the end of 7 November by Central
  * European time; at midnight the full price comes back by itself. Agreed with the owner on
@@ -135,22 +137,40 @@ export const OFFER = {
   ends: new Date('2026-11-08T00:00:00+01:00'),
 } as const;
 
-/** "7 ноября": the last day of the offer, as the advert names it. */
-export const offerLastDay = (locale: string): string =>
+/** What lowers the price this visitor pays: the offer everyone gets, or a code they brought. */
+export interface Discount {
+  percent: number;
+  /** The first moment it no longer applies. */
+  ends: Date;
+  /** The promo code, or null for the offer. */
+  code: string | null;
+}
+
+/** "7 ноября": the last day a discount applies, as an advert names it. */
+export const lastDay = (ends: Date, locale: string): string =>
   new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'long',
     timeZone: 'Europe/Berlin',
-  }).format(new Date(OFFER.ends.getTime() - 1));
+  }).format(new Date(ends.getTime() - 1));
 
-/** What the reading costs this visitor and, while the offer runs, what it costs without it — the
- * struck-through figure beside it. The paywall, the order screen and the order itself all ask
- * here, so the figure shown is the figure charged. The offer price is rounded down to whole
+export const offerLastDay = (locale: string): string => lastDay(OFFER.ends, locale);
+
+export interface BundlePrice extends Price {
+  /** The price without the discount — the struck-through figure beside it — or null. */
+  full: Price | null;
+  discount: Discount | null;
+}
+
+/** What the reading costs this visitor: the full price, less the larger of the offer and their
+ * promo code — the two do not add up. The paywall, the order screen and the order itself all ask
+ * here, so the figure shown is the figure charged. A discounted price is rounded down to whole
  * units: every price on the site is a whole number, and rounding down keeps "−50%" true. */
 export function bundlePrice(
   country: string | null | undefined,
   now: Date = new Date(),
-): Price & { full: Price | null } {
+  promo: Pick<PromoCode, 'code' | 'percent' | 'starts' | 'ends'> | null = null,
+): BundlePrice {
   const currency = currencyFor(country);
   const listed = TABLE[currency].bundle;
   const full: Price = {
@@ -159,7 +179,23 @@ export function bundlePrice(
     amount: listed,
     formatted: format(listed, currency),
   };
-  if (now >= OFFER.ends) return { ...full, full: null };
-  const amount = Math.floor((listed * (100 - OFFER.percent)) / 10_000) * 100;
-  return { product: 'bundle', currency, amount, formatted: format(amount, currency), full };
+  const candidates: Discount[] = [];
+  if (now < OFFER.ends) candidates.push({ percent: OFFER.percent, ends: OFFER.ends, code: null });
+  if (promo && now >= promo.starts && now < promo.ends) {
+    candidates.push({ percent: promo.percent, ends: promo.ends, code: promo.code });
+  }
+  const discount = candidates.reduce<Discount | null>(
+    (best, next) => (best && best.percent >= next.percent ? best : next),
+    null,
+  );
+  if (!discount) return { ...full, full: null, discount: null };
+  const amount = Math.floor((listed * (100 - discount.percent)) / 10_000) * 100;
+  return {
+    product: 'bundle',
+    currency,
+    amount,
+    formatted: format(amount, currency),
+    full,
+    discount,
+  };
 }

@@ -1,10 +1,12 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { OfferPrice, OfferTag } from '@/components/OfferPrice';
+import { PromoField } from '@/components/PromoField';
 import { StartGeneration } from '@/components/StartGeneration';
 import { Stepper } from '@/components/Stepper';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
+import { activePromo, PROMO_COOKIE } from '@/lib/promo';
 import { count } from '@/lib/stats';
 import { cleanText, MAX_NAME, MAX_PLACE } from '@/lib/validate';
 
@@ -37,12 +39,22 @@ export default async function CheckoutPage({
   const search = await searchParams;
   const t = await getTranslations({ locale, namespace: 'checkout' });
   const tp = await getTranslations({ locale, namespace: 'products' });
+  const to = await getTranslations({ locale, namespace: 'offer' });
 
   const country = (await headers()).get('cf-ipcountry');
   const product = isProduct(one(search.p)) ? (one(search.p) as ProductKey) : 'natal';
-  const bundle = product === 'bundle' ? bundlePrice(country) : null;
+  const promo = activePromo((await cookies()).get(PROMO_COOKIE)?.value);
+  const bundle = product === 'bundle' ? bundlePrice(country, new Date(), promo) : null;
   const price = bundle ?? priceFor(product, country);
   const full = bundle?.full?.formatted ?? null;
+  // The code the visitor carries — its terms are on the line above — and whether a larger
+  // discount is in force instead, since the two do not add up.
+  const applied = promo
+    ? {
+        label: to('applied', { code: promo.code }),
+        outdone: bundle?.discount?.code !== promo.code,
+      }
+    : null;
   await count('checkout');
 
   const birth = [
@@ -105,10 +117,15 @@ export default async function CheckoutPage({
             <div>
               <strong>{tp(`${product}.title`)}</strong>
               <span className="muted">{tp(`${product}.meta`)}</span>
-              {full ? <OfferTag /> : null}
+              {bundle?.discount ? <OfferTag discount={bundle.discount} /> : null}
             </div>
             <span className="mono">
-              <OfferPrice price={price.formatted} full={full} tag={false} />
+              <OfferPrice
+                price={price.formatted}
+                full={full}
+                discount={bundle?.discount ?? null}
+                tag={false}
+              />
             </span>
           </div>
           {birth.length > 0 ? (
@@ -119,6 +136,7 @@ export default async function CheckoutPage({
               </div>
             </div>
           ) : null}
+          {product === 'bundle' ? <PromoField applied={applied} /> : null}
           <div className="total">
             <span>{t('total')}</span>
             <span className="num">{price.formatted}</span>

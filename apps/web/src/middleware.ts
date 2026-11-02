@@ -4,6 +4,7 @@ import createMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/routing';
 import { cleanSource, readSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { isProHost } from '@/lib/pro/host';
+import { activePromo, PROMO_COOKIE, promoMaxAge } from '@/lib/promo';
 import { isClosedCountry } from '@/lib/region';
 import { INDEXABLE, isPrivatePath } from '@/lib/seo';
 
@@ -56,6 +57,20 @@ export async function middleware(request: NextRequest) {
   const source = cleanSource(request.nextUrl.searchParams.get('utm_source'));
   if (source && !readSource(request.cookies.get(SOURCE_COOKIE)?.value)) {
     response.cookies.set(SOURCE_COOKIE, source, { sameSite: 'lax', secure: true, path: '/' });
+  }
+
+  // A promo code in the link — a video's description, a letter — is kept for the rest of the
+  // visit and the days after it, until the code itself ends. Only a code that applies now is
+  // kept; a later one in a link replaces it.
+  const linked = activePromo(request.nextUrl.searchParams.get('code'));
+  if (linked) {
+    response.cookies.set(PROMO_COOKIE, linked.code, {
+      maxAge: promoMaxAge(linked),
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: true,
+      path: '/',
+    });
   }
 
   // The header repeats what the page metadata says, for the crawlers that read one and not the

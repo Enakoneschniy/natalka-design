@@ -1,6 +1,25 @@
 import { NextRequest } from 'next/server';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { middleware } from './middleware';
+
+/** One code that applies for as long as the tests run, larger than any offer. */
+vi.mock('@/lib/promo', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/promo')>();
+  const codes = [
+    {
+      code: 'TESTCODE',
+      percent: 60,
+      starts: new Date('2020-01-01'),
+      ends: new Date('2100-01-01'),
+      note: 'test',
+    },
+  ];
+  return {
+    ...actual,
+    activePromo: (value: unknown, now?: Date) => actual.activePromo(value, now, codes),
+    lookupPromo: (value: unknown, now?: Date) => actual.lookupPromo(value, now, codes),
+  };
+});
 
 const request = (url: string, headers: Record<string, string>) => new NextRequest(url, { headers });
 
@@ -87,6 +106,15 @@ describe('middleware: the cabinet host', () => {
     const cleared = (await visit('cx=a.c2lnbmF0dXJl')).headers.get('set-cookie') ?? '';
     expect(cleared).toMatch(/\bcx=;/);
     expect(cleared).toMatch(/Max-Age=0/i);
+  });
+
+  it('keeps a promo code from the link, and only one that applies', async () => {
+    const visit = (query: string) =>
+      middleware(request(`https://chronika.me/ru${query}`, { host: 'chronika.me' }));
+    const kept = (await visit('?code=testcode')).cookies.get('chr_promo');
+    expect(kept?.value).toBe('TESTCODE');
+    expect(kept?.httpOnly).toBe(true);
+    expect((await visit('?code=NOSUCH')).cookies.get('chr_promo')).toBeUndefined();
   });
 
   it('keeps Russia out of the cabinet too', async () => {

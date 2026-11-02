@@ -59,6 +59,14 @@ The offer — −50% on the bundle to the end of 7 November, CET — is `OFFER` 
 `apps/web/src/lib/pricing.ts`. It ends by itself: no release is needed for the full price to come
 back. Another offer is a new `percent` and `ends` there, and a release of natalka-web.
 
+Promo codes are `CODES` in `apps/web/src/lib/promo.ts`: a code (letters and digits, 3–16), a
+percent, the first moment it applies and the first moment it no longer does, and where it was
+given out. A new code is an entry there and a release of natalka-web. A visitor brings it in a
+link (`https://chronika.me/ru?code=XMAS30`, kept in the `chr_promo` cookie until the code ends) or
+types it on the order screen. The larger of the offer and the code applies; they do not add up.
+The order keeps the code it was priced with in `orders.variant`, so sales per code are
+`SELECT variant, COUNT(*) FROM orders WHERE status = 'paid' GROUP BY variant`.
+
 ## The model
 
 Texts are written by `claude-sonnet-5`, reached through the AI Gateway `natalka` by one route at

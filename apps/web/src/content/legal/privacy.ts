@@ -19,7 +19,7 @@ _Редакция от 2 ноября 2026 г. Оператор: coremind s. r. 
 
 ## Cookie и реклама
 
-Сайт ставит свои технические cookie: ваш ответ на вопрос о cookie (на год) и название рекламной кампании, по которой вы пришли (без идентификаторов, до закрытия браузера). Посещения мы считаем сами и через Cloudflare Web Analytics — без cookie.
+Сайт ставит свои технические cookie: ваш ответ на вопрос о cookie (на год), промокод — если вы ввели его или пришли по ссылке с ним (до конца срока его действия) — и название рекламной кампании, по которой вы пришли (без идентификаторов, до закрытия браузера). Посещения мы считаем сами и через Cloudflare Web Analytics — без cookie.
 
 Рекламные теги (Meta, Google, TikTok) загружаются, только если вы нажали «Разрешить», и только на страницах без личных данных: на главной, в документах и на пустой форме. На страницах с картой, заказом, оплатой, ожиданием документа и подпиской их нет — туда не попадают ни данные рождения, ни ссылки на документ.
 
@@ -66,7 +66,7 @@ _Редакція від 2 листопада 2026 р. Оператор: coremin
 
 ## Cookie і реклама
 
-Сайт ставить власні технічні cookie: вашу відповідь на питання про cookie (на рік) і назву рекламної кампанії, з якої ви прийшли (без ідентифікаторів, до закриття браузера). Відвідування ми рахуємо самі та через Cloudflare Web Analytics — без cookie.
+Сайт ставить власні технічні cookie: вашу відповідь на питання про cookie (на рік), промокод — якщо ви ввели його або прийшли за посиланням із ним (до кінця строку його дії) — і назву рекламної кампанії, з якої ви прийшли (без ідентифікаторів, до закриття браузера). Відвідування ми рахуємо самі та через Cloudflare Web Analytics — без cookie.
 
 Рекламні теги (Meta, Google, TikTok) завантажуються, лише якщо ви натиснули «Дозволити», і лише на сторінках без особистих даних: на головній, у документах і на порожній формі. На сторінках з картою, замовленням, оплатою, очікуванням документа та підпискою їх немає — туди не потрапляють ні дані народження, ні посилання на документ.
 
@@ -113,7 +113,7 @@ Birth data serves one purpose: computing the positions of the planets and writin
 
 ## Cookies and advertising
 
-The site sets its own technical cookies: your answer to the cookie question (for a year) and the name of the advertising campaign that brought you (no identifiers, until the browser is closed). We count visits ourselves and with Cloudflare Web Analytics, without cookies.
+The site sets its own technical cookies: your answer to the cookie question (for a year), a promo code — if you entered one or followed a link with one (until the code ends) — and the name of the advertising campaign that brought you (no identifiers, until the browser is closed). We count visits ourselves and with Cloudflare Web Analytics, without cookies.
 
 Advertising tags (Meta, Google, TikTok) load only if you pressed "Allow", and only on pages without personal data: the home page, the documents and the empty form. Pages with your chart, your order, the payment, the waiting screen and your subscription carry none — neither birth data nor document links reach them.
 

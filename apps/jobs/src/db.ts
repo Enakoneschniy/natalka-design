@@ -15,7 +15,8 @@ export interface OrderRow {
   amount_minor: number;
   currency: string;
   status: string;
-  /** Which side of the price experiment this order was shown. */
+  /** The order's price variant: the side of the price test it was shown (until 2026-11-02), and
+   * since then the promo code it was priced with. */
   variant: string | null;
   /** The visitor's answer to the cookie question, as it stood when they bought. */
   consent: string | null;

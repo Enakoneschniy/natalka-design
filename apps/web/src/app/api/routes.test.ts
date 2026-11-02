@@ -6,6 +6,7 @@ import { POST as resume } from './jobs/[token]/checkout/route';
 import { GET as status } from './jobs/[token]/route';
 import { POST as order } from './orders/route';
 import { POST as preview } from './preview/route';
+import { DELETE as dropPromo, POST as promo } from './promo/route';
 import {
   PATCH as changeSubscription,
   GET as subscription,
@@ -14,6 +15,25 @@ import {
 import { POST as oneClick, GET as oneClickPage } from './subscriptions/[token]/unsubscribe/route';
 import { POST as confirm } from './subscriptions/confirm/route';
 import { POST as subscribe } from './subscriptions/route';
+
+/** One code that applies for as long as the tests run, larger than any offer. */
+vi.mock('@/lib/promo', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/promo')>();
+  const codes = [
+    {
+      code: 'TESTCODE',
+      percent: 60,
+      starts: new Date('2020-01-01'),
+      ends: new Date('2100-01-01'),
+      note: 'test',
+    },
+  ];
+  return {
+    ...actual,
+    activePromo: (value: unknown, now?: Date) => actual.activePromo(value, now, codes),
+    lookupPromo: (value: unknown, now?: Date) => actual.lookupPromo(value, now, codes),
+  };
+});
 
 const SHOP = 'chronika.me';
 
@@ -144,6 +164,29 @@ describe('shop API routes and the jobs worker', () => {
     expect(await broken.text()).not.toContain('internal');
   });
 
+  describe('promo codes', () => {
+    it('keeps a code that applies, and names the reason for one that does not', async () => {
+      const ok = await promo(send('/api/promo', { code: ' testcode ' }));
+      expect(ok.status).toBe(200);
+      expect(await ok.json()).toEqual({ ok: true, code: 'TESTCODE', percent: 60 });
+      expect(ok.headers.get('set-cookie')).toMatch(/chr_promo=TESTCODE;.*HttpOnly/i);
+      const unknown = await promo(send('/api/promo', { code: 'NOSUCH' }));
+      expect(unknown.status).toBe(422);
+      expect(await unknown.json()).toEqual({ ok: false, reason: 'unknown' });
+      expect(unknown.headers.get('set-cookie')).toBeNull();
+    });
+
+    it('refuses a code sent from another site, and lets the visitor drop theirs', async () => {
+      const forged = await promo(
+        send('/api/promo', { code: 'TESTCODE' }, 'POST', { 'sec-fetch-site': 'cross-site' }),
+      );
+      expect(forged.status).toBe(403);
+      const dropped = await dropPromo(send('/api/promo', undefined, 'DELETE'));
+      expect(dropped.status).toBe(204);
+      expect(dropped.headers.get('set-cookie')).toMatch(/chr_promo=;.*Max-Age=0/i);
+    });
+  });
+
   describe('orders', () => {
     const created = { order_id: 'o1', job_id: 'j1', token: 'a.b.c' };
 
@@ -182,6 +225,7 @@ describe('shop API routes and the jobs worker', () => {
           'locale',
           'product',
           'source',
+          'variant',
         ].sort(),
       );
       expect(body).toMatchObject({
@@ -195,6 +239,26 @@ describe('shop API routes and the jobs worker', () => {
         source: 'meta',
       });
       expect(body.birth_second.name).toBe('Борис');
+    });
+
+    it('prices the reading with the code the visitor carries, and says which code', async () => {
+      fetchMock.mockResolvedValueOnce(reply(201, created));
+      await order(
+        send('/api/orders', { ...validOrder, product: 'bundle' }, 'POST', {
+          'cf-ipcountry': 'DE',
+          cookie: 'chr_promo=TESTCODE',
+        }),
+      );
+      expect(forwarded().body).toMatchObject({ amount_minor: 1400, variant: 'TESTCODE' });
+      fetchMock.mockResolvedValueOnce(reply(201, created));
+      await order(
+        send('/api/orders', { ...validOrder, product: 'bundle' }, 'POST', {
+          'cf-ipcountry': 'DE',
+          cookie: 'chr_promo=FORGED',
+        }),
+      );
+      expect(forwarded(1).body.variant).toBeNull();
+      expect(forwarded(1).body.amount_minor).not.toBe(1400);
     });
 
     it('sends the browser along only after a yes to the cookies, for the reports to Meta', async () => {

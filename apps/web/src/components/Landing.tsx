@@ -5,7 +5,7 @@ import { OfferPrice } from '@/components/OfferPrice';
 import { SampleGallery } from '@/components/SampleGallery';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
-import type { bundlePrice } from '@/lib/pricing';
+import type { BundlePrice } from '@/lib/pricing';
 
 /* The landing for one product.
  *
@@ -38,7 +38,7 @@ export function Landing({
   facts: ChartFacts;
   angle: Angle;
   /** This visitor's price, the same the paywall will quote. */
-  price: ReturnType<typeof bundlePrice>;
+  price: BundlePrice;
 }) {
   const t = useTranslations('landing');
   const years = forecastYears();
@@ -62,7 +62,7 @@ export function Landing({
           locale={locale}
           angle={angle}
           years={years}
-          offer={price.full !== null}
+          discount={price.discount}
         />
       </section>
 
@@ -147,7 +147,11 @@ export function Landing({
                 this costs before starting: the figure here is the one the paywall will show. */}
             <p className="muted">{t('offer.meta')}</p>
             <p className="l-price">
-              <OfferPrice price={price.formatted} full={price.full?.formatted ?? null} />
+              <OfferPrice
+                price={price.formatted}
+                full={price.full?.formatted ?? null}
+                discount={price.discount}
+              />
             </p>
             <ul>
               {[0, 1, 2, 3, 4].map((i) => (
