@@ -21,7 +21,7 @@ Set with `wrangler secret put <NAME>` in the app's directory, from a generated v
 | `ANTHROPIC_API_KEY` | natalka-api | the owner's own Anthropic key: the model is called directly and OpenRouter not at all (see below); created in console.anthropic.com, not with openssl |
 | `TELEGRAM_BOT_TOKEN`, `SETUP_KEY` | natalka-bot | the bot; `SETUP_KEY` only while re-pointing the webhook |
 | `META_CAPI_TOKEN` | natalka-jobs | Meta's Conversions API; generated in Events Manager, not with openssl (see below) |
-| `TEST_ORDER_KEY` | natalka-jobs | makes an order sent with the same value as `x-test-order` a free test order: written, rendered and delivered, never charged or reported. The site's `/api/orders` passes the header on; set 2026-11-02 to check the German reading |
+| `TEST_ORDER_KEY` | natalka-jobs | makes an order sent with the same value as `x-test-order` a free test order: written, rendered and delivered, never charged or reported. The site's `/api/orders` passes the header on. **Not set** in production: it was put in for two German test orders on 2026-11-02 and deleted right after, since while it exists an order can skip payment. Put it in only for a test, from `openssl rand -base64 48`, and delete it again (`wrangler secret delete TEST_ORDER_KEY`) |
 
 A route whose key is missing answers 503 rather than running unprotected. To rotate a pair, put
 the new value on the caller and the callee one right after the other.
