@@ -6,9 +6,8 @@ import { readSource, SOURCE_COOKIE } from '@/lib/marketing';
  *
  * One row per day per combination in D1, written from the server that rendered the page. No
  * cookie is set for this, nothing is sent to anyone else, and no row points at a person — which
- * is why it needs no banner and no consent. It is also the only thing that can settle the price
- * experiment: what the browser reports can be blocked, and what a third party reports is not
- * ours to keep.
+ * is why it needs no banner and no consent. What the browser reports can be blocked, and what a
+ * third party reports is not ours to keep.
  *
  * Never on the critical path: the write runs after the response has been sent, and a failure is
  * a lost count, not a lost page.
@@ -21,7 +20,7 @@ export const LOOKS_AUTOMATED = /bot|crawl|spider|slurp|headless|preview|fetch|mo
 
 export async function count(
   event: StatEvent,
-  extra: { variant?: string | null; angle?: string | null } = {},
+  extra: { angle?: string | null } = {},
 ): Promise<void> {
   try {
     const list = await headers();
@@ -35,11 +34,11 @@ export async function count(
     const write = db
       .prepare(
         `INSERT INTO stats (day, event, variant, angle, source, country, currency, count, amount_minor)
-         VALUES (?, ?, ?, ?, ?, ?, '', 1, 0)
+         VALUES (?, ?, '', ?, ?, ?, '', 1, 0)
          ON CONFLICT (day, event, variant, angle, source, country, currency)
          DO UPDATE SET count = count + 1`,
       )
-      .bind(day, event, extra.variant ?? '', extra.angle ?? '', source, country)
+      .bind(day, event, extra.angle ?? '', source, country)
       .run();
     ctx.waitUntil(write);
   } catch {

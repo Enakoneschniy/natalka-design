@@ -1,7 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { forecastYears } from '@/components/Landing';
 import { locales } from '@/i18n/routing';
-import { PRICE, SELLER, SITE_URL, url } from '@/lib/seo';
+import { type bundlePrice, OFFER } from '@/lib/pricing';
+import { SELLER, SITE_URL, url } from '@/lib/seo';
 
 /** What the page says about itself in a machine's words.
  *
@@ -9,13 +10,19 @@ import { PRICE, SELLER, SITE_URL, url } from '@/lib/seo';
  * the answers to the questions people actually ask. A search engine uses it for how the result
  * is shown; an answer engine uses it to decide whether the page is worth quoting at all.
  *
- * The price is a range on purpose. What a visitor is charged is decided at the paywall by the
- * running experiment, and a single figure here would contradict half of them — which is both a
- * lie and, in Google's terms, a price mismatch.
+ * The price is the one this request's page shows, in the same currency: a figure that differs
+ * from the page is both a lie and, in Google's terms, a price mismatch. While the offer runs it
+ * says until when.
  */
 const FAQ_COUNT = 11;
 
-export async function StructuredData({ locale }: { locale: string }) {
+export async function StructuredData({
+  locale,
+  price,
+}: {
+  locale: string;
+  price: ReturnType<typeof bundlePrice>;
+}) {
   const t = await getTranslations({ locale, namespace: 'landing' });
   const meta = await getTranslations({ locale, namespace: 'meta' });
   const years = forecastYears();
@@ -63,11 +70,12 @@ export async function StructuredData({ locale }: { locale: string }) {
     url: url(locale),
     image: `${SITE_URL}/sample/page-1.png`,
     offers: {
-      '@type': 'AggregateOffer',
-      lowPrice: PRICE.low,
-      highPrice: PRICE.high,
-      priceCurrency: PRICE.currency,
-      offerCount: 1,
+      '@type': 'Offer',
+      price: price.amount / 100,
+      priceCurrency: price.currency,
+      ...(price.full
+        ? { priceValidUntil: new Date(OFFER.ends.getTime() - 1).toISOString().slice(0, 10) }
+        : {}),
       availability: 'https://schema.org/InStock',
       url: url(locale, '/start?p=bundle'),
       seller: { '@id': `${SITE_URL}/#organisation` },

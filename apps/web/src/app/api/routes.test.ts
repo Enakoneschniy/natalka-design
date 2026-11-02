@@ -182,7 +182,6 @@ describe('shop API routes and the jobs worker', () => {
           'locale',
           'product',
           'source',
-          'variant',
         ].sort(),
       );
       expect(body).toMatchObject({

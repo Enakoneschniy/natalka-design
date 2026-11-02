@@ -5,7 +5,8 @@
  * (₴790, €19, 79 zł) rather than converted. Amounts are in minor units, which is what Stripe
  * will want when payments are wired up.
  *
- * Levels agreed with the owner on 2026-09-29: ₴790 / €19 / $21 for the natal chart.
+ * Levels agreed with the owner on 2026-09-29: ₴790 / €19 / $21 for the natal chart. The euro
+ * bundle is €35 since the price test ended on 2026-11-02: the higher of its two figures.
  */
 
 export const PRODUCTS = ['natal', 'forecast', 'synastry', 'child', 'bundle'] as const;
@@ -16,7 +17,7 @@ type Currency = 'UAH' | 'EUR' | 'USD' | 'PLN' | 'CZK' | 'RON' | 'BGN' | 'GBP';
 /** Minor units (kopiyky, cents, grosze …), in PRODUCTS order. */
 const TABLE: Record<Currency, Record<ProductKey, number>> = {
   UAH: { natal: 79000, forecast: 59000, synastry: 69000, child: 59000, bundle: 119000 },
-  EUR: { natal: 1900, forecast: 1400, synastry: 1700, child: 1400, bundle: 2900 },
+  EUR: { natal: 1900, forecast: 1400, synastry: 1700, child: 1400, bundle: 3500 },
   USD: { natal: 2100, forecast: 1500, synastry: 1800, child: 1500, bundle: 3200 },
   PLN: { natal: 7900, forecast: 5900, synastry: 6900, child: 5900, bundle: 11900 },
   CZK: { natal: 44900, forecast: 34900, synastry: 39900, child: 34900, bundle: 69900 },
@@ -100,13 +101,6 @@ export function priceFor(product: ProductKey, country: string | null | undefined
   return { product, currency, amount, formatted: format(amount, currency) };
 }
 
-/** What the parts of the bundle would cost separately — the struck-through number next to it. */
-export function bundleFullPrice(country: string | null | undefined): Price {
-  const currency = currencyFor(country);
-  const amount = TABLE[currency].natal + TABLE[currency].forecast;
-  return { product: 'bundle', currency, amount, formatted: format(amount, currency) };
-}
-
 /** The horoscope subscription, per month, after the free first month. Agreed with the owner on
  * 2026-09-29: €4, with local figures that look like prices rather than conversions. */
 const SUBSCRIPTION: Record<Currency, number> = {
@@ -130,35 +124,42 @@ export function subscriptionPrice(country: string | null | undefined): {
   return { currency, amount, formatted: format(amount, currency) };
 }
 
-/* ---------- the price experiment ---------- */
+/* ---------- the offer ---------- */
 
-/** The two figures under test, in euro cents. Everything else keeps the table above: the test
- * runs on euro traffic only, which is where the advertising goes. */
-const EXPERIMENT_EUR: Record<string, number> = { a: 1500, b: 3500 };
+/** Half off the reading while the first advertising runs, to the end of 7 November by Central
+ * European time; at midnight the full price comes back by itself. Agreed with the owner on
+ * 2026-11-02. */
+export const OFFER = {
+  percent: 50,
+  /** The first moment the offer no longer applies. */
+  ends: new Date('2026-11-08T00:00:00+01:00'),
+} as const;
 
-/** What the bundle costs this visitor. Outside the eurozone the table decides and there is no
- * experiment to speak of. */
+/** "7 ноября": the last day of the offer, as the advert names it. */
+export const offerLastDay = (locale: string): string =>
+  new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'Europe/Berlin',
+  }).format(new Date(OFFER.ends.getTime() - 1));
+
+/** What the reading costs this visitor and, while the offer runs, what it costs without it — the
+ * struck-through figure beside it. The paywall, the order screen and the order itself all ask
+ * here, so the figure shown is the figure charged. The offer price is rounded down to whole
+ * units: every price on the site is a whole number, and rounding down keeps "−50%" true. */
 export function bundlePrice(
   country: string | null | undefined,
-  variant: 'a' | 'b' | null,
-): Price & { experiment: boolean } {
+  now: Date = new Date(),
+): Price & { full: Price | null } {
   const currency = currencyFor(country);
-  if (currency === 'EUR' && variant) {
-    const amount = EXPERIMENT_EUR[variant] as number;
-    return {
-      product: 'bundle',
-      currency,
-      amount,
-      formatted: format(amount, currency),
-      experiment: true,
-    };
-  }
-  const amount = TABLE[currency].bundle;
-  return {
+  const listed = TABLE[currency].bundle;
+  const full: Price = {
     product: 'bundle',
     currency,
-    amount,
-    formatted: format(amount, currency),
-    experiment: false,
+    amount: listed,
+    formatted: format(listed, currency),
   };
+  if (now >= OFFER.ends) return { ...full, full: null };
+  const amount = Math.floor((listed * (100 - OFFER.percent)) / 10_000) * 100;
+  return { product: 'bundle', currency, amount, formatted: format(amount, currency), full };
 }

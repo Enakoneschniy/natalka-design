@@ -14,9 +14,6 @@ export interface OrderRequest {
   country?: string;
   amount_minor: number;
   currency: string;
-  /** Which side of the price experiment the visitor was shown; kept with the order so the
-   * experiment can be settled against the money rather than against a click. */
-  variant?: string | null;
   /** Their answer to the cookie question, and the campaign that brought them. */
   consent?: string | null;
   source?: string | null;

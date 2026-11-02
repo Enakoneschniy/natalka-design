@@ -37,13 +37,13 @@ describe('count', () => {
 
   it('stores the campaign from the cookie only as a clean label', async () => {
     cookieValue = 'Meta"><img src=x>';
-    await count('landing', { variant: 'a', angle: 'dates' });
-    expect(bound[0]).toEqual([expect.any(String), 'landing', 'a', 'dates', 'metaimgsrcx', 'DE']);
+    await count('landing', { angle: 'dates' });
+    expect(bound[0]).toEqual([expect.any(String), 'landing', 'dates', 'metaimgsrcx', 'DE']);
   });
 
   it('stores no campaign when the cookie holds nothing usable', async () => {
     cookieValue = '<>';
     await count('start');
-    expect(bound[0]?.[4]).toBe('');
+    expect(bound[0]?.[3]).toBe('');
   });
 });

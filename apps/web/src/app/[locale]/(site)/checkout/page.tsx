@@ -1,9 +1,9 @@
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { OfferPrice, OfferTag } from '@/components/OfferPrice';
 import { StartGeneration } from '@/components/StartGeneration';
 import { Stepper } from '@/components/Stepper';
-import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 import { count } from '@/lib/stats';
 import { cleanText, MAX_NAME, MAX_PLACE } from '@/lib/validate';
@@ -40,9 +40,10 @@ export default async function CheckoutPage({
 
   const country = (await headers()).get('cf-ipcountry');
   const product = isProduct(one(search.p)) ? (one(search.p) as ProductKey) : 'natal';
-  const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
-  const price = product === 'bundle' ? bundlePrice(country, variant) : priceFor(product, country);
-  await count('checkout', { variant });
+  const bundle = product === 'bundle' ? bundlePrice(country) : null;
+  const price = bundle ?? priceFor(product, country);
+  const full = bundle?.full?.formatted ?? null;
+  await count('checkout');
 
   const birth = [
     one(search.d)?.split('-').reverse().join('.'),
@@ -104,8 +105,11 @@ export default async function CheckoutPage({
             <div>
               <strong>{tp(`${product}.title`)}</strong>
               <span className="muted">{tp(`${product}.meta`)}</span>
+              {full ? <OfferTag /> : null}
             </div>
-            <span className="mono">{price.formatted}</span>
+            <span className="mono">
+              <OfferPrice price={price.formatted} full={full} tag={false} />
+            </span>
           </div>
           {birth.length > 0 ? (
             <div className="item">

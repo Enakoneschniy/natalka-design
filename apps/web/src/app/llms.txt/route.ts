@@ -1,5 +1,6 @@
 import { forecastYears } from '@/components/Landing';
-import { INDEXABLE, PRICE, SELLER, SITE_URL } from '@/lib/seo';
+import { bundlePrice, OFFER, offerLastDay } from '@/lib/pricing';
+import { INDEXABLE, SELLER, SITE_URL } from '@/lib/seo';
 import ru from '../../../messages/ru.json';
 
 /* Read at request time, not at build time: the switch that opens the site lives in the worker's
@@ -31,10 +32,18 @@ const honest = ru.landing.honest.items
   .join('\n');
 const asks = ru.landing.asks.items.map((item) => `- ${fill(item)}`).join('\n');
 
+/** The euro price, and the offer while it runs; other currencies are named as such. */
+const price = (): string => {
+  const euro = bundlePrice('DE');
+  return euro.full
+    ? `${euro.formatted} вместо ${euro.full.formatted} — скидка ${OFFER.percent}% до ${offerLastDay('ru')}; в других странах — в местной валюте.`
+    : `${euro.formatted}; в других странах — в местной валюте.`;
+};
+
 const text = () => `# Chronika
 
 > Личный разбор натальной карты с прогнозом по датам, в виде PDF. Одна оплата, без подписки.
-> ${PRICE.low}–${PRICE.high} ${PRICE.currency} в зависимости от региона и текущего ценового теста.
+> ${price()}
 > Язык сайта и документа — русский.
 
 Chronika строит натальную карту по дате, времени и месту рождения и превращает её в документ на

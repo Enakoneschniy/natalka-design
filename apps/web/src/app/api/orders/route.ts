@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { browserFrom } from '@/lib/conversions';
-import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { createOrder, isStripeCheckout } from '@/lib/jobs';
 import { CONSENT_COOKIE, readConsent, readSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { bundlePrice, priceFor } from '@/lib/pricing';
@@ -29,17 +28,15 @@ export async function POST(request: NextRequest) {
   if (country && NOT_SOLD_TO.has(country.toUpperCase())) {
     return NextResponse.json({ error: 'region' }, { status: 403 });
   }
-  // The bundle runs the price experiment, and the figure the paywall showed is the figure that
-  // must be charged. It is taken from the signed cookie here, on the server: a price that
-  // arrived in the request body would be a price the buyer chose.
-  const variant = await readVariant(request.cookies.get(EXPERIMENT_COOKIE)?.value);
   // Kept with the order because the payment webhook arrives later, without a browser: this is
   // the only moment at which either of these is knowable.
   const consent = readConsent(request.cookies.get(CONSENT_COOKIE)?.value);
   const source = readSource(request.cookies.get(SOURCE_COOKIE)?.value);
   // The checkout and the payment are reported to Meta from the jobs worker, from this browser.
   const browser = browserFrom(request.headers, request.cookies);
-  const price = product === 'bundle' ? bundlePrice(country, variant) : priceFor(product, country);
+  // The figure the paywall showed, offer and all, from the same table: a price that arrived in
+  // the request body would be a price the buyer chose.
+  const price = product === 'bundle' ? bundlePrice(country) : priceFor(product, country);
 
   let result: Awaited<ReturnType<typeof createOrder>>;
   try {
@@ -48,7 +45,6 @@ export async function POST(request: NextRequest) {
       country: country ?? undefined,
       amount_minor: price.amount,
       currency: price.currency,
-      variant,
       consent,
       source,
       ...(browser ? { browser } : {}),

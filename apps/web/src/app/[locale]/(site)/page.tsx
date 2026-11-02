@@ -1,4 +1,4 @@
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 import { setRequestLocale } from 'next-intl/server';
 import { ANGLES, type Angle, Landing } from '@/components/Landing';
 import { Marketing } from '@/components/Marketing';
@@ -6,7 +6,7 @@ import { StructuredData } from '@/components/StructuredData';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
 import demo from '@/lib/demo-chart.json';
-import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
+import { bundlePrice } from '@/lib/pricing';
 import { count } from '@/lib/stats';
 
 const facts = demo as unknown as ChartFacts;
@@ -24,15 +24,14 @@ export default async function LandingPage({
   setRequestLocale(locale);
   const asked = (await searchParams).h;
   const angle = (Array.isArray(asked) ? asked[0] : asked) ?? '';
-  // The country header is read so the page is rendered per-region, the way the rest of the site is.
-  await headers();
-  const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
+  // The price is the visitor's own, in their currency, and the same figure the paywall will show.
+  const price = bundlePrice((await headers()).get('cf-ipcountry'));
   const chosen = (ANGLES as readonly string[]).includes(angle) ? (angle as Angle) : 'dates';
-  await count('landing', { variant, angle: chosen });
+  await count('landing', { angle: chosen });
   return (
     <>
-      <StructuredData locale={locale} />
-      <Landing locale={locale as Locale} facts={facts} angle={chosen} />
+      <StructuredData locale={locale} price={price} />
+      <Landing locale={locale as Locale} facts={facts} angle={chosen} price={price} />
       <Marketing />
     </>
   );

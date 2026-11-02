@@ -5,13 +5,13 @@ export const privacy: Record<string, string> = {
   ru: `
 # Политика обработки данных
 
-_Редакция от 28 октября 2026 г. Оператор: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
+_Редакция от 2 ноября 2026 г. Оператор: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словакия, IČO 57 339 368, Торговый реестр Городского суда Братислава III, раздел Sro, вставка 194301/B. Связь: help@chronika.me._
 
 ## Какие данные мы получаем
 
 Чтобы построить карту, вы вводите **дату, время и место рождения**, имя (необязательно) и форму обращения. Для доставки документа — **адрес электронной почты**; если вы выбираете получение в Telegram — идентификатор вашего чата. Для совместимости вводятся данные двух человек; для детской карты — данные ребёнка, которые вводит родитель или опекун. Для подписки на гороскоп — данные рождения и почта.
 
-По IP-адресу мы автоматически определяем страну — чтобы показать цену в вашей валюте и не принимать заказы там, где оплата невозможна. Тот же адрес на лету служит ещё двум целям: ограничить частоту запросов к сайту и закрепить за вами одну цену, пока идёт ценовой тест. Сам IP-адрес мы не сохраняем — кроме случая, описанного в разделе о рекламе, и только с вашего согласия.
+По IP-адресу мы автоматически определяем страну — чтобы показать цену в вашей валюте и не принимать заказы там, где оплата невозможна. Тот же адрес на лету служит ещё одной цели: ограничить частоту запросов к сайту. Сам IP-адрес мы не сохраняем — кроме случая, описанного в разделе о рекламе, и только с вашего согласия.
 
 ## Зачем
 
@@ -19,7 +19,7 @@ _Редакция от 28 октября 2026 г. Оператор: coremind s. 
 
 ## Cookie и реклама
 
-Сайт ставит свои технические cookie: ваш ответ на вопрос о cookie (на год), вариант ценового теста (на 60 дней — чтобы цена не менялась от визита к визиту) и название рекламной кампании, по которой вы пришли (без идентификаторов, до закрытия браузера). Посещения мы считаем сами и через Cloudflare Web Analytics — без cookie.
+Сайт ставит свои технические cookie: ваш ответ на вопрос о cookie (на год) и название рекламной кампании, по которой вы пришли (без идентификаторов, до закрытия браузера). Посещения мы считаем сами и через Cloudflare Web Analytics — без cookie.
 
 Рекламные теги (Meta, Google, TikTok) загружаются, только если вы нажали «Разрешить», и только на страницах без личных данных: на главной, в документах и на пустой форме. На страницах с картой, заказом, оплатой, ожиданием документа и подпиской их нет — туда не попадают ни данные рождения, ни ссылки на документ.
 
@@ -52,13 +52,13 @@ _Редакция от 28 октября 2026 г. Оператор: coremind s. 
   uk: `
 # Політика обробки даних
 
-_Редакція від 28 жовтня 2026 р. Оператор: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
+_Редакція від 2 листопада 2026 р. Оператор: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Братислава – Ружинов, Словаччина, IČO 57 339 368, Торговий реєстр Міського суду Братислава III, розділ Sro, вкладка 194301/B. Зв'язок: help@chronika.me._
 
 ## Які дані ми отримуємо
 
 Щоб побудувати карту, ви вводите **дату, час і місце народження**, ім'я (необов'язково) та форму звертання. Для доставки документа — **адресу електронної пошти**; якщо ви обираєте отримання в Telegram — ідентифікатор вашого чату. Для сумісності вводяться дані двох людей; для дитячої карти — дані дитини, які вводить батько, мати або опікун. Для підписки на гороскоп — дані народження і пошта.
 
-За IP-адресою ми автоматично визначаємо країну — щоб показати ціну у вашій валюті і не приймати замовлення там, де оплата неможлива. Ця ж адреса на льоту слугує ще двом цілям: обмежити частоту запитів до сайту і закріпити за вами одну ціну, поки триває ціновий тест. Саму IP-адресу ми не зберігаємо — крім випадку, описаного в розділі про рекламу, і лише з вашої згоди.
+За IP-адресою ми автоматично визначаємо країну — щоб показати ціну у вашій валюті і не приймати замовлення там, де оплата неможлива. Ця ж адреса на льоту слугує ще одній меті: обмежити частоту запитів до сайту. Саму IP-адресу ми не зберігаємо — крім випадку, описаного в розділі про рекламу, і лише з вашої згоди.
 
 ## Навіщо
 
@@ -66,7 +66,7 @@ _Редакція від 28 жовтня 2026 р. Оператор: coremind s. 
 
 ## Cookie і реклама
 
-Сайт ставить власні технічні cookie: вашу відповідь на питання про cookie (на рік), варіант цінового тесту (на 60 днів — щоб ціна не змінювалася від візиту до візиту) і назву рекламної кампанії, з якої ви прийшли (без ідентифікаторів, до закриття браузера). Відвідування ми рахуємо самі та через Cloudflare Web Analytics — без cookie.
+Сайт ставить власні технічні cookie: вашу відповідь на питання про cookie (на рік) і назву рекламної кампанії, з якої ви прийшли (без ідентифікаторів, до закриття браузера). Відвідування ми рахуємо самі та через Cloudflare Web Analytics — без cookie.
 
 Рекламні теги (Meta, Google, TikTok) завантажуються, лише якщо ви натиснули «Дозволити», і лише на сторінках без особистих даних: на головній, у документах і на порожній формі. На сторінках з картою, замовленням, оплатою, очікуванням документа та підпискою їх немає — туди не потрапляють ні дані народження, ні посилання на документ.
 
@@ -99,13 +99,13 @@ _Редакція від 28 жовтня 2026 р. Оператор: coremind s. 
   en: `
 # Privacy policy
 
-_Version of 28 October 2026. Operator: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
+_Version of 2 November 2026. Operator: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovakia, company ID (IČO) 57 339 368, Commercial Register of the Municipal Court Bratislava III, section Sro, insert 194301/B. Contact: help@chronika.me._
 
 ## What we collect
 
 To build a chart you enter a **date, time and place of birth**, a first name (optional) and a form of address. To deliver the document we need an **email address**; if you choose Telegram, the identifier of your chat. Compatibility takes two people's data; a child's chart takes the child's data, entered by a parent or guardian. A horoscope subscription takes birth data and an email address.
 
-We derive your country from your IP address automatically — to show prices in your currency and to take no orders where payment is impossible. The same address serves two more purposes on the fly: limiting how often the site can be called, and keeping one price for you while a price test runs. The IP address itself is not stored, except in the case described under advertising, and only with your consent.
+We derive your country from your IP address automatically — to show prices in your currency and to take no orders where payment is impossible. The same address serves one more purpose on the fly: limiting how often the site can be called. The IP address itself is not stored, except in the case described under advertising, and only with your consent.
 
 ## Why
 
@@ -113,7 +113,7 @@ Birth data serves one purpose: computing the positions of the planets and writin
 
 ## Cookies and advertising
 
-The site sets its own technical cookies: your answer to the cookie question (for a year), which variant of a price test you are shown (for 60 days, so the price does not change from visit to visit), and the name of the advertising campaign that brought you (no identifiers, until the browser is closed). We count visits ourselves and with Cloudflare Web Analytics, without cookies.
+The site sets its own technical cookies: your answer to the cookie question (for a year) and the name of the advertising campaign that brought you (no identifiers, until the browser is closed). We count visits ourselves and with Cloudflare Web Analytics, without cookies.
 
 Advertising tags (Meta, Google, TikTok) load only if you pressed "Allow", and only on pages without personal data: the home page, the documents and the empty form. Pages with your chart, your order, the payment, the waiting screen and your subscription carry none — neither birth data nor document links reach them.
 

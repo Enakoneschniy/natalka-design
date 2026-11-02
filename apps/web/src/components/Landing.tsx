@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { HeroFilm } from '@/components/HeroFilm';
+import { OfferPrice } from '@/components/OfferPrice';
 import { SampleGallery } from '@/components/SampleGallery';
 import type { Locale } from '@/i18n/routing';
 import type { ChartFacts } from '@/lib/chart';
+import type { bundlePrice } from '@/lib/pricing';
 
 /* The landing for one product.
  *
@@ -30,10 +32,13 @@ export function Landing({
   locale,
   facts,
   angle,
+  price,
 }: {
   locale: Locale;
   facts: ChartFacts;
   angle: Angle;
+  /** This visitor's price, the same the paywall will quote. */
+  price: ReturnType<typeof bundlePrice>;
 }) {
   const t = useTranslations('landing');
   const years = forecastYears();
@@ -52,7 +57,13 @@ export function Landing({
   return (
     <>
       <section className="hero hero-film">
-        <HeroFilm facts={facts} locale={locale} angle={angle} years={years} />
+        <HeroFilm
+          facts={facts}
+          locale={locale}
+          angle={angle}
+          years={years}
+          offer={price.full !== null}
+        />
       </section>
 
       <section className="section l-quote-strip">
@@ -132,12 +143,12 @@ export function Landing({
           </div>
           <div className="card l-offer">
             <h3>{t('offer.product', years)}</h3>
-            {/* A range rather than a figure: the price is decided at the paywall, where the
-                experiment runs, and one number here would contradict half of what is shown
-                there. A buyer — and a payment provider reviewing the site — still has to be able
-                to see what this costs before starting. */}
+            {/* A buyer — and a payment provider reviewing the site — has to be able to see what
+                this costs before starting: the figure here is the one the paywall will show. */}
             <p className="muted">{t('offer.meta')}</p>
-            <p className="l-price">{t('offer.price')}</p>
+            <p className="l-price">
+              <OfferPrice price={price.formatted} full={price.full?.formatted ?? null} />
+            </p>
             <ul>
               {[0, 1, 2, 3, 4].map((i) => (
                 <li key={i}>{t(`offer.items.${i}`, years)}</li>

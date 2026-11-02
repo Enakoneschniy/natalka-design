@@ -38,10 +38,6 @@ export const SELLER = {
   email: 'help@chronika.me',
 } as const;
 
-/** What the reading costs, as a range: the price a visitor is shown is decided at the paywall by
- * the running experiment, and a single number in the markup would contradict half of them. */
-export const PRICE = { low: 15, high: 35, currency: 'EUR' } as const;
-
 export const path = (locale: string, rest = ''): string => `/${locale}${rest}`;
 
 export const url = (locale: string, rest = ''): string => `${SITE_URL}${path(locale, rest)}`;

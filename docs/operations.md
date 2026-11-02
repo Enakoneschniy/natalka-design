@@ -15,7 +15,6 @@ Set with `wrangler secret put <NAME>` in the app's directory, from a generated v
 | `PRO_API_KEY` | natalka-web, natalka-jobs | the same value on both: the cabinet's key for `/v1/pro/*` |
 | `NATALKA_API_KEY` / `ACCESS_KEY` | natalka-jobs / natalka-api | the same value: jobs' key for the text and document API |
 | `PREVIEW_KEY` | natalka-web | signs the preview facts a page renders |
-| `EXPERIMENT_KEY` | natalka-web | signs the price-experiment cookie |
 | `DATA_KEY`, `LINK_KEY`, `SESSION_KEY` | natalka-jobs | encryption at rest, link tokens, cabinet sessions (three different values) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY` | natalka-jobs | the providers |
 | `NATALKA_MODEL_API_KEY` (still read under its old name `NATALKA_ANTHROPIC_API_KEY`), `NATALKA_AI_GATEWAY_TOKEN` | natalka-api | the model provider; the AI Gateway's run token |
@@ -47,6 +46,17 @@ jobs first, then web. The Ukrainian cabinet (2026-10-18) is one: an older worker
 reading's `lang` and would charge for a Russian reading the seller ordered in Ukrainian. Its order
 is: push `main` (the API container brings the texts check that knows «твій»), then natalka-jobs,
 then natalka-web. No migration.
+
+## Prices and the offer
+
+The price test ended on 2026-11-02: the bundle costs €35 in the eurozone (its higher figure) and
+the table's price elsewhere. `EXPERIMENT_KEY` on natalka-web is no longer read
+(`wrangler secret delete EXPERIMENT_KEY` in `apps/web`), and the middleware takes back the `cx`
+cookie from anyone still carrying it.
+
+The offer — −50% on the bundle to the end of 7 November, CET — is `OFFER` in
+`apps/web/src/lib/pricing.ts`. It ends by itself: no release is needed for the full price to come
+back. Another offer is a new `percent` and `ends` there, and a release of natalka-web.
 
 ## Meta Conversions API
 

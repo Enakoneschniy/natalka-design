@@ -2,19 +2,15 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/routing';
-import {
-  EXPERIMENT_COOKIE,
-  EXPERIMENT_MAX_AGE,
-  mintVariant,
-  readVariant,
-  variantFor,
-} from '@/lib/experiment';
 import { cleanSource, readSource, SOURCE_COOKIE } from '@/lib/marketing';
 import { isProHost } from '@/lib/pro/host';
 import { isClosedCountry } from '@/lib/region';
 import { INDEXABLE, isPrivatePath } from '@/lib/seo';
 
 const intl = createMiddleware(routing);
+
+/** The cookie the price test kept its side in, until 2026-11-02. */
+const ENDED_TEST_COOKIE = 'cx';
 
 /** Cloudflare sets `cf-ipcountry`; locally it is absent. */
 export async function middleware(request: NextRequest) {
@@ -26,7 +22,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // The seller cabinet answers on its own host, from its own tree under `app/pro`. None of the
-  // shop's machinery runs there: no locale routing, no price experiment, no ad source.
+  // shop's machinery runs there: no locale routing, no ad source.
   const { pathname, search } = request.nextUrl;
   if (isProHost(request.headers.get('host'))) {
     const inner = pathname === '/' ? '/pro' : `/pro${pathname}`;
@@ -49,21 +45,10 @@ export async function middleware(request: NextRequest) {
 
   const response = intl(request);
 
-  // The price experiment: assigned once, here, before a page can read it, and left alone after.
-  // A visitor without the cookie gets the side their address falls on, so clearing cookies shows
-  // the same price again.
-  const carried = request.cookies.get(EXPERIMENT_COOKIE)?.value;
-  if (!(await readVariant(carried))) {
-    const minted = await mintVariant(await variantFor(request.headers.get('cf-connecting-ip')));
-    if (minted) {
-      response.cookies.set(EXPERIMENT_COOKIE, minted, {
-        maxAge: EXPERIMENT_MAX_AGE,
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: true,
-        path: '/',
-      });
-    }
+  // The price test is over, and the privacy policy no longer names its cookie: whoever still
+  // carries one has it taken back rather than kept for the rest of its sixty days.
+  if (request.cookies.has(ENDED_TEST_COOKIE)) {
+    response.cookies.set(ENDED_TEST_COOKIE, '', { maxAge: 0, path: '/' });
   }
   // Where this visit came from, taken from the advert's own link and kept until the browser is
   // closed. First touch wins: the landing is where the campaign is named, and the pages after it

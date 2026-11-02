@@ -1,4 +1,4 @@
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -12,7 +12,6 @@ import { type BirthInput, calcChart, calcSynastry, calcTransits } from '@/lib/ap
 import { type ChartFacts, MAJOR_ASPECTS, monthLabel } from '@/lib/chart';
 import { reportView } from '@/lib/conversions';
 import demo from '@/lib/demo-chart.json';
-import { EXPERIMENT_COOKIE, readVariant } from '@/lib/experiment';
 import { signedPreview } from '@/lib/preview';
 import { bundlePrice, PRODUCTS, type ProductKey, priceFor } from '@/lib/pricing';
 import { count } from '@/lib/stats';
@@ -221,13 +220,12 @@ export default async function PreviewPage({
   const tense = major.filter((a) => a.nature === 'tense').length;
 
   // The price the paywall quotes and the price the order is charged at come from the same
-  // function and the same signed cookie, so they cannot drift apart.
-  const variant = await readVariant((await cookies()).get(EXPERIMENT_COOKIE)?.value);
-  const bundle = bundlePrice(country, variant);
+  // function, so they cannot drift apart.
+  const bundle = bundlePrice(country);
   // Two events, because the gap between them is the question: how many read the preview, and
   // how many of those reach the offer at the end of it.
-  await count('preview', { variant });
-  await count('paywall', { variant });
+  await count('preview');
+  await count('paywall');
   // The sample chart is nobody's own: only a visitor's chart is reported as a view.
   if (!isDemo) {
     const shown = product === 'bundle' ? bundle : priceFor(product, country);
@@ -337,7 +335,12 @@ export default async function PreviewPage({
           />
         </section>
 
-        <Paywall checkoutHref={checkout('bundle')} price={bundle.formatted} dates={hints} />
+        <Paywall
+          checkoutHref={checkout('bundle')}
+          price={bundle.formatted}
+          full={bundle.full?.formatted ?? null}
+          dates={hints}
+        />
       </div>
     </div>
   );
