@@ -142,8 +142,17 @@ async function outcome<T>(response: Response): Promise<Outcome<T>> {
   };
 }
 
-export async function createOrder(order: OrderRequest): Promise<Outcome<OrderCreated>> {
-  return outcome(await jobsFetch('/v1/orders', postJson(order)));
+/** `testKey` is whatever the request carried as `x-test-order`, passed on untouched: the jobs
+ * worker alone decides, against its own TEST_ORDER_KEY, whether that makes the order a free test
+ * order. Without the key there, or with any other value, it is an ordinary order. */
+export async function createOrder(
+  order: OrderRequest,
+  testKey: string | null = null,
+): Promise<Outcome<OrderCreated>> {
+  const init = postJson(order);
+  if (testKey)
+    init.headers = { ...(init.headers as Record<string, string>), 'x-test-order': testKey };
+  return outcome(await jobsFetch('/v1/orders', init));
 }
 
 /** A new payment page for an order that is still unpaid: 409 `paid` or `closed` when there is

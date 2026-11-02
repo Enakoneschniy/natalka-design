@@ -44,18 +44,21 @@ export async function POST(request: NextRequest) {
 
   let result: Awaited<ReturnType<typeof createOrder>>;
   try {
-    result = await createOrder({
-      ...checked.value,
-      country: country ?? undefined,
-      amount_minor: price.amount,
-      currency: price.currency,
-      // The order's price variant: the code it was priced with, so a sale can be traced to the
-      // video or the letter that gave the code out.
-      variant: bundle?.discount?.code ?? null,
-      consent,
-      source,
-      ...(browser ? { browser } : {}),
-    });
+    result = await createOrder(
+      {
+        ...checked.value,
+        country: country ?? undefined,
+        amount_minor: price.amount,
+        currency: price.currency,
+        // The order's price variant: the code it was priced with, so a sale can be traced to the
+        // video or the letter that gave the code out.
+        variant: bundle?.discount?.code ?? null,
+        consent,
+        source,
+        ...(browser ? { browser } : {}),
+      },
+      request.headers.get('x-test-order'),
+    );
   } catch (error) {
     return unavailable('order failed', error);
   }

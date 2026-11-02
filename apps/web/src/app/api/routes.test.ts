@@ -288,6 +288,16 @@ describe('shop API routes and the jobs worker', () => {
       expect(body.birth_second.name).toBe('Борис');
     });
 
+    it('passes a test-order key on untouched, and none when there is none', async () => {
+      fetchMock.mockResolvedValueOnce(reply(201, created));
+      await order(send('/api/orders', validOrder, 'POST', { 'x-test-order': 'some-key' }));
+      expect(forwarded().headers.get('x-test-order')).toBe('some-key');
+      expect(forwarded().headers.get('x-site-key')).toBe('site-key-123');
+      fetchMock.mockResolvedValueOnce(reply(201, created));
+      await order(send('/api/orders', validOrder));
+      expect(forwarded(1).headers.get('x-test-order')).toBeNull();
+    });
+
     it('prices the reading with the code the visitor carries, and says which code', async () => {
       fetchMock.mockResolvedValueOnce(reply(201, created));
       await order(
