@@ -361,7 +361,9 @@ class Renderer:
         for b in blocks:
             match b:
                 case ParagraphBlock():
-                    out.append(Paragraph(b.text, st.s_body))
+                    out.append(
+                        Paragraph(b.text, st.s_body_ragged if self.lang == "de" else st.s_body)
+                    )
                 case Subheading():
                     out.append(_Heading(b.text, st.s_h3, 1, False))
                 case Quote():

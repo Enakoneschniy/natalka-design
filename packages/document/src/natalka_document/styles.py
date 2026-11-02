@@ -137,6 +137,9 @@ s_body = _style(
     alignment=TA_JUSTIFY,
     spaceAfter=6,
 )
+#: German body text, set ragged right. Justified German leaves rivers of space before every long
+#: compound ("Verantwortungsbewusstsein"), and the shorter Cyrillic words rarely do.
+s_body_ragged = _style("BodyRagged", parent=s_body, alignment=TA_LEFT)
 s_quote = _style(
     "Quote",
     fontName="PlayfairDisplay-Italic",
