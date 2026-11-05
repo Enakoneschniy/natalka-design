@@ -180,4 +180,77 @@ Diese Zustimmung und Bestätigung geben Sie auf der Bestellseite und noch einmal
 
 help@chronika.me – geben Sie die E-Mail-Adresse der Bestellung und, falls vorhanden, das Datum an. Wir antworten innerhalb von zwei Arbeitstagen.
 `,
+  pl: `
+# Odstąpienie od umowy i zwroty
+
+_Wersja z 2 listopada 2026 r. Usługodawca: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, IČO 57 339 368, rejestr handlowy Sądu Miejskiego Bratysława III, oddział Sro, wkładka nr 194301/B. Kontakt: help@chronika.me._
+
+## Co sprzedajemy
+
+Interpretacja jest produktem cyfrowym (treścią cyfrową), który powstaje indywidualnie na Państwa zamówienie i jest udostępniany natychmiast po przygotowaniu. Nie można jej „zwrócić” tak, jak zwraca się rzecz: po dostarczeniu jest już u Państwa. Dlatego poniższe zasady dotyczą przypadków, w których coś poszło nie tak z naszej winy, oraz uczciwej ochrony przed pomyłkami. Pozostaje to bez wpływu na Państwa ustawowe uprawnienia w przypadku braku zgodności treści cyfrowej z umową.
+
+## Pełny zwrot pieniędzy – bez zbędnych pytań
+
+- Dokument nie został dostarczony w ciągu 24 godzin od zapłaty.
+- Dokument jest uszkodzony, nie otwiera się lub jest niekompletny (puste rozdziały, urwany tekst).
+- Dokument jest napisany w innym języku niż ten, który Państwo wybrali.
+- Dokument przygotowano na podstawie innych danych niż te, które Państwo wprowadzili (nasz błąd).
+- Płatność została pobrana dwukrotnie.
+
+Prosimy napisać na adres help@chronika.me z adresu, z którego złożono zamówienie. Pieniądze zwracamy tą samą drogą, którą Państwo zapłacili, w ciągu 5 dni roboczych po naszej stronie; Państwa bank może potrzebować na to dodatkowego czasu.
+
+## Błąd w Państwa danych
+
+Jeżeli wprowadzili Państwo błędną datę, godzinę lub miejscowość, przygotowany na ich podstawie dokument nie jest wadliwy – jest prawidłowym dokumentem dla innej osoby. W takim przypadku nie zwracamy ceny, ale jeden raz bezpłatnie przygotujemy dokument ponownie na podstawie poprawionych danych, jeżeli napiszą Państwo do nas w ciągu 7 dni od złożenia zamówienia.
+
+## „Nie podoba mi się” lub „nie pasuje do mnie”
+
+Interpretacja jest wykładnią, a nie pomiarem; nie możemy obiecać, że będzie zgodna z Państwa wyobrażeniem o sobie. Zwrot z tej przyczyny nie jest przewidziany; nie narusza to ustawowego prawa odstąpienia od umowy opisanego w następnej części. Przed zakupem prosimy przeczytać bezpłatny podgląd – to ta sama metoda i ten sam głos.
+
+## Pouczenie o prawie odstąpienia od umowy (dla konsumentów w UE i w Zjednoczonym Królestwie)
+
+Prawo odstąpienia od umowy przysługuje Państwu, jeżeli są Państwo konsumentem, to znaczy zawierają Państwo z nami umowę jako osoba fizyczna, w celu niezwiązanym bezpośrednio z Państwa działalnością gospodarczą lub zawodową.
+
+**Prawo odstąpienia od umowy**
+
+Mają Państwo prawo odstąpić od niniejszej umowy w terminie 14 dni bez podania jakiejkolwiek przyczyny.
+
+Termin do odstąpienia od umowy wygasa po upływie 14 dni od dnia zawarcia umowy.
+
+Aby skorzystać z prawa odstąpienia od umowy, muszą Państwo poinformować nas (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, e-mail: help@chronika.me) o swojej decyzji o odstąpieniu od niniejszej umowy w drodze jednoznacznego oświadczenia (na przykład pismo wysłane pocztą lub pocztą elektroniczną). Mogą Państwo skorzystać z wzoru formularza odstąpienia od umowy, jednak nie jest to obowiązkowe. Mogą Państwo również wypełnić i przesłać formularz odstąpienia od umowy lub jakiekolwiek inne jednoznaczne oświadczenie drogą elektroniczną na naszej stronie internetowej, za pomocą przycisku [„Odstąpienie od umowy”](/pl/withdraw). Jeżeli skorzystają Państwo z tej możliwości, prześlemy Państwu niezwłocznie potwierdzenie otrzymania informacji o odstąpieniu od umowy na trwałym nośniku (np. pocztą elektroniczną).
+
+Aby zachować termin do odstąpienia od umowy, wystarczy, aby wysłali Państwo informację dotyczącą wykonania przysługującego Państwu prawa odstąpienia od umowy przed upływem terminu do odstąpienia od umowy. Najprościej odstąpić od umowy, pisząc na adres help@chronika.me.
+
+**Skutki odstąpienia od umowy**
+
+W przypadku odstąpienia od niniejszej umowy zwracamy Państwu wszystkie otrzymane od Państwa płatności, w tym koszty dostarczenia towaru (z wyjątkiem dodatkowych kosztów wynikających z wybranego przez Państwa sposobu dostarczenia innego niż najtańszy zwykły sposób dostarczenia oferowany przez nas), niezwłocznie, a w każdym przypadku nie później niż 14 dni od dnia, w którym zostaliśmy poinformowani o Państwa decyzji o wykonaniu prawa odstąpienia od niniejszej umowy. Zwrotu płatności dokonamy przy użyciu takich samych sposobów płatności, jakie zostały przez Państwa użyte w pierwotnej transakcji, chyba że wyraźnie zgodziliście się Państwo na inne rozwiązanie; w każdym przypadku nie poniosą Państwo żadnych opłat w związku z tym zwrotem.
+
+**Utrata prawa odstąpienia od umowy**
+
+Prawo odstąpienia od umowy nie przysługuje w odniesieniu do umowy o dostarczanie treści cyfrowych niedostarczanych na nośniku materialnym, za które konsument jest zobowiązany do zapłaty ceny (art. 38 ust. 1 pkt 13 ustawy z dnia 30 maja 2014 r. o prawach konsumenta, Dz. U. z 2026 r. poz. 1244), jeżeli:
+
+- rozpoczęliśmy świadczenie za Państwa wyraźną i uprzednią zgodą,
+- przed rozpoczęciem świadczenia zostali Państwo poinformowani, że po spełnieniu świadczenia przez nas utracą Państwo prawo odstąpienia od umowy, i przyjęli to Państwo do wiadomości, oraz
+- przekazaliśmy Państwu potwierdzenie, o którym mowa w art. 15 ust. 1 i 2 albo art. 21 ust. 1 tej ustawy; przy umowie zawartej na odległość jest to potwierdzenie zawarcia umowy na trwałym nośniku, obejmujące informację o udzielonej przez Państwa zgodzie.
+
+Tę zgodę wyrażają Państwo i utratę prawa odstąpienia od umowy przyjmują Państwo do wiadomości na stronie zamówienia oraz ponownie na stronie płatności, zanim Państwo zapłacą, składając oświadczenie: „Wyrażam zgodę na rozpoczęcie świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że po spełnieniu świadczenia utracę prawo odstąpienia od umowy.” Przygotowanie dokumentu rozpoczyna się bezpośrednio po zapłacie.
+
+**Wzór formularza odstąpienia od umowy**
+
+(formularz ten należy wypełnić i odesłać tylko w przypadku chęci odstąpienia od umowy)
+
+- Adresat: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, e-mail: help@chronika.me
+- Ja/My(*) niniejszym informuję/informujemy(*) o moim/naszym odstąpieniu od umowy sprzedaży następujących towarów(*) umowy dostawy następujących towarów(*) umowy o dzieło polegającej na wykonaniu następujących towarów(*)/o świadczenie następującej usługi(*)
+- Data zawarcia umowy(*)/odbioru(*)
+- Imię i nazwisko konsumenta(-ów)
+- Adres konsumenta(-ów)
+- Podpis konsumenta(-ów) (tylko jeżeli formularz jest przesyłany w wersji papierowej)
+- Data
+
+(*) Niepotrzebne skreślić.
+
+## Kontakt
+
+help@chronika.me – prosimy podać adres e-mail użyty przy zamówieniu oraz, jeżeli to możliwe, datę zamówienia. Odpowiadamy w ciągu dwóch dni roboczych.
+`,
 };

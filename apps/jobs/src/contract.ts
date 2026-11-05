@@ -44,7 +44,7 @@ const CONSENT: Record<string, string> = {
   en: CONSENT_EN,
   de: 'Ich stimme ausdrücklich zu, dass Sie vor Ablauf der Widerrufsfrist mit der Erstellung des Dokuments beginnen, und mir ist bekannt, dass ich durch diese Zustimmung mit Beginn der Vertragserfüllung mein Widerrufsrecht verliere.',
   // Art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta.
-  pl: 'Wyrażam zgodę na rozpoczęcie spełniania świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że z chwilą rozpoczęcia spełniania świadczenia utracę prawo odstąpienia od umowy.',
+  pl: 'Wyrażam zgodę na rozpoczęcie świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że po spełnieniu świadczenia utracę prawo odstąpienia od umowy.',
 };
 
 export const withdrawalConsent = (locale: string): string => CONSENT[locale] ?? CONSENT_EN;
@@ -78,20 +78,33 @@ const WITHDRAWAL: Record<string, string[]> = {
     'An coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, E-Mail: help@chronika.me: Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der folgenden Dienstleistung (*) — Bestellt am (*)/erhalten am (*) — Name des/der Verbraucher(s) — Anschrift des/der Verbraucher(s) — Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier) — Datum',
     '(*) Unzutreffendes streichen.',
   ],
-  // The statutory model (załącznik nr 1 do ustawy o prawach konsumenta) and its form.
+  // The statutory model (załącznik nr 1 do ustawy o prawach konsumenta) and its form, as the
+  // refund page has them word for word.
   pl: [
-    'Prawo odstąpienia od umowy',
-    'Mają Państwo prawo odstąpić od niniejszej umowy w terminie 14 dni bez podania jakiejkolwiek przyczyny. Termin do odstąpienia od umowy wygasa po upływie 14 dni od dnia zawarcia umowy.',
-    'Aby skorzystać z prawa odstąpienia od umowy, muszą Państwo poinformować nas (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, e-mail: help@chronika.me) o swojej decyzji o odstąpieniu od niniejszej umowy w drodze jednoznacznego oświadczenia (na przykład pismo wysłane pocztą lub pocztą elektroniczną). Mogą Państwo skorzystać z wzoru formularza odstąpienia od umowy, jednak nie jest to obowiązkowe. Mogą Państwo również złożyć oświadczenie przyciskiem „Odstąpienie od umowy” na naszej stronie.',
-    'Aby zachować termin do odstąpienia od umowy, wystarczy, aby wysłali Państwo informację dotyczącą wykonania przysługującego Państwu prawa odstąpienia od umowy przed upływem terminu do odstąpienia od umowy.',
-    'Skutki odstąpienia od umowy',
-    'W przypadku odstąpienia od niniejszej umowy zwracamy Państwu wszystkie otrzymane od Państwa płatności niezwłocznie, a w każdym przypadku nie później niż 14 dni od dnia, w którym zostaliśmy poinformowani o Państwa decyzji o wykonaniu prawa odstąpienia od niniejszej umowy. Zwrotu płatności dokonamy przy użyciu takich samych sposobów płatności, jakie zostały przez Państwa użyte w pierwotnej transakcji, chyba że wyraźnie zgodzili się Państwo na inne rozwiązanie; w każdym przypadku nie poniosą Państwo żadnych opłat w związku z tym zwrotem.',
-    'Wygaśnięcie prawa odstąpienia',
-    'Prawo odstąpienia od umowy nie przysługuje, jeżeli spełnianie świadczenia rozpoczęło się za wyraźną i uprzednią zgodą konsumenta, który przed rozpoczęciem świadczenia został poinformowany, że po spełnieniu świadczenia utraci prawo odstąpienia od umowy, i przyjął to do wiadomości (art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta). Ta wiadomość jest potwierdzeniem zawarcia umowy, które przewiduje dla tego ustawa.',
-    'Wzór formularza odstąpienia od umowy',
-    '(formularz ten należy wypełnić i odesłać tylko w przypadku chęci odstąpienia od umowy)',
-    'Adresat: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, e-mail: help@chronika.me — Ja/My(*) niniejszym informuję/informujemy(*) o moim/naszym odstąpieniu od umowy o dostarczenie treści cyfrowych(*)/świadczenie następującej usługi(*) — Data zawarcia umowy(*)/odbioru(*) — Imię i nazwisko konsumenta(-ów) — Adres konsumenta(-ów) — Podpis konsumenta(-ów) (tylko jeżeli formularz jest przesyłany w wersji papierowej) — Data',
-    '(*) Niepotrzebne skreślić.',
+    "Prawo odstąpienia od umowy",
+    "Mają Państwo prawo odstąpić od niniejszej umowy w terminie 14 dni bez podania jakiejkolwiek przyczyny.",
+    "Termin do odstąpienia od umowy wygasa po upływie 14 dni od dnia zawarcia umowy.",
+    "Aby skorzystać z prawa odstąpienia od umowy, muszą Państwo poinformować nas (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, e-mail: help@chronika.me) o swojej decyzji o odstąpieniu od niniejszej umowy w drodze jednoznacznego oświadczenia (na przykład pismo wysłane pocztą lub pocztą elektroniczną). Mogą Państwo skorzystać z wzoru formularza odstąpienia od umowy, jednak nie jest to obowiązkowe. Mogą Państwo również wypełnić i przesłać formularz odstąpienia od umowy lub jakiekolwiek inne jednoznaczne oświadczenie drogą elektroniczną na naszej stronie internetowej, za pomocą przycisku „Odstąpienie od umowy”. Jeżeli skorzystają Państwo z tej możliwości, prześlemy Państwu niezwłocznie potwierdzenie otrzymania informacji o odstąpieniu od umowy na trwałym nośniku (np. pocztą elektroniczną).",
+    "Aby zachować termin do odstąpienia od umowy, wystarczy, aby wysłali Państwo informację dotyczącą wykonania przysługującego Państwu prawa odstąpienia od umowy przed upływem terminu do odstąpienia od umowy. Najprościej odstąpić od umowy, pisząc na adres help@chronika.me.",
+    "Skutki odstąpienia od umowy",
+    "W przypadku odstąpienia od niniejszej umowy zwracamy Państwu wszystkie otrzymane od Państwa płatności, w tym koszty dostarczenia towaru (z wyjątkiem dodatkowych kosztów wynikających z wybranego przez Państwa sposobu dostarczenia innego niż najtańszy zwykły sposób dostarczenia oferowany przez nas), niezwłocznie, a w każdym przypadku nie później niż 14 dni od dnia, w którym zostaliśmy poinformowani o Państwa decyzji o wykonaniu prawa odstąpienia od niniejszej umowy. Zwrotu płatności dokonamy przy użyciu takich samych sposobów płatności, jakie zostały przez Państwa użyte w pierwotnej transakcji, chyba że wyraźnie zgodziliście się Państwo na inne rozwiązanie; w każdym przypadku nie poniosą Państwo żadnych opłat w związku z tym zwrotem.",
+    "Utrata prawa odstąpienia od umowy",
+    "Prawo odstąpienia od umowy nie przysługuje w odniesieniu do umowy o dostarczanie treści cyfrowych niedostarczanych na nośniku materialnym, za które konsument jest zobowiązany do zapłaty ceny (art. 38 ust. 1 pkt 13 ustawy z dnia 30 maja 2014 r. o prawach konsumenta, Dz. U. z 2026 r. poz. 1244), jeżeli:",
+    "– rozpoczęliśmy świadczenie za Państwa wyraźną i uprzednią zgodą,",
+    "– przed rozpoczęciem świadczenia zostali Państwo poinformowani, że po spełnieniu świadczenia przez nas utracą Państwo prawo odstąpienia od umowy, i przyjęli to Państwo do wiadomości, oraz",
+    "– przekazaliśmy Państwu potwierdzenie, o którym mowa w art. 15 ust. 1 i 2 albo art. 21 ust. 1 tej ustawy; przy umowie zawartej na odległość jest to potwierdzenie zawarcia umowy na trwałym nośniku, obejmujące informację o udzielonej przez Państwa zgodzie.",
+    "Tę zgodę wyrażają Państwo i utratę prawa odstąpienia od umowy przyjmują Państwo do wiadomości na stronie zamówienia oraz ponownie na stronie płatności, zanim Państwo zapłacą, składając oświadczenie: „Wyrażam zgodę na rozpoczęcie świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że po spełnieniu świadczenia utracę prawo odstąpienia od umowy.” Przygotowanie dokumentu rozpoczyna się bezpośrednio po zapłacie.",
+    "Wzór formularza odstąpienia od umowy",
+    "(formularz ten należy wypełnić i odesłać tylko w przypadku chęci odstąpienia od umowy)",
+    "– Adresat: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, e-mail: help@chronika.me",
+    "– Ja/My(*) niniejszym informuję/informujemy(*) o moim/naszym odstąpieniu od umowy sprzedaży następujących towarów(*) umowy dostawy następujących towarów(*) umowy o dzieło polegającej na wykonaniu następujących towarów(*)/o świadczenie następującej usługi(*)",
+    "– Data zawarcia umowy(*)/odbioru(*)",
+    "– Imię i nazwisko konsumenta(-ów)",
+    "– Adres konsumenta(-ów)",
+    "– Podpis konsumenta(-ów) (tylko jeżeli formularz jest przesyłany w wersji papierowej)",
+    "– Data",
+    "(*) Niepotrzebne skreślić.",
+    'Ta wiadomość jest potwierdzeniem zawarcia umowy, o którym mowa wyżej.',
   ],
 };
 
@@ -105,6 +118,6 @@ export const WITHDRAWAL_HEADINGS = new Set([
   'Muster-Widerrufsformular',
   'Prawo odstąpienia od umowy',
   'Skutki odstąpienia od umowy',
-  'Wygaśnięcie prawa odstąpienia',
+  'Utrata prawa odstąpienia od umowy',
   'Wzór formularza odstąpienia od umowy',
 ]);

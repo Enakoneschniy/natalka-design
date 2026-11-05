@@ -198,4 +198,59 @@ Ein Kinderhoroskop wird aus den Daten des Kindes erstellt, die ein Erwachsener e
 
 Ändert sich diese Erklärung, erscheint die neue Fassung auf dieser Seite mit neuem Datum. Über wesentliche Änderungen informieren wir Sie per E-Mail, wenn bei uns eine laufende Bestellung mit Ihrer Adresse vorliegt.
 `,
+  pl: `
+# Polityka prywatności
+
+_Wersja z 2 listopada 2026 r. Administratorem danych osobowych w rozumieniu rozporządzenia (UE) 2016/679 (RODO) jest coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, IČO 57 339 368, rejestr handlowy Sądu Miejskiego Bratysława III, oddział Sro, wkładka nr 194301/B. Kontakt: help@chronika.me._
+
+## Jakie dane otrzymujemy
+
+Aby obliczyć Państwa horoskop urodzeniowy, podają Państwo **datę, godzinę i miejsce urodzenia**, imię (dobrowolnie) oraz formę, w jakiej mamy się do Państwa zwracać. Do dostarczenia dokumentu potrzebujemy Państwa **adresu e-mail**; jeżeli wybiorą Państwo dostarczenie przez Telegram – identyfikatora Państwa czatu. Do analizy zgodności podaje się dane dwóch osób; do horoskopu dziecka – dane dziecka, które wprowadza rodzic lub opiekun. Do subskrypcji horoskopu potrzebne są dane urodzenia i adres e-mail. Bez danych urodzenia i adresu do doręczenia nie możemy przygotować ani dostarczyć dokumentu.
+
+Na podstawie adresu IP automatycznie ustalamy Państwa kraj – aby pokazać ceny w Państwa walucie i nie przyjmować zamówień tam, gdzie płatność nie jest możliwa. Ten sam adres służy, wyłącznie w chwili zapytania, jeszcze jednemu celowi: ograniczeniu częstotliwości wywołań strony. Samego adresu IP nie przechowujemy – z wyjątkiem przypadku opisanego w części dotyczącej reklamy i wyłącznie za Państwa zgodą.
+
+## Cele i podstawy prawne przetwarzania
+
+Dane urodzenia służą jednemu celowi: obliczeniu położenia planet i napisaniu na tej podstawie tekstu. Adres e-mail i Telegram służą do dostarczenia dokumentu lub horoskopu oraz do poinformowania Państwa, że jest gotowy. Do niczego innego: nie wysyłamy wiadomości reklamowych i nie sprzedajemy danych. Serwis reklamowy Meta informujemy o zamówieniach wyłącznie za Państwa zgodą i wyłącznie w zakresie wymienionym w części dotyczącej reklamy; dane urodzenia nigdy do niego nie należą.
+
+Państwa własne dane urodzenia, imię, formę zwracania się i adres do doręczenia przetwarzamy, ponieważ jest to niezbędne do wykonania zawartej z Państwem umowy lub subskrypcji albo do przygotowania zamówionego przez Państwa bezpłatnego podglądu (art. 6 ust. 1 lit. b RODO). Dane innej osoby, które podają Państwo do analizy zgodności lub do horoskopu dziecka, przetwarzamy na podstawie prawnie uzasadnionego interesu polegającego na wykonaniu Państwa zamówienia (art. 6 ust. 1 lit. f RODO). Na naszym prawnie uzasadnionym interesie (art. 6 ust. 1 lit. f RODO) opierają się ponadto: ustalanie kraju na podstawie adresu IP (właściwe ceny i metody płatności), ograniczanie liczby wywołań (ochrona i stabilność strony), liczenie odwiedzin bez plików cookie, tymczasowe przechowywanie tekstów podglądu oraz przechowywanie adresu e-mail na potrzeby pytań i zwrotów. Tagi reklamowe i informowanie Meta opierają się na Państwa zgodzie (część „Pliki cookie i reklama”). Zapis zamówienia przechowujemy, ponieważ wymagają tego przepisy o rachunkowości i przepisy podatkowe (art. 6 ust. 1 lit. c RODO).
+
+## Pliki cookie i reklama
+
+Strona zapisuje własne techniczne pliki cookie: Państwa odpowiedź na pytanie o pliki cookie (na rok), kod promocyjny – jeżeli go Państwo wpisali lub weszli na stronę przez link z kodem (do końca jego ważności) – oraz nazwę kampanii reklamowej, z której Państwo przyszli (bez identyfikatorów, do zamknięcia przeglądarki). Odwiedziny liczymy sami oraz za pomocą Cloudflare Web Analytics, bez plików cookie.
+
+Tagi reklamowe (Meta, Google, TikTok) są wczytywane tylko wtedy, gdy wybrali Państwo „Zgadzam się”, i tylko na stronach bez danych osobowych: na stronie głównej, w dokumentach prawnych i na pustym formularzu. Strony z Państwa horoskopem, zamówieniem, płatnością, oczekiwaniem na dokument i subskrypcją nie zawierają ich wcale – nie trafiają tam ani dane urodzenia, ani linki do dokumentu.
+
+Jeżeli wybrali Państwo „Zgadzam się”, strona informuje ponadto Meta, ze swojego serwera, o czterech zdarzeniach: otworzyli Państwo podgląd swojego horoskopu, przeszli Państwo do płatności, opłacili Państwo zamówienie, potwierdzili Państwo subskrypcję horoskopu – abyśmy wiedzieli, która reklama do nich doprowadziła. Wraz z każdym zdarzeniem przekazywane są: Państwa adres e-mail i kraj w postaci skrótu (hash – nieodwracalnego odcisku), Państwa adres IP i dane przeglądarki (user agent), reklamowe pliki cookie Meta, jeżeli zostały już zapisane, numer zamówienia lub subskrypcji, produkt i cena. Dane urodzenia, imiona, miejsce urodzenia i płeć nie są przekazywane nigdy. Aby poinformować o płatności, która wpływa później, adres IP, dane przeglądarki i pliki cookie Meta są przechowywane wraz z zamówieniem w postaci zaszyfrowanej – do chwili zapłaty i nie dłużej niż 7 dni. Jeżeli wybrali Państwo „Tylko niezbędne” lub nie udzielili odpowiedzi, nic z tego nie jest wysyłane ani przechowywane.
+
+Podstawą prawną tagów reklamowych i informowania Meta jest Państwa zgoda (art. 6 ust. 1 lit. a RODO); w odniesieniu do przechowywania informacji w Państwa urządzeniu końcowym i uzyskiwania do nich dostępu – dodatkowo krajowe przepisy wdrażające art. 5 ust. 3 dyrektywy 2002/58/WE, w Polsce art. 399 ust. 1 ustawy z dnia 12 lipca 2024 r. – Prawo komunikacji elektronicznej. Warunki przechowywania plików cookie i dostępu do nich mogą Państwo określić także w ustawieniach przeglądarki.
+
+## Kto przetwarza dane
+
+Nie robimy wszystkiego sami. Przetwarzanie odbywa się na serwerach **Cloudflare** (hosting, baza danych, przechowywanie dokumentów). Płatności przyjmuje **Stripe**: otrzymuje Państwa adres e-mail, nazwę produktu i cenę – bez danych urodzenia; dane Państwa karty widzi wyłącznie Stripe. Jeżeli płacą Państwo na stronie Stripe w inny sposób – na przykład BLIK, Klarna lub Revolut Pay – dostawca tej metody otrzymuje to, czego potrzebuje do płatności, i przetwarza to jako odrębny administrator na własnych zasadach. Tekst interpretacji i horoskopu pisze model językowy: dostawca modelu (**Anthropic**, modele Claude) otrzymuje położenia planet, aspekty i domy, Państwa imię oraz datę i godzinę urodzenia – na ich podstawie odczytuje się wiek i powroty planet. Współrzędnych, miejsca urodzenia, strefy czasowej ani adresu e-mail model nie otrzymuje. Wiadomości e-mail wysyła **Resend**, wiadomości w Telegramie – **Telegram**, tylko jeżeli sami Państwo wybrali tę drogę. Każdy z nich jest związany z nami umową i przetwarza dane wyłącznie na nasze polecenie, jako podmiot przetwarzający w rozumieniu art. 28 RODO.
+
+## Jak i jak długo przechowujemy dane
+
+Dane urodzenia są szyfrowane (AES-256-GCM), zanim trafią do bazy danych, i odszyfrowywane wyłącznie na czas obliczeń. Dane urodzenia, teksty interpretacji i gotowy dokument są **usuwane po 30 dniach** od złożenia zamówienia – razem z linkiem do pobrania. Nieopłacone zamówienie jest usuwane wraz ze wszystkimi danymi po 7 dniach. Adres e-mail przy opłaconym zamówieniu jest przechowywany przez 180 dni – na potrzeby pytań i zwrotów – a następnie usuwany. Zapis zamówienia bez niego (co kupiono, kiedy i za jaką cenę) przechowujemy tak długo, jak wymagają tego przepisy o rachunkowości i przepisy podatkowe.
+
+Subskrypcja horoskopu rozpoczyna się dopiero wtedy, gdy potwierdzą ją Państwo za pomocą linku z naszej wiadomości e-mail; niepotwierdzone zgłoszenie jest usuwane po 7 dniach. W przypadku aktywnej subskrypcji przechowujemy Państwa adres e-mail oraz, w postaci zaszyfrowanej, obliczony horoskop i Państwa imię; same dane urodzenia – tylko przez pierwsze 30 dni, na wypadek potrzeby ich poprawienia. Po anulowaniu lub zakończeniu subskrypcji jej dane są przechowywane jeszcze przez 30 dni, a następnie usuwane.
+
+Teksty bezpłatnego podglądu są przechowywane do 30 dni, aby ten sam tekst nie był pisany dwukrotnie; nie są z nimi powiązane ani adres e-mail, ani zamówienie.
+
+## Państwa prawa
+
+Mają Państwo prawo dostępu do swoich danych i otrzymania ich kopii (art. 15 RODO), prawo do ich sprostowania (art. 16 RODO), do ich usunięcia – także przed upływem podanych terminów (art. 17 RODO), do ograniczenia przetwarzania (art. 18 RODO) oraz do przenoszenia danych (art. 20 RODO). W tym celu prosimy napisać na adres help@chronika.me z adresu, z którego złożono zamówienie lub zamówiono subskrypcję. Usunięcie danych urodzenia oznacza, że dokument przestanie być dostępny.
+
+**Prawo sprzeciwu:** W zakresie, w jakim przetwarzamy dane na podstawie naszego prawnie uzasadnionego interesu (art. 6 ust. 1 lit. f RODO), mogą Państwo w każdej chwili wnieść sprzeciw wobec takiego przetwarzania z przyczyn związanych z Państwa szczególną sytuacją (art. 21 RODO).
+
+Zgodę mogą Państwo wycofać w każdej chwili, bez wpływu na zgodność z prawem przetwarzania, którego dokonano na podstawie zgody przed jej wycofaniem (art. 7 ust. 3 RODO). W przypadku reklamowych plików cookie odbywa się to tak: prosimy usunąć pliki cookie strony w przeglądarce – pytanie pojawi się ponownie, a do czasu udzielenia odpowiedzi żadne tagi nie są wczytywane. Jeżeli uważają Państwo, że przetwarzamy Państwa dane niezgodnie z prawem, mają Państwo prawo wnieść skargę do organu nadzorczego, w szczególności w państwie członkowskim swojego zwykłego pobytu (art. 77 RODO); w Polsce organem tym jest Prezes Urzędu Ochrony Danych Osobowych.
+
+## Dzieci
+
+Horoskop dziecka jest przygotowywany na podstawie danych dziecka, które wprowadza osoba dorosła. Nie zawieramy umowy z dzieckiem i nie kontaktujemy się z nim. Serwis nie jest przeznaczony do samodzielnego korzystania przez osoby, które nie ukończyły 18 lat.
+
+## Zmiany
+
+Jeżeli niniejsza polityka ulegnie zmianie, nowa wersja pojawi się na tej stronie z nową datą. O istotnych zmianach poinformujemy Państwa e-mailem, jeżeli mamy bieżące zamówienie z Państwa adresem.
+`,
 };

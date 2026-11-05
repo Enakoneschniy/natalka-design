@@ -376,7 +376,7 @@
     "startFailed": "Nie udało się uruchomić. Proszę spróbować ponownie.",
     "tooMany": "Zbyt wiele prób z rzędu. Proszę odczekać minutę i spróbować ponownie.",
     "emailInvalid": "Proszę sprawdzić adres e-mail",
-    "consent": "Wyrażam zgodę na rozpoczęcie spełniania świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że z chwilą rozpoczęcia spełniania świadczenia utracę prawo odstąpienia od umowy. Regulamin i zasady zwrotów – w stopce strony.",
+    "consent": "Wyrażam zgodę na rozpoczęcie świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że po spełnieniu świadczenia utracę prawo odstąpienia od umowy. Regulamin i zasady zwrotów – w stopce strony.",
     "pay": "Zamawiam i płacę",
     "regionBlocked": "Niestety w tym kraju nie możemy przyjąć płatności.",
     "howTitle": "Jak przebiega płatność",

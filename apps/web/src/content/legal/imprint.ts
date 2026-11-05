@@ -58,4 +58,15 @@ Kontakt: E-Mail help@chronika.me. Wir antworten innerhalb von zwei Werktagen.
 
 Verbraucherstreitbeilegung: Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
 `,
+  pl: `
+# Dane firmy
+
+**coremind s. r. o.** – spółka z ograniczoną odpowiedzialnością prawa słowackiego.
+
+Adres: Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja.
+
+Rejestr handlowy Sądu Miejskiego Bratysława III, oddział Sro, wkładka nr 194301/B. Numer identyfikacyjny (IČO): 57 339 368. Numer VAT UE (IČ DPH): SK2122681594.
+
+Kontakt: help@chronika.me.
+`,
 };

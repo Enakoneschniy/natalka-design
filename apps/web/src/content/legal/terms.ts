@@ -195,4 +195,57 @@ Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor e
 
 Diese Bedingungen können sich ändern; für Ihre Bestellung gilt die Fassung, die zum Zeitpunkt der Zahlung angezeigt wurde.
 `,
+  pl: `
+# Regulamin
+
+_Wersja z 2 listopada 2026 r. Usługodawca: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, IČO 57 339 368, rejestr handlowy Sądu Miejskiego Bratysława III, oddział Sro, wkładka nr 194301/B. Kontakt: help@chronika.me._
+
+## Czym jest Chronika
+
+Chronika to serwis, który na podstawie daty, godziny i miejsca urodzenia oblicza horoskop urodzeniowy i przygotowuje do niego pisemną interpretację w formacie PDF. Położenia planet są obliczane według efemeryd; tekst pisze model językowy na podstawie tych obliczeń i zasad redakcyjnych serwisu. Opłacając zamówienie, akceptują Państwo niniejszy regulamin.
+
+## Co Państwo otrzymują
+
+Dokument w formacie PDF w wybranym języku, o objętości podanej w opisie produktu. Jest on przygotowywany indywidualnie na podstawie Państwa danych, zazwyczaj w ciągu 10–20 minut, i jest dostępny pod swoim linkiem przez 30 dni od złożenia zamówienia. Link jest wysyłany na podany adres e-mail oraz, jeżeli Państwo tak wybrali, do Telegramu. Bezpłatny podgląd horoskopu jest dostępny bez płatności i bez zobowiązań.
+
+## Cena i płatność
+
+Cena jest wyświetlana przed płatnością w Państwa walucie i zawiera wszystkie podatki. Płatność jest jednorazowa, bez subskrypcji, i odbywa się za pośrednictwem dostawcy usług płatniczych Stripe; nie widzimy i nie przechowujemy danych Państwa karty. Potwierdzenie zapłaty otrzymują Państwo e-mailem.
+
+## Państwa dane i Państwa odpowiedzialność
+
+Dokument jest tak dokładny, jak dane, na podstawie których powstaje. Prosimy sprawdzić datę, godzinę i miejscowość przed zapłatą: dokument przygotowany na podstawie błędnych danych jest prawidłowym dokumentem dla innej osoby. Jeżeli się Państwo pomylili, prosimy napisać do nas w ciągu 7 dni – jeden raz bezpłatnie przygotujemy dokument ponownie na podstawie poprawionych danych.
+
+Wprowadzając dane innej osoby (analiza zgodności, horoskop dziecka), potwierdzają Państwo, że są do tego uprawnieni.
+
+## Czym interpretacja nie jest
+
+Interpretacja to wykładnia tradycji astrologicznej, napisana do czytania. Nie jest poradą medyczną, psychologiczną, prawną ani finansową i nie jest przepowiednią zdarzeń. Prosimy nie podejmować na jej podstawie decyzji dotyczących zdrowia, pieniędzy ani relacji bez porady właściwego specjalisty. Nie gwarantujemy, że nastąpi cokolwiek, co opisano w dokumencie.
+
+## Prawa do tekstu
+
+Dokument jest przygotowany dla Państwa i przeznaczony do użytku osobistego. Mogą go Państwo przechowywać, drukować i udostępniać bliskim osobom. Publikacja w całości lub wykorzystanie komercyjne wymaga naszej zgody. Wszystko inne na stronie (projekt graficzny, teksty, oprogramowanie) należy do usługodawcy.
+
+## Odpowiedzialność
+
+Odpowiadamy za to, aby dokument został dostarczony i był zgodny z opisem. Nasza odpowiedzialność z tytułu każdego zamówienia jest ograniczona do jego ceny. Nie odpowiadamy za decyzje podjęte na podstawie dokumentu ani za niedostępność serwisu z przyczyn od nas niezależnych.
+
+Ograniczenia te nie mają zastosowania w zakresie, w jakim nasza odpowiedzialność wynika z bezwzględnie obowiązujących przepisów, w szczególności w przypadku szkody wyrządzonej umyślnie lub wskutek rażącego niedbalstwa oraz szkody na życiu, ciele lub zdrowiu. Pozostają one bez wpływu na Państwa ustawowe uprawnienia w przypadku braku zgodności dokumentu z umową.
+
+## Zwroty i odstąpienie od umowy
+
+Zasady zwrotów oraz pouczenie o prawie odstąpienia od umowy znajdują się w dokumencie [Odstąpienie od umowy i zwroty](/[locale]/legal/refunds).
+
+## Prawo właściwe i spory
+
+Do niniejszego regulaminu stosuje się prawo Republiki Słowackiej. Jeżeli są Państwo konsumentem, wybór ten nie pozbawia Państwa ochrony przyznanej Państwu na mocy przepisów, których nie można wyłączyć w drodze umowy, obowiązujących w państwie, w którym mają Państwo miejsce zwykłego pobytu (dla konsumentów w UE: art. 6 ust. 2 rozporządzenia (WE) nr 593/2008 (Rzym I)).
+
+Spór rozwiązujemy w pierwszej kolejności w drodze korespondencji pod adresem help@chronika.me; jeżeli w ciągu 30 dni nie dojdzie do porozumienia, rozstrzygają go sądy właściwe dla siedziby usługodawcy, chyba że prawo Państwa kraju przyznaje Państwu prawo do innego sądu.
+
+Nie jesteśmy obowiązani do udziału w postępowaniach w sprawie pozasądowego rozwiązywania sporów konsumenckich i nie zobowiązaliśmy się do takiego udziału.
+
+## Zmiany
+
+Regulamin może ulegać zmianom; do Państwa zamówienia stosuje się wersja wyświetlana w chwili zapłaty.
+`,
 };

@@ -103,9 +103,9 @@ describe('the confirmation of the contract', () => {
     expect(letter?.subject).toBe(`Potwierdzenie zamówienia · ${orderId}`);
     for (const part of [
       'Horoskop urodzeniowy i prognoza',
-      'Wyrażam zgodę na rozpoczęcie spełniania świadczenia przed upływem terminu do odstąpienia od umowy',
+      'Wyrażam zgodę na rozpoczęcie świadczenia przed upływem terminu do odstąpienia od umowy',
       'Mają Państwo prawo odstąpić od niniejszej umowy w terminie 14 dni',
-      'art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta',
+      'art. 38 ust. 1 pkt 13 ustawy z dnia 30 maja 2014 r. o prawach konsumenta',
       'Wzór formularza odstąpienia od umowy',
       'https://chronika.test/pl/withdraw',
     ]) {

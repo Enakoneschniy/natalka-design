@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isDraft, renderLegal } from '.';
 import { terms } from './terms';
 
-const LANGUAGES = ['ru', 'uk', 'en', 'de'] as const;
+const LANGUAGES = ['ru', 'uk', 'en', 'de', 'pl'] as const;
 const text = (locale: string) => terms[locale] ?? '';
 
 /** What each language must say, in its own words: the delivery, the free rebuild, the cap, the law. */
@@ -35,11 +35,19 @@ const FACTS: Record<(typeof LANGUAGES)[number], string[]> = {
     'Unsere Haftung ist für jede Bestellung auf deren Preis begrenzt',
     'gilt das Recht der Slowakischen Republik',
   ],
+  pl: [
+    'zazwyczaj w ciągu 10–20 minut',
+    'jest dostępny pod swoim linkiem przez 30 dni od złożenia zamówienia',
+    'prosimy napisać do nas w ciągu 7 dni – jeden raz bezpłatnie przygotujemy dokument ponownie na podstawie poprawionych danych',
+    'Nasza odpowiedzialność z tytułu każdego zamówienia jest ograniczona do jego ceny',
+    'stosuje się prawo Republiki Słowackiej',
+  ],
 };
 
 describe('terms of service', () => {
-  it('has no blanks left in the German edition', () => {
+  it('has no blanks left in the German and Polish editions', () => {
     expect(isDraft(text('de'))).toBe(false);
+    expect(isDraft(text('pl'))).toBe(false);
   });
 
   it('keeps every language in step, section for section', () => {
@@ -71,6 +79,34 @@ describe('terms of service', () => {
   it('links the German terms to the German refund policy', () => {
     expect(renderLegal(text('de'), 'de')).toContain(
       '<a href="/de/legal/refunds">Erstattung und Widerruf</a>',
+    );
+  });
+
+  it('keeps a Polish consumer the protection of the law where they live', () => {
+    const pl = text('pl');
+    expect(pl).toContain(
+      'wybór ten nie pozbawia Państwa ochrony przyznanej Państwu na mocy przepisów, których nie można wyłączyć w drodze umowy, obowiązujących w państwie, w którym mają Państwo miejsce zwykłego pobytu',
+    );
+    expect(pl).toContain('art. 6 ust. 2 rozporządzenia (WE) nr 593/2008 (Rzym I)');
+    expect(pl).toContain(
+      'w szczególności w przypadku szkody wyrządzonej umyślnie lub wskutek rażącego niedbalstwa oraz szkody na życiu, ciele lub zdrowiu',
+    );
+    expect(pl).toContain(
+      'Pozostają one bez wpływu na Państwa ustawowe uprawnienia w przypadku braku zgodności dokumentu z umową.',
+    );
+  });
+
+  it('names no dispute-resolution body in Polish, at the owner’s wish', () => {
+    const pl = text('pl');
+    expect(pl).toContain(
+      'Nie jesteśmy obowiązani do udziału w postępowaniach w sprawie pozasądowego rozwiązywania sporów konsumenckich i nie zobowiązaliśmy się do takiego udziału.',
+    );
+    expect(pl).not.toMatch(/rzeczni|inspekcj|UOKiK|ochrony konkurencji|polubown|\bODR\b/i);
+  });
+
+  it('links the Polish terms to the Polish refund policy', () => {
+    expect(renderLegal(text('pl'), 'pl')).toContain(
+      '<a href="/pl/legal/refunds">Odstąpienie od umowy i zwroty</a>',
     );
   });
 });
