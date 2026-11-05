@@ -32,8 +32,8 @@ class SectionSpec:
     titles_ty: dict[str, str] = field(default_factory=dict)
 
 
-def _t(uk: str, ru: str, en: str, de: str) -> dict[str, str]:
-    return {"uk": uk, "ru": ru, "en": en, "de": de}
+def _t(uk: str, ru: str, en: str, de: str, pl: str) -> dict[str, str]:
+    return {"uk": uk, "ru": ru, "en": en, "de": de, "pl": pl}
 
 
 NATAL: tuple[SectionSpec, ...] = (
@@ -45,7 +45,13 @@ NATAL: tuple[SectionSpec, ...] = (
             "to read it. State plainly that everything here comes from the chart and nothing else."
         ),
         paragraphs=(2, 3),
-        titles=_t("Про цей розбір", "Об этом разборе", "About this reading", "Über diese Deutung"),
+        titles=_t(
+            "Про цей розбір",
+            "Об этом разборе",
+            "About this reading",
+            "Über diese Deutung",
+            "O tej analizie",
+        ),
     ),
     SectionSpec(
         id="natal.overview",
@@ -66,6 +72,7 @@ NATAL: tuple[SectionSpec, ...] = (
             "Общий рисунок карты",
             "The shape of the chart",
             "Das Gesamtbild des Horoskops",
+            "Ogólny obraz horoskopu",
         ),
     ),
     SectionSpec(
@@ -78,7 +85,7 @@ NATAL: tuple[SectionSpec, ...] = (
         paragraphs=(3, 4),
         needs_time=True,
         quote=True,
-        titles=_t("Асцендент", "Асцендент", "The Ascendant", "Der Aszendent"),
+        titles=_t("Асцендент", "Асцендент", "The Ascendant", "Der Aszendent", "Ascendent"),
     ),
     SectionSpec(
         id="natal.sun",
@@ -88,7 +95,7 @@ NATAL: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         quote=True,
-        titles=_t("Сонце", "Солнце", "The Sun", "Die Sonne"),
+        titles=_t("Сонце", "Солнце", "The Sun", "Die Sonne", "Słońce"),
     ),
     SectionSpec(
         id="natal.moon",
@@ -98,7 +105,7 @@ NATAL: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         quote=True,
-        titles=_t("Місяць", "Луна", "The Moon", "Der Mond"),
+        titles=_t("Місяць", "Луна", "The Moon", "Der Mond", "Księżyc"),
     ),
     SectionSpec(
         id="natal.mercury_venus_mars",
@@ -113,6 +120,7 @@ NATAL: tuple[SectionSpec, ...] = (
             "Меркурий, Венера, Марс",
             "Mercury, Venus and Mars",
             "Merkur, Venus und Mars",
+            "Merkury, Wenus i Mars",
         ),
     ),
     SectionSpec(
@@ -122,7 +130,13 @@ NATAL: tuple[SectionSpec, ...] = (
             "discipline and time. Name the Saturn return years if they are relevant to the age."
         ),
         paragraphs=(3, 4),
-        titles=_t("Юпітер і Сатурн", "Юпитер и Сатурн", "Jupiter and Saturn", "Jupiter und Saturn"),
+        titles=_t(
+            "Юпітер і Сатурн",
+            "Юпитер и Сатурн",
+            "Jupiter and Saturn",
+            "Jupiter und Saturn",
+            "Jowisz i Saturn",
+        ),
     ),
     SectionSpec(
         id="natal.outer",
@@ -138,6 +152,7 @@ NATAL: tuple[SectionSpec, ...] = (
             "Внешние планеты и узлы",
             "Outer planets and nodes",
             "Die äußeren Planeten und die Mondknoten",
+            "Planety zewnętrzne i węzły księżycowe",
         ),
     ),
     SectionSpec(
@@ -148,7 +163,13 @@ NATAL: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         needs_time=True,
-        titles=_t("MC і покликання", "MC и призвание", "Midheaven and vocation", "MC und Berufung"),
+        titles=_t(
+            "MC і покликання",
+            "MC и призвание",
+            "Midheaven and vocation",
+            "MC und Berufung",
+            "MC i powołanie",
+        ),
     ),
     SectionSpec(
         id="natal.key_aspects",
@@ -158,7 +179,11 @@ NATAL: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(4, 6),
         titles=_t(
-            "Ключові аспекти", "Ключевые аспекты", "The key aspects", "Die wichtigsten Aspekte"
+            "Ключові аспекти",
+            "Ключевые аспекты",
+            "The key aspects",
+            "Die wichtigsten Aspekte",
+            "Najważniejsze aspekty",
         ),
     ),
     SectionSpec(
@@ -169,7 +194,7 @@ NATAL: tuple[SectionSpec, ...] = (
             "for this person in general, before the detail."
         ),
         paragraphs=(2, 3),
-        titles=_t("Стосунки", "Отношения", "Relationships", "Beziehungen"),
+        titles=_t("Стосунки", "Отношения", "Relationships", "Beziehungen", "Związki"),
     ),
     SectionSpec(
         id="love.seventh_house",
@@ -179,7 +204,9 @@ NATAL: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         needs_time=True,
-        titles=_t("Сьомий дім", "Седьмой дом", "The seventh house", "Das siebte Haus"),
+        titles=_t(
+            "Сьомий дім", "Седьмой дом", "The seventh house", "Das siebte Haus", "Dom siódmy"
+        ),
     ),
     SectionSpec(
         id="love.venus_moon",
@@ -188,7 +215,13 @@ NATAL: tuple[SectionSpec, ...] = (
             "emotional peace, and where the two disagree with each other."
         ),
         paragraphs=(3, 4),
-        titles=_t("Венера і Місяць", "Венера и Луна", "Venus and the Moon", "Venus und Mond"),
+        titles=_t(
+            "Венера і Місяць",
+            "Венера и Луна",
+            "Venus and the Moon",
+            "Venus und Mond",
+            "Wenus i Księżyc",
+        ),
     ),
     SectionSpec(
         id="love.partner",
@@ -203,6 +236,7 @@ NATAL: tuple[SectionSpec, ...] = (
             "Какой партнёр подходит",
             "The partner that fits",
             "Wer zu Ihnen passt",
+            "Jaka osoba pasuje",
         ),
     ),
     SectionSpec(
@@ -217,6 +251,7 @@ NATAL: tuple[SectionSpec, ...] = (
             "Что с этим делать",
             "What to do with it",
             "Was Sie daraus machen können",
+            "Co z tym zrobić",
         ),
     ),
     SectionSpec(
@@ -224,7 +259,13 @@ NATAL: tuple[SectionSpec, ...] = (
         impersonal_ok=True,
         brief="A short opening for the work and money part: the overall picture from the chart.",
         paragraphs=(2, 3),
-        titles=_t("Робота і гроші", "Работа и деньги", "Work and money", "Beruf und Geld"),
+        titles=_t(
+            "Робота і гроші",
+            "Работа и деньги",
+            "Work and money",
+            "Beruf und Geld",
+            "Praca i pieniądze",
+        ),
     ),
     SectionSpec(
         id="work.picture",
@@ -233,7 +274,9 @@ NATAL: tuple[SectionSpec, ...] = (
             "kind of rhythm suits them, and what kind of environment quietly drains them."
         ),
         paragraphs=(3, 4),
-        titles=_t("Як ви працюєте", "Как вы работаете", "How you work", "Wie Sie arbeiten"),
+        titles=_t(
+            "Як ви працюєте", "Как вы работаете", "How you work", "Wie Sie arbeiten", "Styl pracy"
+        ),
         titles_ty={"ru": "Как ты работаешь", "uk": "Як ти працюєш"},
     ),
     SectionSpec(
@@ -243,7 +286,7 @@ NATAL: tuple[SectionSpec, ...] = (
             "to earning, to spending, to shared money and debt."
         ),
         paragraphs=(3, 4),
-        titles=_t("Гроші", "Деньги", "Money", "Geld"),
+        titles=_t("Гроші", "Деньги", "Money", "Geld", "Pieniądze"),
     ),
     SectionSpec(
         id="summary",
@@ -253,7 +296,7 @@ NATAL: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         quote=True,
-        titles=_t("Головне", "Главное", "The essentials", "Das Wichtigste"),
+        titles=_t("Головне", "Главное", "The essentials", "Das Wichtigste", "Najważniejsze"),
     ),
     SectionSpec(
         id="ps",
@@ -263,7 +306,7 @@ NATAL: tuple[SectionSpec, ...] = (
             "none of it is a verdict."
         ),
         paragraphs=(1, 2),
-        titles=_t("Наостанок", "Напоследок", "One last thing", "Zum Schluss"),
+        titles=_t("Наостанок", "Напоследок", "One last thing", "Zum Schluss", "Na koniec"),
     ),
 )
 
@@ -284,7 +327,11 @@ TRANSITS: tuple[SectionSpec, ...] = (
         paragraphs=(2, 3),
         needs_transits=True,
         titles=_t(
-            "Про цей прогноз", "Об этом прогнозе", "About this forecast", "Über diese Prognose"
+            "Про цей прогноз",
+            "Об этом прогнозе",
+            "About this forecast",
+            "Über diese Prognose",
+            "O tej prognozie",
         ),
     ),
     SectionSpec(
@@ -297,7 +344,9 @@ TRANSITS: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(4, 6),
         needs_transits=True,
-        titles=_t("Погляд назад", "Взгляд назад", "Looking back", "Ein Blick zurück"),
+        titles=_t(
+            "Погляд назад", "Взгляд назад", "Looking back", "Ein Blick zurück", "Spojrzenie wstecz"
+        ),
     ),
     SectionSpec(
         id="time.now",
@@ -313,6 +362,7 @@ TRANSITS: tuple[SectionSpec, ...] = (
             "Что происходит сейчас",
             "What is happening now",
             "Was jetzt geschieht",
+            "Co dzieje się teraz",
         ),
     ),
     SectionSpec(
@@ -324,7 +374,13 @@ TRANSITS: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 6),
         needs_transits=True,
-        titles=_t("До кінця року", "До конца года", "The rest of this year", "Bis zum Jahresende"),
+        titles=_t(
+            "До кінця року",
+            "До конца года",
+            "The rest of this year",
+            "Bis zum Jahresende",
+            "Do końca roku",
+        ),
     ),
     SectionSpec(
         id="time.next.q1",
@@ -334,14 +390,26 @@ TRANSITS: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         needs_transits=True,
-        titles=_t("Січень — березень", "Январь — март", "January to March", "Januar bis März"),
+        titles=_t(
+            "Січень — березень",
+            "Январь — март",
+            "January to March",
+            "Januar bis März",
+            "Styczeń – marzec",
+        ),
     ),
     SectionSpec(
         id="time.next.q2",
         brief="The next calendar year, April to June, month by month with the exact dates.",
         paragraphs=(3, 4),
         needs_transits=True,
-        titles=_t("Квітень — червень", "Апрель — июнь", "April to June", "April bis Juni"),
+        titles=_t(
+            "Квітень — червень",
+            "Апрель — июнь",
+            "April to June",
+            "April bis Juni",
+            "Kwiecień – czerwiec",
+        ),
     ),
     SectionSpec(
         id="time.next.q3",
@@ -349,7 +417,11 @@ TRANSITS: tuple[SectionSpec, ...] = (
         paragraphs=(3, 4),
         needs_transits=True,
         titles=_t(
-            "Липень — вересень", "Июль — сентябрь", "July to September", "Juli bis September"
+            "Липень — вересень",
+            "Июль — сентябрь",
+            "July to September",
+            "Juli bis September",
+            "Lipiec – wrzesień",
         ),
     ),
     SectionSpec(
@@ -358,7 +430,11 @@ TRANSITS: tuple[SectionSpec, ...] = (
         paragraphs=(3, 4),
         needs_transits=True,
         titles=_t(
-            "Жовтень — грудень", "Октябрь — декабрь", "October to December", "Oktober bis Dezember"
+            "Жовтень — грудень",
+            "Октябрь — декабрь",
+            "October to December",
+            "Oktober bis Dezember",
+            "Październik – grudzień",
         ),
     ),
     SectionSpec(
@@ -370,7 +446,7 @@ TRANSITS: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         needs_transits=True,
-        titles=_t("Рік потому", "Год спустя", "The year after", "Das Jahr danach"),
+        titles=_t("Рік потому", "Год спустя", "The year after", "Das Jahr danach", "Rok później"),
     ),
     SectionSpec(
         id="time.work",
@@ -386,6 +462,7 @@ TRANSITS: tuple[SectionSpec, ...] = (
             "Работа и деньги в эти годы",
             "Work and money in these years",
             "Beruf und Geld in diesen Jahren",
+            "Praca i pieniądze w tych latach",
         ),
     ),
     SectionSpec(
@@ -402,6 +479,7 @@ TRANSITS: tuple[SectionSpec, ...] = (
             "Отношения в эти годы",
             "Relationships in these years",
             "Beziehungen in diesen Jahren",
+            "Związki w tych latach",
         ),
     ),
     SectionSpec(
@@ -418,6 +496,7 @@ TRANSITS: tuple[SectionSpec, ...] = (
             "Что с этим делать",
             "What to do with it",
             "Was Sie daraus machen können",
+            "Co z tym zrobić",
         ),
     ),
 )
@@ -455,6 +534,7 @@ FORECAST: tuple[SectionSpec, ...] = (
             "Почва вашей карты",
             "The ground of your chart",
             "Das Fundament Ihres Horoskops",
+            "Fundament horoskopu",
         ),
         titles_ty={"ru": "Почва твоей карты", "uk": "Ґрунт твоєї карти"},
     ),
@@ -467,7 +547,7 @@ FORECAST: tuple[SectionSpec, ...] = (
             "that none of it is a verdict."
         ),
         paragraphs=(1, 2),
-        titles=_t("Наостанок", "Напоследок", "One last thing", "Zum Schluss"),
+        titles=_t("Наостанок", "Напоследок", "One last thing", "Zum Schluss", "Na koniec"),
     ),
 )
 
@@ -480,7 +560,13 @@ CHILD: tuple[SectionSpec, ...] = (
             "chart describes a temperament, never a diagnosis or a destiny."
         ),
         paragraphs=(2, 3),
-        titles=_t("Про цей розбір", "Об этом разборе", "About this reading", "Über diese Deutung"),
+        titles=_t(
+            "Про цей розбір",
+            "Об этом разборе",
+            "About this reading",
+            "Über diese Deutung",
+            "O tej analizie",
+        ),
     ),
     SectionSpec(
         id="child.overview",
@@ -490,7 +576,13 @@ CHILD: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 5),
         must_cover=("element and modality balance with the actual counts",),
-        titles=_t("Загальний малюнок", "Общий рисунок", "The shape of the chart", "Das Gesamtbild"),
+        titles=_t(
+            "Загальний малюнок",
+            "Общий рисунок",
+            "The shape of the chart",
+            "Das Gesamtbild",
+            "Ogólny obraz horoskopu",
+        ),
     ),
     SectionSpec(
         id="child.temper",
@@ -500,7 +592,7 @@ CHILD: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         quote=True,
-        titles=_t("Характер", "Характер", "Temperament", "Temperament"),
+        titles=_t("Характер", "Характер", "Temperament", "Temperament", "Temperament"),
     ),
     SectionSpec(
         id="child.needs",
@@ -514,6 +606,7 @@ CHILD: tuple[SectionSpec, ...] = (
             "Что даёт чувство безопасности",
             "What makes them feel safe",
             "Was Ihrem Kind Sicherheit gibt",
+            "Co daje dziecku poczucie bezpieczeństwa",
         ),
     ),
     SectionSpec(
@@ -523,7 +616,13 @@ CHILD: tuple[SectionSpec, ...] = (
             "teaching works and which one makes them shut down."
         ),
         paragraphs=(3, 4),
-        titles=_t("Як вчиться", "Как учится", "How they learn", "Wie Ihr Kind lernt"),
+        titles=_t(
+            "Як вчиться",
+            "Как учится",
+            "How they learn",
+            "Wie Ihr Kind lernt",
+            "Jak dziecko się uczy",
+        ),
     ),
     SectionSpec(
         id="child.rest",
@@ -532,7 +631,13 @@ CHILD: tuple[SectionSpec, ...] = (
             "for them, what to protect in the timetable."
         ),
         paragraphs=(2, 4),
-        titles=_t("Як відпочиває", "Как отдыхает", "How they rest", "Wie Ihr Kind sich erholt"),
+        titles=_t(
+            "Як відпочиває",
+            "Как отдыхает",
+            "How they rest",
+            "Wie Ihr Kind sich erholt",
+            "Jak dziecko odpoczywa",
+        ),
     ),
     SectionSpec(
         id="child.hurts",
@@ -542,7 +647,9 @@ CHILD: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         quote=True,
-        titles=_t("Що ранить", "Что ранит", "What hurts", "Was Ihr Kind verletzt"),
+        titles=_t(
+            "Що ранить", "Что ранит", "What hurts", "Was Ihr Kind verletzt", "Co dziecko rani"
+        ),
     ),
     SectionSpec(
         id="child.language",
@@ -557,6 +664,7 @@ CHILD: tuple[SectionSpec, ...] = (
             "Какой её видят",
             "How they come across",
             "Wie Ihr Kind auf andere wirkt",
+            "Jak dziecko jest postrzegane",
         ),
     ),
     SectionSpec(
@@ -571,6 +679,7 @@ CHILD: tuple[SectionSpec, ...] = (
             "Язык, на котором её слышно",
             "The language they hear",
             "Die Sprache, die Ihr Kind versteht",
+            "Język, który dziecko rozumie",
         ),
     ),
     SectionSpec(
@@ -581,7 +690,13 @@ CHILD: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         needs_transits=True,
-        titles=_t("Найближчі роки", "Ближайшие годы", "The years ahead", "Die nächsten Jahre"),
+        titles=_t(
+            "Найближчі роки",
+            "Ближайшие годы",
+            "The years ahead",
+            "Die nächsten Jahre",
+            "Najbliższe lata",
+        ),
     ),
     SectionSpec(
         id="ps",
@@ -591,7 +706,7 @@ CHILD: tuple[SectionSpec, ...] = (
             "child in front of them, not an instruction."
         ),
         paragraphs=(1, 2),
-        titles=_t("Наостанок", "Напоследок", "One last thing", "Zum Schluss"),
+        titles=_t("Наостанок", "Напоследок", "One last thing", "Zum Schluss", "Na koniec"),
     ),
 )
 
@@ -608,7 +723,13 @@ SYNASTRY: tuple[SectionSpec, ...] = (
             "does not score a couple or say whether to stay together."
         ),
         paragraphs=(2, 3),
-        titles=_t("Про цей розбір", "Об этом разборе", "About this reading", "Über diese Deutung"),
+        titles=_t(
+            "Про цей розбір",
+            "Об этом разборе",
+            "About this reading",
+            "Über diese Deutung",
+            "O tej analizie",
+        ),
     ),
     SectionSpec(
         id="synastry.each",
@@ -617,7 +738,13 @@ SYNASTRY: tuple[SectionSpec, ...] = (
             "or three sentences about each, no more — the pair is the subject."
         ),
         paragraphs=(3, 4),
-        titles=_t("Двоє окремо", "Двое по отдельности", "The two of them apart", "Jeder für sich"),
+        titles=_t(
+            "Двоє окремо",
+            "Двое по отдельности",
+            "The two of them apart",
+            "Jeder für sich",
+            "Każde z osobna",
+        ),
     ),
     SectionSpec(
         id="synastry.pull",
@@ -628,7 +755,11 @@ SYNASTRY: tuple[SectionSpec, ...] = (
         paragraphs=(4, 5),
         quote=True,
         titles=_t(
-            "Що притягує", "Что притягивает", "What pulls them together", "Was Sie zueinander zieht"
+            "Що притягує",
+            "Что притягивает",
+            "What pulls them together",
+            "Was Sie zueinander zieht",
+            "Co przyciąga",
         ),
     ),
     SectionSpec(
@@ -639,7 +770,11 @@ SYNASTRY: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(4, 5),
         titles=_t(
-            "Де виникає тертя", "Где возникает трение", "Where the friction is", "Wo es reibt"
+            "Де виникає тертя",
+            "Где возникает трение",
+            "Where the friction is",
+            "Wo es reibt",
+            "Gdzie pojawia się tarcie",
         ),
     ),
     SectionSpec(
@@ -655,6 +790,7 @@ SYNASTRY: tuple[SectionSpec, ...] = (
             "Где вы друг у друга",
             "Where you land in each other",
             "Wo Sie einander berühren",
+            "Gdzie się odnajdują",
         ),
     ),
     SectionSpec(
@@ -665,7 +801,11 @@ SYNASTRY: tuple[SectionSpec, ...] = (
         ),
         paragraphs=(3, 4),
         titles=_t(
-            "Як домовлятися", "Как договариваться", "How to work it out", "Wie Sie sich einigen"
+            "Як домовлятися",
+            "Как договариваться",
+            "How to work it out",
+            "Wie Sie sich einigen",
+            "Jak się porozumieć",
         ),
     ),
     SectionSpec(
@@ -680,6 +820,7 @@ SYNASTRY: tuple[SectionSpec, ...] = (
             "Что держит надолго",
             "What makes it last",
             "Was Ihre Beziehung trägt",
+            "Co sprawia, że związek trwa",
         ),
     ),
     SectionSpec(
@@ -694,6 +835,7 @@ SYNASTRY: tuple[SectionSpec, ...] = (
             "Что с этим делать",
             "What to do with it",
             "Was Sie daraus machen können",
+            "Co z tym zrobić",
         ),
     ),
     SectionSpec(
@@ -704,7 +846,7 @@ SYNASTRY: tuple[SectionSpec, ...] = (
             "or their future. Say it without hedging."
         ),
         paragraphs=(1, 2),
-        titles=_t("Наостанок", "Напоследок", "One last thing", "Zum Schluss"),
+        titles=_t("Наостанок", "Напоследок", "One last thing", "Zum Schluss", "Na koniec"),
     ),
 )
 
@@ -740,7 +882,7 @@ HOROSCOPE_WEEK = SectionSpec(
     ),
     paragraphs=(4, 4),
     needs_transits=True,
-    titles=_t("Тиждень", "Неделя", "The week", "Die Woche"),
+    titles=_t("Тиждень", "Неделя", "The week", "Die Woche", "Tydzień"),
 )
 
 HOROSCOPE_MONTH = SectionSpec(
@@ -756,7 +898,7 @@ HOROSCOPE_MONTH = SectionSpec(
     ),
     paragraphs=(6, 7),
     needs_transits=True,
-    titles=_t("Місяць", "Месяц", "The month", "Der Monat"),
+    titles=_t("Місяць", "Месяц", "The month", "Der Monat", "Miesiąc"),
 )
 
 HOROSCOPE = {"week": HOROSCOPE_WEEK, "month": HOROSCOPE_MONTH}
@@ -780,7 +922,13 @@ PREVIEW = SectionSpec(
     id="preview",
     brief=f"{_PREVIEW_COMMON} The three are: the Sun, the Moon, then the Ascendant.",
     paragraphs=(3, 3),
-    titles=_t("Перше враження", "Первое впечатление", "A first look", "Ein erster Blick"),
+    titles=_t(
+        "Перше враження",
+        "Первое впечатление",
+        "A first look",
+        "Ein erster Blick",
+        "Pierwsze spojrzenie",
+    ),
 )
 
 PREVIEW_NO_TIME = SectionSpec(
@@ -791,19 +939,31 @@ PREVIEW_NO_TIME = SectionSpec(
         "birth time for this chart, so there is no Ascendant to write about; do not mention that."
     ),
     paragraphs=(3, 3),
-    titles=_t("Перше враження", "Первое впечатление", "A first look", "Ein erster Blick"),
+    titles=_t(
+        "Перше враження",
+        "Первое впечатление",
+        "A first look",
+        "Ein erster Blick",
+        "Pierwsze spojrzenie",
+    ),
 )
 
 #: The titles printed above each passage.
 PREVIEW_TITLES: tuple[dict[str, str], ...] = (
-    _t("Сонце", "Солнце", "The Sun", "Die Sonne"),
-    _t("Місяць", "Луна", "The Moon", "Der Mond"),
-    _t("Асцендент", "Асцендент", "The Ascendant", "Der Aszendent"),
+    _t("Сонце", "Солнце", "The Sun", "Die Sonne", "Słońce"),
+    _t("Місяць", "Луна", "The Moon", "Der Mond", "Księżyc"),
+    _t("Асцендент", "Асцендент", "The Ascendant", "Der Aszendent", "Ascendent"),
 )
 PREVIEW_TITLES_NO_TIME: tuple[dict[str, str], ...] = (
-    _t("Сонце", "Солнце", "The Sun", "Die Sonne"),
-    _t("Місяць", "Луна", "The Moon", "Der Mond"),
-    _t("Малюнок карти", "Рисунок карты", "The shape of the chart", "Das Gesamtbild"),
+    _t("Сонце", "Солнце", "The Sun", "Die Sonne", "Słońce"),
+    _t("Місяць", "Луна", "The Moon", "Der Mond", "Księżyc"),
+    _t(
+        "Малюнок карти",
+        "Рисунок карты",
+        "The shape of the chart",
+        "Das Gesamtbild",
+        "Ogólny obraz horoskopu",
+    ),
 )
 
 
@@ -817,16 +977,35 @@ PREVIEW_SYNASTRY = SectionSpec(
         "about the pair, not about either chart on its own."
     ),
     paragraphs=(3, 3),
-    titles=_t("Перше враження", "Первое впечатление", "A first look", "Ein erster Blick"),
+    titles=_t(
+        "Перше враження",
+        "Первое впечатление",
+        "A first look",
+        "Ein erster Blick",
+        "Pierwsze spojrzenie",
+    ),
 )
 
 PREVIEW_TITLES_SYNASTRY: tuple[dict[str, str], ...] = (
-    _t("Що притягує", "Что притягивает", "What pulls you together", "Was Sie zueinander zieht"),
-    _t("Де виникає тертя", "Где возникает трение", "Where the friction is", "Wo es reibt"),
+    _t(
+        "Що притягує",
+        "Что притягивает",
+        "What pulls you together",
+        "Was Sie zueinander zieht",
+        "Co przyciąga",
+    ),
+    _t(
+        "Де виникає тертя",
+        "Где возникает трение",
+        "Where the friction is",
+        "Wo es reibt",
+        "Gdzie pojawia się tarcie",
+    ),
     _t(
         "Де ви одне в одного",
         "Где вы друг у друга",
         "Where you land in each other",
         "Wo Sie einander berühren",
+        "Gdzie się odnajdują",
     ),
 )

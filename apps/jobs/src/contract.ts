@@ -23,6 +23,7 @@ const COUNTRY: Record<string, string> = {
   uk: 'Словаччина',
   en: 'Slovakia',
   de: 'Slowakei',
+  pl: 'Słowacja',
 };
 
 /** The seller, in one line, in the buyer's language. */
@@ -42,6 +43,8 @@ const CONSENT: Record<string, string> = {
   ru: 'Документ создаётся сразу после оплаты; с его доставкой право на отказ прекращается.',
   en: CONSENT_EN,
   de: 'Ich stimme ausdrücklich zu, dass Sie vor Ablauf der Widerrufsfrist mit der Erstellung des Dokuments beginnen, und mir ist bekannt, dass ich durch diese Zustimmung mit Beginn der Vertragserfüllung mein Widerrufsrecht verliere.',
+  // Art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta.
+  pl: 'Wyrażam zgodę na rozpoczęcie spełniania świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że z chwilą rozpoczęcia spełniania świadczenia utracę prawo odstąpienia od umowy.',
 };
 
 export const withdrawalConsent = (locale: string): string => CONSENT[locale] ?? CONSENT_EN;
@@ -75,6 +78,21 @@ const WITHDRAWAL: Record<string, string[]> = {
     'An coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slowakei, E-Mail: help@chronika.me: Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der folgenden Dienstleistung (*) — Bestellt am (*)/erhalten am (*) — Name des/der Verbraucher(s) — Anschrift des/der Verbraucher(s) — Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier) — Datum',
     '(*) Unzutreffendes streichen.',
   ],
+  // The statutory model (załącznik nr 1 do ustawy o prawach konsumenta) and its form.
+  pl: [
+    'Prawo odstąpienia od umowy',
+    'Mają Państwo prawo odstąpić od niniejszej umowy w terminie 14 dni bez podania jakiejkolwiek przyczyny. Termin do odstąpienia od umowy wygasa po upływie 14 dni od dnia zawarcia umowy.',
+    'Aby skorzystać z prawa odstąpienia od umowy, muszą Państwo poinformować nas (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, e-mail: help@chronika.me) o swojej decyzji o odstąpieniu od niniejszej umowy w drodze jednoznacznego oświadczenia (na przykład pismo wysłane pocztą lub pocztą elektroniczną). Mogą Państwo skorzystać z wzoru formularza odstąpienia od umowy, jednak nie jest to obowiązkowe. Mogą Państwo również złożyć oświadczenie przyciskiem „Odstąpienie od umowy” na naszej stronie.',
+    'Aby zachować termin do odstąpienia od umowy, wystarczy, aby wysłali Państwo informację dotyczącą wykonania przysługującego Państwu prawa odstąpienia od umowy przed upływem terminu do odstąpienia od umowy.',
+    'Skutki odstąpienia od umowy',
+    'W przypadku odstąpienia od niniejszej umowy zwracamy Państwu wszystkie otrzymane od Państwa płatności niezwłocznie, a w każdym przypadku nie później niż 14 dni od dnia, w którym zostaliśmy poinformowani o Państwa decyzji o wykonaniu prawa odstąpienia od niniejszej umowy. Zwrotu płatności dokonamy przy użyciu takich samych sposobów płatności, jakie zostały przez Państwa użyte w pierwotnej transakcji, chyba że wyraźnie zgodzili się Państwo na inne rozwiązanie; w każdym przypadku nie poniosą Państwo żadnych opłat w związku z tym zwrotem.',
+    'Wygaśnięcie prawa odstąpienia',
+    'Prawo odstąpienia od umowy nie przysługuje, jeżeli spełnianie świadczenia rozpoczęło się za wyraźną i uprzednią zgodą konsumenta, który przed rozpoczęciem świadczenia został poinformowany, że po spełnieniu świadczenia utraci prawo odstąpienia od umowy, i przyjął to do wiadomości (art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta). Ta wiadomość jest potwierdzeniem zawarcia umowy, które przewiduje dla tego ustawa.',
+    'Wzór formularza odstąpienia od umowy',
+    '(formularz ten należy wypełnić i odesłać tylko w przypadku chęci odstąpienia od umowy)',
+    'Adresat: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratysława – Ružinov, Słowacja, e-mail: help@chronika.me — Ja/My(*) niniejszym informuję/informujemy(*) o moim/naszym odstąpieniu od umowy o dostarczenie treści cyfrowych(*)/świadczenie następującej usługi(*) — Data zawarcia umowy(*)/odbioru(*) — Imię i nazwisko konsumenta(-ów) — Adres konsumenta(-ów) — Podpis konsumenta(-ów) (tylko jeżeli formularz jest przesyłany w wersji papierowej) — Data',
+    '(*) Niepotrzebne skreślić.',
+  ],
 };
 
 export const withdrawalInfo = (locale: string): string[] => WITHDRAWAL[locale] ?? WITHDRAWAL_EN;
@@ -85,4 +103,8 @@ export const WITHDRAWAL_HEADINGS = new Set([
   'Folgen des Widerrufs',
   'Erlöschen des Widerrufsrechts',
   'Muster-Widerrufsformular',
+  'Prawo odstąpienia od umowy',
+  'Skutki odstąpienia od umowy',
+  'Wygaśnięcie prawa odstąpienia',
+  'Wzór formularza odstąpienia od umowy',
 ]);

@@ -95,6 +95,24 @@ describe('the confirmation of the contract', () => {
     expect(event?.status).toBe('sent');
   });
 
+  it('gives a Polish buyer the statutory withdrawal information and form, in Polish', async () => {
+    const email = 'kupujaca@confirm.test';
+    const { orderId, jobId } = await pendingOrder(email, 'pl');
+    await stripeWebhook(await signed(paid(orderId, jobId)), recordingQueue().env);
+    const [letter] = await letters(email);
+    expect(letter?.subject).toBe(`Potwierdzenie zamówienia · ${orderId}`);
+    for (const part of [
+      'Horoskop urodzeniowy i prognoza',
+      'Wyrażam zgodę na rozpoczęcie spełniania świadczenia przed upływem terminu do odstąpienia od umowy',
+      'Mają Państwo prawo odstąpić od niniejszej umowy w terminie 14 dni',
+      'art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta',
+      'Wzór formularza odstąpienia od umowy',
+      'https://chronika.test/pl/withdraw',
+    ]) {
+      expect(letter?.text, part).toContain(part);
+    }
+  });
+
   it('quotes a Russian buyer the consent they gave, in Russian', async () => {
     const email = 'pokupatel@confirm.test';
     const { orderId, jobId } = await pendingOrder(email, 'ru');

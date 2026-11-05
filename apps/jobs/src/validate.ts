@@ -8,7 +8,7 @@ import type { Product } from './db';
 import { type Browser, parseBrowser } from './meta';
 
 export const PRODUCTS: readonly Product[] = ['natal', 'forecast', 'synastry', 'child', 'bundle'];
-export const LOCALES = ['ru', 'uk', 'en', 'de'] as const;
+export const LOCALES = ['ru', 'uk', 'en', 'de', 'pl'] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export class InvalidField extends Error {

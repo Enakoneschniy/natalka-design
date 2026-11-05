@@ -236,3 +236,48 @@ def test_a_german_sign_without_its_article_and_an_english_word_are_caught() -> N
     assert "sign_article" in report.codes
     assert "anglicism" in report.codes
     assert check(GERMAN, lang="de", min_paragraphs=2, max_paragraphs=3).ok
+
+
+POLISH = (
+    "Słońce Pani horoskopu stoi w Byku, w dziewiątym domu. Nie spieszy się Pani, i to nie jest "
+    "powolność, tylko sposób robienia rzeczy dobrze. To, co Pani zaczyna, doprowadza Pani do "
+    "końca.\n\n"
+    "Dziewiąty dom przenosi to w widoczną część życia: Pani reputacja rośnie warstwa po warstwie, "
+    "a ci, którzy z Panią pracują, zauważają to wcześniej niż Pani sama. Kwadratura do Saturna "
+    "nie jest tu ciężarem, tylko miarą."
+)
+
+
+def test_a_polish_reading_on_pani_passes_and_ci_is_not_informal() -> None:
+    report = check(POLISH, lang="pl", min_paragraphs=2, max_paragraphs=3, gender="f")
+    assert report.ok, report.problems
+
+
+def test_ty_in_a_polish_reading_on_pani_is_caught() -> None:
+    slipped = POLISH.replace("To, co Pani zaczyna", "To, co ty zaczynasz")
+    report = check(slipped, lang="pl", min_paragraphs=2, max_paragraphs=3, gender="f")
+    assert "informal_address" in report.codes
+    assert any("«Pani» / «Pan»" in p for p in report.problems)
+
+
+def test_a_polish_reading_without_a_gender_is_impersonal_by_design() -> None:
+    impersonal = (
+        "Słońce w tym horoskopie stoi w Byku, w dziewiątym domu. Przy takim układzie nie ma pośpiechu, "
+        "a rzeczy robi się dokładnie i do końca. " * 3
+    )
+    text = f"{impersonal}\n\n{impersonal}"
+    assert (
+        "not_addressed"
+        not in check(text, lang="pl", min_paragraphs=2, max_paragraphs=3, gender="n").codes
+    )
+    assert (
+        "not_addressed"
+        in check(text, lang="pl", min_paragraphs=2, max_paragraphs=3, gender="f").codes
+    )
+
+
+def test_a_polish_greeting_in_a_chapter_is_caught() -> None:
+    report = check(
+        "Droga Anno,\n\n" + POLISH, lang="pl", min_paragraphs=2, max_paragraphs=4, gender="f"
+    )
+    assert "greeting" in report.codes

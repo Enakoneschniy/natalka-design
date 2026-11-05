@@ -45,6 +45,18 @@ GENDER = {
         ),
     },
 }
+GENDER["f"]["pl"] = (
+    "kobieta — zwracaj się do niej «Pani» i uzgadniaj wszystkie formy w rodzaju żeńskim "
+    "(jest Pani gotowa, zrobiła Pani)"
+)
+GENDER["m"]["pl"] = (
+    "mężczyzna — zwracaj się do niego «Pan» i uzgadniaj wszystkie formy w rodzaju męskim "
+    "(jest Pan gotowy, zrobił Pan)"
+)
+GENDER["n"]["pl"] = (
+    "płeć nie została podana — nie zwracaj się «Pani» ani «Pan»; buduj zdania bezosobowo, tak "
+    "by rodzaj nie był potrzebny (ten horoskop pokazuje…, przy takim układzie…)"
+)
 GENDER["f"]["de"] = (
     "eine Frau — Personenbezeichnungen in der weiblichen Form (die Kämpferin, die Gestalterin)"
 )
@@ -152,10 +164,37 @@ ADDRESS_RULE_DE: dict[str, str] = {
     ),
 }
 
+#: Polish formal address is a title and the third person — «Pani» to a woman, «Pan» to a man —
+#: so it depends on the gender the system prompt gives; with none given there is no title to
+#: use, and the reading speaks impersonally instead.
+ADDRESS_RULE_PL: dict[str, str] = {
+    "vy": (
+        "In Polish this is the formal\n«Pani» / «Pan» throughout, capitalised as in a letter, "
+        "with the verb in the third person (Słońce Pani horoskopu stoi w Byku; jest Pani…) — "
+        "«Pani» or «Pan» as the line on the person below says, never «ty», in any sentence, "
+        "however warm the moment. When the gender is not given, use neither title and write "
+        "impersonally. In a synastry the two of them together are «Państwo»."
+    ),
+    "ty": (
+        "In Polish this is the informal\n«ty» throughout — «ty», «ciebie», «twój» — warm and "
+        "direct, never «Pani» or «Pan» to this one person. In a synastry the two of them "
+        "together are «wy»."
+    ),
+}
+
 #: What the reading may contain besides its own alphabet. A Cyrillic reading allows no Latin
 #: letters but the chart's abbreviations; a German one is written in Latin letters and has to
 #: be told what that does not license.
 SCRIPT_RULE: dict[str, str] = {
+    "pl": (
+        "Write natural Polish, not Polish translated from English or Russian: no English word at "
+        "all, Polish quotation marks „…”, the en dash with spaces ( – ), the Polish names for "
+        "planets, signs and aspects (Ascendent, koniunkcja, opozycja, kwadratura, trygon, "
+        "sekstyl). A sign is in the locative: w Baranie, w Byku, w Bliźniętach, w Raku, we Lwie, "
+        "w Pannie, w Wadze, w Skorpionie, w Strzelcu, w Koziorożcu, w Wodniku, w Rybach. An "
+        "applying aspect is «zbliżający się», a separating one «oddalający się». The chart "
+        "abbreviations AC, MC, IC and DC stay as they are."
+    ),
     "de": (
         "Write natural German, not German translated from English: no English word at all, not "
         "even inside a compound (no «Mindset», «Challenge», «Timing», «Timing-Wissen»), German "
@@ -181,7 +220,7 @@ SYSTEM = _SYSTEM_TEMPLATE.replace("{address_rule}", ADDRESS_RULE["vy"]).replace(
 def system_prompt(lang: str, gender: str, product: str = "natal", address: Address = "vy") -> str:
     language = LANGUAGE.get(lang, f"in {lang}")
     who = GENDER.get(gender, GENDER["n"]).get(lang) or GENDER[gender]["en"]
-    address_rule = (ADDRESS_RULE_DE if lang == "de" else ADDRESS_RULE)[address]
+    address_rule = {"de": ADDRESS_RULE_DE, "pl": ADDRESS_RULE_PL}.get(lang, ADDRESS_RULE)[address]
     script_rule = SCRIPT_RULE.get(lang, CYRILLIC_SCRIPT_RULE)
     parts = [
         _SYSTEM_TEMPLATE.replace("{address_rule}", address_rule).replace(

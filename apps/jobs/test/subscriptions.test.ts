@@ -121,7 +121,7 @@ describe('POST /v1/subscriptions', () => {
   it('refuses malformed fields by name', async () => {
     const cases: [Record<string, unknown>, string][] = [
       [{ email: 'nope' }, 'email'],
-      [{ locale: 'pl' }, 'locale'],
+      [{ locale: 'fr' }, 'locale'],
       [{ cadence: 'day' }, 'cadence'],
       [{ birth: { ...BIRTH, date: '1992-13-01' } }, 'birth.date'],
       [{ birth: { ...BIRTH, latitude: 100 } }, 'birth.latitude'],

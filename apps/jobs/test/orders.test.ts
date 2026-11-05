@@ -111,6 +111,16 @@ describe('POST /v1/orders', () => {
     expect(row).toEqual({ locale: 'de', variant: 'XMAS30' });
   });
 
+  it('takes a Polish order, with the payment page, the name and the consent in Polish', async () => {
+    const response = await post({ ...ORDER, product: 'bundle', locale: 'pl', currency: 'PLN', amount_minor: 7400 });
+    expect(response.status).toBe(201);
+    const created = (await response.json()) as Created;
+    const { fields } = (await lastRequest(`stripe|checkout|${created.order_id}`)) as { fields: Record<string, string> };
+    expect(fields.locale).toBe('pl');
+    expect(fields['line_items[0][price_data][product_data][name]']).toBe('Horoskop urodzeniowy i prognoza');
+    expect(fields['custom_text[terms_of_service_acceptance][message]']).toMatch(/utracę prawo odstąpienia od umowy\.$/);
+  });
+
   it('refuses each malformed field by name', async () => {
     const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
     const cases: [Record<string, unknown>, string][] = [

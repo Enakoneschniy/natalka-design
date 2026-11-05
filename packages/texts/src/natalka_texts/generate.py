@@ -66,6 +66,7 @@ def _one_section(
     user: str,
     lang: str,
     reading: Reading,
+    gender: str = "n",
 ) -> SectionText:
     completion = provider.complete(system, user, max_tokens=MAX_TOKENS)
     reading._record(completion)
@@ -75,6 +76,7 @@ def _one_section(
         min_paragraphs=spec.paragraphs[0],
         max_paragraphs=spec.paragraphs[1],
         impersonal_ok=spec.impersonal_ok,
+        gender=gender,
     )
     if report.ok:
         return SectionText(spec.id, title(spec, lang), completion.text, quote=spec.quote)
@@ -91,6 +93,7 @@ def _one_section(
         min_paragraphs=spec.paragraphs[0],
         max_paragraphs=spec.paragraphs[1],
         impersonal_ok=spec.impersonal_ok,
+        gender=gender,
     )
     # The second draft is used even when imperfect: it is the better of the two in practice, and a
     # missing section is worse than a clumsy one. `Reading.rejected` keeps the receipt.
@@ -127,7 +130,7 @@ def write_reading(
         user = section_prompt(spec, name=name, sheet=sheet, written_so_far=written)
         try:
             section = _one_section(
-                provider, spec, system=system, user=user, lang=lang, reading=reading
+                provider, spec, system=system, user=user, lang=lang, reading=reading, gender=gender
             )
         except ModelUnavailableError:
             raise
@@ -160,6 +163,8 @@ def write_horoscope(
     user = section_prompt(spec, name=name, sheet=sheet, written_so_far=[])
     reading = Reading(lang=lang)
     reading.sections.append(
-        _one_section(provider, spec, system=system, user=user, lang=lang, reading=reading)
+        _one_section(
+            provider, spec, system=system, user=user, lang=lang, reading=reading, gender=gender
+        )
     )
     return reading

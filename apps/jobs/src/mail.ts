@@ -66,6 +66,17 @@ const COPY: Record<string, Copy> = {
     manage: 'Abo verwalten',
     unsubscribe: 'Sie erhalten diese E-Mail, weil Sie die Horoskope von Chronika abonniert haben. Abbestellen oder den Rhythmus ändern können Sie über den Link oben.',
   },
+  // Polish letters know no gender, so they speak impersonally rather than to «Pani» or «Pan».
+  pl: {
+    subject: 'Analiza jest gotowa',
+    ready: 'Dokument jest gotowy. Otwiera się pod linkiem poniżej.',
+    open: 'Analiza w PDF',
+    keeps: 'Link działa przez trzydzieści dni; potem dokument i dane urodzenia są usuwane.',
+    sign: 'Chronika · chronika.me',
+    window: 'Horoskop na',
+    manage: 'Zarządzanie subskrypcją',
+    unsubscribe: 'Ta wiadomość przychodzi, ponieważ zamówiono horoskopy Chronika. Rezygnacja lub zmiana częstotliwości jest możliwa pod linkiem powyżej.',
+  },
 };
 
 const escape = (text: string) =>
@@ -451,6 +462,22 @@ const CONFIRMATION: Record<string, ConfirmationCopy> = {
     button: 'Den Widerruf können Sie auch über die Schaltfläche „Vertrag widerrufen“ auf unserer Website erklären:',
     documents: 'AGB und Widerrufsbelehrung:',
   },
+  pl: {
+    subject: 'Potwierdzenie zamówienia',
+    intro: 'Dziękujemy za zamówienie. Ta wiadomość potwierdza zawarcie umowy; warto ją zachować.',
+    order: 'Numer zamówienia',
+    date: 'Data płatności',
+    product: 'Produkt',
+    description: 'indywidualna analiza w PDF, około 35 stron, link e-mailem',
+    price: 'Cena (z VAT)',
+    seller: 'Sprzedawca',
+    consentTitle: 'Zgoda',
+    consentIntro: 'Przed płatnością złożono oświadczenie:',
+    started: 'Tworzenie dokumentu rozpoczęło się zaraz po płatności; link przyjdzie osobną wiadomością w ciągu 10–20 minut.',
+    withdrawalTitle: 'Pouczenie o prawie odstąpienia od umowy',
+    button: 'Od umowy można też odstąpić przyciskiem „Odstąpienie od umowy” na stronie:',
+    documents: 'Regulamin i zasady odstąpienia:',
+  },
 };
 
 export interface ConfirmationInput {
@@ -560,6 +587,17 @@ const RECEIPT: Record<string, ReceiptCopy> = {
     messageKept: 'liegt uns vor; wir lesen sie',
     next: 'Wir melden uns innerhalb von zwei Werktagen. Steht Ihnen eine Rückzahlung zu, erfolgt sie über dasselbe Zahlungsmittel, mit dem Sie bezahlt haben.',
   },
+  pl: {
+    subject: 'Otrzymaliśmy oświadczenie o odstąpieniu od umowy',
+    intro: 'Potwierdzamy otrzymanie oświadczenia o odstąpieniu od umowy. Jego treść:',
+    received: 'Otrzymano',
+    name: 'Imię i nazwisko',
+    email: 'E-mail',
+    order: 'Zamówienie',
+    message: 'Wiadomość',
+    messageKept: 'otrzymana; zapoznamy się z nią',
+    next: 'Odpowiemy w ciągu dwóch dni roboczych. Jeśli przysługuje zwrot, pieniądze wrócą tą samą metodą, którą dokonano płatności.',
+  },
 };
 
 export interface WithdrawalInput {
@@ -622,6 +660,12 @@ const CONFIRM_COPY: Record<string, Copy> = {
     'Abo bestätigen',
     'Der Link gilt 7 Tage. Wenn Sie nichts abonniert haben, ignorieren Sie diese E-Mail einfach: Die Daten werden von selbst gelöscht.',
   ),
+  pl: simple(
+    'Potwierdzenie subskrypcji horoskopów',
+    'Kliknięcie przycisku potwierdza subskrypcję horoskopów Chronika. Dopóki subskrypcja nie zostanie potwierdzona, niczego nie wysyłamy.',
+    'Potwierdzenie subskrypcji',
+    'Link jest ważny 7 dni. Jeśli subskrypcja nie była zamawiana, wystarczy zignorować tę wiadomość: dane usuną się same.',
+  ),
 };
 
 export async function sendSubscriptionConfirm(env: Env, to: string, locale: string, link: string): Promise<Sent> {
@@ -662,6 +706,12 @@ const TRIAL_ENDED_COPY: Record<string, Copy> = {
     'Ihr kostenloser Monat mit den Horoskopen von Chronika ist vorbei, weitere Horoskope kommen nicht. Sie müssen nichts bezahlen: Das Abo endet einfach.',
     'Abo öffnen',
     'Die Daten des Abos werden in 30 Tagen gelöscht. Auf der Seite des Abos können Sie sie schon früher löschen.',
+  ),
+  pl: simple(
+    'Bezpłatny miesiąc dobiegł końca',
+    'Bezpłatny miesiąc horoskopów Chronika dobiegł końca i kolejne horoskopy nie będą wysyłane. Nie trzeba nic płacić: subskrypcja po prostu się zatrzymała.',
+    'Subskrypcja',
+    'Dane subskrypcji zostaną usunięte za 30 dni. Wcześniej można je usunąć na stronie subskrypcji.',
   ),
 };
 

@@ -48,6 +48,13 @@ const PRODUCT_NAMES: Record<string, Record<Product, string>> = {
     child: 'Kinderhoroskop',
     bundle: 'Geburtshoroskop und Prognose',
   },
+  pl: {
+    natal: 'Horoskop urodzeniowy',
+    forecast: 'Prognoza na 12 miesięcy',
+    synastry: 'Horoskop partnerski',
+    child: 'Horoskop dziecka',
+    bundle: 'Horoskop urodzeniowy i prognoza',
+  },
 };
 
 export const productName = (product: Product, locale: string): string =>

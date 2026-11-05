@@ -33,6 +33,13 @@ const PRODUCT: Record<string, Record<Product, string>> = {
     child: 'Kinderhoroskop',
     bundle: 'Horoskop und Prognose',
   },
+  pl: {
+    natal: 'horoskop urodzeniowy',
+    forecast: 'prognoza',
+    synastry: 'zgodność',
+    child: 'horoskop dziecka',
+    bundle: 'horoskop i prognoza',
+  },
 };
 
 const AND: Record<string, string> = { uk: 'і', ru: 'и', en: 'and', pl: 'i', de: 'und' };

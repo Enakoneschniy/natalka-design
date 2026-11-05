@@ -105,11 +105,26 @@ const COPY = {
       'Erledigt: Ihre Horoskope kommen ab jetzt hierher. Das Abo verwalten Sie über den Link in Ihrer E-Mail; /stop trennt diesen Chat.',
     stopped: 'In Ordnung, hierher wird nichts mehr geschickt.',
   },
+  pl: {
+    hello:
+      'Tu Chronika. Aby otrzymać dokument tutaj, wystarczy otworzyć link „Odbierz w Telegramie” na stronie zamówienia.',
+    unknown:
+      'Nie ma takiego kodu albo link wygasł. Wystarczy ponownie otworzyć stronę zamówienia i nacisnąć „Odbierz w Telegramie”.',
+    waiting:
+      'Analiza jest jeszcze pisana — zwykle trwa to dziesięć–piętnaście minut. Gdy tylko dokument będzie gotowy, przyślę go tutaj.',
+    failed:
+      'Z tym zamówieniem coś poszło nie tak. Widzimy błąd i ponowimy generowanie; jeśli w ciągu godziny nic się nie zmieni, prosimy o wiadomość na help@chronika.me.',
+    here: 'Analiza jest gotowa.',
+    caption: 'Chronika · dokument jest przechowywany przez trzydzieści dni',
+    subscribed:
+      'Gotowe: horoskopy będą przychodzić tutaj. Subskrypcją można zarządzać przez link z e-maila; /stop odłącza ten czat.',
+    stopped: 'Dobrze, nic więcej nie będzie tu wysyłane.',
+  },
 } as const;
 
 type Lang = keyof typeof COPY;
 const lang = (code?: string | null): Lang =>
-  code === 'uk' || code === 'ru' || code === 'de' ? code : 'en';
+  code === 'uk' || code === 'ru' || code === 'de' || code === 'pl' ? code : 'en';
 
 /* Telegram authenticates its webhook calls with a secret we choose. Derived from the token rather
  * than stored as a second secret: it is only ever compared here. */
@@ -250,7 +265,7 @@ async function setup(token: string, origin: string): Promise<Response> {
     body: JSON.stringify({
       commands: [
         { command: 'start', description: 'Chronika' },
-        { command: 'stop', description: 'Stop / Stopp / Зупинити / Остановить' },
+        { command: 'stop', description: 'Stop / Stopp / Zatrzymaj / Зупинити / Остановить' },
       ],
     }),
   });

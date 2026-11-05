@@ -79,6 +79,23 @@ IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
         "du hast geschrieben",
         "wie du weißt",
     ),
+    "pl": (
+        "pisała pani",
+        "pisał pan",
+        "jak pani wie",
+        "jak pan wie",
+        "wspomniała pani",
+        "wspomniał pan",
+        "z pani listu",
+        "z pana listu",
+        "jak sama pani",
+        "jak sam pan",
+        "przechodzi pani teraz",
+        "przechodzi pan teraz",
+        "pisałaś",
+        "pisałeś",
+        "jak wiesz",
+    ),
 }
 
 #: Machine-writing tells from the style guide.
@@ -138,6 +155,21 @@ CLICHES: dict[str, tuple[str, ...]] = {
         "es ist wichtig zu verstehen",
         "es sei darauf hingewiesen",
     ),
+    "pl": (
+        "w dzisiejszym świecie",
+        "w dzisiejszych czasach",
+        "kluczowy aspekt",
+        "jest świadectwem",
+        "podkreśla znaczenie",
+        "zanurzmy się",
+        "przyjrzyjmy się",
+        "podsumowując",
+        "na zakończenie",
+        "warto zauważyć",
+        "warto podkreślić",
+        "należy zaznaczyć",
+        "ważne jest, aby zrozumieć",
+    ),
 }
 
 #: The reading is written on formal terms. A model that slips into «ты» has not made a stylistic
@@ -153,6 +185,8 @@ INFORMAL = {
         r"\b(ти|тоб[іи]|тебе|тобою|тві[йм]|тво(?:го|му|я|ю|[їєё]\w*))\b", re.IGNORECASE
     ),
     "de": re.compile(r"\b(du|dich|dir|dein\w*)\b", re.IGNORECASE),
+    # Not «ci»: it is also "those" («ci ludzie»).
+    "pl": re.compile(r"\b(ty|ciebie|cię|tobie|tobą|twój|twoj\w+)\b", re.IGNORECASE),
 }
 
 #: A section written *about* the reader instead of *to* them reads like a horoscope column and
@@ -165,15 +199,20 @@ SECOND_PERSON = {
     # At the start of a sentence the capital says nothing, so only a «Sie», «Ihnen» or «Ihr…»
     # inside a sentence — after a lower-case word or a comma — counts as speaking to the reader.
     "de": re.compile(r"(?<=[a-zäöüß,;:–—] )(Sie|Ihnen|Ihr\w*)\b"),
+    # The formal title, capitalised as in a letter; lower-case «pani» is just "a lady".
+    "pl": re.compile(r"\b(Pani|Pan|Pana|Panu|Panem|Panią|Państw\w*)\b"),
 }
 
 #: The two forms of address by name, for the problems the model is given back.
-ADDRESS_NAMES = {"de": ("«Sie»", "«du»")}
+ADDRESS_NAMES = {"de": ("«Sie»", "«du»"), "pl": ("«Pani» / «Pan»", "«ty»")}
 DEFAULT_ADDRESS_NAMES = ("«вы»", "«ты»")
 
 #: Two people addressed together on informal terms. In Russian and Ukrainian that is the formal
 #: plural; German has its own: «ihr», «euch», «euer».
-INFORMAL_PLURAL = {"de": re.compile(r"\b(ihr|euch|euer\w*)\b", re.IGNORECASE)}
+INFORMAL_PLURAL = {
+    "de": re.compile(r"\b(ihr|euch|euer\w*)\b", re.IGNORECASE),
+    "pl": re.compile(r"\b(wy|was|wam|wami|wasz\w*)\b", re.IGNORECASE),
+}
 #: Below this a section is an opening or a closing line, where an impersonal sentence is fine.
 ADDRESS_MIN_CHARS = 400
 
@@ -228,6 +267,9 @@ GREETING = {
     "ru": re.compile(r"^(Дорогая|Дорогой|Здравствуйте|Привет)\b[^\n.,!]{0,40}[,!]"),
     "uk": re.compile(r"^(Дорога|Дорогий|Вітаю|Привіт)\b[^\n.,!]{0,40}[,!]"),
     "en": re.compile(r"^(Dear|Hello|Hi)\b[^\n.,!]{0,40}[,!]"),
+    "pl": re.compile(
+        r"^(Droga|Drogi|Szanowna|Szanowny|Dzień dobry|Witam|Witaj)\b[^\n.,!]{0,40}[,!]"
+    ),
 }
 
 #: A German sign without its article — «in Stier» for «im Stier», «in Jungfrau» for «in der
@@ -272,7 +314,7 @@ def _found(text: str, needles: tuple[str, ...]) -> list[str]:
 
 
 def _address_problems(
-    text: str, lang: str, *, impersonal_ok: bool, address: Address, pair: bool
+    text: str, lang: str, *, impersonal_ok: bool, address: Address, pair: bool, gender: str
 ) -> list[_Problem]:
     """The form of address: «вы» / «Sie» by default, «ты» / «du» when the seller asked for it."""
     problems: list[_Problem] = []
@@ -288,7 +330,10 @@ def _address_problems(
             )
         )
 
-    if not impersonal_ok and len(text) > ADDRESS_MIN_CHARS:
+    # A Polish reader whose gender is not given has no title to be addressed by — «Pani» and «Pan»
+    # are a woman's and a man's — so their reading is written impersonally, by design.
+    impersonal_by_design = lang == "pl" and address == "vy" and gender not in ("f", "m")
+    if not impersonal_ok and not impersonal_by_design and len(text) > ADDRESS_MIN_CHARS:
         if address == "ty" and informal_re:
             plural = INFORMAL_PLURAL.get(lang) or SECOND_PERSON.get(lang)
             if not informal and not (pair and plural and plural.search(text)):
@@ -318,6 +363,7 @@ def _language_problems(
     impersonal_ok: bool = False,
     address: Address = "vy",
     pair: bool = False,
+    gender: str = "n",
 ) -> list[_Problem]:
     """Checks that only make sense for a given language: banned phrases, stray Latin, address."""
     problems: list[_Problem] = []
@@ -348,6 +394,10 @@ def _language_problems(
         problems.append(
             ("greeting", "the section opens with a greeting; only the opening section greets")
         )
+    if lang in ("de", "pl"):
+        english = sorted({m.group(0) for m in ANGLICISMS.finditer(text)})
+        if english:
+            problems.append(("anglicism", f"English words: {', '.join(english[:3])}"))
     if lang == "de":
         bare = sorted({m.group(0) for m in SIGN_WITHOUT_ARTICLE.finditer(text)})
         if bare:
@@ -358,9 +408,6 @@ def _language_problems(
                     "«in der Jungfrau», «in den Zwillingen»",
                 )
             )
-        english = sorted({m.group(0) for m in ANGLICISMS.finditer(text)})
-        if english:
-            problems.append(("anglicism", f"English words: {', '.join(english[:3])}"))
 
     script = _foreign_script(text, lang)
     if script:
@@ -384,7 +431,9 @@ def _language_problems(
             )
 
     problems.extend(
-        _address_problems(text, lang, impersonal_ok=impersonal_ok, address=address, pair=pair)
+        _address_problems(
+            text, lang, impersonal_ok=impersonal_ok, address=address, pair=pair, gender=gender
+        )
     )
     return problems
 
@@ -398,6 +447,7 @@ def check(
     impersonal_ok: bool = False,
     address: Address = "vy",
     pair: bool = False,
+    gender: str = "n",
 ) -> Report:
     problems: list[_Problem] = []
 
@@ -423,7 +473,9 @@ def check(
         )
 
     problems.extend(
-        _language_problems(stripped, lang, impersonal_ok=impersonal_ok, address=address, pair=pair)
+        _language_problems(
+            stripped, lang, impersonal_ok=impersonal_ok, address=address, pair=pair, gender=gender
+        )
     )
 
     if "!" in stripped:

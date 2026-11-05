@@ -112,14 +112,22 @@ def preview(req: PreviewRequest) -> dict[str, Any]:
     user = section_prompt(spec, name="", sheet=sheet, written_so_far=[])
     try:
         completion = provider.complete(system, user, max_tokens=2000)
-        report = check(completion.text, lang=req.lang, min_paragraphs=3, max_paragraphs=3)
+        report = check(
+            completion.text, lang=req.lang, min_paragraphs=3, max_paragraphs=3, gender=req.gender
+        )
         if not report.ok:
             # These are the first paragraphs a visitor reads, so they get the same second chance
             # a paid section does. It costs a cent and only happens when the editor objects.
             completion = provider.complete(
                 system, f"{user}\n\n{repair_prompt(list(report.problems))}", max_tokens=2000
             )
-            report = check(completion.text, lang=req.lang, min_paragraphs=3, max_paragraphs=3)
+            report = check(
+                completion.text,
+                lang=req.lang,
+                min_paragraphs=3,
+                max_paragraphs=3,
+                gender=req.gender,
+            )
     except ModelUnavailableError as exc:
         raise HTTPException(503, f"model unavailable: {exc}") from exc
 
@@ -267,6 +275,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
             impersonal_ok=spec.impersonal_ok,
             address=req.address,
             pair=(req.product == "synastry"),
+            gender=req.gender,
         )
         attempts = 1
         if not report.ok:
@@ -284,6 +293,7 @@ def section(req: SectionRequest) -> dict[str, Any]:
                 impersonal_ok=spec.impersonal_ok,
                 address=req.address,
                 pair=(req.product == "synastry"),
+                gender=req.gender,
             )
             # Keep the receipt of both attempts: the caller pays for them either way.
             return {

@@ -172,3 +172,13 @@ def test_only_the_opening_section_may_greet() -> None:
     assert intro.id == "intro"
     assert "do not greet" not in section_prompt(intro, name="Lena", sheet="-", written_so_far=[])
     assert "do not greet" in section_prompt(overview, name="Lena", sheet="-", written_so_far=[])
+
+
+def test_a_polish_reading_is_on_pani_or_pan_by_gender() -> None:
+    she = system_prompt("pl", "f", "natal")
+    assert "«Pani» / «Pan» throughout" in she and "never «ty»" in she
+    assert "zwracaj się do niej «Pani»" in she
+    assert "zwracaj się do niego «Pan»" in system_prompt("pl", "m", "natal")
+    assert "nie zwracaj się «Pani» ani «Pan»" in system_prompt("pl", "n", "natal")
+    assert "w Byku" in she and "„…”" in she
+    assert "{" not in system_prompt("pl", "f", "synastry", address="ty")

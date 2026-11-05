@@ -162,7 +162,7 @@ COVER_TITLE: dict[str, dict[str, str]] = {
         "uk": "Натальна карта і прогноз",
         "en": "Birth chart and forecast",
         "ru": "Натальная карта и прогноз",
-        "pl": "Horoskop i prognoza",
+        "pl": "Horoskop urodzeniowy i prognoza",
         "de": "Geburtshoroskop und Prognose",
     },
 }
@@ -178,7 +178,7 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "uk": "за транзитами вашої карти",
         "en": "from the transits to your chart",
         "ru": "по транзитам вашей карты",
-        "pl": "według tranzytów twojej karty",
+        "pl": "według tranzytów w horoskopie urodzeniowym",
         "de": "nach den Transiten Ihres Horoskops",
     },
     "child": {
@@ -192,7 +192,7 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "uk": "дві карти поряд",
         "en": "two charts side by side",
         "ru": "две карты рядом",
-        "pl": "dwie karty obok siebie",
+        "pl": "dwa horoskopy obok siebie",
         "de": "zwei Horoskope nebeneinander",
     },
     "bundle": {
@@ -207,7 +207,7 @@ CHART_SECTION_TITLE = {
     "uk": "Ваша карта",
     "en": "Your chart",
     "ru": "Ваша карта",
-    "pl": "Twoja karta",
+    "pl": "Horoskop urodzeniowy",
     "de": "Ihr Horoskop",
 }
 #: The chart page's title in the informal «ты» form, where it differs from the formal one above.
