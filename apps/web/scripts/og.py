@@ -21,6 +21,20 @@ COPY = {
         "Бесплатное превью, PDF на почту.",
         "PDF · 35 страниц",
     ),
+    "uk": (
+        "Ваша натальна карта —",
+        "з датами",
+        "35 сторінок особистого розбору і прогноз за місяцями.",
+        "Безкоштовне превʼю, PDF на пошту.",
+        "PDF · 35 сторінок",
+    ),
+    "pl": (
+        "Horoskop urodzeniowy —",
+        "z dokładnymi datami",
+        "35 stron indywidualnej analizy i prognoza na każdy miesiąc.",
+        "Bezpłatny podgląd, PDF e-mailem.",
+        "PDF · 35 stron",
+    ),
     "de": (
         "Ihr Geburtshoroskop —",
         "auf den Monat genau",
@@ -31,7 +45,12 @@ COPY = {
 }
 
 #: Russian keeps the name it always had; other languages carry theirs.
-OUT = {"ru": "public/og.png", "de": "public/og-de.png"}
+OUT = {
+    "ru": "public/og.png",
+    "uk": "public/og-uk.png",
+    "pl": "public/og-pl.png",
+    "de": "public/og-de.png",
+}
 
 mark_f = ImageFont.truetype(F + "PlayfairDisplay-Medium.ttf", 34)
 head_f = ImageFont.truetype(F + "PlayfairDisplay-Regular.ttf", 54)

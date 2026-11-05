@@ -36,11 +36,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL('/_not-found', request.url), { status: 404 });
   }
 
-  // The site used to be in three languages. Anyone holding one of those links — a bookmark, a
-  // message, the odd crawler — lands on the same page in Russian rather than on a 404.
-  const gone = request.nextUrl.pathname.match(/^\/(uk|en)(\/.*)?$/);
+  // English was a language of the site once. Anyone holding such a link — a bookmark, a message,
+  // the odd crawler — lands on the same page in Russian rather than on a 404.
+  const gone = request.nextUrl.pathname.match(/^\/en(\/.*)?$/);
   if (gone) {
-    const url = new URL(`/ru${gone[2] ?? ''}${request.nextUrl.search}`, request.url);
+    const url = new URL(`/ru${gone[1] ?? ''}${request.nextUrl.search}`, request.url);
     return NextResponse.redirect(url, 308);
   }
 

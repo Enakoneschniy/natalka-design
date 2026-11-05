@@ -132,9 +132,25 @@ describe('middleware: the cabinet host', () => {
     expect(await go('ru-RU,ru;q=0.9,de;q=0.8')).toBe('https://chronika.me/ru');
     expect(await go('en-US')).toBe('https://chronika.me/ru');
     expect(await go(undefined)).toBe('https://chronika.me/ru');
+    expect(await go('uk-UA,uk;q=0.9,ru;q=0.8')).toBe('https://chronika.me/uk');
+    expect(await go('pl-PL,pl;q=0.9')).toBe('https://chronika.me/pl');
+    expect(await go('ru-UA,ru;q=0.9,uk;q=0.8')).toBe('https://chronika.me/ru');
     expect(await go('de-AT', '?code=testcode&utm_source=youtube')).toBe(
       'https://chronika.me/de?code=testcode&utm_source=youtube',
     );
+  });
+
+  it('serves Ukrainian and Polish pages again, and still sends /en to Russian', async () => {
+    for (const path of ['/uk/start', '/pl/preview']) {
+      const response = await middleware(
+        request(`https://chronika.me${path}`, { host: 'chronika.me' }),
+      );
+      expect(response.headers.get('location'), path).toBeNull();
+    }
+    const english = await middleware(
+      request('https://chronika.me/en/start?x=1', { host: 'chronika.me' }),
+    );
+    expect(english.headers.get('location')).toBe('https://chronika.me/ru/start?x=1');
   });
 
   it('serves German pages under /de without sending them anywhere', async () => {

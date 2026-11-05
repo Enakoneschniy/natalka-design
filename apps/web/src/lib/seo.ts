@@ -53,10 +53,11 @@ export function alternates(locale: string, rest = '') {
   return { canonical: url(locale, rest), languages };
 }
 
-const OG_LOCALE: Record<Locale, string> = { ru: 'ru_RU', de: 'de_DE' };
+const OG_LOCALE: Record<Locale, string> = { ru: 'ru_RU', uk: 'uk_UA', pl: 'pl_PL', de: 'de_DE' };
 
 /** The share card in the page's language, composed by scripts/og.py. */
-const shareImage = (locale: string) => `${SITE_URL}${locale === 'de' ? '/og-de.png' : '/og.png'}`;
+const shareImage = (locale: string) =>
+  `${SITE_URL}${locale === 'ru' || !OG_LOCALE[locale as Locale] ? '/og.png' : `/og-${locale}.png`}`;
 
 export function openGraph(locale: string, rest: string, title: string, description: string) {
   return {

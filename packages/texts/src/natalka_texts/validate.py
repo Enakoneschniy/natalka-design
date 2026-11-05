@@ -356,6 +356,32 @@ def _address_problems(
     return problems
 
 
+def _style_problems(text: str, lang: str, *, impersonal_ok: bool) -> list[_Problem]:
+    """A greeting at the head of a chapter, and the slips of the Latin-script languages: English
+    words, and a German sign without its article."""
+    problems: list[_Problem] = []
+    greeting = GREETING.get(lang)
+    if greeting and not impersonal_ok and greeting.search(text):
+        problems.append(
+            ("greeting", "the section opens with a greeting; only the opening section greets")
+        )
+    if lang in ("de", "pl"):
+        english = sorted({m.group(0) for m in ANGLICISMS.finditer(text)})
+        if english:
+            problems.append(("anglicism", f"English words: {', '.join(english[:3])}"))
+    if lang == "de":
+        bare = sorted({m.group(0) for m in SIGN_WITHOUT_ARTICLE.finditer(text)})
+        if bare:
+            problems.append(
+                (
+                    "sign_article",
+                    f"a sign without its article: {', '.join(bare[:3])} — write «im Stier», "
+                    "«in der Jungfrau», «in den Zwillingen»",
+                )
+            )
+    return problems
+
+
 def _language_problems(
     text: str,
     lang: str,
@@ -389,25 +415,7 @@ def _language_problems(
                 ("latin_word", f"untranslated Latin words: {', '.join(sorted(set(latin))[:3])}")
             )
 
-    greeting = GREETING.get(lang)
-    if greeting and not impersonal_ok and greeting.search(text):
-        problems.append(
-            ("greeting", "the section opens with a greeting; only the opening section greets")
-        )
-    if lang in ("de", "pl"):
-        english = sorted({m.group(0) for m in ANGLICISMS.finditer(text)})
-        if english:
-            problems.append(("anglicism", f"English words: {', '.join(english[:3])}"))
-    if lang == "de":
-        bare = sorted({m.group(0) for m in SIGN_WITHOUT_ARTICLE.finditer(text)})
-        if bare:
-            problems.append(
-                (
-                    "sign_article",
-                    f"a sign without its article: {', '.join(bare[:3])} — write «im Stier», "
-                    "«in der Jungfrau», «in den Zwillingen»",
-                )
-            )
+    problems.extend(_style_problems(text, lang, impersonal_ok=impersonal_ok))
 
     script = _foreign_script(text, lang)
     if script:

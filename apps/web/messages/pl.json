@@ -1,0 +1,706 @@
+{
+  "nav": {
+    "products": "Produkty",
+    "how": "Jak to działa",
+    "sample": "Przykładowa analiza",
+    "faq": "Pytania",
+    "start": "Obliczenie horoskopu",
+    "language": "Język",
+    "menu": "Menu"
+  },
+  "hero": {
+    "titleLead": "Horoskop urodzeniowy,",
+    "titleAccent": "który chce się czytać",
+    "lead": "Wystarczy podać datę, godzinę i miejsce urodzenia – po minucie można bezpłatnie zobaczyć własny horoskop. Pełna analiza na 20–30 stron przychodzi e-mailem jako PDF.",
+    "cta": "Obliczenie horoskopu",
+    "secondary": "Przykładowa analiza",
+    "facts": {
+      "accuracy": "do 1′",
+      "accuracyLabel": "dokładność pozycji planet",
+      "speed": "~10 min",
+      "speedLabel": "od płatności do PDF-a",
+      "count": "12 400",
+      "countLabel": "wysłanych analiz"
+    },
+    "film": {
+      "line": "Każdy urodził się\npod własnym niebem.",
+      "quote": "Słońce w Byku w dziewiątym domu: sama wiedza nie wystarcza, potrzebne jest zrozumienie do końca – a na słowo wierzy się tu rzadko. Księżyc w Wodniku w szóstym domu sprawia, że rozkład dnia staje się kwestią wolności, a nie dyscypliny.",
+      "quoteFrom": "fragment analizy",
+      "cta": "Obliczenie własnego horoskopu"
+    }
+  },
+  "products": {
+    "title": "Produkty",
+    "lead": "Stała cena, jednorazowa płatność. Dane podaje się tylko przed pierwszym zamówieniem – kolejne dokumenty powstają z tego samego horoskopu.",
+    "choose": "Wybieram",
+    "natal": {
+      "title": "Horoskop urodzeniowy",
+      "meta": "20–30 stron",
+      "items": [
+        "Słońce, Księżyc, Ascendent",
+        "Planety w znakach i domach",
+        "Aspekty i ich przejawy",
+        "Związki, praca, pieniądze"
+      ]
+    },
+    "forecast": {
+      "title": "Prognoza na 12 miesięcy",
+      "meta": "20–30 stron",
+      "items": [
+        "Tranzyty do horoskopu urodzeniowego",
+        "Kalendarz wydarzeń miesiąc po miesiącu",
+        "Okresy sprzyjające i trudne",
+        "Co robić w każdym z nich"
+      ]
+    },
+    "synastry": {
+      "title": "Zgodność",
+      "meta": "20–30 stron · dwa horoskopy",
+      "items": [
+        "Synastria dwóch horoskopów",
+        "W czym para wzajemnie się wzmacnia",
+        "Gdzie pojawia się tarcie i dlaczego",
+        "Jak się porozumiewać"
+      ]
+    },
+    "child": {
+      "title": "Horoskop dziecka",
+      "meta": "20–30 stron · dla rodziców",
+      "items": [
+        "Temperament i potrzeby dziecka",
+        "Jak się uczy i odpoczywa",
+        "Co je rani, a co inspiruje",
+        "Jak naprawdę do niego dotrzeć"
+      ]
+    },
+    "once": "jednorazowo, bez subskrypcji",
+    "bundle": {
+      "title": "Horoskop urodzeniowy i prognoza",
+      "meta": "35 stron · PDF e-mailem"
+    }
+  },
+  "how": {
+    "title": "Jak to działa",
+    "steps": [
+      {
+        "title": "Podanie danych urodzenia",
+        "text": "Imię, data, godzina i miejsce. Bez dokładnej godziny też się da – tylko bez domów i Ascendentu."
+      },
+      {
+        "title": "Bezpłatny podgląd",
+        "text": "Koło horoskopu, tabela pozycji, aspekty i krótki tekst o Słońcu, Księżycu i Ascendencie – od razu."
+      },
+      {
+        "title": "PDF e-mailem",
+        "text": "Dokument przychodzi e-mailem w ciągu 5–15 minut i pozostaje dostępny pod linkiem."
+      }
+    ]
+  },
+  "faq": {
+    "title": "Pytania",
+    "contact": "Nie ma tu odpowiedzi? Prosimy napisać na",
+    "contactAfter": ", odpowiadamy w ciągu dnia roboczego.",
+    "items": [
+      {
+        "q": "Co, jeśli nie znam dokładnej godziny urodzenia?",
+        "a": "Obliczymy horoskop na południe. Pozycje Słońca, planet i większość aspektów pozostaną dokładne, ale domów i Ascendentu nie da się wyznaczyć – te części zostaną pominięte. Godzinę można znaleźć w wypisie ze szpitala lub w książeczce zdrowia dziecka."
+      },
+      {
+        "q": "Czym to się różni od horoskopu z gazety?",
+        "a": "Horoskop z gazety opisuje jedną dwunastą ludzkości według znaku Słońca. Horoskop urodzeniowy to położenie dziesięciu planet, Ascendentu i domów w chwili narodzin oraz kąty między nimi. Dwie osoby spod tego samego znaku dostają u nas dwa różne teksty."
+      },
+      {
+        "q": "Kto pisze tekst analizy?",
+        "a": "Pozycje planet oblicza program na podstawie efemeryd astronomicznych, z dokładnością do minuty kątowej. Tekst tworzy model językowy według wytycznych napisanych przez astrologów Chroniki; każdy akapit odnosi się do konkretnej pozycji lub aspektu horoskopu."
+      },
+      {
+        "q": "Jak przechowywane są moje dane?",
+        "a": "Data, godzina i miejsce urodzenia są przechowywane wyłącznie w celu przygotowania dokumentów i usuwane po 30 dniach. Nie przekazujemy ich osobom trzecim."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Własny horoskop w minutę",
+    "lead": "Bezpłatny podgląd – bez rejestracji i bez karty płatniczej.",
+    "button": "Obliczenie horoskopu"
+  },
+  "footer": {
+    "about": "Automatycznie obliczane horoskopy urodzeniowe. Obliczenia według efemeryd astronomicznych, tekst – według całego horoskopu, a nie znaku Słońca.",
+    "products": "Produkty",
+    "documents": "Dokumenty",
+    "contacts": "Kontakt",
+    "terms": "Regulamin",
+    "privacy": "Polityka prywatności",
+    "refunds": "Odstąpienie i zwroty",
+    "withdraw": "Odstąpienie od umowy",
+    "imprint": "Dane firmy",
+    "hours": "pon.–pt., 10:00–19:00 CET",
+    "disclaimer": "Analiza ma charakter rozrywkowo-poznawczy i nie stanowi porady medycznej, psychologicznej ani finansowej.",
+    "seller": "coremind s. r. o. · IČO 57 339 368 · Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Słowacja"
+  },
+  "unavailable": {
+    "title": "Usługa jest niedostępna w tym regionie",
+    "text": "Chronika nie obsługuje użytkowników z Federacji Rosyjskiej. Nie przyjmujemy płatności z tego regionu i nie wysyłamy tam dokumentów."
+  },
+  "form": {
+    "title": "Dane urodzenia",
+    "lead": "Im dokładniejsze dane, tym dokładniejszy horoskop. Wszystko poza godziną jest wymagane.",
+    "steps": {
+      "data": "Dane urodzenia",
+      "preview": "Bezpłatny podgląd",
+      "payment": "Pełna analiza"
+    },
+    "name": "Imię",
+    "nameHint": "Tego imienia użyjemy w analizie",
+    "date": "Data urodzenia",
+    "datePlaceholder": "dd.mm.rrrr",
+    "time": "Godzina urodzenia",
+    "timePlaceholder": "gg:mm",
+    "timeHint": "Czas lokalny w miejscu urodzenia",
+    "unknownTime": "Nie znam dokładnej godziny urodzenia",
+    "unknownTimeTitle": "Co się zmieni bez godziny.",
+    "unknownTimeBody": "Obliczymy horoskop na południe: pozycje planet i aspekty pozostaną dokładne, ale domów i Ascendentu nie da się wyznaczyć – te części zostaną pominięte. Godzina często figuruje w wypisie ze szpitala lub w książeczce zdrowia dziecka.",
+    "city": "Miejsce urodzenia",
+    "cityPlaceholder": "Nazwa miejscowości",
+    "cityHint": "Współrzędne i strefę czasową ustalamy automatycznie, z uwzględnieniem czasu letniego w roku urodzenia",
+    "gender": "Forma zwrotu w analizie",
+    "genderHint": "Wpływa tylko na formy słów w analizie: „Pani jest skłonna” lub „Pan jest skłonny”. Na nic innego",
+    "genders": {
+      "female": "Kobieta",
+      "male": "Mężczyzna",
+      "neutral": "Neutralnie"
+    },
+    "submit": "Obliczenie horoskopu",
+    "submitPending": "Obliczamy…",
+    "free": "Horoskop i podgląd są bezpłatne. Płatna jest tylko pełna analiza.",
+    "north": "szer. pn.",
+    "south": "szer. pd.",
+    "east": "dł. wsch.",
+    "west": "dł. zach.",
+    "errors": {
+      "date": "Proszę podać datę w formacie dd.mm.rrrr",
+      "dateMissing": "Takiej daty nie ma w kalendarzu – proszę sprawdzić dzień i miesiąc",
+      "dateEarly": "Proszę podać datę nie wcześniejszą niż 1900 rok",
+      "dateFuture": "Ta data jeszcze nie nadeszła – proszę sprawdzić rok",
+      "time": "Proszę podać godzinę w formacie gg:mm lub zaznaczyć, że jest nieznana",
+      "city": "Proszę wybrać miejscowość z listy"
+    },
+    "you": "Własne dane",
+    "partner": "Druga osoba",
+    "partnerNameHint": "Tak w analizie będziemy nazywać drugą osobę",
+    "childName": "Imię dziecka",
+    "childNameHint": "Tak w analizie będziemy nazywać dziecko",
+    "childGender": "Płeć dziecka",
+    "childGenderHint": "Wpływa tylko na formy słów w tekście",
+    "titles": {
+      "natal": "Dane urodzenia",
+      "forecast": "Dane urodzenia",
+      "bundle": "Dane urodzenia",
+      "child": "Dane urodzenia dziecka",
+      "synastry": "Dane urodzenia dwóch osób",
+      "horoscope": "Horoskop w subskrypcji"
+    },
+    "leads": {
+      "synastry": "Potrzebne są oba horoskopy. Im dokładniejsza godzina, tym dokładniejsze powiązania między nimi.",
+      "child": "Im dokładniejsze dane, tym dokładniejszy horoskop. Wszystko poza godziną jest wymagane.",
+      "horoscope": "Na podstawie danych urodzenia obliczymy horoskop urodzeniowy i co tydzień lub co miesiąc napiszemy horoskop właśnie według niego – na podstawie rzeczywistych tranzytów z datami, a nie znaku Słońca."
+    },
+    "submitSubscribe": "Zapisuję się",
+    "edit": "Edycja danych",
+    "timeUnknown": "godzina nieznana"
+  },
+  "preview": {
+    "title": "{name}, oto gotowy horoskop",
+    "titleAnonymous": "Oto gotowy horoskop",
+    "edit": "Edycja danych",
+    "unknownTime": "godzina nieznana · horoskop na południe",
+    "aspectsTitle": "Aspekty",
+    "aspectsLead": "Kąty między planetami. Harmonijne dają lekkość, napięte – energię, którą trzeba gdzieś skierować. W tym horoskopie: harmonijne – {harmonious}, napięte – {tense}.",
+    "legend": {
+      "conjunction": "Koniunkcja – planety działają razem",
+      "trine": "Trygon – lekki, naturalny przepływ",
+      "sextile": "Sekstyl – szansa, którą trzeba wykorzystać",
+      "square": "Kwadratura – wewnętrzne tarcie, siła napędowa",
+      "opposition": "Opozycja – dwie strony, które trzeba połączyć"
+    },
+    "noHouses": "Domy i Ascendent nie zostały obliczone: bez dokładnej godziny urodzenia byłyby niewiarygodne.",
+    "soonTitle": "Pełna analiza",
+    "soonBody": "PDF na 20–30 stron ze szczegółową analizą planet, domów i aspektów. Właśnie go dopracowujemy – horoskop powyżej powstał już na podstawie tych samych obliczeń.",
+    "soonCta": "Wkrótce",
+    "errorTitle": "Nie udało się obliczyć horoskopu",
+    "errorBody": "Proszę sprawdzić dane urodzenia i spróbować ponownie.",
+    "back": "Powrót do formularza",
+    "positionsTitle": "Położenie planet",
+    "coreTitle": "Sedno horoskopu",
+    "coreLead": "Trzy punkty, od których zaczyna się każda analiza: działania, uczucia i obraz w oczach innych.",
+    "wheelHint": "Po najechaniu na planetę lub jej dotknięciu podświetlą się jej aspekty.",
+    "writing": "Piszemy…",
+    "readingTitle": "Pierwsze wrażenie",
+    "readingLead": "Trzy fragmenty z tego horoskopu – bezpłatnie, przed płatnością. Pełna analiza sięga znacznie głębiej.",
+    "synastryTitle": "Dwa horoskopy obok siebie",
+    "personOne": "Pierwsza osoba",
+    "personTwo": "Druga osoba",
+    "contactsTitle": "Aspekty między horoskopami",
+    "contactsLead": "Aspekty planet jednego horoskopu do planet drugiego. Łącznie: {total}, w tym harmonijne – {harmonious}, napięte – {tense}. Poniżej najdokładniejsze."
+  },
+  "chart": {
+    "planets": {
+      "sun": "Słońce",
+      "moon": "Księżyc",
+      "mercury": "Merkury",
+      "venus": "Wenus",
+      "mars": "Mars",
+      "jupiter": "Jowisz",
+      "saturn": "Saturn",
+      "uranus": "Uran",
+      "neptune": "Neptun",
+      "pluto": "Pluton",
+      "chiron": "Chiron",
+      "north_node": "Węzeł pn.",
+      "south_node": "Węzeł pd.",
+      "lilith": "Lilith",
+      "pars_fortunae": "Punkt Szczęścia",
+      "vertex": "Vertex",
+      "asc": "Ascendent",
+      "mc": "MC",
+      "dsc": "Descendent",
+      "ic": "IC"
+    },
+    "signs": {
+      "aries": "Baran",
+      "taurus": "Byk",
+      "gemini": "Bliźnięta",
+      "cancer": "Rak",
+      "leo": "Lew",
+      "virgo": "Panna",
+      "libra": "Waga",
+      "scorpio": "Skorpion",
+      "sagittarius": "Strzelec",
+      "capricorn": "Koziorożec",
+      "aquarius": "Wodnik",
+      "pisces": "Ryby"
+    },
+    "in": {
+      "aries": "w Baranie",
+      "taurus": "w Byku",
+      "gemini": "w Bliźniętach",
+      "cancer": "w Raku",
+      "leo": "we Lwie",
+      "virgo": "w Pannie",
+      "libra": "w Wadze",
+      "scorpio": "w Skorpionie",
+      "sagittarius": "w Strzelcu",
+      "capricorn": "w Koziorożcu",
+      "aquarius": "w Wodniku",
+      "pisces": "w Rybach"
+    },
+    "aspects": {
+      "conjunction": "Koniunkcja",
+      "opposition": "Opozycja",
+      "trine": "Trygon",
+      "square": "Kwadratura",
+      "sextile": "Sekstyl",
+      "quincunx": "Kwinkunks",
+      "semisextile": "Półsekstyl",
+      "semisquare": "Półkwadratura",
+      "sesquiquadrate": "Półtorakwadratura"
+    },
+    "table": {
+      "planet": "Planeta",
+      "sign": "Znak",
+      "degree": "Stopień",
+      "house": "Dom",
+      "retro": "R"
+    },
+    "houseShort": "{n}. dom"
+  },
+  "paywall": {
+    "title": "Dalej najważniejsze: co i kiedy",
+    "lead": "Za nami trzy punkty horoskopu. Pełna analiza omawia wszystkie pozostałe – na 35 stronach:",
+    "items": [
+      "Osobowość według horoskopu: mocne strony, co dodaje sił, a co je odbiera",
+      "Życie uczuciowe: kogo według horoskopu warto szukać i które okresy otwierają ten temat",
+      "Praca i pieniądze: czym warto się zajmować i co robić już teraz",
+      "Najbliższe lata miesiąc po miesiącu: reszta tego roku, cały rok {next}, rok {year} – i najważniejsze daty na jednej stronie"
+    ],
+    "cta": "Odblokowanie pełnej analizy – {price}",
+    "note": "35 stron · PDF e-mailem w ciągu 20–30 minut · jednorazowa płatność · cena z VAT",
+    "pages": [
+      {
+        "section": "3 · Planety w znakach i domach",
+        "page": "14",
+        "title": "Wenus w Bliźniętach, 11. dom",
+        "body": [
+          "W miłości potrzebna jest rozmowa. Nie komplementy – właśnie rozmowa, w której jest ciekawie. Związki, w których nie ma o czym mówić, kończą się, zanim druga strona to zauważy.",
+          "Jedenasty dom sprawia, że przyjaciele i partnerzy to sąsiednie kategorie: wiele związków zaczyna się tu od przyjaźni – i to nie przypadek, tylko metoda."
+        ]
+      },
+      {
+        "section": "4 · Aspekty",
+        "page": "23",
+        "title": "Księżyc w kwadraturze do Marsa",
+        "body": [
+          "Najszybsza reakcja w tym horoskopie. Gdy ktoś trąci czułą strunę, ciało odpowiada szybciej niż myśl. To daje odwagę – i kilka zbędnych słów, których potem się żałuje.",
+          "Co z tym zrobić: nie tłumić, lecz przekierować. Ruch fizyczny w pierwszych minutach przejmuje pierwszy impuls i zostawia jasność umysłu."
+        ]
+      },
+      {
+        "section": "5 · Związki, praca, pieniądze",
+        "page": "31",
+        "title": "Pieniądze: Byk i drugi dom",
+        "body": [
+          "Pieniądze działają tu jak jedzenie: liczy się nie ilość, lecz poczucie, że jest zapas. Puste konto niepokoi bardziej, niż powinno, a pełne uspokaja bardziej, niż jest tego warte.",
+          "Saturn w ósmym domu dodaje ostrożności we wspólnych finansach i kredytach."
+        ]
+      }
+    ],
+    "leadSynastry": "20–30 stron o tej parze: co przyciąga, gdzie pojawia się tarcie i jak z tym żyć. PDF przychodzi e-mailem 5–15 minut po płatności.",
+    "sticky": "Ciąg dalszy – {price}",
+    "datesTitle": "Najbliższe silne okresy w tym horoskopie",
+    "datesNote": "Omówienie każdej daty – w pełnej analizie."
+  },
+  "checkout": {
+    "title": "Zamówienie",
+    "steps": "Płatność",
+    "summary": "Podsumowanie",
+    "total": "Razem (z VAT)",
+    "email": "E-mail do wysyłki PDF-a",
+    "emailHint": "Link do dokumentu jest ważny 30 dni",
+    "emailPlaceholder": "nazwa@przyklad.pl",
+    "back": "Powrót do horoskopu",
+    "chart": "Horoskop",
+    "unknownTime": "godzina nieznana",
+    "start": "Utworzenie analizy",
+    "starting": "Uruchamiamy…",
+    "startNote": "Płatność kartą, Apple Pay, Google Pay lub metodą lokalną – na przykład BLIK lub Przelewy24 w Polsce. Dokument przychodzi e-mailem w ciągu 10–20 minut.",
+    "startFailed": "Nie udało się uruchomić. Proszę spróbować ponownie.",
+    "tooMany": "Zbyt wiele prób z rzędu. Proszę odczekać minutę i spróbować ponownie.",
+    "emailInvalid": "Proszę sprawdzić adres e-mail",
+    "consent": "Wyrażam zgodę na rozpoczęcie spełniania świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że z chwilą rozpoczęcia spełniania świadczenia utracę prawo odstąpienia od umowy. Regulamin i zasady zwrotów – w stopce strony.",
+    "pay": "Zamawiam i płacę",
+    "regionBlocked": "Niestety w tym kraju nie możemy przyjąć płatności.",
+    "howTitle": "Jak przebiega płatność",
+    "howBody": "Kartą, Apple Pay, Google Pay lub metodą popularną w danym kraju (BLIK, Przelewy24, Klarna, Revolut Pay i inne) na bezpiecznej stronie Stripe. Nie widzimy i nie przechowujemy danych płatniczych. Zaraz po płatności zaczyna się generowanie; link do dokumentu przychodzi e-mailem w ciągu 10–20 minut."
+  },
+  "generating": {
+    "title": "Przygotowujemy analizę",
+    "lead": "Zwykle trwa to od dziesięciu do piętnastu minut. Postęp odświeża się sam – wystarczy zostawić otwartą kartę.",
+    "starting": "Uruchamiamy…",
+    "noToken": "Link jest nieaktualny lub niepełny. Proszę wrócić do formularza i obliczyć horoskop od nowa.",
+    "stepCalc": "Obliczamy horoskop",
+    "stepTexts": "Piszemy analizę: {written} z {total} części",
+    "stepPdf": "Składamy PDF",
+    "readyTitle": "Gotowe",
+    "readyBody": "Analiza liczy {pages, plural, one {# stronę} few {# strony} many {# stron} other {# strony}}.",
+    "open": "PDF z analizą",
+    "failedTitle": "Coś poszło nie tak",
+    "failedBody": "Widzimy błąd i ponowimy generowanie. Jeśli w ciągu godziny nic się nie zmieni – prosimy o wiadomość.",
+    "back": "Na stronę główną",
+    "goneTitle": "Link nie działa",
+    "stage": {
+      "calc": "Horoskop",
+      "texts": "Analiza",
+      "pdf": "PDF"
+    },
+    "telegram": "PDF w Telegramie",
+    "awaitingPayment": "Czekamy na potwierdzenie płatności…",
+    "unpaidTitle": "Płatność nie została zakończona",
+    "unpaidBody": "Zamówienie jest zapisane i czeka na płatność. Można ją dokończyć na bezpiecznej stronie Stripe.",
+    "unpaidPay": "Do płatności",
+    "unpaidPending": "Otwieramy płatność…",
+    "unpaidNote": "Jeśli płatność została już wykonana, wystarczy minutę poczekać – strona odświeży się sama.",
+    "unpaidFailed": "Nie udało się otworzyć płatności. Proszę spróbować ponownie za minutę.",
+    "tooMany": "Zbyt wiele prób z rzędu. Proszę odczekać minutę i spróbować ponownie.",
+    "refundedTitle": "Płatność zwrócona",
+    "refundedBody": "Pieniądze za to zamówienie wróciły tą samą metodą, którą dokonano płatności. Dokument pod tym linkiem nie jest już dostępny.",
+    "disputedTitle": "Płatność jest kwestionowana",
+    "disputedBody": "Bank rozpatruje spór dotyczący tej płatności. Do jego rozstrzygnięcia dokument jest niedostępny. Pytania – na help@chronika.me.",
+    "declinedTitle": "Płatność nie powiodła się",
+    "declinedBody": "Zamówienie nie zostało złożone. Jeśli mimo to pobrano pieniądze, prosimy napisać na help@chronika.me – zwrócimy je."
+  },
+  "legal": {
+    "draft": "Wersja robocza: dokument nie jest jeszcze podpisany ani uzupełniony o dane firmy. Do uruchomienia płatności nie ma mocy wiążącej."
+  },
+  "subscription": {
+    "sectionTitle": "Osobisty horoskop – co tydzień",
+    "sectionLead": "Nie według znaku Słońca, lecz według całego horoskopu urodzeniowego: które tranzyty trafiają w planety z własnego horoskopu i w jakie dni. Pierwszy miesiąc za darmo, potem {price} miesięcznie, rezygnacja w dowolnym momencie.",
+    "sectionItems": [
+      "Dokładne daty wydarzeń tygodnia lub miesiąca",
+      "Tranzyty do własnych planet i domów",
+      "Przychodzi e-mailem i w Telegramie",
+      "Pierwszy horoskop – zaraz po potwierdzeniu adresu e-mail"
+    ],
+    "sectionCta": "Zapisuję się",
+    "trial": "pierwszy miesiąc za darmo",
+    "then": "potem {price} miesięcznie",
+    "title": "Subskrypcja horoskopu",
+    "lead": "Wystarczy wybrać, jak często i dokąd wysyłać. Wyślemy e-mail z prośbą o potwierdzenie – pierwszy horoskop napiszemy zaraz potem.",
+    "cadence": "Jak często",
+    "week": "Co tydzień",
+    "weekHint": "Krótki tekst na siedem dni z dokładnymi datami.",
+    "month": "Co miesiąc",
+    "monthHint": "Szczegółowy tekst na miesiąc, tydzień po tygodniu.",
+    "email": "Adres e-mail",
+    "emailHint": "Tu przychodzi horoskop i link do zarządzania subskrypcją.",
+    "consent": "Przyjmuję do wiadomości, że pierwszy miesiąc jest bezpłatny, potem obowiązuje opłata {price} miesięcznie, a z subskrypcji można zrezygnować w każdej chwili przez link w e-mailu.",
+    "submit": "Zapisuję się",
+    "submitPending": "Zapisujemy…",
+    "failed": "Nie udało się założyć subskrypcji. Proszę spróbować ponownie.",
+    "emailInvalid": "Proszę sprawdzić adres e-mail",
+    "tooMany": "Zbyt wiele prób z rzędu. Proszę odczekać minutę i spróbować ponownie.",
+    "checkMailTitle": "Czas zajrzeć do skrzynki",
+    "checkMailBody": "Wysłaliśmy wiadomość na adres {email}. Wystarczy ją otworzyć i potwierdzić subskrypcję – bez tego horoskopy nie będą przychodzić. Link w wiadomości jest ważny siedem dni.",
+    "checkMailNote": "Nie ma wiadomości? Warto zajrzeć do folderu „Spam” lub zapisać się ponownie.",
+    "confirmTitle": "Potwierdzenie subskrypcji",
+    "confirmLead": "Po naciśnięciu przycisku subskrypcja się rozpocznie: pierwszy horoskop przyjdzie od razu, pierwszy miesiąc jest bezpłatny.",
+    "confirm": "Potwierdzam subskrypcję",
+    "confirmPending": "Potwierdzamy…",
+    "confirmGone": "Link jest nieaktualny lub już nieważny. Wystarczy zapisać się ponownie – przyjdzie nowa wiadomość.",
+    "confirmFailed": "Nie udało się potwierdzić. Proszę spróbować ponownie za minutę.",
+    "endedBody": "Nowe horoskopy nie będą już przychodzić.",
+    "manageTitle": "Moja subskrypcja",
+    "statusActive": "Aktywna",
+    "statusPaused": "Wstrzymana",
+    "statusCancelled": "Anulowana",
+    "statusEnded": "Bezpłatny miesiąc dobiegł końca",
+    "nextSend": "Następny horoskop: {date}",
+    "trialUntil": "Bezpłatnie do {date}",
+    "writing": "Pierwszy horoskop jest w trakcie pisania – zwykle trwa to krócej niż minutę.",
+    "latestFor": "Horoskop na {start} – {end}",
+    "telegramTitle": "Także w Telegramie",
+    "telegramBody": "Po otwarciu bota i naciśnięciu „Start” horoskopy będą przychodzić również tam.",
+    "telegramOpen": "Bot w Telegramie",
+    "pause": "Wstrzymanie",
+    "resume": "Wznowienie",
+    "cancel": "Anulowanie subskrypcji",
+    "delete": "Usunięcie subskrypcji i danych",
+    "deleteConfirm": "Usunąć subskrypcję i wszystkie dane? Tego nie da się cofnąć.",
+    "deleted": "Subskrypcja i dane zostały usunięte.",
+    "birth": "Dane urodzenia",
+    "birthKept": "Przechowywane do {date} na wypadek poprawek, potem zostaje tylko horoskop.",
+    "birthGone": "Dane urodzenia usunięte; przechowywany jest tylko horoskop.",
+    "gone": "Link jest nieaktualny. Aktualny znajduje się w ostatnim e-mailu z horoskopem.",
+    "contact": "Poprawa danych urodzenia: help@chronika.me",
+    "foot": "Pierwszy miesiąc za darmo. Potem {price} miesięcznie, rezygnacja w dowolnym momencie.",
+    "nextLabel": "Następny",
+    "trialLabel": "Bezpłatnie do",
+    "birthGoneShort": "usunięte"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Horoskop urodzeniowy i prognoza do {year} roku",
+      "dates": {
+        "title": "Kiedy w życiu coś się zmieni? Horoskop urodzeniowy podaje daty",
+        "lead": "35 osobistych stron: charakter, praca i pieniądze, związki, dom i własne miejsce. Do tego kalendarz okresów na lata {from}–{year}: kiedy zaczynać, kiedy przeczekać, kiedy się odważyć."
+      },
+      "home": {
+        "title": "Tu jest dom czy tylko przystanek?",
+        "lead": "Horoskop nie wybierze kraju. Pokazuje jednak, gdzie jest oparcie, jaki okres trwa właśnie teraz i kiedy nadejdzie czas zmian – z datami do {year} roku."
+      },
+      "love": {
+        "title": "Kiedy w życiu uczuciowym się odważyć, a kiedy poczekać?",
+        "lead": "Dlaczego ciągnie do jednych, a zostaje się z innymi, kto naprawdę pasuje i które okresy w latach {from}–{year} otwierają ten temat. Bez wyroków i „daty ślubu” – z konkretnymi miesiącami."
+      },
+      "cta": "Bezpłatne obliczenie horoskopu",
+      "under": "Podgląd w minutę · bez rejestracji i karty płatniczej",
+      "quote": "Powiem od razu: to wyjątkowo spójny horoskop. Wystarczy poruszyć pracę – odzywa się dom; poruszyć związki – odzywają się pieniądze. To nie przewrażliwienie, tylko konstrukcja.",
+      "quoteFrom": "fragment analizy",
+      "line": "Każdy urodził się\npod własnym niebem.",
+      "facts": ["35 stron", "PDF e-mailem", "jedna płatność, bez subskrypcji"]
+    },
+    "asks": {
+      "title": "Z jakimi pytaniami przychodzą do nas ludzie",
+      "items": [
+        "To moje miejsce – czy uciekam od siebie?",
+        "Od lat myślę o przeprowadzce i nie mogę się zdecydować",
+        "Niby wszystko jest, a sprawy nie idą do przodu. Dlaczego?",
+        "Kiedy w miłości się decydować, a kiedy poczekać?",
+        "Czym się zajmować, skoro dawne sposoby już nie działają?",
+        "Co mnie czeka w {next} roku?"
+      ],
+      "note": "Horoskop nie odpowiada <em>„tak”</em> ani <em>„nie”</em> i nie wydaje wyroków. Pokazuje, jaki okres trwa teraz i kiedy otworzy się następne okno. Z taką odpowiedzią można coś zrobić.",
+      "cta": "Podgląd własnego horoskopu"
+    },
+    "inside": {
+      "title": "35 stron o osobistym horoskopie – nie o znaku zodiaku",
+      "lead": "Horoskop z gazety pisze to samo dla co dwunastej osoby. Tutaj liczą się wszystkie planety, domy i aspekty danego horoskopu. Dwa Byki dostaną dwa różne dokumenty.",
+      "cards": [
+        {
+          "title": "Portret osobowości",
+          "text": "Gdzie leżą mocne strony, co dodaje sił, a co niepostrzeżenie je odbiera. Ascendent, Księżyc, kluczowe aspekty – prostym językiem, bez terminów dla samych terminów."
+        },
+        {
+          "title": "Życie uczuciowe",
+          "text": "Jak układają się związki, kogo według horoskopu warto szukać i które okresy w latach {from}–{year} otwierają ten temat."
+        },
+        {
+          "title": "Praca i pieniądze",
+          "text": "Czym warto się zajmować według horoskopu, dlaczego pieniądze przychodzą tak, a nie inaczej, i co robić już teraz."
+        },
+        {
+          "title": "Miesiąc po miesiącu",
+          "text": "Spojrzenie wstecz, reszta tego roku i cały rok {next} miesiąc po miesiącu, rok {year} w zarysie. Na końcu wszystkie najważniejsze daty na jednej stronie."
+        }
+      ],
+      "note": "Do tego koło horoskopu, tabela pozycji i domów oraz podsumowanie „Najważniejsze w horoskopie” – żeby wrócić do niego za pół roku.",
+      "galleryNote": "Tak wygląda analiza. Każda opowiada o jednej, konkretnej osobie.",
+      "pages": ["Okładka", "Spis treści", "Strona analizy", "Najważniejsze daty"]
+    },
+    "steps": {
+      "title": "Najpierw podgląd – potem decyzja",
+      "items": [
+        {
+          "title": "Podanie danych urodzenia",
+          "text": "Data, godzina i miejsce. Bez dokładnej godziny też się da – tylko bez domów i Ascendentu."
+        },
+        {
+          "title": "Początek analizy za darmo",
+          "text": "Po minucie: horoskop, pozycje planet i pierwsze strony analizy. Od razu widać, czy to trafia w sedno."
+        },
+        {
+          "title": "Pełna analiza e-mailem",
+          "text": "Jeśli przyjdzie ochota na ciąg dalszy, PDF na 35 stron dotrze e-mailem w ciągu 20–30 minut."
+        }
+      ],
+      "note": "Płatność tylko wtedy, gdy pojawi się chęć czytania dalej. Podgląd nie wymaga ani rejestracji, ani karty płatniczej.",
+      "cta": "Bezpłatne obliczenie horoskopu"
+    },
+    "offer": {
+      "title": "Jeden dokument. Jedna płatność.",
+      "product": "Horoskop urodzeniowy i prognoza do {year} roku",
+      "meta": "Podgląd bezpłatnie · pełna analiza – jedna płatność, bez subskrypcji · ceny z VAT",
+      "items": [
+        "35 stron o osobistym horoskopie",
+        "Charakter, związki, praca i pieniądze",
+        "Kalendarz okresów: reszta tego roku i {next} miesiąc po miesiącu, {year} w zarysie",
+        "Wszystkie najważniejsze daty na jednej stronie",
+        "PDF e-mailem i link, który zostaje w skrzynce"
+      ],
+      "cta": "Na początek bezpłatny podgląd",
+      "under": "Jeśli w obliczeniach znajdzie się błąd – poprawimy go lub zwrócimy pieniądze."
+    },
+    "honest": {
+      "title": "Uczciwie o tym, jak to powstaje",
+      "items": [
+        {
+          "title": "Obliczenia są dokładne",
+          "text": "Pozycje planet i daty tranzytów oblicza program na podstawie szwajcarskich efemeryd (Swiss Ephemeris) – tablic astronomicznych, na których działają profesjonalne programy astrologiczne. Nic nie jest zmyślone: każdą pozycję można sprawdzić w dowolnym kalkulatorze astrologicznym."
+        },
+        {
+          "title": "Tekst pisze sztuczna inteligencja",
+          "text": "Za to nie męczy się na trzydziestej stronie i nie pisze ogólników: pracuje według metodyki opracowanej przez astrologów Chroniki, a każdy akapit odnosi się do konkretnej pozycji lub aspektu horoskopu – widać to w tekście."
+        },
+        {
+          "title": "Nie przepowiadamy wydarzeń",
+          "text": "Nie podajemy daty ślubu i nie wydajemy wyroków. Horoskop pokazuje okresy i tendencje, a decyzje podejmuje się samodzielnie."
+        }
+      ],
+      "note": "Astrologia nie jest nauką. To język, w którym wygodnie myśli się o sobie i swoim czasie."
+    },
+    "faq": {
+      "title": "Pytania i odpowiedzi",
+      "items": [
+        {
+          "q": "Czym to się różni od horoskopu z gazety?",
+          "a": "Horoskop z gazety pisze to samo dla wszystkich osób spod jednego znaku. Horoskop urodzeniowy to położenie wszystkich planet, Ascendentu i domów w chwili narodzin. Taki układ powtarza się raz na kilka tysięcy lat."
+        },
+        {
+          "q": "Co oznacza „prognoza”? Przepowiadacie wydarzenia?",
+          "a": "Nie. Pokazujemy, kiedy planety w ruchu dotykają horoskopu urodzeniowego i jakie tematy wychodzą wtedy na pierwszy plan: praca, związki, dom. Jak dokładnie to się przejawi – zależy od własnych wyborów."
+        },
+        {
+          "q": "Chcę zrozumieć, w jakim kraju mam żyć. Czy analiza na to odpowie?",
+          "a": "Nie, wybór kraju to osobna technika. Za to w analizie widać, co w danym horoskopie oznacza dom i oparcie oraz które okresy w latach {from}–{year} sprzyjają dużym zmianom."
+        },
+        {
+          "q": "Nie mieszkam w miejscu urodzenia. Czy to ważne?",
+          "a": "Nie. Horoskop oblicza się dla miejsca urodzenia, a okresy prognozy obowiązują niezależnie od miejsca zamieszkania."
+        },
+        {
+          "q": "Nie znam dokładnej godziny urodzenia.",
+          "a": "Obliczymy horoskop na południe. Planety i większość aspektów pozostaną dokładne, ale bez domów i Ascendentu część analizy będzie krótsza. Godzina często figuruje w odpisie zupełnym aktu urodzenia lub w wypisie ze szpitala."
+        },
+        {
+          "q": "Kto pisze tekst?",
+          "a": "Obliczenia wykonuje program na podstawie szwajcarskich efemeryd, tekst – model językowy według metodyki opracowanej przez astrologów Chroniki. Każdy akapit opiera się na konkretnej pozycji lub aspekcie horoskopu."
+        },
+        {
+          "q": "Czy to subskrypcja?",
+          "a": "Nie. Jedna płatność – jeden dokument. Żadnych automatycznych obciążeń."
+        },
+        {
+          "q": "Jak długo trzeba czekać?",
+          "a": "Podgląd – około minuty. Pełna analiza przychodzi e-mailem 20–30 minut po płatności."
+        },
+        {
+          "q": "A jeśli się nie spodoba?",
+          "a": "Najpierw warto przeczytać bezpłatny podgląd: pełna analiza jest napisana w tym samym stylu. Jeśli w obliczeniach znajdzie się błąd, prosimy napisać na help@chronika.me – poprawimy go lub zwrócimy pieniądze."
+        },
+        {
+          "q": "Można to podarować?",
+          "a": "Tak. Wystarczy podać dane urodzenia tej osoby i własny e-mail, a potem przesłać jej PDF."
+        },
+        {
+          "q": "Co dzieje się z moimi danymi?",
+          "a": "Datę, godzinę i miejsce urodzenia wykorzystujemy wyłącznie do przygotowania dokumentu. Miejsce jest potrzebne do obliczenia horoskopu; model językowy otrzymuje pozycje planet, imię, datę i godzinę – bez miejsca urodzenia i bez adresu e-mail. Operator płatności nie otrzymuje danych urodzenia. Usuwamy je po 30 dniach lub na pierwsze żądanie."
+        }
+      ]
+    },
+    "final": {
+      "title": "Własny horoskop – w minutę",
+      "text": "Początek analizy można przeczytać bezpłatnie. Jeśli trafia – warto czytać dalej. Jeśli nie – nic się nie traci.",
+      "cta": "Bezpłatne obliczenie horoskopu",
+      "under": "Bez rejestracji i karty płatniczej"
+    }
+  },
+  "meta": {
+    "title": "Horoskop urodzeniowy z interpretacją i prognozą z datami",
+    "description": "Osobista analiza horoskopu urodzeniowego na 35 stron i kalendarz okresów do {year} roku: kiedy zaczynać, kiedy przeczekać, kiedy się odważyć. Bezpłatny podgląd w minutę, PDF e-mailem.",
+    "productName": "Horoskop urodzeniowy i prognoza do {year} roku",
+    "productDescription": "PDF na 35 stron: charakter według horoskopu, związki, praca i pieniądze, prognoza miesiąc po miesiącu i strona z dokładnymi datami. Jedna płatność, bez subskrypcji.",
+    "subscribeTitle": "Osobisty horoskop e-mailem – na tydzień i na miesiąc",
+    "subscribeDescription": "Krótka analiza na podstawie horoskopu urodzeniowego: jaki okres nadchodzi i na co wpływa. E-mailem lub w Telegramie, raz w tygodniu lub raz w miesiącu."
+  },
+  "offer": {
+    "tag": "−{percent}% do {until}",
+    "hero": "−{percent}% na pełną analizę do {until}",
+    "promo": "Kod rabatowy {code}: −{percent}% do {until}",
+    "promoHero": "Kod rabatowy {code}: −{percent}% na pełną analizę do {until}",
+    "was": "Bez rabatu:",
+    "field": "Kod rabatowy",
+    "apply": "Aktywacja",
+    "applying": "Sprawdzamy…",
+    "applied": "Kod rabatowy {code} zastosowany",
+    "remove": "Usunięcie",
+    "unknown": "Taki kod nie istnieje – proszę sprawdzić pisownię",
+    "early": "Ten kod jeszcze nie obowiązuje",
+    "expired": "Termin ważności kodu minął",
+    "failed": "Nie udało się sprawdzić kodu. Proszę spróbować ponownie.",
+    "outdone": "Obecnie obowiązuje wyższy rabat – to on został zastosowany."
+  },
+  "withdraw": {
+    "title": "Odstąpienie od umowy",
+    "lead": "W przypadku zakupu w charakterze konsumenta można tu złożyć oświadczenie o odstąpieniu od umowy. Od razu wyślemy e-mailem potwierdzenie z treścią oświadczenia oraz datą i godziną jego otrzymania.",
+    "name": "Imię i nazwisko",
+    "email": "Adres e-mail podany w zamówieniu",
+    "order": "Numer lub data zamówienia",
+    "orderHint": "Jeśli to możliwe – tak szybciej odnajdziemy zamówienie",
+    "message": "Wiadomość",
+    "messageHint": "Opcjonalnie",
+    "submit": "Potwierdzam odstąpienie",
+    "sending": "Wysyłamy…",
+    "doneTitle": "Oświadczenie otrzymane",
+    "doneBody": "Otrzymaliśmy oświadczenie: {when}. Jeśli z adresu {email} złożono zamówienie, potwierdzenie zostało już tam wysłane; odpowiemy w ciągu dwóch dni roboczych.",
+    "note": "Czy w przypadku danego zamówienia przysługuje prawo odstąpienia, czy już wygasło, sprawdzimy i przekażemy odpowiedź. Zasady opisuje strona „Odstąpienie i zwroty”.",
+    "nameInvalid": "Proszę podać imię i nazwisko",
+    "emailInvalid": "Proszę sprawdzić adres e-mail",
+    "failed": "Nie udało się wysłać. Proszę spróbować ponownie lub napisać na help@chronika.me.",
+    "tooMany": "Zbyt wiele prób z rzędu. Proszę odczekać minutę i spróbować ponownie."
+  },
+  "consent": {
+    "title": "Pliki cookie",
+    "text": "Korzystamy z plików cookie serwisów reklamowych, aby wiedzieć, która reklama doprowadziła do zakupu. Bez zgody nie są one wczytywane: strona działa i liczy własne statystyki bez nich.",
+    "allow": "Zgadzam się",
+    "deny": "Tylko niezbędne"
+  }
+}
