@@ -372,7 +372,7 @@
     "unknownTime": "Uhrzeit unbekannt",
     "start": "Deutung erstellen",
     "starting": "Wird gestartet…",
-    "startNote": "Zahlung per Karte oder Apple Pay/Google Pay. Das Dokument kommt in 10–20 Minuten per E-Mail.",
+    "startNote": "Zahlung per Karte, Apple Pay, Google Pay oder Klarna. Das Dokument kommt in 10–20 Minuten per E-Mail.",
     "startFailed": "Der Start hat nicht geklappt. Versuchen Sie es noch einmal.",
     "tooMany": "Zu viele Versuche hintereinander. Warten Sie eine Minute und versuchen Sie es erneut.",
     "emailInvalid": "Prüfen Sie die E-Mail-Adresse",
@@ -380,7 +380,7 @@
     "pay": "Bezahlen",
     "regionBlocked": "Leider können wir in Ihrem Land keine Zahlung annehmen.",
     "howTitle": "So läuft die Zahlung",
-    "howBody": "Per Karte oder Apple Pay/Google Pay auf einer sicheren Seite von Stripe. Kartendaten sehen und speichern wir nicht. Direkt nach der Zahlung beginnt die Erstellung; der Link zum Dokument kommt in 10–20 Minuten per E-Mail."
+    "howBody": "Per Karte, Apple Pay, Google Pay, Klarna oder einer anderen in Ihrem Land üblichen Zahlungsart auf einer sicheren Seite von Stripe. Zahlungsdaten sehen und speichern wir nicht. Direkt nach der Zahlung beginnt die Erstellung; der Link zum Dokument kommt in 10–20 Minuten per E-Mail."
   },
   "generating": {
     "title": "Wir bereiten Ihre Deutung vor",
@@ -412,7 +412,7 @@
     "unpaidFailed": "Die Zahlungsseite ließ sich nicht öffnen. Versuchen Sie es in einer Minute noch einmal.",
     "tooMany": "Zu viele Versuche hintereinander. Warten Sie eine Minute und versuchen Sie es erneut.",
     "refundedTitle": "Zahlung erstattet",
-    "refundedBody": "Das Geld für diese Bestellung ist auf Ihre Karte zurückgegangen. Das Dokument lässt sich über diesen Link nicht mehr öffnen.",
+    "refundedBody": "Das Geld für diese Bestellung ist über dieselbe Zahlungsart zurückgegangen, mit der Sie bezahlt haben. Das Dokument lässt sich über diesen Link nicht mehr öffnen.",
     "disputedTitle": "Zahlung wird angefochten",
     "disputedBody": "Die Bank prüft einen Einspruch gegen diese Zahlung. Bis er geklärt ist, ist das Dokument nicht verfügbar. Fragen an help@chronika.me.",
     "declinedTitle": "Zahlung fehlgeschlagen",
