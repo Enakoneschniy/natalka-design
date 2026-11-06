@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isDraft, renderLegal } from '.';
 import { terms } from './terms';
 
-const LANGUAGES = ['ru', 'uk', 'en', 'de', 'pl'] as const;
+const LANGUAGES = ['ru', 'uk', 'en', 'de', 'pl', 'fr', 'es'] as const;
 const text = (locale: string) => terms[locale] ?? '';
 
 /** What each language must say, in its own words: the delivery, the free rebuild, the cap, the law. */
@@ -42,12 +42,28 @@ const FACTS: Record<(typeof LANGUAGES)[number], string[]> = {
     'Nasza odpowiedzialność z tytułu każdego zamówienia jest ograniczona do jego ceny',
     'stosuje się prawo Republiki Słowackiej',
   ],
+  fr: [
+    'généralement en 10 à 20 minutes',
+    'reste accessible par son lien pendant 30 jours à compter de la commande',
+    'écrivez-nous dans les 7 jours : nous établirons, une seule fois et gratuitement, un nouveau document à partir des données corrigées',
+    'Notre responsabilité est limitée, pour chaque commande, à son prix',
+    'régies par le droit de la République slovaque',
+  ],
+  es: [
+    'normalmente en un plazo de 10 a 20 minutos',
+    'está disponible en su enlace durante 30 días desde el pedido',
+    'escríbanos en un plazo de 7 días: elaboraremos una vez y gratuitamente un nuevo documento con los datos corregidos',
+    'Nuestra responsabilidad por cada pedido se limita a su precio',
+    'se rigen por el Derecho de la República Eslovaca',
+  ],
 };
 
 describe('terms of service', () => {
-  it('has no blanks left in the German and Polish editions', () => {
+  it('has no blanks left in the German, Polish, French and Spanish editions', () => {
     expect(isDraft(text('de'))).toBe(false);
     expect(isDraft(text('pl'))).toBe(false);
+    expect(isDraft(text('fr'))).toBe(false);
+    expect(isDraft(text('es'))).toBe(false);
   });
 
   it('keeps every language in step, section for section', () => {
@@ -107,6 +123,64 @@ describe('terms of service', () => {
   it('links the Polish terms to the Polish refund policy', () => {
     expect(renderLegal(text('pl'), 'pl')).toContain(
       '<a href="/pl/legal/refunds">Odstąpienie od umowy i zwroty</a>',
+    );
+  });
+
+  it('keeps a French consumer the protection of the law where they live', () => {
+    const fr = text('fr');
+    expect(fr).toContain('# Conditions générales de vente');
+    expect(fr).toContain(
+      'ce choix ne peut avoir pour résultat de vous priver de la protection que vous assurent les dispositions auxquelles il ne peut être dérogé par accord en vertu de la loi du pays où vous avez votre résidence habituelle',
+    );
+    expect(fr).toContain('article 6, paragraphe 2, du règlement (CE) n° 593/2008 (Rome I)');
+    expect(fr).toContain(
+      "notamment en cas de dol ou de faute lourde ainsi qu'en cas d'atteinte à la vie, à l'intégrité physique ou à la santé",
+    );
+    expect(fr).toContain(
+      'Elles sont sans effet sur vos droits légaux en cas de défaut de conformité du document.',
+    );
+  });
+
+  it('names no dispute-resolution body in French, at the owner’s wish', () => {
+    const fr = text('fr');
+    expect(fr).toContain(
+      'Nous ne sommes pas tenus de participer à des procédures de règlement extrajudiciaire des litiges de consommation et ne nous sommes pas engagés à y participer.',
+    );
+    expect(fr).not.toMatch(/médiat|conciliat|arbitr|DGCCRF|CECMC|\bODR\b|\bRLL\b/i);
+  });
+
+  it('links the French terms to the French refund policy', () => {
+    expect(renderLegal(text('fr'), 'fr')).toContain(
+      '<a href="/fr/legal/refunds">Rétractation et remboursements</a>',
+    );
+  });
+
+  it('keeps a Spanish consumer the protection of the law where they live', () => {
+    const es = text('es');
+    expect(es).toContain('# Condiciones generales');
+    expect(es).toContain(
+      'esta elección no podrá acarrear la pérdida de la protección que le proporcionen las disposiciones que no puedan excluirse mediante acuerdo en virtud de la ley del país en el que tenga su residencia habitual',
+    );
+    expect(es).toContain('artículo 6, apartado 2, del Reglamento (CE) n.º 593/2008 (Roma I)');
+    expect(es).toContain(
+      'en particular en caso de dolo o culpa grave, así como de daños a la vida, la integridad física o la salud',
+    );
+    expect(es).toContain(
+      'No afectan a los derechos que la ley le reconoce en caso de falta de conformidad del documento.',
+    );
+  });
+
+  it('names no dispute-resolution body in Spanish, at the owner’s wish', () => {
+    const es = text('es');
+    expect(es).toContain(
+      'No estamos obligados a participar en procedimientos de resolución alternativa de litigios de consumo ni nos hemos comprometido a hacerlo.',
+    );
+    expect(es).not.toMatch(/arbitra|mediaci|junta|Dirección General de Consumo|\bODR\b|\bRAL\b/i);
+  });
+
+  it('links the Spanish terms to the Spanish refund policy', () => {
+    expect(renderLegal(text('es'), 'es')).toContain(
+      '<a href="/es/legal/refunds">Desistimiento y reembolsos</a>',
     );
   });
 });

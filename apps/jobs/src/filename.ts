@@ -40,9 +40,23 @@ const PRODUCT: Record<string, Record<Product, string>> = {
     child: 'horoskop dziecka',
     bundle: 'horoskop i prognoza',
   },
+  fr: {
+    natal: 'thème natal',
+    forecast: 'prévisions',
+    synastry: 'compatibilité',
+    child: "thème de l'enfant",
+    bundle: 'thème et prévisions',
+  },
+  es: {
+    natal: 'carta natal',
+    forecast: 'previsión',
+    synastry: 'compatibilidad',
+    child: 'carta infantil',
+    bundle: 'carta y previsión',
+  },
 };
 
-const AND: Record<string, string> = { uk: 'і', ru: 'и', en: 'and', pl: 'i', de: 'und' };
+const AND: Record<string, string> = { uk: 'і', ru: 'и', en: 'and', pl: 'i', de: 'und', fr: 'et', es: 'y' };
 
 interface Person {
   name: string;

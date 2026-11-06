@@ -296,7 +296,7 @@ describe('POST /v1/conversions/view', () => {
 
   it('refuses a product or a language it does not know', async () => {
     expect((await post('/v1/conversions/view', { product: 'tarot', locale: 'ru', browser: BROWSER })).status).toBe(400);
-    expect((await post('/v1/conversions/view', { product: 'natal', locale: 'fr', browser: BROWSER })).status).toBe(400);
+    expect((await post('/v1/conversions/view', { product: 'natal', locale: 'it', browser: BROWSER })).status).toBe(400);
   });
 
   it('is behind the site key', async () => {

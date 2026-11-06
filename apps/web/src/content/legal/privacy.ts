@@ -253,4 +253,114 @@ Horoskop dziecka jest przygotowywany na podstawie danych dziecka, które wprowad
 
 Jeżeli niniejsza polityka ulegnie zmianie, nowa wersja pojawi się na tej stronie z nową datą. O istotnych zmianach poinformujemy Państwa e-mailem, jeżeli mamy bieżące zamówienie z Państwa adresem.
 `,
+  fr: `
+# Politique de confidentialité
+
+_Version du 2 novembre 2026. Responsable du traitement au sens du règlement (UE) 2016/679 (RGPD) : coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovaquie, numéro d'identification (IČO) 57 339 368, registre du commerce du tribunal municipal de Bratislava III, section Sro, insertion n° 194301/B. Contact : help@chronika.me._
+
+## Les données que nous recevons
+
+Pour que nous puissions calculer votre thème, vous indiquez **la date, l'heure et le lieu de naissance**, un prénom (facultatif) et la forme sous laquelle nous devons nous adresser à vous. Pour vous remettre le document, nous avons besoin de votre **adresse e-mail** ; si vous choisissez la remise par Telegram, de l'identifiant de votre conversation. Pour une étude de compatibilité, on indique les données de deux personnes ; pour le thème d'un enfant, les données de l'enfant, saisies par un parent ou un tuteur. Pour un abonnement à l'horoscope, nous avons besoin des données de naissance et d'une adresse e-mail. Sans données de naissance ni adresse de remise, nous ne pouvons ni établir ni remettre le document.
+
+À partir de votre adresse IP, nous déterminons automatiquement votre pays – pour afficher les prix dans votre devise et ne pas accepter de commandes là où le paiement est impossible. La même adresse sert, uniquement au moment de la requête, à une autre fin : limiter la fréquence à laquelle le site peut être sollicité. Nous ne conservons pas l'adresse IP elle-même – sauf dans le cas décrit dans la partie consacrée à la publicité, et uniquement avec votre consentement.
+
+## Finalités et bases juridiques
+
+Les données de naissance servent à une seule fin : calculer la position des planètes et rédiger un texte à partir de celle-ci. L'adresse e-mail et Telegram servent à vous remettre le document ou l'horoscope et à vous prévenir qu'il est prêt. À rien d'autre : nous n'envoyons pas de messages publicitaires et ne vendons pas de données. Nous ne signalons des commandes au service publicitaire Meta qu'avec votre consentement et uniquement ce qui est énuméré dans la partie consacrée à la publicité ; les données de naissance n'en font jamais partie.
+
+Nous traitons vos propres données de naissance, votre prénom, la forme d'adresse et l'adresse de remise parce que cela est nécessaire à l'exécution du contrat ou de l'abonnement conclu avec vous, ou à l'établissement de l'aperçu gratuit que vous avez demandé (article 6, paragraphe 1, point b), du RGPD). Les données d'une autre personne que vous indiquez pour une étude de compatibilité ou pour le thème d'un enfant sont traitées sur le fondement de notre intérêt légitime à exécuter votre commande (article 6, paragraphe 1, point f), du RGPD). Reposent en outre sur notre intérêt légitime (article 6, paragraphe 1, point f), du RGPD) : la détermination du pays à partir de l'adresse IP (prix et moyens de paiement corrects), la limitation des sollicitations (protection et stabilité du site), le comptage des visites sans cookies, la conservation temporaire des textes de l'aperçu et la conservation de l'adresse e-mail pour les questions et les remboursements. Les balises publicitaires et les signalements à Meta reposent sur votre consentement (partie « Cookies et publicité »). Nous conservons l'enregistrement de la commande parce que le droit comptable et fiscal l'exige (article 6, paragraphe 1, point c), du RGPD).
+
+## Cookies et publicité
+
+Le site dépose ses propres cookies techniques : votre réponse à la question sur les cookies (pour un an), un code promotionnel – si vous l'avez saisi ou avez suivi un lien qui en contient un (jusqu'à la fin de sa validité) – et le nom de la campagne publicitaire à l'origine de votre visite (sans identifiants, jusqu'à la fermeture du navigateur). Nous comptons les visites nous-mêmes et avec Cloudflare Web Analytics, sans cookies.
+
+Les balises publicitaires (Meta, Google, TikTok) ne sont chargées que si vous avez choisi « Autoriser », et uniquement sur les pages sans données personnelles : la page d'accueil, les documents juridiques et le formulaire vide. Les pages qui affichent votre thème, votre commande, le paiement, l'attente du document et votre abonnement n'en contiennent aucune – ni les données de naissance ni les liens vers le document n'y parviennent.
+
+Si vous avez choisi « Autoriser », le site signale en outre à Meta, depuis son propre serveur, quatre événements : l'ouverture de l'aperçu de votre thème, le passage au paiement, le paiement d'une commande et la confirmation d'un abonnement à l'horoscope – afin que nous sachions quelle publicité y a conduit. Chaque événement transmet : votre adresse e-mail et votre pays sous forme de hachage (une empreinte irréversible), votre adresse IP et les informations sur votre navigateur (user agent), les cookies publicitaires de Meta s'ils sont déjà déposés, le numéro de la commande ou de l'abonnement, le produit et le prix. Les données de naissance, les prénoms, le lieu de naissance et le sexe ne sont jamais transmis. Pour signaler un paiement, qui intervient plus tard, l'adresse IP, les informations sur le navigateur et les cookies de Meta sont conservés avec la commande sous forme chiffrée – jusqu'au paiement et pendant 7 jours au plus. Si vous avez choisi « Nécessaires uniquement » ou n'avez pas répondu, rien de tout cela n'est transmis ni conservé.
+
+La base juridique des balises publicitaires et des signalements à Meta est votre consentement (article 6, paragraphe 1, point a), du RGPD) ; pour le stockage d'informations dans votre terminal et l'accès à celles-ci s'y ajoutent les dispositions nationales qui transposent l'article 5, paragraphe 3, de la directive 2002/58/CE, en France l'article 82 de la loi n° 78-17 du 6 janvier 1978 relative à l'informatique, aux fichiers et aux libertés.
+
+## Qui traite les données
+
+Nous ne faisons pas tout nous-mêmes. Le traitement s'effectue sur les serveurs de **Cloudflare** (hébergement, base de données, stockage des documents). Les paiements sont reçus par **Stripe** : Stripe reçoit votre adresse e-mail, le nom du produit et le prix – sans données de naissance ; seul Stripe voit les données de votre carte. Si vous payez autrement sur la page de Stripe – par exemple avec Klarna, BLIK ou Revolut Pay –, le prestataire concerné reçoit ce dont il a besoin pour le paiement et le traite en tant que responsable du traitement distinct, selon ses propres conditions. Le texte de la lecture et de l'horoscope est rédigé par un modèle de langage : le fournisseur du modèle (**Anthropic**, modèles Claude) reçoit les positions des planètes, les aspects et les maisons, votre prénom ainsi que la date et l'heure de naissance – on en déduit l'âge et les retours planétaires. Les coordonnées géographiques, le lieu de naissance, le fuseau horaire et l'adresse e-mail ne sont pas transmis au modèle. Les e-mails sont envoyés par **Resend**, les messages Telegram par **Telegram** – uniquement si vous avez vous-même choisi ce canal. Chacun d'eux est lié à nous par contrat et ne traite les données que sur nos instructions, en tant que sous-traitant au sens de l'article 28 du RGPD.
+
+## Comment et combien de temps nous conservons les données
+
+Les données de naissance sont chiffrées (AES-256-GCM) avant d'entrer dans la base de données et ne sont déchiffrées que pour la durée du calcul. Les données de naissance, les textes de la lecture et le document final sont **supprimés 30 jours après la commande** – avec le lien de téléchargement. Une commande non payée est supprimée avec toutes ses données au bout de 7 jours. L'adresse e-mail d'une commande payée est conservée 180 jours – pour les questions et les remboursements – puis supprimée. L'enregistrement de la commande sans cette adresse (ce qui a été acheté, quand et à quel prix) est conservé aussi longtemps que le droit comptable et fiscal l'exige.
+
+Un abonnement à l'horoscope ne commence qu'une fois que vous l'avez confirmé par le lien figurant dans notre e-mail ; une inscription non confirmée est supprimée au bout de 7 jours. Pour un abonnement en cours, nous conservons votre adresse e-mail ainsi que, sous forme chiffrée, le thème calculé et votre prénom ; les données de naissance elles-mêmes, uniquement pendant les 30 premiers jours, au cas où elles devraient être corrigées. Après la résiliation ou la fin d'un abonnement, ses données sont conservées encore 30 jours, puis supprimées.
+
+Les textes de l'aperçu gratuit sont conservés jusqu'à 30 jours, afin que le même texte ne soit pas rédigé deux fois ; aucune adresse e-mail ni aucune commande n'y est rattachée.
+
+## Vos droits
+
+Vous disposez d'un droit d'accès à vos données et d'en obtenir une copie (article 15 du RGPD), d'un droit de rectification (article 16 du RGPD), d'un droit à l'effacement, y compris avant l'expiration des délais indiqués (article 17 du RGPD), d'un droit à la limitation du traitement (article 18 du RGPD) et d'un droit à la portabilité des données (article 20 du RGPD). Pour les exercer, écrivez à help@chronika.me depuis l'adresse avec laquelle la commande ou l'abonnement a été conclu. Si les données de naissance sont effacées, le document n'est plus disponible.
+
+**Droit d'opposition :** dans la mesure où nous traitons des données sur le fondement de notre intérêt légitime (article 6, paragraphe 1, point f), du RGPD), vous pouvez à tout moment vous opposer à ce traitement pour des raisons tenant à votre situation particulière (article 21 du RGPD).
+
+Vous pouvez retirer votre consentement à tout moment, sans que cela compromette la licéité du traitement fondé sur le consentement effectué avant ce retrait (article 7, paragraphe 3, du RGPD). Pour les cookies publicitaires, procédez ainsi : supprimez les cookies du site dans votre navigateur – la question s'affiche alors de nouveau, et aucune balise n'est chargée avant votre réponse. Si vous estimez que nous traitons vos données de manière illicite, vous avez le droit d'introduire une réclamation auprès d'une autorité de contrôle, en particulier dans l'État membre de votre résidence habituelle (article 77 du RGPD) ; en France, cette autorité est la Commission nationale de l'informatique et des libertés (CNIL).
+
+## Enfants
+
+Le thème d'un enfant est établi à partir des données de l'enfant saisies par un adulte. Nous ne concluons pas de contrat avec l'enfant et ne prenons pas contact avec lui. Le service n'est pas destiné à être utilisé de manière autonome par des personnes de moins de 18 ans.
+
+## Modifications
+
+Si la présente politique change, la nouvelle version apparaît sur cette page avec une nouvelle date. Nous vous informons par e-mail des modifications importantes si nous détenons une commande en cours à votre adresse.
+`,
+  es: `
+# Política de privacidad
+
+_Versión de 2 de noviembre de 2026. Responsable del tratamiento a efectos del Reglamento (UE) 2016/679 (RGPD) y de la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD): coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Eslovaquia, número de identificación (IČO) 57 339 368, Registro Mercantil del Tribunal Municipal de Bratislava III, sección Sro, inserción n.º 194301/B. Contacto: help@chronika.me._
+
+## Qué datos recibimos
+
+Para que podamos calcular su carta natal, usted indica la **fecha, la hora y el lugar de nacimiento**, un nombre (opcional) y la forma de tratamiento que prefiere. Para entregar el documento necesitamos su **dirección de correo electrónico**; si elige la entrega por Telegram, el identificador de su chat. Para un estudio de compatibilidad se introducen los datos de dos personas; para una carta infantil, los datos del niño o de la niña, que introduce su madre, su padre o su tutor. Para una suscripción al horóscopo necesitamos los datos de nacimiento y una dirección de correo electrónico. Sin datos de nacimiento ni dirección de entrega no podemos elaborar ni entregar el documento.
+
+A partir de su dirección IP determinamos automáticamente su país, para mostrar los precios en su moneda y no aceptar pedidos donde el pago no es posible. La misma dirección sirve, solo en el momento de la solicitud, para otro fin: limitar la frecuencia con la que puede accederse al sitio web. No conservamos la dirección IP en sí, salvo en el caso descrito en el apartado sobre publicidad y únicamente con su consentimiento.
+
+## Finalidades y bases jurídicas del tratamiento
+
+Los datos de nacimiento sirven a un único fin: calcular la posición de los planetas y redactar un texto a partir de ella. La dirección de correo electrónico y Telegram sirven para entregar el documento o el horóscopo y avisarle de que está listo. Para nada más: no enviamos comunicaciones publicitarias ni vendemos datos. Al servicio publicitario Meta solo le informamos de los pedidos con su consentimiento y únicamente de lo que se enumera en el apartado sobre publicidad; los datos de nacimiento nunca forman parte de ello.
+
+Tratamos sus propios datos de nacimiento, su nombre, la forma de tratamiento y la dirección de entrega porque es necesario para ejecutar el contrato o la suscripción celebrados con usted, o para elaborar la vista previa gratuita que ha solicitado (artículo 6, apartado 1, letra b), del RGPD). Los datos de otra persona que introduzca para un estudio de compatibilidad o para una carta infantil se tratan sobre la base de nuestro interés legítimo en ejecutar su encargo (artículo 6, apartado 1, letra f), del RGPD). También se basan en nuestro interés legítimo (artículo 6, apartado 1, letra f), del RGPD): la determinación del país a partir de la dirección IP (precios y medios de pago correctos), la limitación de accesos (protección y estabilidad del sitio web), el recuento de visitas sin cookies, la conservación temporal de los textos de la vista previa y la conservación de la dirección de correo electrónico para consultas y reembolsos. Las etiquetas publicitarias y las comunicaciones a Meta se basan en su consentimiento (apartado «Cookies y publicidad»). Conservamos el registro del pedido porque así lo exige la normativa contable y tributaria (artículo 6, apartado 1, letra c), del RGPD).
+
+## Cookies y publicidad
+
+El sitio web instala sus propias cookies técnicas: su respuesta a la pregunta sobre las cookies (durante un año), un código promocional, si lo ha introducido o ha llegado a través de un enlace que lo contiene (hasta que deje de ser válido), y el nombre de la campaña publicitaria que originó su visita (sin identificadores, hasta que se cierre el navegador). Contamos las visitas nosotros mismos y con Cloudflare Web Analytics, sin cookies.
+
+Las etiquetas publicitarias (Meta, Google, TikTok) solo se cargan si ha elegido «Aceptar», y solo en páginas sin datos personales: la página de inicio, los textos legales y el formulario vacío. Las páginas con su carta, su pedido, el pago, la espera del documento y su suscripción no contienen ninguna: a ellas no llegan ni los datos de nacimiento ni los enlaces al documento.
+
+Si ha elegido «Aceptar», el sitio web comunica además a Meta, desde su propio servidor, cuatro eventos: la apertura de la vista previa de su carta, el paso al pago, el pago de un pedido y la confirmación de una suscripción al horóscopo, para que sepamos qué publicidad ha conducido a ellos. Con cada evento se transmiten: su dirección de correo electrónico y su país en forma de hash (una huella irreversible), su dirección IP y los datos de su navegador (user agent), las cookies publicitarias de Meta si ya están instaladas, el número del pedido o de la suscripción, el producto y el precio. Los datos de nacimiento, los nombres, el lugar de nacimiento y el sexo no se transmiten nunca. Para comunicar un pago, que llega más tarde, la dirección IP, los datos del navegador y las cookies de Meta se conservan cifrados junto con el pedido, hasta el pago y durante 7 días como máximo. Si ha elegido «Solo las necesarias» o no ha respondido, no se envía ni se conserva nada de esto.
+
+La base jurídica de las etiquetas publicitarias y de las comunicaciones a Meta es su consentimiento (artículo 6, apartado 1, letra a), del RGPD); para el almacenamiento de información en su equipo terminal y el acceso a ella, además, las normas nacionales que transponen el artículo 5, apartado 3, de la Directiva 2002/58/CE, en España el artículo 22.2 de la Ley 34/2002, de 11 de julio, de servicios de la sociedad de la información y de comercio electrónico (LSSI).
+
+## Quién trata los datos
+
+No lo hacemos todo nosotros mismos. El tratamiento se realiza en los servidores de **Cloudflare** (alojamiento, base de datos, almacenamiento de documentos). Los pagos los recibe **Stripe**, que recibe su dirección de correo electrónico, el nombre del producto y el precio, sin datos de nacimiento; los datos de su tarjeta solo los ve Stripe. Si paga de otra forma en la página de Stripe (por ejemplo, con Klarna, BLIK o Revolut Pay), el proveedor correspondiente recibe lo que necesita para el pago y lo trata como responsable independiente, conforme a sus propias condiciones. El texto de la lectura y del horóscopo lo redacta un modelo de lenguaje: el proveedor del modelo (**Anthropic**, modelos Claude) recibe las posiciones de los planetas, los aspectos y las casas, su nombre y la fecha y la hora de nacimiento, de los que se deducen la edad y los retornos planetarios. Las coordenadas, el lugar de nacimiento, la zona horaria y la dirección de correo electrónico no se transmiten al modelo. Los correos electrónicos los envía **Resend**, y los mensajes de Telegram, **Telegram**, solo si usted ha elegido esa vía. Cada uno de ellos está vinculado a nosotros por contrato y trata los datos únicamente siguiendo nuestras instrucciones, como encargado del tratamiento en el sentido del artículo 28 del RGPD y del artículo 33 de la LOPDGDD.
+
+## Cómo y durante cuánto tiempo conservamos los datos
+
+Los datos de nacimiento se cifran (AES-256-GCM) antes de llegar a la base de datos y solo se descifran durante el cálculo. Los datos de nacimiento, los textos de la lectura y el documento final **se suprimen a los 30 días del pedido**, junto con el enlace de descarga. Un pedido no pagado se suprime con todos sus datos a los 7 días. La dirección de correo electrónico de un pedido pagado se conserva durante 180 días, para consultas y reembolsos, y después se suprime. El registro del pedido sin ella (qué se compró, cuándo y a qué precio) se conserva durante el tiempo que exija la normativa contable y tributaria.
+
+Una suscripción al horóscopo solo comienza cuando usted la confirma mediante el enlace de nuestro correo electrónico; una solicitud no confirmada se suprime a los 7 días. Mientras la suscripción está activa, conservamos su dirección de correo electrónico y, cifrados, la carta calculada y su nombre; los datos de nacimiento en sí, solo durante los primeros 30 días, por si hubiera que corregirlos. Tras la cancelación o el fin de una suscripción, sus datos se conservan 30 días más y después se suprimen.
+
+Los textos de la vista previa gratuita se conservan hasta 30 días, para no redactar dos veces el mismo texto; no están vinculados a ninguna dirección de correo electrónico ni a ningún pedido.
+
+## Sus derechos
+
+Tiene derecho a acceder a sus datos y a obtener una copia de ellos (artículo 15 del RGPD), a su rectificación (artículo 16 del RGPD), a su supresión, también antes de que venzan los plazos indicados (artículo 17 del RGPD), a la limitación del tratamiento (artículo 18 del RGPD) y a la portabilidad de los datos (artículo 20 del RGPD), en los términos de los artículos 12 a 18 de la LOPDGDD. Para ejercerlos, escriba a help@chronika.me desde la dirección con la que se hizo el pedido o la suscripción. Si se suprimen los datos de nacimiento, el documento deja de estar disponible.
+
+**Derecho de oposición:** en la medida en que tratamos datos sobre la base de nuestro interés legítimo (artículo 6, apartado 1, letra f), del RGPD), puede oponerse en cualquier momento a ese tratamiento por motivos relacionados con su situación particular (artículo 21 del RGPD).
+
+Puede retirar su consentimiento en cualquier momento, sin que ello afecte a la licitud del tratamiento basado en el consentimiento previo a su retirada (artículo 7, apartado 3, del RGPD). Para las cookies publicitarias se hace así: elimine las cookies del sitio web en su navegador; la pregunta volverá a aparecer y, hasta que responda, no se cargará ninguna etiqueta. Si considera que tratamos sus datos de forma ilícita, tiene derecho a presentar una reclamación ante una autoridad de control, en particular en el Estado miembro de su residencia habitual (artículo 77 del RGPD); en España, esa autoridad es la Agencia Española de Protección de Datos (AEPD).
+
+## Menores
+
+La carta infantil se elabora con los datos del niño o de la niña que introduce una persona adulta. No celebramos ningún contrato con el menor ni nos ponemos en contacto con él. El servicio no está destinado a ser utilizado de forma autónoma por menores de 18 años.
+
+## Cambios
+
+Si esta política cambia, la nueva versión aparecerá en esta página con una nueva fecha. Le informaremos por correo electrónico de los cambios importantes si tenemos un pedido en curso con su dirección.
+`,
 };

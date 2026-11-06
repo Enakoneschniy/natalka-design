@@ -12,7 +12,7 @@ two deliberate removals:
 
 from __future__ import annotations
 
-from .address import Address
+from .address import Address, address_for
 from .facts import as_data, clean_name
 from .sections import SectionSpec
 
@@ -22,6 +22,8 @@ LANGUAGE = {
     "en": "in English",
     "pl": "po polsku",
     "de": "auf Deutsch",
+    "fr": "en français",
+    "es": "en español (de España)",
 }
 
 GENDER = {
@@ -45,6 +47,18 @@ GENDER = {
         ),
     },
 }
+GENDER["f"]["fr"] = (
+    "une femme — accordez au féminin tout ce qui la concerne (vous êtes prête, vous êtes née)"
+)
+GENDER["m"]["fr"] = "un homme — accordez au masculin tout ce qui le concerne (vous êtes prêt)"
+GENDER["n"]["fr"] = (
+    "genre non précisé — tournez les phrases pour qu'aucun accord de genre ne soit nécessaire"
+)
+GENDER["f"]["es"] = "una mujer — concuerda en femenino lo que se refiere a ella (estás preparada)"
+GENDER["m"]["es"] = "un hombre — concuerda en masculino lo que se refiere a él (estás preparado)"
+GENDER["n"]["es"] = (
+    "género no indicado — construye las frases para que no haga falta concordar el género"
+)
 GENDER["f"]["pl"] = (
     "kobieta — zwracaj się do niej «Pani» i uzgadniaj wszystkie formy w rodzaju żeńskim "
     "(jest Pani gotowa, zrobiła Pani)"
@@ -182,10 +196,58 @@ ADDRESS_RULE_PL: dict[str, str] = {
     ),
 }
 
+ADDRESS_RULE_FR: dict[str, str] = {
+    "vy": (
+        "In French this is «vous»\nthroughout — «vous», «votre», «vos» — never «tu», in any "
+        "sentence, however warm the moment."
+    ),
+    "ty": (
+        "In French this is «tu»\nthroughout — «tu», «toi», «ton» — warm and direct, never "
+        "«vous» to this one person. In a synastry the two of them together are «vous»."
+    ),
+}
+
+#: Spanish readings are always on «tú» (see address.py); the formal rule exists for completeness.
+ADDRESS_RULE_ES: dict[str, str] = {
+    "vy": (
+        "In Spanish this is «usted»\nthroughout, never «tú». In a synastry the two of them "
+        "together are «ustedes»."
+    ),
+    "ty": (
+        "In Spanish this is «tú»\nthroughout — «tú», «te», «tu», «tus» — warm and direct, as a "
+        "reading speaks in Spain, never «usted». In a synastry the two of them together are "
+        "«vosotros» («os», «vuestro»)."
+    ),
+}
+
+#: English has one «you», and nothing to choose.
+ADDRESS_RULE_EN: dict[str, str] = {
+    "vy": "In English this is simply\n«you» — direct and warm.",
+    "ty": "In English this is simply\n«you» — direct and warm.",
+}
+
 #: What the reading may contain besides its own alphabet. A Cyrillic reading allows no Latin
 #: letters but the chart's abbreviations; a German one is written in Latin letters and has to
 #: be told what that does not license.
 SCRIPT_RULE: dict[str, str] = {
+    "fr": (
+        "Write natural French, not French translated from English: no English word at all "
+        "(no «timing», «mindset»), French quotation marks « … », the French names for planets, "
+        "signs and aspects (Ascendant, Milieu du Ciel, conjonction, opposition, carré, trigone, "
+        "sextile). A planet stands «en» a sign: en Bélier, en Taureau, en Gémeaux, en Cancer, "
+        "en Lion, en Vierge, en Balance, en Scorpion, en Sagittaire, en Capricorne, en Verseau, "
+        "en Poissons. An applying aspect is «appliquant», a separating one «séparant». The chart "
+        "abbreviations AC, MC, IC and DC stay as they are."
+    ),
+    "es": (
+        "Write natural Spanish of Spain, not Spanish translated from English: no English word at "
+        "all (no «timing», «mindset»), quotation marks «…», the Spanish names for planets, signs "
+        "and aspects (Ascendente, Medio Cielo, conjunción, oposición, cuadratura, trígono, "
+        "sextil). A planet stands «en» a sign: en Aries, en Tauro, en Géminis, en Cáncer, en Leo, "
+        "en Virgo, en Libra, en Escorpio, en Sagitario, en Capricornio, en Acuario, en Piscis. An "
+        "applying aspect is «aplicativo», a separating one «separativo». The chart abbreviations "
+        "AC, MC, IC and DC stay as they are."
+    ),
     "pl": (
         "Write natural Polish, not Polish translated from English or Russian: no English word at "
         "all, Polish quotation marks „…”, the en dash with spaces ( – ), the Polish names for "
@@ -207,6 +269,14 @@ SCRIPT_RULE: dict[str, str] = {
     ),
     "en": "The chart abbreviations AC, MC, IC and DC stay as they are.",
 }
+ENGLISH_BAN = (
+    "The\nreading itself must contain no English at all — translate every term, including the "
+    "names of\nplanets, signs and aspects."
+)
+ENGLISH_PLAIN = (
+    "The\nreading spells that shorthand out in plain English — the names of planets, signs and "
+    "aspects in\nfull, never the ephemeris's abbreviations."
+)
 CYRILLIC_SCRIPT_RULE = (
     "The only Latin characters allowed are the chart abbreviations AC, MC,\nIC, DC and the degree "
     "figures."
@@ -218,15 +288,25 @@ SYSTEM = _SYSTEM_TEMPLATE.replace("{address_rule}", ADDRESS_RULE["vy"]).replace(
 
 
 def system_prompt(lang: str, gender: str, product: str = "natal", address: Address = "vy") -> str:
+    address = address_for(lang, address)
     language = LANGUAGE.get(lang, f"in {lang}")
     who = GENDER.get(gender, GENDER["n"]).get(lang) or GENDER[gender]["en"]
-    address_rule = {"de": ADDRESS_RULE_DE, "pl": ADDRESS_RULE_PL}.get(lang, ADDRESS_RULE)[address]
+    address_rule = {
+        "de": ADDRESS_RULE_DE,
+        "pl": ADDRESS_RULE_PL,
+        "fr": ADDRESS_RULE_FR,
+        "es": ADDRESS_RULE_ES,
+        "en": ADDRESS_RULE_EN,
+    }.get(lang, ADDRESS_RULE)[address]
     script_rule = SCRIPT_RULE.get(lang, CYRILLIC_SCRIPT_RULE)
-    parts = [
-        _SYSTEM_TEMPLATE.replace("{address_rule}", address_rule).replace(
-            "{script_rule}", script_rule
-        )
-    ]
+    body = _SYSTEM_TEMPLATE.replace("{address_rule}", address_rule).replace(
+        "{script_rule}", script_rule
+    )
+    if lang == "en":
+        # The rule against English is for every other language; an English reading only has to
+        # spell the shorthand out.
+        body = body.replace(ENGLISH_BAN, ENGLISH_PLAIN)
+    parts = [body]
     if product in ADDRESSEE:
         parts.append(ADDRESSEE[product])
     parts.append(f"Write {language}. The person the chart belongs to is {who}.")

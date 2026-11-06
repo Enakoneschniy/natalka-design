@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isDraft, renderLegal } from '.';
 import { refunds } from './refunds';
 
-const LANGUAGES = ['ru', 'uk', 'en', 'de', 'pl'] as const;
+const LANGUAGES = ['ru', 'uk', 'en', 'de', 'pl', 'fr', 'es'] as const;
 const text = (locale: string) => refunds[locale] ?? '';
 
 /** The refund promises and the deadlines, in each language's own words. */
@@ -47,6 +47,22 @@ const PROMISES: Record<(typeof LANGUAGES)[number], string[]> = {
     'Mają Państwo prawo odstąpić od niniejszej umowy w terminie 14 dni bez podania jakiejkolwiek przyczyny.',
     'Odpowiadamy w ciągu dwóch dni roboczych',
   ],
+  fr: [
+    "n'a pas été remis dans les 24 heures suivant le paiement",
+    'Le paiement a été débité deux fois',
+    'dans un délai de 5 jours ouvrés de notre côté',
+    'nous établissons, une seule fois et gratuitement, un nouveau document à partir des données corrigées si vous nous écrivez dans les 7 jours suivant la commande',
+    'Vous avez le droit de vous rétracter du présent contrat sans donner de motif dans un délai de quatorze jours.',
+    'Nous répondons dans un délai de deux jours ouvrés',
+  ],
+  es: [
+    'no se ha entregado en las 24 horas siguientes al pago',
+    'El pago se ha cobrado dos veces',
+    'en un plazo de 5 días hábiles por nuestra parte',
+    'elaboramos una vez y gratuitamente un nuevo documento con los datos corregidos si nos escribe en un plazo de 7 días desde el pedido',
+    'Tiene usted derecho a desistir del presente contrato en un plazo de catorce días naturales sin necesidad de justificación.',
+    'Respondemos en un plazo de dos días hábiles',
+  ],
 };
 
 /** The text of one part of a policy (German unless told otherwise): from its heading to the next
@@ -61,9 +77,11 @@ const part = (heading: string, locale = 'de') => {
 };
 
 describe('refund policy', () => {
-  it('has no blanks left in the German and Polish editions', () => {
+  it('has no blanks left in the German, Polish, French and Spanish editions', () => {
     expect(isDraft(text('de'))).toBe(false);
     expect(isDraft(text('pl'))).toBe(false);
+    expect(isDraft(text('fr'))).toBe(false);
+    expect(isDraft(text('es'))).toBe(false);
   });
 
   it('keeps every language in step, section for section', () => {
@@ -177,6 +195,116 @@ describe('refund policy', () => {
     expect(html).toContain('<p><strong>Wzór formularza odstąpienia od umowy</strong></p>');
     expect(html).toContain(
       '<li>Imię i nazwisko konsumenta(-ów)</li><li>Adres konsumenta(-ów)</li>',
+    );
+  });
+
+  it('carries the French information on the right of withdrawal for digital content', () => {
+    const information = part(
+      "## Informations concernant l'exercice du droit de rétractation",
+      'fr',
+    );
+    for (const line of [
+      '**Droit de rétractation**',
+      'Le délai de rétractation expire quatorze jours après le jour de la conclusion du contrat.',
+      "Pour exercer le droit de rétractation, vous devez nous notifier (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovaquie, courriel : help@chronika.me) votre décision de rétractation du présent contrat au moyen d'une déclaration dénuée d'ambiguïté (par exemple, lettre envoyée par la poste ou courrier électronique).",
+      "Vous pouvez utiliser le modèle de formulaire de rétractation mais ce n'est pas obligatoire.",
+      'Vous pouvez également exercer votre droit de rétractation en ligne',
+      "nous vous enverrons, dans les meilleurs délais, un accusé de réception de la rétractation sur un support durable (par exemple, par courriel), y compris son contenu ainsi que la date et l'heure de sa soumission.",
+      "Pour que le délai de rétractation soit respecté, il suffit que vous transmettiez votre communication relative à l'exercice du droit de rétractation avant l'expiration du délai de rétractation.",
+      '**Effets de rétractation**',
+      'sans retard excessif et, en tout état de cause, au plus tard quatorze jours',
+      '**Exception au droit de rétractation**',
+      'article L. 221-28, 13°, du code de la consommation',
+      "vous avez donné préalablement votre consentement exprès pour que l'exécution du contrat commence avant l'expiration du délai de rétractation",
+      'vous avez reconnu que vous perdrez votre droit de rétractation',
+      "deuxième alinéa de l'article L. 221-13 du même code",
+      // What the order and payment pages ask the French buyer to agree to (apps/jobs/src/contract.ts).
+      "« J'accepte expressément que l'exécution commence avant la fin du délai de rétractation et je reconnais que je perdrai ainsi mon droit de rétractation. »",
+    ]) {
+      expect(information, line).toContain(line);
+    }
+    expect(renderLegal(text('fr'), 'fr')).toContain('<a href="/fr/withdraw">« Se rétracter du contrat ici »</a>');
+  });
+
+  it('carries the French modèle de formulaire de rétractation, addressed and as a list', () => {
+    const form =
+      part("## Informations concernant l'exercice du droit de rétractation", 'fr').split(
+        '**Modèle de formulaire de rétractation**',
+      )[1] ?? '';
+    for (const line of [
+      '(Veuillez compléter et renvoyer le présent formulaire uniquement si vous souhaitez vous rétracter du contrat.)',
+      "- À l'attention de coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovaquie, courriel : help@chronika.me :",
+      '- Je/nous (*) vous notifie/notifions (*) par la présente ma/notre (*) rétractation du contrat',
+      '/pour la prestation de services (*) ci-dessous :',
+      '- Commandé le (*)/reçu le (*) :',
+      '- Nom du (des) consommateur(s) :',
+      '- Adresse du (des) consommateur(s) :',
+      '- Signature du (des) consommateur(s) (uniquement en cas de notification du présent formulaire sur papier) :',
+      '- Date :',
+      '(*) Rayez la mention inutile.',
+    ]) {
+      expect(form, line).toContain(line);
+    }
+    const html = renderLegal(text('fr'), 'fr');
+    expect(html).toContain('<p><strong>Modèle de formulaire de rétractation</strong></p>');
+    expect(html).toContain(
+      '<li>Nom du (des) consommateur(s) :</li><li>Adresse du (des) consommateur(s) :</li>',
+    );
+  });
+
+  it('carries the Spanish información sobre el derecho de desistimiento for digital content', () => {
+    const information = part(
+      '## Información sobre el ejercicio del derecho de desistimiento',
+      'es',
+    );
+    for (const line of [
+      '**Derecho de desistimiento**',
+      'El plazo de desistimiento expirará a los catorce días naturales del día de la celebración del contrato.',
+      'Para ejercer el derecho de desistimiento, deberá usted notificarnos (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Eslovaquia, correo electrónico: help@chronika.me) su decisión de desistir del contrato a través de una declaración inequívoca (por ejemplo, una carta enviada por correo postal o correo electrónico).',
+      'Podrá utilizar el modelo de formulario de desistimiento que figura a continuación, aunque su uso no es obligatorio.',
+      'Tiene usted asimismo la opción de cumplimentar y enviar electrónicamente el modelo de formulario de desistimiento o cualquier otra declaración inequívoca a través de nuestro sitio web',
+      'le comunicaremos sin demora en un soporte duradero (por ejemplo, por correo electrónico) la recepción de dicho desistimiento.',
+      'Para cumplir el plazo de desistimiento, basta con que la comunicación relativa al ejercicio por su parte de este derecho sea enviada antes de que venza el plazo correspondiente.',
+      '**Consecuencias del desistimiento**',
+      'sin ninguna demora indebida y, en todo caso, a más tardar 14 días naturales',
+      '**Pérdida del derecho de desistimiento**',
+      'artículo 103, letra m), del texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios y otras leyes complementarias, aprobado por el Real Decreto Legislativo 1/2007, de 16 de noviembre',
+      'usted haya otorgado su consentimiento previo y expreso para iniciar la ejecución durante el plazo del derecho de desistimiento',
+      'haya expresado su conocimiento de que, en consecuencia, pierde su derecho de desistimiento',
+      'la confirmación prevista en el artículo 98.7 de dicha ley',
+      // What the order and payment pages ask the Spanish buyer to agree to (apps/jobs/src/contract.ts).
+      '«Doy mi consentimiento expreso para que la ejecución comience antes de que finalice el plazo de desistimiento y reconozco que, con ello, pierdo mi derecho de desistimiento.»',
+    ]) {
+      expect(information, line).toContain(line);
+    }
+    expect(renderLegal(text('es'), 'es')).toContain(
+      '<a href="/es/withdraw">«Desistir del contrato»</a>',
+    );
+  });
+
+  it('carries the Spanish modelo de formulario de desistimiento, addressed and as a list', () => {
+    const form =
+      part('## Información sobre el ejercicio del derecho de desistimiento', 'es').split(
+        '**Modelo de formulario de desistimiento**',
+      )[1] ?? '';
+    for (const line of [
+      '(sólo debe cumplimentar y enviar el presente formulario si desea desistir del contrato)',
+      '- A la atención de coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Eslovaquia, correo electrónico: help@chronika.me:',
+      '- Por la presente le comunico/comunicamos (*) que desisto de mi/desistimos de nuestro (*) contrato',
+      '/prestación del siguiente servicio (*)',
+      '- Pedido el/recibido el (*)',
+      '- Nombre del consumidor y usuario o de los consumidores y usuarios',
+      '- Domicilio del consumidor y usuario o de los consumidores y usuarios',
+      '- Firma del consumidor y usuario o de los consumidores y usuarios (solo si el presente formulario se presenta en papel)',
+      '- Fecha',
+      '(*) Táchese lo que no proceda.',
+    ]) {
+      expect(form, line).toContain(line);
+    }
+    const html = renderLegal(text('es'), 'es');
+    expect(html).toContain('<p><strong>Modelo de formulario de desistimiento</strong></p>');
+    expect(html).toContain(
+      '<li>Nombre del consumidor y usuario o de los consumidores y usuarios</li><li>Domicilio del consumidor y usuario o de los consumidores y usuarios</li>',
     );
   });
 });

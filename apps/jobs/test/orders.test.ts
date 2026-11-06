@@ -128,7 +128,7 @@ describe('POST /v1/orders', () => {
       [{ email: `${'a'.repeat(250)}@x.io` }, 'email'],
       [{ email: 42 }, 'email'],
       [{ product: 'tarot' }, 'product'],
-      [{ locale: 'fr' }, 'locale'],
+      [{ locale: 'it' }, 'locale'],
       [{ currency: 'EURO' }, 'currency'],
       [{ currency: 'E1R' }, 'currency'],
       [{ amount_minor: 49 }, 'amount_minor'],

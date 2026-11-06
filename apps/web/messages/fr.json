@@ -1,0 +1,706 @@
+{
+  "nav": {
+    "products": "Produits",
+    "how": "Comment ça marche",
+    "sample": "Exemple de lecture",
+    "faq": "Questions",
+    "start": "Calculer mon thème",
+    "language": "Langue",
+    "menu": "Menu"
+  },
+  "hero": {
+    "titleLead": "Un thème astral",
+    "titleAccent": "qu'on a envie de lire",
+    "lead": "Indiquez votre date, votre heure et votre lieu de naissance : en une minute, votre thème s'affiche, gratuitement. La lecture complète de 20 à 30 pages vous parvient en PDF par e-mail.",
+    "cta": "Calculer mon thème",
+    "secondary": "Voir un exemple",
+    "facts": {
+      "accuracy": "à 1′ près",
+      "accuracyLabel": "précision des positions planétaires",
+      "speed": "~10 min",
+      "speedLabel": "du paiement au PDF",
+      "count": "12 400",
+      "countLabel": "lectures envoyées"
+    },
+    "film": {
+      "line": "Chacun est né\nsous son propre ciel.",
+      "quote": "Soleil en Taureau en maison 9 : savoir ne vous suffit pas, vous avez besoin de comprendre jusqu'au bout – et vous croyez rarement sur parole. La Lune en Verseau en maison 6 fait de votre emploi du temps une question de liberté, pas de discipline.",
+      "quoteFrom": "extrait d'une lecture",
+      "cta": "Découvrir mon thème"
+    }
+  },
+  "products": {
+    "title": "Produits",
+    "lead": "Prix fixe, paiement unique. Vous saisissez vos données une seule fois, avant la première commande : les documents suivants sont établis à partir du même thème.",
+    "choose": "Choisir",
+    "natal": {
+      "title": "Thème natal",
+      "meta": "20–30 pages",
+      "items": [
+        "Soleil, Lune, Ascendant",
+        "Les planètes en signes et en maisons",
+        "Les aspects et leur expression",
+        "Relations, travail, argent"
+      ]
+    },
+    "forecast": {
+      "title": "Prévisions sur 12 mois",
+      "meta": "20–30 pages",
+      "items": [
+        "Les transits sur votre thème",
+        "Un calendrier des événements mois par mois",
+        "Périodes favorables et périodes difficiles",
+        "Que faire dans chacune"
+      ]
+    },
+    "synastry": {
+      "title": "Compatibilité",
+      "meta": "20–30 pages · deux thèmes",
+      "items": [
+        "La synastrie de deux thèmes",
+        "Là où vous vous renforcez l'un l'autre",
+        "Là où naissent les frictions, et pourquoi",
+        "Comment vous entendre"
+      ]
+    },
+    "child": {
+      "title": "Thème de l'enfant",
+      "meta": "20–30 pages · pour les parents",
+      "items": [
+        "Le tempérament et les besoins de votre enfant",
+        "Comment il apprend et se repose",
+        "Ce qui le blesse, ce qui l'inspire",
+        "Le langage qui lui parle vraiment"
+      ]
+    },
+    "once": "paiement unique, sans abonnement",
+    "bundle": {
+      "title": "Thème natal et prévisions",
+      "meta": "35 pages · PDF par e-mail"
+    }
+  },
+  "how": {
+    "title": "Comment ça marche",
+    "steps": [
+      {
+        "title": "Indiquez vos données de naissance",
+        "text": "Prénom, date, heure et ville. Vous ne connaissez pas l'heure exacte ? Ça fonctionne aussi, simplement sans les maisons ni l'Ascendant."
+      },
+      {
+        "title": "Découvrez l'aperçu gratuit",
+        "text": "La roue du thème, le tableau des positions, les aspects et un court texte sur votre Soleil, votre Lune et votre Ascendant – tout de suite."
+      },
+      {
+        "title": "Recevez le PDF",
+        "text": "Le document arrive par e-mail en 5 à 15 minutes et reste accessible via un lien."
+      }
+    ]
+  },
+  "faq": {
+    "title": "Questions",
+    "contact": "Vous n'avez pas trouvé de réponse ? Écrivez-nous à",
+    "contactAfter": ", nous vous répondons sous un jour ouvré.",
+    "items": [
+      {
+        "q": "Et si je ne connais pas mon heure de naissance exacte ?",
+        "a": "Nous calculerons le thème pour midi. Les positions du Soleil et des planètes, ainsi que la plupart des aspects, resteront exactes, mais nous ne pourrons pas calculer les maisons ni l'Ascendant : les parties correspondantes seront omises. L'heure figure souvent dans les papiers de la maternité ou dans le carnet de santé."
+      },
+      {
+        "q": "En quoi est-ce différent d'un horoscope ?",
+        "a": "Un horoscope décrit un douzième de l'humanité d'après le signe solaire. Un thème natal, c'est la position des dix planètes, de l'Ascendant et des maisons au moment de votre naissance, et les angles qu'ils forment entre eux. Chez nous, deux personnes du même signe reçoivent deux textes différents."
+      },
+      {
+        "q": "Qui écrit le texte de la lecture ?",
+        "a": "Les positions des planètes sont calculées par un programme d'après des éphémérides astronomiques, à la minute d'arc près. Le texte est rédigé par un modèle de langage selon un guide écrit par les astrologues de Chronika ; chaque paragraphe est rattaché à une position ou à un aspect précis de votre thème."
+      },
+      {
+        "q": "Comment conservez-vous mes données ?",
+        "a": "Votre date, votre heure et votre lieu de naissance ne sont conservés que pour établir vos documents, puis supprimés au bout de 30 jours. Nous ne les transmettons à aucun tiers."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Découvrez votre thème en une minute",
+    "lead": "Aperçu gratuit – sans inscription ni carte bancaire.",
+    "button": "Calculer mon thème"
+  },
+  "footer": {
+    "about": "Des thèmes natals calculés automatiquement. Calcul d'après les éphémérides astronomiques, texte établi d'après votre thème, et non d'après votre signe solaire.",
+    "products": "Produits",
+    "documents": "Documents",
+    "contacts": "Contact",
+    "terms": "Conditions générales de vente",
+    "privacy": "Politique de confidentialité",
+    "refunds": "Rétractation et remboursements",
+    "withdraw": "Se rétracter du contrat ici",
+    "imprint": "Mentions légales",
+    "hours": "Lun.–ven., 10 h–19 h CET",
+    "disclaimer": "La lecture est proposée à titre de divertissement et de découverte de soi ; elle ne constitue pas un conseil médical, psychologique ou financier.",
+    "seller": "coremind s. r. o. · IČO 57 339 368 · Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovaquie"
+  },
+  "unavailable": {
+    "title": "Service indisponible dans votre région",
+    "text": "Chronika ne travaille pas avec les utilisateurs de la Fédération de Russie. Nous n'acceptons aucun paiement depuis cette région et n'y envoyons aucun document."
+  },
+  "form": {
+    "title": "Données de naissance",
+    "lead": "Plus les données sont précises, plus le thème l'est aussi. Tout est obligatoire, sauf l'heure.",
+    "steps": {
+      "data": "Données de naissance",
+      "preview": "Aperçu gratuit",
+      "payment": "Lecture complète"
+    },
+    "name": "Prénom",
+    "nameHint": "C'est ainsi que nous vous appellerons dans la lecture",
+    "date": "Date de naissance",
+    "datePlaceholder": "jj.mm.aaaa",
+    "time": "Heure de naissance",
+    "timePlaceholder": "hh:mm",
+    "timeHint": "Heure locale du lieu de naissance",
+    "unknownTime": "Je ne connais pas mon heure de naissance exacte",
+    "unknownTimeTitle": "Ce qui change sans l'heure.",
+    "unknownTimeBody": "Nous calculerons le thème pour midi : les positions des planètes et les aspects resteront exacts, mais les maisons et l'Ascendant ne peuvent pas être calculés – les parties correspondantes seront omises. L'heure figure souvent dans les papiers de la maternité ou dans le carnet de santé.",
+    "city": "Ville de naissance",
+    "cityPlaceholder": "Commencez à saisir le nom",
+    "cityHint": "Coordonnées et fuseau horaire déterminés automatiquement, en tenant compte de l'heure d'été en vigueur l'année de naissance",
+    "gender": "Comment nous adresser à vous dans le texte",
+    "genderHint": "Seul l'accord des mots change dans la lecture : « prête » ou « prêt ». Rien d'autre",
+    "genders": {
+      "female": "Femme",
+      "male": "Homme",
+      "neutral": "Neutre"
+    },
+    "submit": "Calculer mon thème",
+    "submitPending": "Calcul…",
+    "free": "Thème et aperçu gratuits. Vous ne payez que la lecture complète.",
+    "north": "N",
+    "south": "S",
+    "east": "E",
+    "west": "O",
+    "errors": {
+      "date": "Indiquez la date au format jj.mm.aaaa",
+      "dateMissing": "Cette date n'existe pas dans le calendrier : vérifiez le jour et le mois",
+      "dateEarly": "Indiquez une date à partir de 1900",
+      "dateFuture": "Cette date n'est pas encore arrivée : vérifiez l'année",
+      "time": "Indiquez l'heure au format hh:mm ou cochez la case si vous ne la connaissez pas",
+      "city": "Choisissez une ville dans la liste"
+    },
+    "you": "Vous",
+    "partner": "Partenaire",
+    "partnerNameHint": "C'est ainsi que nous appellerons la seconde personne dans la lecture",
+    "childName": "Prénom de l'enfant",
+    "childNameHint": "C'est ainsi que nous appellerons l'enfant dans la lecture",
+    "childGender": "Sexe de l'enfant",
+    "childGenderHint": "Ne change que l'accord des mots dans le texte",
+    "titles": {
+      "natal": "Données de naissance",
+      "forecast": "Données de naissance",
+      "bundle": "Données de naissance",
+      "child": "Données de naissance de l'enfant",
+      "synastry": "Données de naissance des deux personnes",
+      "horoscope": "Horoscope par abonnement"
+    },
+    "leads": {
+      "synastry": "Il nous faut les deux thèmes. Plus les heures sont précises, plus les liens entre eux le sont aussi.",
+      "child": "Plus les données sont précises, plus le thème l'est aussi. Tout est obligatoire, sauf l'heure.",
+      "horoscope": "À partir de vos données de naissance, nous calculons votre thème, puis chaque semaine ou chaque mois nous vous écrivons un horoscope fondé sur lui : d'après les transits réels, avec leurs dates, et non d'après le signe solaire."
+    },
+    "submitSubscribe": "S'abonner",
+    "edit": "Modifier les données",
+    "timeUnknown": "heure inconnue"
+  },
+  "preview": {
+    "title": "{name}, voici votre thème",
+    "titleAnonymous": "Voici votre thème",
+    "edit": "Modifier les données",
+    "unknownTime": "heure inconnue · thème calculé pour midi",
+    "aspectsTitle": "Aspects",
+    "aspectsLead": "Les angles entre les planètes. Les aspects harmonieux apportent de la légèreté, ceux en tension une énergie qu'il faut bien canaliser. Dans votre thème : {harmonious} harmonieux et {tense} en tension.",
+    "legend": {
+      "conjunction": "Conjonction – les planètes agissent ensemble",
+      "trine": "Trigone – un flux facile et naturel",
+      "sextile": "Sextile – une occasion à saisir",
+      "square": "Carré – une friction intérieure, un moteur",
+      "opposition": "Opposition – deux pôles à réunir"
+    },
+    "noHouses": "Maisons et Ascendant non calculés : sans heure de naissance exacte, ils ne seraient pas fiables.",
+    "soonTitle": "Lecture complète",
+    "soonBody": "Un PDF de 20 à 30 pages avec une interprétation détaillée des planètes, des maisons et des aspects. Nous y mettons la dernière main – le thème ci-dessus repose déjà sur les mêmes calculs.",
+    "soonCta": "Bientôt",
+    "errorTitle": "Impossible de calculer le thème",
+    "errorBody": "Vérifiez vos données de naissance et réessayez.",
+    "back": "Retour au formulaire",
+    "positionsTitle": "Positions des planètes",
+    "coreTitle": "Le cœur du thème",
+    "coreLead": "Trois points par lesquels commence toute lecture : ce que vous faites, ce que vous ressentez et la façon dont les autres vous voient.",
+    "wheelHint": "Survolez ou touchez une planète : ses aspects s'allument.",
+    "writing": "Rédaction…",
+    "readingTitle": "Première impression",
+    "readingLead": "Trois extraits de votre thème – gratuits, avant tout paiement. La lecture complète va nettement plus loin.",
+    "synastryTitle": "Deux thèmes côte à côte",
+    "personOne": "Première personne",
+    "personTwo": "Seconde personne",
+    "contactsTitle": "Les liens entre les deux thèmes",
+    "contactsLead": "Les aspects que forment les planètes d'un thème avec celles de l'autre. {total} au total, dont {harmonious} harmonieux et {tense} en tension. Ci-dessous, les plus exacts."
+  },
+  "chart": {
+    "planets": {
+      "sun": "Soleil",
+      "moon": "Lune",
+      "mercury": "Mercure",
+      "venus": "Vénus",
+      "mars": "Mars",
+      "jupiter": "Jupiter",
+      "saturn": "Saturne",
+      "uranus": "Uranus",
+      "neptune": "Neptune",
+      "pluto": "Pluton",
+      "chiron": "Chiron",
+      "north_node": "Nœud Nord",
+      "south_node": "Nœud Sud",
+      "lilith": "Lilith",
+      "pars_fortunae": "Part de Fortune",
+      "vertex": "Vertex",
+      "asc": "Ascendant",
+      "mc": "MC",
+      "dsc": "Descendant",
+      "ic": "IC"
+    },
+    "signs": {
+      "aries": "Bélier",
+      "taurus": "Taureau",
+      "gemini": "Gémeaux",
+      "cancer": "Cancer",
+      "leo": "Lion",
+      "virgo": "Vierge",
+      "libra": "Balance",
+      "scorpio": "Scorpion",
+      "sagittarius": "Sagittaire",
+      "capricorn": "Capricorne",
+      "aquarius": "Verseau",
+      "pisces": "Poissons"
+    },
+    "in": {
+      "aries": "en Bélier",
+      "taurus": "en Taureau",
+      "gemini": "en Gémeaux",
+      "cancer": "en Cancer",
+      "leo": "en Lion",
+      "virgo": "en Vierge",
+      "libra": "en Balance",
+      "scorpio": "en Scorpion",
+      "sagittarius": "en Sagittaire",
+      "capricorn": "en Capricorne",
+      "aquarius": "en Verseau",
+      "pisces": "en Poissons"
+    },
+    "aspects": {
+      "conjunction": "Conjonction",
+      "opposition": "Opposition",
+      "trine": "Trigone",
+      "square": "Carré",
+      "sextile": "Sextile",
+      "quincunx": "Quinconce",
+      "semisextile": "Semi-sextile",
+      "semisquare": "Semi-carré",
+      "sesquiquadrate": "Sesqui-carré"
+    },
+    "table": {
+      "planet": "Planète",
+      "sign": "Signe",
+      "degree": "Degré",
+      "house": "Maison",
+      "retro": "R"
+    },
+    "houseShort": "Maison {n}"
+  },
+  "paywall": {
+    "title": "Et maintenant, l'essentiel : quoi et quand",
+    "lead": "Vous avez lu ce que disent trois points de votre thème. La lecture complète aborde tous les autres, en 35 pages :",
+    "items": [
+      "Qui vous êtes selon votre thème : vos forces, ce qui vous donne de l'énergie et ce qui vous en prend",
+      "Vie amoureuse : qui chercher d'après votre thème et quelles périodes ouvrent ce chapitre",
+      "Travail et argent : à quoi vous consacrer et que faire dès maintenant",
+      "Vos années mois par mois : la fin de cette année, toute l'année {next}, {year} – et les dates clés sur une seule page"
+    ],
+    "cta": "Accéder à la lecture complète – {price}",
+    "note": "35 pages · PDF par e-mail sous 20 à 30 minutes · paiement unique · TTC",
+    "pages": [
+      {
+        "section": "3 · Les planètes en signes et en maisons",
+        "page": "14",
+        "title": "Vénus en Gémeaux, maison 11",
+        "body": [
+          "En amour, il vous faut la conversation. Pas des compliments : une vraie conversation, de celles qui passionnent. Les relations où l'on n'a rien à se dire s'achèvent avant même que l'autre s'en aperçoive.",
+          "La maison 11 fait des amis et des partenaires deux catégories voisines : beaucoup de vos histoires ont commencé par une amitié – et ce n'est pas un hasard, c'est votre façon de faire."
+        ]
+      },
+      {
+        "section": "4 · Les aspects",
+        "page": "23",
+        "title": "Lune carré Mars",
+        "body": [
+          "La réaction la plus rapide de votre thème. Quand on touche à ce qui compte, le corps répond avant la pensée. Cela vous donne du courage – et quelques mots de trop, que vous regrettez ensuite.",
+          "Qu'en faire : ne pas retenir, mais rediriger. Une action physique dans les premières minutes absorbe la première impulsion et laisse place à la clarté."
+        ]
+      },
+      {
+        "section": "5 · Relations, travail, argent",
+        "page": "31",
+        "title": "L'argent : le Taureau et la maison 2",
+        "body": [
+          "Vous vivez l'argent comme la nourriture : ce n'est pas la quantité qui compte, mais le sentiment d'avoir des réserves. Un compte vide vous inquiète plus qu'il ne le devrait, un compte plein vous rassure plus qu'il ne le mérite.",
+          "Saturne en maison 8 ajoute de la prudence en matière d'argent commun et de crédits."
+        ]
+      }
+    ],
+    "leadSynastry": "20 à 30 pages sur votre couple : ce qui vous attire, où naissent les frictions et comment vivre avec. Le PDF arrive par e-mail 5 à 15 minutes après le paiement.",
+    "sticky": "Lire la suite – {price}",
+    "datesTitle": "Vos prochaines périodes fortes selon votre thème",
+    "datesNote": "L'interprétation de chaque date se trouve dans la lecture complète."
+  },
+  "checkout": {
+    "title": "Commande",
+    "steps": "Paiement",
+    "summary": "Votre commande",
+    "total": "Total TTC",
+    "email": "Où envoyer le PDF",
+    "emailHint": "Le lien vers le document reste valable 30 jours",
+    "emailPlaceholder": "nom@exemple.fr",
+    "back": "Retour au thème",
+    "chart": "Thème",
+    "unknownTime": "heure inconnue",
+    "start": "Générer ma lecture",
+    "starting": "Lancement…",
+    "startNote": "Paiement par carte, Apple Pay, Google Pay ou Klarna. Le document arrive par e-mail sous 10 à 20 minutes.",
+    "startFailed": "Le lancement a échoué. Réessayez.",
+    "tooMany": "Trop de tentatives d'affilée. Patientez une minute, puis réessayez.",
+    "emailInvalid": "Vérifiez l'adresse e-mail",
+    "consent": "J'accepte expressément que l'exécution commence avant la fin du délai de rétractation et je reconnais que je perdrai ainsi mon droit de rétractation. Les conditions générales de vente et les règles de remboursement figurent en bas de page.",
+    "pay": "Payer",
+    "regionBlocked": "Nous ne pouvons malheureusement pas accepter de paiement depuis votre pays.",
+    "howTitle": "Comment se passe le paiement",
+    "howBody": "Par carte, Apple Pay, Google Pay ou un moyen de paiement courant dans votre pays (BLIK, Przelewy24, Klarna, Revolut Pay et d'autres), sur une page sécurisée de Stripe. Nous ne voyons ni ne conservons vos données de paiement. La génération démarre dès le paiement ; le lien vers le document arrive par e-mail sous 10 à 20 minutes."
+  },
+  "generating": {
+    "title": "Nous préparons votre lecture",
+    "lead": "Cela prend généralement dix à quinze minutes. La progression s'actualise d'elle-même : vous pouvez simplement laisser l'onglet ouvert.",
+    "starting": "Lancement…",
+    "noToken": "Ce lien est expiré ou incomplet. Revenez au formulaire et calculez à nouveau votre thème.",
+    "stepCalc": "Calcul du thème",
+    "stepTexts": "Rédaction de la lecture : {written}/{total} sections",
+    "stepPdf": "Assemblage du PDF",
+    "readyTitle": "C'est prêt",
+    "readyBody": "Votre lecture compte {pages, plural, one {# page} other {# pages}}.",
+    "open": "Ouvrir le PDF",
+    "failedTitle": "Un problème est survenu",
+    "failedBody": "Nous avons repéré l'erreur et allons relancer la génération. Si rien ne change d'ici une heure, écrivez-nous.",
+    "back": "Retour à l'accueil",
+    "goneTitle": "Ce lien ne fonctionne pas",
+    "stage": {
+      "calc": "Thème",
+      "texts": "Lecture",
+      "pdf": "PDF"
+    },
+    "telegram": "Recevoir sur Telegram",
+    "awaitingPayment": "En attente de la confirmation du paiement…",
+    "unpaidTitle": "Paiement non finalisé",
+    "unpaidBody": "Votre commande est enregistrée et attend son paiement. Vous pouvez le finaliser sur la page sécurisée de Stripe.",
+    "unpaidPay": "Procéder au paiement",
+    "unpaidPending": "Ouverture du paiement…",
+    "unpaidNote": "Si vous avez déjà payé, patientez une minute : la page s'actualisera d'elle-même.",
+    "unpaidFailed": "Impossible d'ouvrir le paiement. Réessayez dans une minute.",
+    "tooMany": "Trop de tentatives d'affilée. Patientez une minute, puis réessayez.",
+    "refundedTitle": "Paiement remboursé",
+    "refundedBody": "Le montant de cette commande a été remboursé sur le moyen de paiement utilisé. Le document n'est plus accessible via ce lien.",
+    "disputedTitle": "Paiement contesté",
+    "disputedBody": "La banque examine une contestation de ce paiement. Tant qu'elle n'est pas résolue, le document n'est pas accessible. Pour toute question : help@chronika.me.",
+    "declinedTitle": "Le paiement n'a pas abouti",
+    "declinedBody": "La commande n'a pas été passée. Si un montant a tout de même été prélevé, écrivez à help@chronika.me : nous le rembourserons."
+  },
+  "legal": {
+    "draft": "Brouillon : ce document n'est pas encore signé et les informations légales de la société n'y figurent pas encore. Il n'a aucune valeur tant que les paiements ne sont pas ouverts."
+  },
+  "subscription": {
+    "sectionTitle": "L'horoscope de votre thème – chaque semaine",
+    "sectionLead": "Pas d'après votre signe solaire, mais d'après votre thème entier : quels transits touchent précisément vos planètes, et quels jours. Le premier mois est gratuit, ensuite {price} par mois, résiliable à tout moment.",
+    "sectionItems": [
+      "Les dates précises des événements de la semaine ou du mois",
+      "Les transits sur vos planètes et vos maisons",
+      "Par e-mail et sur Telegram",
+      "Le premier horoscope dès la confirmation de votre e-mail"
+    ],
+    "sectionCta": "S'abonner",
+    "trial": "premier mois gratuit",
+    "then": "puis {price} par mois",
+    "title": "Abonnement à l'horoscope",
+    "lead": "Choisissez la fréquence et le canal. Nous vous enverrons un e-mail de confirmation, puis nous rédigerons le premier horoscope juste après.",
+    "cadence": "Fréquence",
+    "week": "Chaque semaine",
+    "weekHint": "Un texte court pour sept jours, avec des dates précises.",
+    "month": "Chaque mois",
+    "monthHint": "Un texte détaillé pour le mois, semaine par semaine.",
+    "email": "Adresse e-mail",
+    "emailHint": "C'est ici que vous recevrez l'horoscope et le lien pour gérer votre abonnement.",
+    "consent": "Je comprends que le premier mois est gratuit, qu'ensuite l'abonnement coûte {price} par mois et que je peux le résilier à tout moment grâce au lien figurant dans l'e-mail.",
+    "submit": "S'abonner",
+    "submitPending": "Inscription…",
+    "failed": "L'abonnement n'a pas pu être créé. Réessayez.",
+    "emailInvalid": "Vérifiez l'adresse e-mail",
+    "tooMany": "Trop de tentatives d'affilée. Patientez une minute, puis réessayez.",
+    "checkMailTitle": "Consultez votre boîte mail",
+    "checkMailBody": "Nous avons envoyé un e-mail à {email}. Ouvrez-le et confirmez votre abonnement : sans cela, vous ne recevrez pas d'horoscope. Le lien de l'e-mail est valable sept jours.",
+    "checkMailNote": "Pas d'e-mail ? Jetez un œil au dossier « Spam » ou abonnez-vous à nouveau.",
+    "confirmTitle": "Confirmation de l'abonnement",
+    "confirmLead": "Cliquez sur le bouton et l'abonnement commence : le premier horoscope arrive tout de suite, le premier mois est gratuit.",
+    "confirm": "Confirmer l'abonnement",
+    "confirmPending": "Confirmation…",
+    "confirmGone": "Ce lien est expiré ou n'est plus valable. Abonnez-vous à nouveau : vous recevrez un nouvel e-mail.",
+    "confirmFailed": "La confirmation a échoué. Réessayez dans une minute.",
+    "endedBody": "Vous ne recevez plus de nouveaux horoscopes.",
+    "manageTitle": "Votre abonnement",
+    "statusActive": "Actif",
+    "statusPaused": "En pause",
+    "statusCancelled": "Résilié",
+    "statusEnded": "Le mois gratuit est terminé",
+    "nextSend": "Prochain horoscope : {date}",
+    "trialUntil": "Gratuit jusqu'au {date}",
+    "writing": "Le premier horoscope est en cours de rédaction – cela prend généralement moins d'une minute.",
+    "latestFor": "Horoscope du {start} au {end}",
+    "telegramTitle": "Le recevoir aussi sur Telegram",
+    "telegramBody": "Ouvrez le bot et appuyez sur « Démarrer » : vos horoscopes arriveront aussi là-bas.",
+    "telegramOpen": "Ouvrir le bot",
+    "pause": "Mettre en pause",
+    "resume": "Reprendre",
+    "cancel": "Résilier l'abonnement",
+    "delete": "Supprimer l'abonnement et les données",
+    "deleteConfirm": "Supprimer l'abonnement et toutes les données ? Cette action est irréversible.",
+    "deleted": "L'abonnement et les données ont été supprimés.",
+    "birth": "Données de naissance",
+    "birthKept": "Conservées jusqu'au {date} au cas où vous voudriez les corriger ; ensuite, seul le thème est conservé.",
+    "birthGone": "Données de naissance supprimées ; seul le thème est conservé.",
+    "gone": "Ce lien a expiré. Vous en trouverez un à jour dans le dernier e-mail contenant votre horoscope.",
+    "contact": "Corriger vos données de naissance : help@chronika.me",
+    "foot": "Le premier mois est gratuit. Ensuite {price} par mois, résiliable à tout moment.",
+    "nextLabel": "Prochain",
+    "trialLabel": "Gratuit jusqu'au",
+    "birthGoneShort": "supprimées"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Thème natal et prévisions jusqu'en {year}",
+      "dates": {
+        "title": "Quand quelque chose va-t-il changer dans votre vie ? Votre thème le dit, dates à l'appui",
+        "lead": "35 pages sur vous : caractère, travail et argent, relations, foyer et votre place dans le monde. Et un calendrier des périodes de {from} à {year} : quand commencer, quand laisser passer, quand vous décider."
+      },
+      "home": {
+        "title": "Ici, c'est chez vous – ou juste une escale ?",
+        "lead": "Votre thème ne choisira pas un pays à votre place. Mais il montre où se trouvent vos appuis, quelle période vous traversez en ce moment et quand viendra le temps du changement – dates à l'appui, jusqu'en {year}."
+      },
+      "love": {
+        "title": "En amour, quand oser et quand attendre ?",
+        "lead": "Pourquoi certaines personnes vous attirent alors que vous restez avec d'autres, qui vous correspond vraiment et quelles périodes entre {from} et {year} ouvrent ce chapitre. Sans verdict ni « date de mariage » – avec des mois précis."
+      },
+      "cta": "Calculer mon thème gratuitement",
+      "under": "Aperçu en une minute · sans inscription ni carte bancaire",
+      "quote": "Votre thème, je vous le dis d'emblée, est remarquablement cohérent. Touchez au travail, c'est le foyer qui répond ; touchez aux relations, c'est l'argent qui réagit. Ce n'est pas de l'imagination : c'est la structure même.",
+      "quoteFrom": "extrait d'une lecture",
+      "line": "Chacun est né\nsous son propre ciel.",
+      "facts": ["35 pages", "PDF par e-mail", "paiement unique, sans abonnement"]
+    },
+    "asks": {
+      "title": "Les questions qu'on vient nous poser",
+      "items": [
+        "Est-ce ma place ici – ou est-ce que je me fuis moi-même ?",
+        "Depuis des années, je pense à déménager sans parvenir à me décider",
+        "En apparence, j'ai tout, et pourtant rien n'avance. Pourquoi ?",
+        "En amour, quand se décider et quand attendre ?",
+        "Que faire, quand ce qui marchait avant ne marche plus ?",
+        "Que me réserve l'année {next} ?"
+      ],
+      "note": "Le thème ne répond pas par <em>« oui »</em> ou par <em>« non »</em> et ne prononce aucun verdict. Il montre quelle période vous traversez et quand s'ouvrira la prochaine fenêtre. Une telle réponse, on peut en faire quelque chose.",
+      "cta": "Voir mon thème"
+    },
+    "inside": {
+      "title": "35 pages sur votre thème – pas sur votre signe",
+      "lead": "Un horoscope écrit la même chose pour une personne sur douze. Ici, ce sont toutes les planètes, les maisons et les aspects de votre thème. Deux Taureaux recevront deux documents différents.",
+      "cards": [
+        {
+          "title": "Votre portrait astral",
+          "text": "Où sont vos forces, ce qui vous donne de l'énergie et ce qui vous en prend sans que vous le remarquiez. Ascendant, Lune, aspects clés – en termes simples, sans jargon inutile."
+        },
+        {
+          "title": "Vie amoureuse",
+          "text": "Comment fonctionnent vos relations, qui chercher d'après votre thème et quelles périodes entre {from} et {year} ouvrent ce chapitre."
+        },
+        {
+          "title": "Travail et argent",
+          "text": "À quoi vous consacrer selon votre thème, pourquoi l'argent vous vient de cette façon et pas d'une autre, et que faire dès maintenant."
+        },
+        {
+          "title": "Vos années mois par mois",
+          "text": "Un regard en arrière, la fin de cette année et toute l'année {next} mois par mois, {year} dans les grandes lignes. À la fin, toutes les dates clés sur une seule page."
+        }
+      ],
+      "note": "Avec, en plus, la roue du thème, le tableau des positions et des maisons, et une synthèse « L'essentiel de votre thème » – pour y revenir dans six mois.",
+      "galleryNote": "Voici à quoi ressemble une lecture. La vôtre parlera de vous.",
+      "pages": ["Couverture", "Sommaire", "Page de lecture", "Dates clés"]
+    },
+    "steps": {
+      "title": "Regardez d'abord, décidez ensuite",
+      "items": [
+        {
+          "title": "Indiquez vos données de naissance",
+          "text": "Date, heure et ville. Vous ne connaissez pas l'heure exacte ? Ça fonctionne aussi, simplement sans les maisons ni l'Ascendant."
+        },
+        {
+          "title": "Lisez le début gratuitement",
+          "text": "En une minute : votre thème, les positions des planètes et les premières pages de la lecture. Vous verrez tout de suite si c'est bien vous."
+        },
+        {
+          "title": "Recevez la lecture complète",
+          "text": "Si vous voulez la suite, le PDF de 35 pages arrive par e-mail sous 20 à 30 minutes."
+        }
+      ],
+      "note": "Vous ne payez que si vous voulez lire la suite. L'aperçu ne demande ni inscription ni carte bancaire.",
+      "cta": "Calculer mon thème gratuitement"
+    },
+    "offer": {
+      "title": "Un document. Un paiement.",
+      "product": "Thème natal et prévisions jusqu'en {year}",
+      "meta": "Aperçu gratuit · lecture complète en un seul paiement, sans abonnement · prix TTC",
+      "items": [
+        "35 pages sur votre thème",
+        "Caractère, relations, travail et argent",
+        "Calendrier des périodes : la fin de cette année et {next} mois par mois, {year} dans les grandes lignes",
+        "Toutes les dates clés sur une seule page",
+        "Le PDF par e-mail et un lien qui reste à vous"
+      ],
+      "cta": "Commencer par l'aperçu gratuit",
+      "under": "Si une erreur se glisse dans le calcul, nous la corrigeons ou nous vous remboursons."
+    },
+    "honest": {
+      "title": "En toute honnêteté : comment c'est fait",
+      "items": [
+        {
+          "title": "Le calcul est exact",
+          "text": "Les positions des planètes et les dates des transits sont calculées par un programme d'après les éphémérides suisses (Swiss Ephemeris), les tables astronomiques sur lesquelles reposent les logiciels d'astrologie professionnels. Rien n'est inventé : vous pouvez vérifier chaque position avec n'importe quel calculateur astrologique."
+        },
+        {
+          "title": "Le texte est écrit par une intelligence artificielle",
+          "text": "En revanche, elle ne se fatigue pas à la trentième page et n'écrit pas de généralités : elle suit une méthode conçue par les astrologues de Chronika, et chaque paragraphe est rattaché à une position ou à un aspect précis de votre thème – cela se voit dans le texte."
+        },
+        {
+          "title": "Nous ne prédisons pas d'événements",
+          "text": "Nous ne donnons pas de date de mariage et ne prononçons pas de verdict. Le thème montre des périodes et des tendances ; les décisions, c'est vous qui les prenez."
+        }
+      ],
+      "note": "L'astrologie n'est pas une science. C'est un langage qui aide à penser à soi et au moment que l'on traverse."
+    },
+    "faq": {
+      "title": "Questions et réponses",
+      "items": [
+        {
+          "q": "En quoi est-ce différent d'un horoscope ?",
+          "a": "Un horoscope écrit la même chose pour toutes les personnes d'un même signe. Un thème natal, c'est la position de toutes les planètes, de l'Ascendant et des maisons au moment de votre naissance. Une telle configuration ne se répète qu'une fois en plusieurs milliers d'années."
+        },
+        {
+          "q": "Que signifie « prévisions » ? Vous prédisez des événements ?",
+          "a": "Non. Nous montrons quand les planètes en mouvement touchent votre thème et quels sujets passent alors au premier plan : travail, relations, foyer. La façon dont cela se manifestera dépend de vous."
+        },
+        {
+          "q": "Je voudrais savoir dans quel pays vivre. La lecture peut-elle répondre ?",
+          "a": "Non, le choix d'un pays relève d'une technique à part. En revanche, la lecture montre ce que représentent pour vous le foyer et les points d'appui, et quelles périodes entre {from} et {year} se prêtent aux grands changements."
+        },
+        {
+          "q": "Je ne vis plus dans ma ville de naissance. Est-ce important ?",
+          "a": "Non. Le thème est calculé pour le lieu de naissance, et les périodes des prévisions s'appliquent où que vous viviez."
+        },
+        {
+          "q": "Je ne connais pas mon heure de naissance exacte.",
+          "a": "Nous calculerons le thème pour midi. Les planètes et la plupart des aspects resteront exacts, mais sans maisons ni Ascendant, une partie de la lecture sera plus courte. L'heure figure souvent sur l'acte de naissance ou dans les papiers de la maternité."
+        },
+        {
+          "q": "Qui écrit le texte ?",
+          "a": "Le calcul est fait par un programme d'après les éphémérides suisses, le texte par un modèle de langage selon une méthode conçue par les astrologues de Chronika. Chaque paragraphe s'appuie sur une position ou un aspect précis de votre thème."
+        },
+        {
+          "q": "Est-ce un abonnement ?",
+          "a": "Non. Un paiement, un document. Aucun prélèvement automatique."
+        },
+        {
+          "q": "Quel est le délai ?",
+          "a": "L'aperçu : environ une minute. La lecture complète arrive par e-mail 20 à 30 minutes après le paiement."
+        },
+        {
+          "q": "Et si la lecture ne me plaît pas ?",
+          "a": "Lisez d'abord l'aperçu gratuit : la lecture complète est écrite dans le même style. Si une erreur s'est glissée dans le calcul, écrivez à help@chronika.me : nous la corrigerons ou nous vous rembourserons."
+        },
+        {
+          "q": "Puis-je l'offrir ?",
+          "a": "Oui. Saisissez les données de naissance de la personne et votre propre adresse e-mail, puis transférez-lui le PDF."
+        },
+        {
+          "q": "Que faites-vous de mes données ?",
+          "a": "Nous utilisons votre date, votre heure et votre lieu de naissance uniquement pour votre document. Le lieu sert au calcul du thème ; le modèle de langage reçoit les positions des planètes, le prénom, la date et l'heure – sans le lieu de naissance ni l'adresse e-mail. Le prestataire de paiement ne reçoit pas les données de naissance. Nous les supprimons au bout de 30 jours ou dès votre première demande."
+        }
+      ]
+    },
+    "final": {
+      "title": "Votre thème – en une minute",
+      "text": "Découvrez gratuitement le début de votre lecture. Si c'est bien vous, lisez la suite. Sinon, vous n'avez rien perdu.",
+      "cta": "Calculer mon thème gratuitement",
+      "under": "Sans inscription ni carte bancaire"
+    }
+  },
+  "meta": {
+    "title": "Thème astral : interprétation complète et prévisions datées",
+    "description": "Une lecture personnelle de votre thème natal en 35 pages et un calendrier des périodes jusqu'en {year} : quand commencer, quand laisser passer, quand vous décider. Aperçu gratuit en une minute, PDF par e-mail.",
+    "productName": "Thème natal et prévisions jusqu'en {year}",
+    "productDescription": "PDF de 35 pages : votre caractère selon votre thème, relations, travail et argent, prévisions mois par mois et une page de dates précises. Paiement unique, sans abonnement.",
+    "subscribeTitle": "L'horoscope de votre thème, chaque semaine ou chaque mois",
+    "subscribeDescription": "Une courte lecture d'après votre thème natal : la période qui s'annonce et ce qu'elle touche. Par e-mail ou sur Telegram, une fois par semaine ou une fois par mois."
+  },
+  "offer": {
+    "tag": "−{percent} % jusqu'au {until}",
+    "hero": "−{percent} % sur la lecture complète jusqu'au {until}",
+    "promo": "Code promo {code} : −{percent} % jusqu'au {until}",
+    "promoHero": "Code promo {code} : −{percent} % sur la lecture complète jusqu'au {until}",
+    "was": "Sans remise :",
+    "field": "Code promo",
+    "apply": "Appliquer",
+    "applying": "Vérification…",
+    "applied": "Code promo {code} appliqué",
+    "remove": "Retirer",
+    "unknown": "Ce code promo n'existe pas : vérifiez l'orthographe",
+    "early": "Ce code promo n'est pas encore valable",
+    "expired": "Ce code promo a expiré",
+    "failed": "Impossible de vérifier le code promo. Réessayez.",
+    "outdone": "Une remise plus avantageuse est en cours : c'est elle qui a été appliquée."
+  },
+  "withdraw": {
+    "title": "Exercer mon droit de rétractation",
+    "lead": "Si vous avez acheté chez nous en tant que consommateur, vous pouvez déclarer ici votre rétractation. Nous vous envoyons aussitôt par e-mail un accusé de réception reprenant le texte de votre déclaration, ainsi que la date et l'heure de sa réception.",
+    "name": "Nom et prénom",
+    "email": "Adresse e-mail utilisée pour la commande",
+    "order": "Numéro ou date de la commande",
+    "orderHint": "Si vous l'avez sous la main – nous retrouverons la commande plus vite",
+    "message": "Message",
+    "messageHint": "Facultatif",
+    "submit": "Confirmer la rétractation",
+    "sending": "Envoi…",
+    "doneTitle": "Rétractation reçue",
+    "doneBody": "Nous avons reçu votre déclaration le {when}. Si une commande a été passée avec l'adresse {email}, l'accusé de réception y a déjà été envoyé ; nous vous répondrons sous deux jours ouvrés.",
+    "note": "Nous vérifierons si le droit de rétractation s'applique à votre commande ou s'il a déjà pris fin, et nous vous en informerons. Les règles figurent sur la page « Rétractation et remboursements ».",
+    "nameInvalid": "Indiquez votre nom",
+    "emailInvalid": "Vérifiez l'adresse e-mail",
+    "failed": "L'envoi a échoué. Réessayez ou écrivez à help@chronika.me.",
+    "tooMany": "Trop de tentatives d'affilée. Patientez une minute, puis réessayez."
+  },
+  "consent": {
+    "title": "Cookies",
+    "text": "Nous utilisons les cookies de services publicitaires pour savoir quelle publicité a mené à un achat. Ils ne sont pas chargés sans votre consentement : le site fonctionne et mesure ses propres statistiques sans eux.",
+    "allow": "Autoriser",
+    "deny": "Nécessaires uniquement"
+  }
+}

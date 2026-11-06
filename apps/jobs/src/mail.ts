@@ -77,6 +77,27 @@ const COPY: Record<string, Copy> = {
     manage: 'Zarządzanie subskrypcją',
     unsubscribe: 'Ta wiadomość przychodzi, ponieważ zamówiono horoskopy Chronika. Rezygnacja lub zmiana częstotliwości jest możliwa pod linkiem powyżej.',
   },
+  // French letters address the reader as «vous», Spanish ones as «tú», like the readings.
+  fr: {
+    subject: "Votre lecture est prête",
+    ready: "Le document est prêt. Il s’ouvre avec le lien ci-dessous.",
+    open: "Ouvrir la lecture",
+    keeps: "Le lien reste valable trente jours ; ensuite, le document et les données de naissance sont supprimés.",
+    sign: "Chronika · chronika.me",
+    window: "Horoscope pour",
+    manage: "Gérer l’abonnement",
+    unsubscribe: "Vous recevez ce message parce que vous avez souscrit aux horoscopes Chronika. Pour vous désabonner ou changer la fréquence, utilisez le lien ci-dessus.",
+  },
+  es: {
+    subject: "Tu lectura está lista",
+    ready: "El documento está listo. Se abre con el enlace de abajo.",
+    open: "Abrir la lectura",
+    keeps: "El enlace funciona durante treinta días; después, el documento y los datos de nacimiento se borran.",
+    sign: "Chronika · chronika.me",
+    window: "Horóscopo para",
+    manage: "Gestionar la suscripción",
+    unsubscribe: "Recibes este correo porque te suscribiste a los horóscopos de Chronika. Puedes darte de baja o cambiar la frecuencia en el enlace de arriba.",
+  },
 };
 
 const escape = (text: string) =>
@@ -478,6 +499,38 @@ const CONFIRMATION: Record<string, ConfirmationCopy> = {
     button: 'Od umowy można też odstąpić przyciskiem „Odstąpienie od umowy” na stronie:',
     documents: 'Regulamin i zasady odstąpienia:',
   },
+  fr: {
+    subject: "Confirmation de votre commande",
+    intro: "Merci pour votre commande. Ce message confirme le contrat ; veuillez le conserver.",
+    order: "Numéro de commande",
+    date: "Payé le",
+    product: "Produit",
+    description: "lecture personnelle en PDF, environ 35 pages, lien envoyé par e-mail",
+    price: "Prix TTC",
+    seller: "Vendeur",
+    consentTitle: "Votre consentement",
+    consentIntro: "Avant le paiement, vous avez confirmé :",
+    started: "Nous avons commencé à créer le document juste après le paiement ; le lien vous parviendra dans un message séparé d’ici 10 à 20 minutes.",
+    withdrawalTitle: "Droit de rétractation",
+    button: "Vous pouvez aussi vous rétracter avec le bouton « Se rétracter du contrat ici » sur le site :",
+    documents: "Conditions générales et politique de remboursement :",
+  },
+  es: {
+    subject: "Confirmación de tu pedido",
+    intro: "Gracias por tu pedido. Este correo confirma el contrato; guárdalo.",
+    order: "Número de pedido",
+    date: "Pagado el",
+    product: "Producto",
+    description: "lectura personal en PDF, unas 35 páginas, enlace por correo electrónico",
+    price: "Precio (IVA incluido)",
+    seller: "Vendedor",
+    consentTitle: "Tu consentimiento",
+    consentIntro: "Antes de pagar, confirmaste:",
+    started: "Empezamos a crear el documento justo después del pago; el enlace te llegará en otro correo en 10–20 minutos.",
+    withdrawalTitle: "Derecho de desistimiento",
+    button: "También puedes desistir con el botón «Desistir del contrato» de la web:",
+    documents: "Condiciones y política de reembolso:",
+  },
 };
 
 export interface ConfirmationInput {
@@ -598,6 +651,28 @@ const RECEIPT: Record<string, ReceiptCopy> = {
     messageKept: 'otrzymana; zapoznamy się z nią',
     next: 'Odpowiemy w ciągu dwóch dni roboczych. Jeśli przysługuje zwrot, pieniądze wrócą tą samą metodą, którą dokonano płatności.',
   },
+  fr: {
+    subject: "Nous avons bien reçu votre rétractation",
+    intro: "Nous confirmons avoir reçu votre déclaration de rétractation du contrat. Son contenu :",
+    received: "Reçu le",
+    name: "Nom",
+    email: "E-mail",
+    order: "Commande",
+    message: "Message",
+    messageKept: "reçu ; nous allons le lire",
+    next: "Nous vous répondrons sous deux jours ouvrés. Si un remboursement vous est dû, il sera effectué avec le moyen de paiement que vous avez utilisé.",
+  },
+  es: {
+    subject: "Hemos recibido tu desistimiento",
+    intro: "Te confirmamos que hemos recibido tu declaración de desistimiento del contrato. Su contenido:",
+    received: "Recibido el",
+    name: "Nombre",
+    email: "Correo electrónico",
+    order: "Pedido",
+    message: "Mensaje",
+    messageKept: "recibido; lo leeremos",
+    next: "Te responderemos en un plazo de dos días hábiles. Si te corresponde un reembolso, lo recibirás por el mismo medio con el que pagaste.",
+  },
 };
 
 export interface WithdrawalInput {
@@ -666,6 +741,18 @@ const CONFIRM_COPY: Record<string, Copy> = {
     'Potwierdzenie subskrypcji',
     'Link jest ważny 7 dni. Jeśli subskrypcja nie była zamawiana, wystarczy zignorować tę wiadomość: dane usuną się same.',
   ),
+  fr: simple(
+    "Confirmez votre abonnement aux horoscopes",
+    "Cliquez sur le bouton pour confirmer votre abonnement aux horoscopes Chronika. Tant qu’il n’est pas confirmé, nous n’envoyons rien.",
+    "Confirmer l’abonnement",
+    "Le lien est valable 7 jours. Si vous n’avez rien demandé, ignorez simplement ce message : les données seront supprimées d’elles-mêmes.",
+  ),
+  es: simple(
+    "Confirma tu suscripción a los horóscopos",
+    "Pulsa el botón para confirmar tu suscripción a los horóscopos de Chronika. Hasta que la confirmes, no te enviaremos nada.",
+    "Confirmar la suscripción",
+    "El enlace es válido durante 7 días. Si no te has suscrito, ignora este correo: los datos se borrarán solos.",
+  ),
 };
 
 export async function sendSubscriptionConfirm(env: Env, to: string, locale: string, link: string): Promise<Sent> {
@@ -712,6 +799,18 @@ const TRIAL_ENDED_COPY: Record<string, Copy> = {
     'Bezpłatny miesiąc horoskopów Chronika dobiegł końca i kolejne horoskopy nie będą wysyłane. Nie trzeba nic płacić: subskrypcja po prostu się zatrzymała.',
     'Subskrypcja',
     'Dane subskrypcji zostaną usunięte za 30 dni. Wcześniej można je usunąć na stronie subskrypcji.',
+  ),
+  fr: simple(
+    "Votre mois gratuit est terminé",
+    "Votre mois gratuit d’horoscopes Chronika est terminé ; vous ne recevrez plus de nouveaux horoscopes. Vous n’avez rien à payer : l’abonnement s’est simplement arrêté.",
+    "Ouvrir l’abonnement",
+    "Les données de l’abonnement seront supprimées dans 30 jours. Vous pouvez les supprimer plus tôt sur la page de l’abonnement.",
+  ),
+  es: simple(
+    "Tu mes gratis ha terminado",
+    "Tu mes gratis de horóscopos de Chronika ha terminado y no recibirás más horóscopos. No tienes que pagar nada: la suscripción simplemente se ha detenido.",
+    "Abrir la suscripción",
+    "Los datos de la suscripción se borrarán dentro de 30 días. Puedes borrarlos antes en la página de la suscripción.",
   ),
 };
 

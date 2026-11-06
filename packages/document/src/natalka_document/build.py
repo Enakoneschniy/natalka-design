@@ -136,6 +136,8 @@ COVER_TITLE: dict[str, dict[str, str]] = {
         "ru": "Натальная карта",
         "pl": "Horoskop urodzeniowy",
         "de": "Geburtshoroskop",
+        "fr": "Thème natal",
+        "es": "Carta natal",
     },
     "forecast": {
         "uk": "Прогноз на 12 місяців",
@@ -143,6 +145,8 @@ COVER_TITLE: dict[str, dict[str, str]] = {
         "ru": "Прогноз на 12 месяцев",
         "pl": "Prognoza na 12 miesięcy",
         "de": "Prognose für zwölf Monate",
+        "fr": "Prévisions sur douze mois",
+        "es": "Previsión a doce meses",
     },
     "child": {
         "uk": "Дитяча карта",
@@ -150,6 +154,8 @@ COVER_TITLE: dict[str, dict[str, str]] = {
         "ru": "Детская карта",
         "pl": "Horoskop dziecka",
         "de": "Kinderhoroskop",
+        "fr": "Thème natal de l'enfant",
+        "es": "Carta natal infantil",
     },
     "synastry": {
         "uk": "Сумісність",
@@ -157,6 +163,8 @@ COVER_TITLE: dict[str, dict[str, str]] = {
         "ru": "Совместимость",
         "pl": "Zgodność",
         "de": "Partnerschaft",
+        "fr": "Compatibilité",
+        "es": "Compatibilidad",
     },
     "bundle": {
         "uk": "Натальна карта і прогноз",
@@ -164,6 +172,8 @@ COVER_TITLE: dict[str, dict[str, str]] = {
         "ru": "Натальная карта и прогноз",
         "pl": "Horoskop urodzeniowy i prognoza",
         "de": "Geburtshoroskop und Prognose",
+        "fr": "Thème natal et prévisions",
+        "es": "Carta natal y previsión",
     },
 }
 COVER_SUBTITLE: dict[str, dict[str, str]] = {
@@ -173,6 +183,8 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "ru": "индивидуальный разбор",
         "pl": "analiza indywidualna",
         "de": "persönliche Deutung",
+        "fr": "lecture personnelle",
+        "es": "lectura personal",
     },
     "forecast": {
         "uk": "за транзитами вашої карти",
@@ -180,6 +192,8 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "ru": "по транзитам вашей карты",
         "pl": "według tranzytów w horoskopie urodzeniowym",
         "de": "nach den Transiten Ihres Horoskops",
+        "fr": "d'après les transits de votre thème",
+        "es": "según los tránsitos de tu carta",
     },
     "child": {
         "uk": "для батьків",
@@ -187,6 +201,8 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "ru": "для родителей",
         "pl": "dla rodziców",
         "de": "für die Eltern",
+        "fr": "pour les parents",
+        "es": "para madres y padres",
     },
     "synastry": {
         "uk": "дві карти поряд",
@@ -194,6 +210,8 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "ru": "две карты рядом",
         "pl": "dwa horoskopy obok siebie",
         "de": "zwei Horoskope nebeneinander",
+        "fr": "deux thèmes côte à côte",
+        "es": "dos cartas, lado a lado",
     },
     "bundle": {
         "uk": "розбір і дванадцять місяців наперед",
@@ -201,6 +219,8 @@ COVER_SUBTITLE: dict[str, dict[str, str]] = {
         "ru": "разбор и двенадцать месяцев вперёд",
         "pl": "analiza i dwanaście miesięcy naprzód",
         "de": "Deutung und die nächsten zwölf Monate",
+        "fr": "la lecture et les douze mois à venir",
+        "es": "la lectura y los próximos doce meses",
     },
 }
 CHART_SECTION_TITLE = {
@@ -209,6 +229,8 @@ CHART_SECTION_TITLE = {
     "ru": "Ваша карта",
     "pl": "Horoskop urodzeniowy",
     "de": "Ihr Horoskop",
+    "fr": "Votre thème",
+    "es": "Tu carta",
 }
 #: The chart page's title in the informal «ты» form, where it differs from the formal one above.
 CHART_SECTION_TITLE_TY = {"ru": "Твоя карта", "uk": "Твоя карта"}
@@ -218,6 +240,8 @@ DISCLAIMER = {
     "ru": "Разбор носит развлекательно-познавательный характер и не является медицинским, психологическим или финансовым советом.",
     "pl": "Analiza ma charakter rozrywkowo-poznawczy i nie jest poradą medyczną, psychologiczną ani finansową.",
     "de": "Die Deutung dient der Unterhaltung und Selbstreflexion und ist keine medizinische, psychologische oder finanzielle Beratung.",
+    "fr": "Cette lecture est proposée à titre de divertissement et de réflexion personnelle ; elle ne constitue pas un conseil médical, psychologique ou financier.",
+    "es": "Esta lectura tiene fines de entretenimiento y autoconocimiento y no constituye asesoramiento médico, psicológico ni financiero.",
 }
 CLOSING = {
     "uk": "✦  на цьому розбір завершено  ✦",
@@ -225,6 +249,8 @@ CLOSING = {
     "ru": "✦  на этом разбор завершён  ✦",
     "pl": "✦  koniec analizy  ✦",
     "de": "✦  Ende der Deutung  ✦",
+    "fr": "✦  fin de la lecture  ✦",
+    "es": "✦  fin de la lectura  ✦",
 }
 
 #: The cover subtitle in the informal «ты» form, where it differs from the formal one above.
@@ -244,6 +270,8 @@ DATES_TITLE = {
     "ru": "Главные даты",
     "pl": "Najważniejsze daty",
     "de": "Die wichtigsten Daten",
+    "fr": "Les dates clés",
+    "es": "Las fechas clave",
 }
 
 

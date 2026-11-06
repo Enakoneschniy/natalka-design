@@ -120,11 +120,41 @@ const COPY = {
       'Gotowe: horoskopy będą przychodzić tutaj. Subskrypcją można zarządzać przez link z e-maila; /stop odłącza ten czat.',
     stopped: 'Dobrze, nic więcej nie będzie tu wysyłane.',
   },
+  fr: {
+    hello:
+      'Ici Chronika. Pour recevoir votre document ici, ouvrez le lien « Recevoir sur Telegram » sur la page de votre commande.',
+    unknown:
+      'Ce code n’existe pas, ou le lien a expiré. Rouvrez la page de votre commande et appuyez sur « Recevoir sur Telegram ».',
+    waiting:
+      'Votre lecture est encore en cours d’écriture — cela prend en général dix à quinze minutes. Dès que le document sera prêt, je vous l’enverrai ici.',
+    failed:
+      'Un problème est survenu avec cette commande. Nous voyons l’erreur et allons relancer la création ; si rien ne change d’ici une heure, écrivez à help@chronika.me.',
+    here: 'Votre lecture est prête.',
+    caption: 'Chronika · le document est conservé trente jours',
+    subscribed:
+      'C’est fait : vos horoscopes arriveront ici. Gérez l’abonnement avec le lien de votre e-mail ; /stop détache ce chat.',
+    stopped: 'Entendu, plus rien ne sera envoyé ici.',
+  },
+  es: {
+    hello:
+      'Aquí Chronika. Para recibir tu documento aquí, abre el enlace «Recibir en Telegram» en la página de tu pedido.',
+    unknown:
+      'Ese código no existe o el enlace ha caducado. Vuelve a abrir la página de tu pedido y pulsa «Recibir en Telegram».',
+    waiting:
+      'Tu lectura aún se está escribiendo; suele tardar entre diez y quince minutos. En cuanto el documento esté listo, te lo enviaré aquí.',
+    failed:
+      'Algo ha fallado con este pedido. Vemos el error y volveremos a intentarlo; si en una hora no cambia nada, escríbenos a help@chronika.me.',
+    here: 'Tu lectura está lista.',
+    caption: 'Chronika · el documento se guarda treinta días',
+    subscribed:
+      'Listo: tus horóscopos llegarán aquí. Gestiona la suscripción con el enlace de tu correo; /stop desvincula este chat.',
+    stopped: 'De acuerdo, no enviaré nada más aquí.',
+  },
 } as const;
 
 type Lang = keyof typeof COPY;
 const lang = (code?: string | null): Lang =>
-  code === 'uk' || code === 'ru' || code === 'de' || code === 'pl' ? code : 'en';
+  code && Object.hasOwn(COPY, code) ? (code as Lang) : 'en';
 
 /* Telegram authenticates its webhook calls with a secret we choose. Derived from the token rather
  * than stored as a second secret: it is only ever compared here. */

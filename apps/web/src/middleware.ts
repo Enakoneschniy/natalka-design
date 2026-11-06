@@ -36,15 +36,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL('/_not-found', request.url), { status: 404 });
   }
 
-  // English was a language of the site once. Anyone holding such a link — a bookmark, a message,
-  // the odd crawler — lands on the same page in Russian rather than on a 404.
-  const gone = request.nextUrl.pathname.match(/^\/en(\/.*)?$/);
-  if (gone) {
-    const url = new URL(`/ru${gone[1] ?? ''}${request.nextUrl.search}`, request.url);
-    return NextResponse.redirect(url, 308);
-  }
-
-  // The bare address: German for a browser that asks for German first, Russian otherwise. The
+  // The bare address: the language the browser asks for, when the site has it (see `localeFor`). The
   // query goes along — a promo code or an advert's tags arrive on links to the front page too.
   if (pathname === '/') {
     const locale = localeFor(request.headers.get('accept-language'));

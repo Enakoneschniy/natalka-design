@@ -1,4 +1,5 @@
 from natalka_texts import prompts
+from natalka_texts.address import address_for
 from natalka_texts.prompts import section_prompt, system_prompt
 from natalka_texts.sections import NATAL, specs, title
 from natalka_texts.validate import check
@@ -182,3 +183,29 @@ def test_a_polish_reading_is_on_pani_or_pan_by_gender() -> None:
     assert "nie zwracaj się «Pani» ani «Pan»" in system_prompt("pl", "n", "natal")
     assert "w Byku" in she and "„…”" in she
     assert "{" not in system_prompt("pl", "f", "synastry", address="ty")
+
+
+def test_a_french_reading_is_on_vous_by_default() -> None:
+    she = system_prompt("fr", "f", "natal")
+    assert "«vous»\nthroughout" in she and "never «tu»" in she
+    assert she.endswith("vous êtes née).")
+    assert "en français" in she
+    assert "{" not in system_prompt("fr", "m", "synastry", address="ty")
+
+
+def test_a_spanish_reading_is_always_on_tu() -> None:
+    assert address_for("es", "vy") == "ty"
+    assert address_for("de", "vy") == "vy"
+    assert address_for("fr", "ty") == "ty"
+    formal = system_prompt("es", "f", "natal", address="vy")
+    assert formal == system_prompt("es", "f", "natal", address="ty")
+    assert "«tú»\nthroughout" in formal and "never «usted»" in formal
+    assert "de España" in formal and "estás preparada" in formal
+    assert "«vosotros»" in system_prompt("es", "m", "synastry")
+
+
+def test_an_english_reading_spells_the_chart_out_and_may_use_english() -> None:
+    text = system_prompt("en", "f", "natal")
+    assert "plain English" in text
+    assert "use she/her" in text
+    assert "{" not in text

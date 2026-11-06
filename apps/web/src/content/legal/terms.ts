@@ -248,4 +248,110 @@ Nie jesteśmy obowiązani do udziału w postępowaniach w sprawie pozasądowego 
 
 Regulamin może ulegać zmianom; do Państwa zamówienia stosuje się wersja wyświetlana w chwili zapłaty.
 `,
+  fr: `
+# Conditions générales de vente
+
+_Version du 2 novembre 2026. Prestataire : coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovaquie, numéro d'identification (IČO) 57 339 368, registre du commerce du tribunal municipal de Bratislava III, section Sro, insertion n° 194301/B. Contact : help@chronika.me._
+
+## De quoi il s'agit
+
+Chronika est un service qui, à partir de la date, de l'heure et du lieu de naissance, calcule un thème astrologique et en rédige une interprétation écrite au format PDF. Les positions des planètes sont calculées d'après des éphémérides ; le texte est rédigé par un modèle de langage sur la base de ces calculs et des règles éditoriales du service. En payant une commande, vous acceptez les présentes conditions.
+
+## Ce que vous recevez
+
+Un document au format PDF, dans la langue choisie et de l'étendue indiquée dans la description du produit. Il est établi individuellement à partir de vos données, généralement en 10 à 20 minutes, et reste accessible par son lien pendant 30 jours à compter de la commande. Le lien est envoyé à l'adresse e-mail indiquée et, si vous l'avez choisi, sur Telegram. L'aperçu gratuit du thème est disponible sans paiement et sans engagement.
+
+## Prix et paiement
+
+Le prix est affiché avant le paiement dans votre devise et comprend toutes les taxes. Le paiement est unique, sans abonnement, et s'effectue par l'intermédiaire du prestataire de paiement Stripe ; nous ne voyons ni ne conservons les données de votre carte. Vous recevez le justificatif de paiement par e-mail.
+
+## Vos données et votre responsabilité
+
+Le document n'est exact que dans la mesure où le sont les données à partir desquelles il est établi. Vérifiez la date, l'heure et le lieu avant de payer : un document établi à partir de données erronées est le bon document pour une autre personne. En cas d'erreur de votre part, écrivez-nous dans les 7 jours : nous établirons, une seule fois et gratuitement, un nouveau document à partir des données corrigées.
+
+En saisissant les données d'une autre personne (compatibilité, thème de l'enfant), vous confirmez en avoir le droit.
+
+## Ce que ce n'est pas
+
+Une lecture est une interprétation de la tradition astrologique, rédigée pour être lue. Ce n'est ni un conseil médical, psychologique, juridique ou financier, ni une prédiction d'événements. Ne prenez pas, sur cette base, de décisions concernant votre santé, votre argent ou vos relations sans l'avis d'un professionnel compétent. Nous ne garantissons pas que ce qui est décrit dans le document se produira.
+
+## Droits sur le texte
+
+Le document est établi pour vous et destiné à un usage personnel. Vous pouvez le conserver, l'imprimer et le partager avec vos proches. Une publication intégrale ou une utilisation commerciale nécessite notre accord. Tout le reste du site (conception graphique, textes, logiciels) appartient au prestataire.
+
+## Responsabilité
+
+Nous sommes responsables de la remise du document et de sa conformité à la description. Notre responsabilité est limitée, pour chaque commande, à son prix. Nous ne sommes pas responsables des décisions prises sur la base du document, ni de l'indisponibilité du service pour des raisons échappant à notre contrôle.
+
+Ces limitations ne s'appliquent pas lorsque notre responsabilité est engagée en vertu de dispositions impératives, notamment en cas de dol ou de faute lourde ainsi qu'en cas d'atteinte à la vie, à l'intégrité physique ou à la santé. Elles sont sans effet sur vos droits légaux en cas de défaut de conformité du document.
+
+## Remboursements et rétractation
+
+Les règles de remboursement et les informations sur le droit de rétractation figurent dans le document [Rétractation et remboursements](/[locale]/legal/refunds).
+
+## Droit applicable et litiges
+
+Les présentes conditions sont régies par le droit de la République slovaque. Si vous êtes un consommateur, ce choix ne peut avoir pour résultat de vous priver de la protection que vous assurent les dispositions auxquelles il ne peut être dérogé par accord en vertu de la loi du pays où vous avez votre résidence habituelle (pour les consommateurs dans l'UE : article 6, paragraphe 2, du règlement (CE) n° 593/2008 (Rome I)).
+
+Nous cherchons d'abord à régler un litige par e-mail, à l'adresse help@chronika.me ; à défaut d'accord dans un délai de 30 jours, les tribunaux du siège du prestataire sont compétents, à moins que le droit de votre pays ne vous donne droit à une autre juridiction.
+
+Nous ne sommes pas tenus de participer à des procédures de règlement extrajudiciaire des litiges de consommation et ne nous sommes pas engagés à y participer.
+
+## Modifications
+
+Les présentes conditions peuvent changer ; la version applicable à votre commande est celle qui était affichée au moment du paiement.
+`,
+  es: `
+# Condiciones generales
+
+_Versión de 2 de noviembre de 2026. Prestador: coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Eslovaquia, número de identificación (IČO) 57 339 368, Registro Mercantil del Tribunal Municipal de Bratislava III, sección Sro, inserción n.º 194301/B. Contacto: help@chronika.me._
+
+## Qué es Chronika
+
+Chronika es un servicio que, a partir de la fecha, la hora y el lugar de nacimiento, calcula una carta astrológica y elabora una interpretación escrita de ella en formato PDF. Las posiciones de los planetas se calculan con efemérides; el texto lo redacta un modelo de lenguaje a partir de esos cálculos y de las reglas editoriales del servicio. Al pagar un pedido, se aceptan estas condiciones.
+
+## Qué se recibe
+
+Un documento en formato PDF, en el idioma elegido y con la extensión indicada en la descripción del producto. Se elabora de forma individual a partir de los datos facilitados, normalmente en un plazo de 10 a 20 minutos, y está disponible en su enlace durante 30 días desde el pedido. El enlace se envía a la dirección de correo electrónico indicada y, si así se ha elegido, a Telegram. La vista previa gratuita de la carta está disponible sin pago y sin compromiso.
+
+## Precio y pago
+
+El precio se muestra antes del pago en su moneda e incluye todos los impuestos. El pago es único, sin suscripción, y se realiza a través del proveedor de servicios de pago Stripe; no vemos ni conservamos los datos de su tarjeta. El justificante de pago se envía por correo electrónico.
+
+## Sus datos y su responsabilidad
+
+El documento es tan exacto como los datos con los que se elabora. Compruebe la fecha, la hora y el lugar antes de pagar: un documento elaborado con datos erróneos es el documento correcto para otra persona. Si ha cometido un error, escríbanos en un plazo de 7 días: elaboraremos una vez y gratuitamente un nuevo documento con los datos corregidos.
+
+Al introducir los datos de otra persona (compatibilidad, carta infantil), confirma que tiene derecho a hacerlo.
+
+## Qué no es
+
+Una lectura es una interpretación de la tradición astrológica, escrita para ser leída. No constituye asesoramiento médico, psicológico, jurídico ni financiero, ni una predicción de acontecimientos. No tome decisiones sobre salud, dinero o relaciones basándose en ella sin el consejo de un profesional cualificado. No garantizamos que vaya a ocurrir nada de lo descrito en el documento.
+
+## Derechos sobre el texto
+
+El documento se elabora para usted y está destinado al uso personal. Puede conservarlo, imprimirlo y compartirlo con personas cercanas. Su publicación íntegra o su uso comercial requieren nuestro consentimiento. Todo lo demás del sitio web (diseño, textos, software) pertenece al prestador.
+
+## Responsabilidad
+
+Respondemos de que el documento se entregue y se ajuste a la descripción. Nuestra responsabilidad por cada pedido se limita a su precio. No respondemos de las decisiones tomadas sobre la base del documento ni de la falta de disponibilidad del servicio por causas ajenas a nuestro control.
+
+Estas limitaciones no se aplican en la medida en que nuestra responsabilidad derive de normas imperativas, en particular en caso de dolo o culpa grave, así como de daños a la vida, la integridad física o la salud. No afectan a los derechos que la ley le reconoce en caso de falta de conformidad del documento.
+
+## Reembolsos y desistimiento
+
+Las reglas de reembolso y la información sobre el derecho de desistimiento figuran en el documento [Desistimiento y reembolsos](/[locale]/legal/refunds).
+
+## Ley aplicable y litigios
+
+Estas condiciones se rigen por el Derecho de la República Eslovaca. Si usted contrata como consumidor, esta elección no podrá acarrear la pérdida de la protección que le proporcionen las disposiciones que no puedan excluirse mediante acuerdo en virtud de la ley del país en el que tenga su residencia habitual (para los consumidores en la UE: artículo 6, apartado 2, del Reglamento (CE) n.º 593/2008 (Roma I)).
+
+Un litigio se intenta resolver primero por correo electrónico en help@chronika.me; si no se alcanza un acuerdo en un plazo de 30 días, serán competentes los tribunales del domicilio social del prestador, salvo que la ley de su país le reconozca el derecho a acudir a otro tribunal.
+
+No estamos obligados a participar en procedimientos de resolución alternativa de litigios de consumo ni nos hemos comprometido a hacerlo.
+
+## Cambios
+
+Estas condiciones pueden cambiar; a su pedido se aplica la versión mostrada en el momento del pago.
+`,
 };

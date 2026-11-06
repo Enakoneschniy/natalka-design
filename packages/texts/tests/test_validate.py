@@ -281,3 +281,116 @@ def test_a_polish_greeting_in_a_chapter_is_caught() -> None:
         "Droga Anno,\n\n" + POLISH, lang="pl", min_paragraphs=2, max_paragraphs=4, gender="f"
     )
     assert "greeting" in report.codes
+
+
+FRENCH = (
+    "Votre Soleil est en Taureau, dans la neuvième maison. Vous ne vous pressez pas, et ce n'est "
+    "pas de la lenteur : c'est votre façon de bien faire les choses. Ce que vous commencez, vous "
+    "le menez à son terme, et le ton de votre Lune reste calme.\n\n"
+    "La neuvième maison porte cela vers la partie visible de la vie : votre réputation se "
+    "construit couche après couche, et ceux qui travaillent avec vous le remarquent avant vous. "
+    "Le carré à Saturne n'en fait pas un fardeau, mais une mesure."
+)
+
+
+def test_a_french_reading_on_vous_passes_and_tone_is_not_informal() -> None:
+    report = check(FRENCH, lang="fr", min_paragraphs=2, max_paragraphs=3, gender="f")
+    assert report.ok, report.problems
+
+
+def test_tu_in_a_french_reading_on_vous_is_caught() -> None:
+    slipped = FRENCH.replace(
+        "Ce que vous commencez, vous le menez", "Ce que tu commences, tu le mènes"
+    )
+    report = check(slipped, lang="fr", min_paragraphs=2, max_paragraphs=3)
+    assert "informal_address" in report.codes
+    assert any("«vous»" in p for p in report.problems)
+    elided = FRENCH.replace("Vous ne vous pressez pas", "Tu ne t'empresses pas")
+    assert "informal_address" in check(elided, lang="fr", min_paragraphs=2, max_paragraphs=3).codes
+
+
+def test_a_french_chapter_that_greets_or_borrows_english_is_caught() -> None:
+    assert (
+        "greeting"
+        in check("Chère Léa,\n\n" + FRENCH, lang="fr", min_paragraphs=2, max_paragraphs=4).codes
+    )
+    assert (
+        "anglicism"
+        in check(
+            FRENCH + " Le timing compte pour vous.", lang="fr", min_paragraphs=2, max_paragraphs=3
+        ).codes
+    )
+    assert (
+        "foreign_script"
+        in check(
+            FRENCH + " C'est Ваше Солнце.", lang="fr", min_paragraphs=2, max_paragraphs=3
+        ).codes
+    )
+
+
+SPANISH = (
+    "Tu Sol está en Tauro, en la novena casa. No tienes prisa, y eso no es lentitud: es tu manera "
+    "de hacer bien las cosas. Lo que empiezas lo terminas, y quienes trabajan contigo lo notan "
+    "antes que tú.\n\n"
+    "La novena casa lleva todo esto a la parte visible de la vida: tu reputación se construye "
+    "capa a capa, sin prisa y sin ruido. La cuadratura con Saturno no es una carga, sino una "
+    "medida de lo que eres capaz de sostener."
+)
+
+
+def test_a_spanish_reading_is_on_tu_even_when_the_order_says_formal() -> None:
+    # The seller's «вы» does not reach Spanish: Spain reads its horoscopes on «tú».
+    assert check(SPANISH, lang="es", min_paragraphs=2, max_paragraphs=3, address="vy").ok
+    assert check(SPANISH, lang="es", min_paragraphs=2, max_paragraphs=3, address="ty").ok
+
+
+def test_usted_in_a_spanish_reading_is_caught() -> None:
+    slipped = SPANISH.replace("Lo que empiezas lo terminas", "Lo que usted empieza lo termina")
+    report = check(slipped, lang="es", min_paragraphs=2, max_paragraphs=3)
+    assert "formal_address" in report.codes
+    assert any("«tú»" in p for p in report.problems)
+
+
+def test_a_spanish_section_about_her_instead_of_to_you_is_caught() -> None:
+    about = (
+        "Su Sol está en Tauro. No tiene prisa, y su ritmo no es duda. Lo que empieza lo termina, "
+        "y su reputación crece despacio, capa a capa, entre quienes la conocen. " * 3
+    )
+    report = check(f"{about}\n\n{about}", lang="es", min_paragraphs=2, max_paragraphs=3)
+    assert "not_addressed" in report.codes
+
+
+def test_a_spanish_synastry_may_speak_to_the_pair_as_vosotros() -> None:
+    pair = (
+        "Lo que os une es una forma parecida de cuidar las cosas. Vuestro ritmo es lento, y "
+        "ninguno de los dos lo vive como un defecto, sino como una manera de durar. " * 3
+    )
+    report = check(f"{pair}\n\n{pair}", lang="es", min_paragraphs=2, max_paragraphs=3, pair=True)
+    assert report.ok, report.problems
+
+
+ENGLISH = (
+    "Your Sun is in Taurus, in the ninth house. You are not in a hurry, and that is not slowness "
+    "but your way of doing things well. What you begin, you finish.\n\n"
+    "The ninth house carries this into the visible part of life: your reputation is built layer "
+    "by layer, and the people who work with you notice it before you do. The square to Saturn is "
+    "not a burden here but a measure."
+)
+
+
+def test_an_english_reading_passes_and_may_use_english_words() -> None:
+    report = check(ENGLISH + " Timing matters.", lang="en", min_paragraphs=2, max_paragraphs=3)
+    assert report.ok, report.problems
+
+
+def test_an_english_chapter_that_greets_or_slips_into_cyrillic_is_caught() -> None:
+    assert (
+        "greeting"
+        in check("Dear Lena,\n\n" + ENGLISH, lang="en", min_paragraphs=2, max_paragraphs=4).codes
+    )
+    assert (
+        "foreign_script"
+        in check(
+            ENGLISH + " This is Ваше Солнце.", lang="en", min_paragraphs=2, max_paragraphs=3
+        ).codes
+    )

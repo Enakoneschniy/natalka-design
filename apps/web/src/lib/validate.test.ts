@@ -126,7 +126,7 @@ describe('checkOrder', () => {
   it('names the first field that is wrong', () => {
     expect(field(checkOrder({ ...order, email: 'nope' }, TODAY))).toBe('email');
     expect(field(checkOrder({ ...order, product: 'tarot' }, TODAY))).toBe('product');
-    expect(field(checkOrder({ ...order, locale: 'fr' }, TODAY))).toBe('locale');
+    expect(field(checkOrder({ ...order, locale: 'it' }, TODAY))).toBe('locale');
     // Every language of the site is a language a document can be ordered in: on 2026-11-06 /pl
     // went live while Polish orders were still refused here.
     for (const locale of locales) {
@@ -174,7 +174,7 @@ describe('checkSubscription', () => {
   it('holds the birth to an order’s limits and names what is wrong', () => {
     expect(field(checkSubscription({ ...subscription, email: 'x' }, TODAY))).toBe('email');
     expect(field(checkSubscription({ ...subscription, cadence: 'day' }, TODAY))).toBe('cadence');
-    expect(field(checkSubscription({ ...subscription, locale: 'fr' }, TODAY))).toBe('locale');
+    expect(field(checkSubscription({ ...subscription, locale: 'it' }, TODAY))).toBe('locale');
     expect(
       field(
         checkSubscription({ ...subscription, birth: { ...person, name: 'и'.repeat(81) } }, TODAY),

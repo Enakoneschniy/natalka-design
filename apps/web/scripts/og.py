@@ -42,6 +42,27 @@ COPY = {
         "Kostenlose Vorschau, PDF per E-Mail.",
         "PDF · 35 Seiten",
     ),
+    "en": (
+        "Your birth chart —",
+        "with dates",
+        "35 pages of personal reading and a month-by-month forecast.",
+        "Free preview, PDF by email.",
+        "PDF · 35 pages",
+    ),
+    "fr": (
+        "Votre thème astral —",
+        "avec des dates",
+        "35 pages de lecture personnelle, prévisions mois par mois.",
+        "Aperçu gratuit, PDF par e-mail.",
+        "PDF · 35 pages",
+    ),
+    "es": (
+        "Tu carta natal,",
+        "con fechas",
+        "35 páginas de lectura personal y una previsión mes a mes.",
+        "Vista previa gratis, PDF por correo.",
+        "PDF · 35 páginas",
+    ),
 }
 
 #: Russian keeps the name it always had; other languages carry theirs.
@@ -50,6 +71,9 @@ OUT = {
     "uk": "public/og-uk.png",
     "pl": "public/og-pl.png",
     "de": "public/og-de.png",
+    "en": "public/og-en.png",
+    "fr": "public/og-fr.png",
+    "es": "public/og-es.png",
 }
 
 mark_f = ImageFont.truetype(F + "PlayfairDisplay-Medium.ttf", 34)

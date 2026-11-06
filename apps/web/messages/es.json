@@ -1,0 +1,706 @@
+{
+  "nav": {
+    "products": "Productos",
+    "how": "Cómo funciona",
+    "sample": "Ejemplo de lectura",
+    "faq": "Preguntas",
+    "start": "Calcula tu carta",
+    "language": "Idioma",
+    "menu": "Menú"
+  },
+  "hero": {
+    "titleLead": "Una carta natal",
+    "titleAccent": "que apetece leer",
+    "lead": "Introduce tu fecha, hora y lugar de nacimiento – en un minuto verás tu carta gratis. La lectura completa, de 20–30 páginas, te llega en PDF por correo.",
+    "cta": "Calcula tu carta",
+    "secondary": "Ver un ejemplo",
+    "facts": {
+      "accuracy": "hasta 1′",
+      "accuracyLabel": "precisión de las posiciones planetarias",
+      "speed": "~10 min",
+      "speedLabel": "del pago al PDF",
+      "count": "12.400",
+      "countLabel": "lecturas enviadas"
+    },
+    "film": {
+      "line": "Cada persona nació\nbajo su propio cielo.",
+      "quote": "Sol en Tauro en la novena casa: no te basta con saber, necesitas entender hasta el fondo – y rara vez te crees algo solo porque te lo digan. La Luna en Acuario en la sexta convierte tu rutina diaria en una cuestión de libertad, no de disciplina.",
+      "quoteFrom": "fragmento de una lectura",
+      "cta": "Calcula tu propia carta"
+    }
+  },
+  "products": {
+    "title": "Productos",
+    "lead": "Precio fijo, pago único. Tus datos los introduces solo antes del primer pedido – los siguientes documentos se calculan a partir de la misma carta.",
+    "choose": "Elegir",
+    "natal": {
+      "title": "Carta natal",
+      "meta": "20–30 páginas",
+      "items": [
+        "Sol, Luna, Ascendente",
+        "Planetas en signos y casas",
+        "Los aspectos y cómo se manifiestan",
+        "Relaciones, trabajo, dinero"
+      ]
+    },
+    "forecast": {
+      "title": "Previsión para 12 meses",
+      "meta": "20–30 páginas",
+      "items": [
+        "Tránsitos a tu carta",
+        "Calendario de acontecimientos mes a mes",
+        "Periodos favorables y difíciles",
+        "Qué hacer en cada uno"
+      ]
+    },
+    "synastry": {
+      "title": "Compatibilidad",
+      "meta": "20–30 páginas · dos cartas",
+      "items": [
+        "Sinastría de las dos cartas",
+        "En qué os reforzáis el uno al otro",
+        "Dónde surge la fricción y por qué",
+        "Cómo llegar a acuerdos"
+      ]
+    },
+    "child": {
+      "title": "Carta infantil",
+      "meta": "20–30 páginas · para madres y padres",
+      "items": [
+        "Temperamento y necesidades de tu hijo o hija",
+        "Cómo aprende y cómo descansa",
+        "Qué le hiere y qué le inspira",
+        "El lenguaje en el que de verdad se le escucha"
+      ]
+    },
+    "once": "un solo pago, sin suscripción",
+    "bundle": {
+      "title": "Carta natal y previsión",
+      "meta": "35 páginas · PDF por correo"
+    }
+  },
+  "how": {
+    "title": "Cómo funciona",
+    "steps": [
+      {
+        "title": "Introduce tus datos de nacimiento",
+        "text": "Nombre, fecha, hora y ciudad. Si no sabes la hora exacta, también funciona, solo que sin casas ni Ascendente."
+      },
+      {
+        "title": "Mira la vista previa gratuita",
+        "text": "La rueda de la carta, la tabla de posiciones, los aspectos y un texto breve sobre el Sol, la Luna y el Ascendente – al momento."
+      },
+      {
+        "title": "Recibe el PDF",
+        "text": "El documento te llega por correo en 5–15 minutos y sigue disponible en un enlace."
+      }
+    ]
+  },
+  "faq": {
+    "title": "Preguntas",
+    "contact": "¿No encuentras la respuesta? Escríbenos a",
+    "contactAfter": " y te contestamos en un día laborable.",
+    "items": [
+      {
+        "q": "¿Qué pasa si no sé mi hora exacta de nacimiento?",
+        "a": "Calcularemos la carta para el mediodía. Las posiciones del Sol y de los planetas y la mayoría de los aspectos seguirán siendo exactas, pero no podremos calcular las casas ni el Ascendente – esas secciones se omitirán. La hora suele figurar en el informe del hospital donde naciste o en tu historial médico."
+      },
+      {
+        "q": "¿En qué se diferencia de un horóscopo?",
+        "a": "Un horóscopo describe a la doceava parte de la humanidad según el signo solar. La carta natal es la posición de los diez planetas, del Ascendente y de las casas en el momento de tu nacimiento, y los ángulos entre ellos. Dos personas del mismo signo reciben con nosotros dos textos distintos."
+      },
+      {
+        "q": "¿Quién escribe el texto de la lectura?",
+        "a": "Las posiciones de los planetas las calcula un programa a partir de efemérides astronómicas, con precisión de un minuto de arco. El texto lo redacta un modelo de lenguaje siguiendo una guía escrita por los astrólogos de Chronika; cada párrafo está ligado a una posición o un aspecto concretos de tu carta."
+      },
+      {
+        "q": "¿Cómo guardáis mis datos?",
+        "a": "La fecha, la hora y el lugar de nacimiento se guardan solo para preparar tus documentos y se eliminan a los 30 días. No los cedemos a terceros."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Mira tu carta en un minuto",
+    "lead": "Vista previa gratuita – sin registro y sin tarjeta.",
+    "button": "Calcula tu carta"
+  },
+  "footer": {
+    "about": "Cartas natales automáticas. Calculadas con efemérides astronómicas; el texto parte de tu carta, no de tu signo solar.",
+    "products": "Productos",
+    "documents": "Documentos",
+    "contacts": "Contacto",
+    "terms": "Condiciones generales",
+    "privacy": "Política de privacidad",
+    "refunds": "Desistimiento y reembolsos",
+    "withdraw": "Desistir del contrato",
+    "imprint": "Aviso legal",
+    "hours": "Lun.–vie., 10:00–19:00 CET",
+    "disclaimer": "La lectura tiene fines de entretenimiento y divulgación, y no constituye asesoramiento médico, psicológico ni financiero.",
+    "seller": "coremind s. r. o. · IČO 57 339 368 · Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Eslovaquia"
+  },
+  "unavailable": {
+    "title": "El servicio no está disponible en tu región",
+    "text": "Chronika no trabaja con usuarios de la Federación de Rusia. No aceptamos pagos desde esa región ni enviamos documentos allí."
+  },
+  "form": {
+    "title": "Datos de nacimiento",
+    "lead": "Cuanto más precisos los datos, más precisa la carta. Todo es obligatorio salvo la hora.",
+    "steps": {
+      "data": "Datos de nacimiento",
+      "preview": "Vista previa gratuita",
+      "payment": "Lectura completa"
+    },
+    "name": "Nombre",
+    "nameHint": "Así te llamaremos en la lectura",
+    "date": "Fecha de nacimiento",
+    "datePlaceholder": "dd.mm.aaaa",
+    "time": "Hora de nacimiento",
+    "timePlaceholder": "hh:mm",
+    "timeHint": "Hora local del lugar de nacimiento",
+    "unknownTime": "No sé mi hora exacta de nacimiento",
+    "unknownTimeTitle": "Qué cambia sin la hora.",
+    "unknownTimeBody": "Calcularemos la carta para el mediodía: las posiciones de los planetas y los aspectos seguirán siendo exactos, pero las casas y el Ascendente no se pueden calcular – esas secciones se omitirán. La hora suele figurar en el informe del hospital donde naciste o en tu historial médico.",
+    "city": "Ciudad de nacimiento",
+    "cityPlaceholder": "Empieza a escribir el nombre",
+    "cityHint": "Las coordenadas y la zona horaria las determinamos automáticamente, teniendo en cuenta el horario de verano del año de nacimiento",
+    "gender": "Cómo dirigirnos a ti en el texto",
+    "genderHint": "Solo cambia la forma de las palabras en la lectura: «preparada» o «preparado». Nada más",
+    "genders": {
+      "female": "Mujer",
+      "male": "Hombre",
+      "neutral": "Neutro"
+    },
+    "submit": "Calcula tu carta",
+    "submitPending": "Calculando…",
+    "free": "La carta y la vista previa son gratis. Solo pagas la lectura completa.",
+    "north": "N",
+    "south": "S",
+    "east": "E",
+    "west": "O",
+    "errors": {
+      "date": "Indica la fecha en formato dd.mm.aaaa",
+      "dateMissing": "Esa fecha no existe en el calendario – revisa el día y el mes",
+      "dateEarly": "Indica una fecha a partir de 1900",
+      "dateFuture": "Esa fecha todavía no ha llegado – revisa el año",
+      "time": "Indica la hora en formato hh:mm o marca que no la sabes",
+      "city": "Elige una ciudad de la lista"
+    },
+    "you": "Tú",
+    "partner": "Tu pareja",
+    "partnerNameHint": "Así llamaremos a la otra persona en la lectura",
+    "childName": "Nombre del niño o niña",
+    "childNameHint": "El nombre que usaremos en la lectura",
+    "childGender": "Sexo del niño o niña",
+    "childGenderHint": "Solo cambia la forma de las palabras en el texto",
+    "titles": {
+      "natal": "Datos de nacimiento",
+      "forecast": "Datos de nacimiento",
+      "bundle": "Datos de nacimiento",
+      "child": "Datos de nacimiento del niño o niña",
+      "synastry": "Datos de nacimiento de las dos personas",
+      "horoscope": "Horóscopo por suscripción"
+    },
+    "leads": {
+      "synastry": "Hacen falta las dos cartas. Cuanto más exacta sea la hora, más exactos serán los contactos entre ellas.",
+      "child": "Cuanto más precisos los datos, más precisa la carta. Todo es obligatorio salvo la hora.",
+      "horoscope": "Con tus datos de nacimiento calcularemos tu carta, y cada semana o cada mes te escribiremos un horóscopo basado precisamente en ella – en los tránsitos reales, con fechas, y no en el signo solar."
+    },
+    "submitSubscribe": "Suscribirme",
+    "edit": "Cambiar datos",
+    "timeUnknown": "hora desconocida"
+  },
+  "preview": {
+    "title": "{name}, aquí tienes tu carta",
+    "titleAnonymous": "Aquí tienes tu carta",
+    "edit": "Cambiar datos",
+    "unknownTime": "hora desconocida · carta calculada para el mediodía",
+    "aspectsTitle": "Aspectos",
+    "aspectsLead": "Ángulos entre los planetas. Los armónicos aportan ligereza; los tensos, una energía que hay que encauzar. En tu carta hay {harmonious} aspectos armónicos y {tense} tensos.",
+    "legend": {
+      "conjunction": "Conjunción – los planetas actúan juntos",
+      "trine": "Trígono – un flujo fácil y natural",
+      "sextile": "Sextil – una oportunidad que hay que aprovechar",
+      "square": "Cuadratura – fricción interna, un motor",
+      "opposition": "Oposición – dos polos que hay que unir"
+    },
+    "noHouses": "Las casas y el Ascendente no se han calculado: sin la hora exacta de nacimiento no serían fiables.",
+    "soonTitle": "Lectura completa",
+    "soonBody": "Un PDF de 20–30 páginas con una lectura detallada de planetas, casas y aspectos. Ahora mismo lo estamos puliendo – la carta de arriba ya está hecha con los mismos cálculos.",
+    "soonCta": "Próximamente",
+    "errorTitle": "No hemos podido calcular la carta",
+    "errorBody": "Revisa los datos de nacimiento y vuelve a intentarlo.",
+    "back": "Volver al formulario",
+    "positionsTitle": "Posiciones de los planetas",
+    "coreTitle": "El núcleo de la carta",
+    "coreLead": "Tres puntos con los que empieza cualquier lectura: lo que haces, lo que sientes y cómo te ven.",
+    "wheelHint": "Pasa el cursor o toca un planeta para resaltar sus aspectos.",
+    "writing": "Escribiendo…",
+    "readingTitle": "Primera impresión",
+    "readingLead": "Tres fragmentos de tu carta – gratis, antes de pagar. La lectura completa va mucho más a fondo.",
+    "synastryTitle": "Dos cartas, una junto a otra",
+    "personOne": "Primera persona",
+    "personTwo": "Segunda persona",
+    "contactsTitle": "Contactos entre las cartas",
+    "contactsLead": "Aspectos de los planetas de una carta a los de la otra. En total, {total}: {harmonious} armónicos y {tense} tensos. Debajo, los más exactos."
+  },
+  "chart": {
+    "planets": {
+      "sun": "Sol",
+      "moon": "Luna",
+      "mercury": "Mercurio",
+      "venus": "Venus",
+      "mars": "Marte",
+      "jupiter": "Júpiter",
+      "saturn": "Saturno",
+      "uranus": "Urano",
+      "neptune": "Neptuno",
+      "pluto": "Plutón",
+      "chiron": "Quirón",
+      "north_node": "Nodo norte",
+      "south_node": "Nodo sur",
+      "lilith": "Lilith",
+      "pars_fortunae": "Parte de la Fortuna",
+      "vertex": "Vértex",
+      "asc": "Ascendente",
+      "mc": "MC",
+      "dsc": "Descendente",
+      "ic": "IC"
+    },
+    "signs": {
+      "aries": "Aries",
+      "taurus": "Tauro",
+      "gemini": "Géminis",
+      "cancer": "Cáncer",
+      "leo": "Leo",
+      "virgo": "Virgo",
+      "libra": "Libra",
+      "scorpio": "Escorpio",
+      "sagittarius": "Sagitario",
+      "capricorn": "Capricornio",
+      "aquarius": "Acuario",
+      "pisces": "Piscis"
+    },
+    "in": {
+      "aries": "en Aries",
+      "taurus": "en Tauro",
+      "gemini": "en Géminis",
+      "cancer": "en Cáncer",
+      "leo": "en Leo",
+      "virgo": "en Virgo",
+      "libra": "en Libra",
+      "scorpio": "en Escorpio",
+      "sagittarius": "en Sagitario",
+      "capricorn": "en Capricornio",
+      "aquarius": "en Acuario",
+      "pisces": "en Piscis"
+    },
+    "aspects": {
+      "conjunction": "Conjunción",
+      "opposition": "Oposición",
+      "trine": "Trígono",
+      "square": "Cuadratura",
+      "sextile": "Sextil",
+      "quincunx": "Quincuncio",
+      "semisextile": "Semisextil",
+      "semisquare": "Semicuadratura",
+      "sesquiquadrate": "Sesquicuadratura"
+    },
+    "table": {
+      "planet": "Planeta",
+      "sign": "Signo",
+      "degree": "Grado",
+      "house": "Casa",
+      "retro": "R"
+    },
+    "houseShort": "Casa {n}"
+  },
+  "paywall": {
+    "title": "Ahora viene lo más importante: qué y cuándo",
+    "lead": "Has leído sobre tres puntos de tu carta. En la lectura completa están todos los demás, y con ellos 35 páginas:",
+    "items": [
+      "Quién eres según tu carta: tus puntos fuertes, qué te da energía y qué te la quita",
+      "Vida sentimental: a quién te conviene buscar según tu carta y qué periodos abren este tema",
+      "Trabajo y dinero: a qué dedicarte y qué hacer ahora mismo",
+      "Tus años mes a mes: lo que queda de este año, todo {next}, {year} – y las fechas clave en una sola página"
+    ],
+    "cta": "Desbloquea la lectura completa – {price}",
+    "note": "35 páginas · PDF por correo en 20–30 minutos · pago único · IVA incluido",
+    "pages": [
+      {
+        "section": "3 · Planetas en signos y casas",
+        "page": "14",
+        "title": "Venus en Géminis, Casa 11",
+        "body": [
+          "En el amor necesitas conversación. No cumplidos – conversación de verdad, de la que engancha. Las relaciones en las que no hay nada de qué hablar terminan antes de que la otra persona se dé cuenta.",
+          "La undécima casa convierte a los amigos y a las parejas en categorías vecinas: muchas de tus relaciones empezaron como amistad – y no es casualidad, es tu manera de hacerlo."
+        ]
+      },
+      {
+        "section": "4 · Aspectos",
+        "page": "23",
+        "title": "Luna en cuadratura con Marte",
+        "body": [
+          "La reacción más rápida de tu carta. Cuando te tocan algo importante, el cuerpo responde antes que el pensamiento. Eso te da valentía – y unas cuantas palabras de más que luego lamentas.",
+          "Qué hacer con ello: no contenerlo, sino redirigirlo. Una acción física en los primeros minutos se lleva el primer impulso y te deja la mente clara."
+        ]
+      },
+      {
+        "section": "5 · Relaciones, trabajo, dinero",
+        "page": "31",
+        "title": "Dinero: Tauro y la Casa 2",
+        "body": [
+          "Te relacionas con el dinero como con la comida: no importa la cantidad, sino la sensación de tener reservas. Una cuenta vacía te inquieta más de lo debido, y una llena te tranquiliza más de lo que merece.",
+          "Saturno en la octava casa añade prudencia con el dinero compartido y los créditos."
+        ]
+      }
+    ],
+    "leadSynastry": "20–30 páginas sobre vosotros dos: qué os atrae, dónde hay fricción y cómo convivir con ello. El PDF llega por correo 5–15 minutos después del pago.",
+    "sticky": "Sigue leyendo – {price}",
+    "datesTitle": "Los próximos periodos intensos de tu carta",
+    "datesNote": "El significado de cada fecha está en la lectura completa."
+  },
+  "checkout": {
+    "title": "Pedido",
+    "steps": "Pago",
+    "summary": "Tu pedido",
+    "total": "Total (IVA incluido)",
+    "email": "Correo para enviarte el PDF",
+    "emailHint": "El enlace al documento es válido durante 30 días",
+    "emailPlaceholder": "tu@correo.es",
+    "back": "Volver a la carta",
+    "chart": "Carta",
+    "unknownTime": "hora desconocida",
+    "start": "Generar la lectura",
+    "starting": "Iniciando…",
+    "startNote": "Pago con tarjeta, Apple Pay, Google Pay o Klarna. El documento te llega por correo en 10–20 minutos.",
+    "startFailed": "No se ha podido iniciar. Vuelve a intentarlo.",
+    "tooMany": "Demasiados intentos seguidos. Espera un minuto y vuelve a intentarlo.",
+    "emailInvalid": "Revisa la dirección de correo",
+    "consent": "Doy mi consentimiento expreso para que la ejecución comience antes de que finalice el plazo de desistimiento y reconozco que, con ello, pierdo mi derecho de desistimiento. Las condiciones generales y las normas de reembolso están en el pie de página.",
+    "pay": "Pagar",
+    "regionBlocked": "Lo sentimos, no podemos aceptar pagos desde tu país.",
+    "howTitle": "Cómo es el pago",
+    "howBody": "Con tarjeta, Apple Pay, Google Pay o el método habitual en tu país (BLIK, Przelewy24, Klarna, Revolut Pay y otros), en una página segura de Stripe. No vemos ni guardamos tus datos de pago. Justo después del pago empieza la generación; el enlace al documento te llega por correo en 10–20 minutos."
+  },
+  "generating": {
+    "title": "Estamos preparando tu lectura",
+    "lead": "Suele tardar entre diez y quince minutos. El progreso se actualiza solo – basta con dejar la pestaña abierta.",
+    "starting": "Iniciando…",
+    "noToken": "El enlace ha caducado o está incompleto. Vuelve al formulario y calcula la carta de nuevo.",
+    "stepCalc": "Calculando la carta",
+    "stepTexts": "Escribiendo la lectura: {written} de {total} secciones",
+    "stepPdf": "Montando el PDF",
+    "readyTitle": "Listo",
+    "readyBody": "Tu lectura tiene {pages, plural, one {# página} many {# páginas} other {# páginas}}.",
+    "open": "Abrir el PDF",
+    "failedTitle": "Algo ha salido mal",
+    "failedBody": "Hemos detectado el error y repetiremos la generación. Si en una hora no cambia nada, escríbenos.",
+    "back": "Volver al inicio",
+    "goneTitle": "El enlace no funciona",
+    "stage": {
+      "calc": "Carta",
+      "texts": "Lectura",
+      "pdf": "PDF"
+    },
+    "telegram": "Recibir en Telegram",
+    "awaitingPayment": "Esperando la confirmación del pago…",
+    "unpaidTitle": "Pago sin completar",
+    "unpaidBody": "Tu pedido está guardado y pendiente de pago. Puedes completarlo en la página segura de Stripe.",
+    "unpaidPay": "Ir al pago",
+    "unpaidPending": "Abriendo el pago…",
+    "unpaidNote": "Si ya has pagado, espera un minuto – la página se actualizará sola.",
+    "unpaidFailed": "No se ha podido abrir el pago. Vuelve a intentarlo dentro de un minuto.",
+    "tooMany": "Demasiados intentos seguidos. Espera un minuto y vuelve a intentarlo.",
+    "refundedTitle": "Pago reembolsado",
+    "refundedBody": "El dinero de este pedido se ha devuelto por el mismo medio con el que pagaste. El documento ya no se abre desde este enlace.",
+    "disputedTitle": "Pago en disputa",
+    "disputedBody": "El banco está revisando una reclamación sobre este pago. Mientras no se resuelva, el documento no estará disponible. Si tienes dudas, escribe a help@chronika.me.",
+    "declinedTitle": "Pago rechazado",
+    "declinedBody": "El pedido no se ha realizado. Si aun así se te ha cobrado, escribe a help@chronika.me y te lo devolvemos."
+  },
+  "legal": {
+    "draft": "Borrador: el documento aún no está firmado ni incluye los datos de la empresa. No tendrá validez hasta que se activen los pagos."
+  },
+  "subscription": {
+    "sectionTitle": "Un horóscopo según tu carta – cada semana",
+    "sectionLead": "No según tu signo solar, sino según toda tu carta: qué tránsitos tocan precisamente tus planetas y en qué días. El primer mes es gratis; después, {price} al mes, y puedes darte de baja cuando quieras.",
+    "sectionItems": [
+      "Fechas exactas de lo que trae la semana o el mes",
+      "Tránsitos a tus planetas y casas",
+      "Te llega por correo y por Telegram",
+      "El primer horóscopo, nada más confirmar tu correo"
+    ],
+    "sectionCta": "Suscribirme",
+    "trial": "primer mes gratis",
+    "then": "después, {price} al mes",
+    "title": "Suscripción al horóscopo",
+    "lead": "Elige con qué frecuencia recibirlo y dónde. Te enviaremos un correo de confirmación – tu primer horóscopo lo escribiremos justo después.",
+    "cadence": "Frecuencia",
+    "week": "Cada semana",
+    "weekHint": "Un texto breve para siete días, con fechas exactas.",
+    "month": "Cada mes",
+    "monthHint": "Un texto detallado para el mes, semana a semana.",
+    "email": "Correo electrónico",
+    "emailHint": "Aquí te llegarán el horóscopo y el enlace para gestionar la suscripción.",
+    "consent": "Entiendo que el primer mes es gratis, que después cuesta {price} al mes y que puedo darme de baja en cualquier momento desde el enlace del correo.",
+    "submit": "Suscribirme",
+    "submitPending": "Tramitando…",
+    "failed": "No se ha podido completar la suscripción. Vuelve a intentarlo.",
+    "emailInvalid": "Revisa la dirección de correo",
+    "tooMany": "Demasiados intentos seguidos. Espera un minuto y vuelve a intentarlo.",
+    "checkMailTitle": "Revisa tu correo",
+    "checkMailBody": "Te hemos enviado un correo a {email}. Ábrelo y confirma la suscripción – sin ese paso no te llegarán los horóscopos. El enlace del correo es válido durante siete días.",
+    "checkMailNote": "¿No te ha llegado? Mira en la carpeta de «Spam» o vuelve a suscribirte.",
+    "confirmTitle": "Confirmación de la suscripción",
+    "confirmLead": "Pulsa el botón y la suscripción empezará: el primer horóscopo te llegará al momento y el primer mes es gratis.",
+    "confirm": "Confirmar la suscripción",
+    "confirmPending": "Confirmando…",
+    "confirmGone": "El enlace ha caducado o ya no es válido. Vuelve a suscribirte y te llegará un correo nuevo.",
+    "confirmFailed": "No se ha podido confirmar. Vuelve a intentarlo dentro de un minuto.",
+    "endedBody": "Ya no te llegarán horóscopos nuevos.",
+    "manageTitle": "Tu suscripción",
+    "statusActive": "Activa",
+    "statusPaused": "En pausa",
+    "statusCancelled": "Cancelada",
+    "statusEnded": "El mes gratuito ha terminado",
+    "nextSend": "Próximo horóscopo: {date}",
+    "trialUntil": "Gratis hasta el {date}",
+    "writing": "Tu primer horóscopo se está escribiendo – suele tardar menos de un minuto.",
+    "latestFor": "Horóscopo del {start} al {end}",
+    "telegramTitle": "Recíbelo también en Telegram",
+    "telegramBody": "Abre el bot y pulsa «Iniciar»: los horóscopos te llegarán también allí.",
+    "telegramOpen": "Abrir el bot",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "cancel": "Cancelar la suscripción",
+    "delete": "Eliminar la suscripción y los datos",
+    "deleteConfirm": "¿Eliminar la suscripción y todos los datos? No se puede deshacer.",
+    "deleted": "Se han eliminado la suscripción y los datos.",
+    "birth": "Datos de nacimiento",
+    "birthKept": "Se conservan hasta el {date} por si hay que corregirlos; después solo queda la carta.",
+    "birthGone": "Los datos de nacimiento se han eliminado; solo se conserva la carta.",
+    "gone": "El enlace ha caducado. Encontrarás uno nuevo en el último correo con tu horóscopo.",
+    "contact": "Para corregir los datos de nacimiento: help@chronika.me",
+    "foot": "El primer mes es gratis. Después, {price} al mes; puedes darte de baja cuando quieras.",
+    "nextLabel": "Próximo",
+    "trialLabel": "Gratis hasta",
+    "birthGoneShort": "eliminados"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Carta natal y previsión hasta {year}",
+      "dates": {
+        "title": "¿Cuándo va a cambiar algo en tu vida? Según tu carta, con fechas",
+        "lead": "35 páginas sobre ti: carácter, trabajo y dinero, relaciones, hogar y tu lugar en el mundo. Y un calendario de periodos para {from}–{year}: cuándo empezar, cuándo esperar, cuándo lanzarte."
+      },
+      "home": {
+        "title": "¿Esto es tu hogar o solo una parada?",
+        "lead": "La carta no elegirá un país por ti. Pero muestra dónde está tu punto de apoyo, qué etapa atraviesas ahora y cuándo llegará el momento del cambio – con fechas hasta {year}."
+      },
+      "love": {
+        "title": "En el amor, ¿cuándo lanzarte y cuándo esperar?",
+        "lead": "Por qué te atraen unas personas y acabas quedándote con otras, quién te encaja de verdad y qué periodos de {from}–{year} abren este tema. Sin sentencias ni «fecha de boda» – con meses concretos."
+      },
+      "cta": "Calcula tu carta gratis",
+      "under": "Vista previa en un minuto · sin registro ni tarjeta bancaria",
+      "quote": "Tu carta, te lo digo de entrada, está excepcionalmente bien trabada. Tocas el trabajo y responde el hogar; tocas las relaciones y responde el dinero. No son imaginaciones tuyas: es la estructura.",
+      "quoteFrom": "fragmento de una lectura",
+      "line": "Cada persona nació\nbajo su propio cielo.",
+      "facts": ["35 páginas", "PDF por correo", "un solo pago, sin suscripción"]
+    },
+    "asks": {
+      "title": "Las preguntas con las que la gente llega a nosotros",
+      "items": [
+        "¿Este es mi sitio o estoy huyendo de mí?",
+        "Llevo años pensando en mudarme y no me decido",
+        "Parece que lo tengo todo, pero las cosas no despegan. ¿Por qué?",
+        "En el amor, ¿cuándo decidirme y cuándo esperar?",
+        "¿A qué me dedico si lo de antes ya no funciona?",
+        "¿Qué me espera en {next}?"
+      ],
+      "note": "La carta no responde <em>«sí»</em> ni <em>«no»</em>, ni dicta sentencia. Muestra qué etapa estás atravesando ahora y cuándo se abrirá la siguiente ventana. Con una respuesta así se puede hacer algo.",
+      "cta": "Mira tu carta"
+    },
+    "inside": {
+      "title": "35 páginas sobre tu carta – no sobre tu signo",
+      "lead": "El horóscopo dice lo mismo a una de cada doce personas. Aquí están todos los planetas, casas y aspectos de tu carta. Dos Tauro recibirán dos documentos distintos.",
+      "cards": [
+        {
+          "title": "Quién eres según tu carta",
+          "text": "Cuáles son tus puntos fuertes, qué te da energía y qué te la quita sin que te des cuenta. Ascendente, Luna, aspectos clave – en un lenguaje sencillo, sin tecnicismos porque sí."
+        },
+        {
+          "title": "Vida sentimental",
+          "text": "Cómo funcionan tus relaciones, a quién te conviene buscar según tu carta y qué periodos de {from}–{year} abren este tema."
+        },
+        {
+          "title": "Trabajo y dinero",
+          "text": "A qué dedicarte según tu carta, por qué el dinero te llega de una forma y no de otra, y qué hacer ahora mismo."
+        },
+        {
+          "title": "Tus años mes a mes",
+          "text": "Una mirada atrás, lo que queda de este año y todo {next} mes a mes, {year} a grandes rasgos. Al final, todas las fechas clave en una sola página."
+        }
+      ],
+      "note": "Además, la rueda de la carta, la tabla de posiciones y casas, y un resumen final, «Lo esencial de tu carta», para volver a él dentro de seis meses.",
+      "galleryNote": "Así es una lectura. La tuya hablará de ti.",
+      "pages": ["Portada", "Índice", "Página de la lectura", "Fechas clave"]
+    },
+    "steps": {
+      "title": "Primero mira – luego decide",
+      "items": [
+        {
+          "title": "Introduce tus datos de nacimiento",
+          "text": "Fecha, hora y ciudad. ¿No sabes la hora exacta? También funciona, solo que sin casas ni Ascendente."
+        },
+        {
+          "title": "Lee el principio gratis",
+          "text": "En un minuto: tu carta, las posiciones de los planetas y las primeras páginas de la lectura. Verás si habla de ti o no."
+        },
+        {
+          "title": "Recibe la lectura completa",
+          "text": "Si quieres seguir, el PDF de 35 páginas te llega por correo en 20–30 minutos."
+        }
+      ],
+      "note": "Solo pagas si quieres seguir leyendo. Para la vista previa no hace falta registrarte ni dar tu tarjeta.",
+      "cta": "Calcula tu carta gratis"
+    },
+    "offer": {
+      "title": "Un documento. Un solo pago.",
+      "product": "Carta natal y previsión hasta {year}",
+      "meta": "Vista previa gratis · lectura completa con un solo pago, sin suscripción · IVA incluido",
+      "items": [
+        "35 páginas sobre tu carta",
+        "Carácter, relaciones, trabajo y dinero",
+        "Calendario de periodos: lo que queda de este año y {next} mes a mes, {year} a grandes rasgos",
+        "Todas las fechas clave en una sola página",
+        "PDF por correo y un enlace que conservas"
+      ],
+      "cta": "Empieza con la vista previa gratuita",
+      "under": "Si aparece un error en el cálculo, lo corregimos o te devolvemos el dinero."
+    },
+    "honest": {
+      "title": "Con franqueza: cómo está hecho",
+      "items": [
+        {
+          "title": "El cálculo es exacto",
+          "text": "Las posiciones de los planetas y las fechas de los tránsitos las calcula un programa con las efemérides suizas (Swiss Ephemeris), las tablas astronómicas con las que trabajan los programas profesionales de astrología. No hay nada inventado: puedes comprobar cada posición con cualquier calculadora astrológica."
+        },
+        {
+          "title": "El texto lo escribe una inteligencia artificial",
+          "text": "A cambio, no se cansa en la página treinta ni escribe frases hechas: trabaja con una metodología elaborada por los astrólogos de Chronika, y cada párrafo está ligado a una posición o un aspecto concretos de tu carta – se nota en el texto."
+        },
+        {
+          "title": "No predecimos acontecimientos",
+          "text": "No te damos una fecha de boda ni dictamos sentencias. La carta muestra periodos y tendencias; las decisiones las tomas tú."
+        }
+      ],
+      "note": "La astrología no es una ciencia. Es un lenguaje con el que resulta cómodo pensar en ti y en tu tiempo."
+    },
+    "faq": {
+      "title": "Preguntas y respuestas",
+      "items": [
+        {
+          "q": "¿En qué se diferencia de un horóscopo?",
+          "a": "El horóscopo dice lo mismo a todas las personas de un mismo signo. La carta natal es la posición de todos los planetas, del Ascendente y de las casas en el momento de tu nacimiento. Una carta así solo se repite una vez cada varios miles de años."
+        },
+        {
+          "q": "¿Qué significa «previsión»? ¿Predecís acontecimientos?",
+          "a": "No. Te mostramos cuándo los planetas en movimiento tocan tu carta y qué temas pasan a primer plano en esos periodos: trabajo, relaciones, hogar. Cómo se manifieste exactamente depende de ti."
+        },
+        {
+          "q": "Quiero saber en qué país debería vivir. ¿Me lo dirá la lectura?",
+          "a": "No, elegir país es una técnica aparte. Pero en la lectura se ve qué significan para ti el hogar y el punto de apoyo, y qué periodos de {from}–{year} son buenos para los grandes cambios."
+        },
+        {
+          "q": "No vivo donde nací. ¿Importa?",
+          "a": "No. La carta se calcula para el lugar de nacimiento, y los periodos de la previsión valen vivas donde vivas."
+        },
+        {
+          "q": "No sé mi hora exacta de nacimiento.",
+          "a": "Calcularemos la carta para el mediodía. Los planetas y la mayoría de los aspectos seguirán siendo exactos, pero sin casas ni Ascendente parte de la lectura será más breve. La hora suele figurar en el certificado de nacimiento o en el informe del hospital donde naciste."
+        },
+        {
+          "q": "¿Quién escribe el texto?",
+          "a": "El cálculo lo hace un programa con las efemérides suizas; el texto, un modelo de lenguaje con una metodología elaborada por los astrólogos de Chronika. Cada párrafo se apoya en una posición o un aspecto concretos de tu carta."
+        },
+        {
+          "q": "¿Es una suscripción?",
+          "a": "No. Un pago, un documento. Sin cargos automáticos."
+        },
+        {
+          "q": "¿Cuánto hay que esperar?",
+          "a": "La vista previa, alrededor de un minuto. La lectura completa te llega por correo 20–30 minutos después del pago."
+        },
+        {
+          "q": "¿Y si no me gusta?",
+          "a": "Lee primero la vista previa gratuita: la lectura completa está escrita en el mismo estilo. Si aparece un error en el cálculo, escribe a help@chronika.me y lo corregimos o te devolvemos el dinero."
+        },
+        {
+          "q": "¿Puedo regalarla?",
+          "a": "Sí. Introduce los datos de nacimiento de esa persona y tu correo, y luego reenvíale el PDF."
+        },
+        {
+          "q": "¿Qué hacéis con mis datos?",
+          "a": "La fecha, la hora y el lugar de nacimiento los usamos solo para tu documento. El lugar hace falta para calcular la carta; el modelo de lenguaje recibe las posiciones de los planetas, el nombre, la fecha y la hora – sin el lugar de nacimiento y sin tu correo. El servicio de pago no recibe los datos de nacimiento. Los eliminamos a los 30 días o en cuanto nos lo pidas."
+        }
+      ]
+    },
+    "final": {
+      "title": "Tu carta – en un minuto",
+      "text": "Lee gratis el principio de tu lectura. Si habla de ti, sigue leyendo. Si no, no has perdido nada.",
+      "cta": "Calcula tu carta gratis",
+      "under": "Sin registro ni tarjeta bancaria"
+    }
+  },
+  "meta": {
+    "title": "Carta natal con interpretación y previsión con fechas",
+    "description": "Lectura personal de tu carta natal en 35 páginas y un calendario de periodos hasta {year}: cuándo empezar, cuándo esperar, cuándo lanzarte. Vista previa gratis en un minuto, PDF por correo.",
+    "productName": "Carta natal y previsión hasta {year}",
+    "productDescription": "PDF de 35 páginas: tu carácter según la carta, relaciones, trabajo y dinero, previsión mes a mes y una página de fechas exactas. Un solo pago, sin suscripción.",
+    "subscribeTitle": "Horóscopo según tu carta – semanal o mensual",
+    "subscribeDescription": "Una breve lectura basada en tu carta natal: qué periodo tienes por delante y en qué influye. Por correo o por Telegram, una vez a la semana o una vez al mes."
+  },
+  "offer": {
+    "tag": "−{percent}% hasta el {until}",
+    "hero": "−{percent}% en la lectura completa hasta el {until}",
+    "promo": "Código {code}: −{percent}% hasta el {until}",
+    "promoHero": "Código {code}: −{percent}% en la lectura completa hasta el {until}",
+    "was": "Sin descuento:",
+    "field": "Código promocional",
+    "apply": "Aplicar",
+    "applying": "Comprobando…",
+    "applied": "Código {code} aplicado",
+    "remove": "Quitar",
+    "unknown": "Ese código no existe – revisa cómo lo has escrito",
+    "early": "Este código todavía no es válido",
+    "expired": "Este código ha caducado",
+    "failed": "No se ha podido comprobar el código. Vuelve a intentarlo.",
+    "outdone": "Ahora mismo hay un descuento mayor, y es el que se ha aplicado."
+  },
+  "withdraw": {
+    "title": "Desistir del contrato",
+    "lead": "Si nos has comprado como consumidor, aquí puedes comunicarnos que desistes del contrato. Te enviaremos al momento por correo una confirmación con el texto de tu declaración y la fecha y hora en que la recibimos.",
+    "name": "Nombre y apellidos",
+    "email": "Correo con el que hiciste el pedido",
+    "order": "Número o fecha del pedido",
+    "orderHint": "Si lo recuerdas, encontraremos el pedido antes",
+    "message": "Mensaje",
+    "messageHint": "Opcional",
+    "submit": "Confirmar desistimiento",
+    "sending": "Enviando…",
+    "doneTitle": "Desistimiento recibido",
+    "doneBody": "Hemos recibido tu declaración el {when}. Si había un pedido con la dirección {email}, ya te hemos enviado allí la confirmación; te responderemos en un plazo de dos días laborables.",
+    "note": "Comprobaremos si el derecho de desistimiento se aplica a tu pedido o si ya se ha extinguido, y te lo comunicaremos. Las normas están en la página «Desistimiento y reembolsos».",
+    "nameInvalid": "Indica tu nombre",
+    "emailInvalid": "Revisa la dirección de correo",
+    "failed": "No se ha podido enviar. Vuelve a intentarlo o escribe a help@chronika.me.",
+    "tooMany": "Demasiados intentos seguidos. Espera un minuto y vuelve a intentarlo."
+  },
+  "consent": {
+    "title": "Cookies",
+    "text": "Usamos cookies de servicios publicitarios para saber qué anuncio ha llevado a una compra. Sin tu consentimiento no se cargan: la web funciona y mide sus propias estadísticas sin ellas.",
+    "allow": "Aceptar",
+    "deny": "Solo las necesarias"
+  }
+}

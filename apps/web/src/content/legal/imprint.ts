@@ -69,4 +69,26 @@ Rejestr handlowy Sądu Miejskiego Bratysława III, oddział Sro, wkładka nr 194
 
 Kontakt: help@chronika.me.
 `,
+  fr: `
+# Mentions légales
+
+**coremind s. r. o.**, société à responsabilité limitée de droit slovaque.
+
+Adresse : Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovaquie.
+
+Registre du commerce du tribunal municipal de Bratislava III, section Sro, insertion n° 194301/B. Numéro d'identification (IČO) : 57 339 368. Numéro de TVA intracommunautaire (IČ DPH) : SK2122681594.
+
+Contact : help@chronika.me.
+`,
+  es: `
+# Aviso legal
+
+**coremind s. r. o.**, sociedad de responsabilidad limitada constituida conforme al Derecho eslovaco.
+
+Dirección: Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Eslovaquia.
+
+Registro Mercantil del Tribunal Municipal de Bratislava III, sección Sro, inserción n.º 194301/B. Número de identificación (IČO): 57 339 368. Número de IVA intracomunitario (IČ DPH): SK2122681594.
+
+Contacto: help@chronika.me.
+`,
 };

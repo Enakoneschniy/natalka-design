@@ -117,7 +117,7 @@ describe('middleware: the cabinet host', () => {
     expect((await visit('?code=NOSUCH')).cookies.get('chr_promo')).toBeUndefined();
   });
 
-  it('sends the bare address to German for a German browser, Russian otherwise, query and all', async () => {
+  it('sends the bare address to the language the browser asks for, Russian otherwise, query and all', async () => {
     const go = async (language: string | undefined, query = '') =>
       (
         await middleware(
@@ -130,7 +130,19 @@ describe('middleware: the cabinet host', () => {
     expect(await go('de-DE,de;q=0.9,en;q=0.8')).toBe('https://chronika.me/de');
     expect(await go('de')).toBe('https://chronika.me/de');
     expect(await go('ru-RU,ru;q=0.9,de;q=0.8')).toBe('https://chronika.me/ru');
-    expect(await go('en-US')).toBe('https://chronika.me/ru');
+    expect(await go('en-US')).toBe('https://chronika.me/en');
+    expect(await go('fr-FR,fr;q=0.9,en;q=0.8')).toBe('https://chronika.me/fr');
+    expect(await go('es-ES,es;q=0.9')).toBe('https://chronika.me/es');
+    expect(await go('es-MX')).toBe('https://chronika.me/es');
+    // English is a browser's default more often than its owner's choice: whatever else it asks
+    // for comes first.
+    expect(await go('en-US,en;q=0.9,ru;q=0.8')).toBe('https://chronika.me/ru');
+    expect(await go('en-GB,en;q=0.9,de;q=0.8')).toBe('https://chronika.me/de');
+    // A language the site does not have is passed over for the next one.
+    expect(await go('it-IT,it;q=0.9,fr;q=0.8')).toBe('https://chronika.me/fr');
+    expect(await go('it-IT,cs;q=0.9')).toBe('https://chronika.me/ru');
+    expect(await go('ru;q=0.5,de;q=0.9')).toBe('https://chronika.me/de');
+    expect(await go('de;q=0,pl')).toBe('https://chronika.me/pl');
     expect(await go(undefined)).toBe('https://chronika.me/ru');
     expect(await go('uk-UA,uk;q=0.9,ru;q=0.8')).toBe('https://chronika.me/uk');
     expect(await go('pl-PL,pl;q=0.9')).toBe('https://chronika.me/pl');
@@ -140,17 +152,13 @@ describe('middleware: the cabinet host', () => {
     );
   });
 
-  it('serves Ukrainian and Polish pages again, and still sends /en to Russian', async () => {
-    for (const path of ['/uk/start', '/pl/preview']) {
+  it('serves every language under its own prefix, English included', async () => {
+    for (const path of ['/uk/start', '/pl/preview', '/en/start?x=1', '/fr/legal/terms', '/es']) {
       const response = await middleware(
         request(`https://chronika.me${path}`, { host: 'chronika.me' }),
       );
       expect(response.headers.get('location'), path).toBeNull();
     }
-    const english = await middleware(
-      request('https://chronika.me/en/start?x=1', { host: 'chronika.me' }),
-    );
-    expect(english.headers.get('location')).toBe('https://chronika.me/ru/start?x=1');
   });
 
   it('serves German pages under /de without sending them anywhere', async () => {

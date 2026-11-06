@@ -15,7 +15,7 @@ export const MAX_PLACE = 120;
 export const MAX_ZONE = 64;
 
 /** The languages a document can be written in. */
-export const DOCUMENT_LOCALES = ['ru', 'uk', 'en', 'de', 'pl'] as const;
+export const DOCUMENT_LOCALES = ['ru', 'uk', 'en', 'de', 'pl', 'fr', 'es'] as const;
 export type DocumentLocale = (typeof DOCUMENT_LOCALES)[number];
 
 export type Checked<T> = { ok: true; value: T } | { ok: false; field: string };

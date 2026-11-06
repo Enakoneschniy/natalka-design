@@ -15,7 +15,7 @@ const API = 'https://api.stripe.com/v1';
 const TOLERANCE_SECONDS = 5 * 60;
 
 /** Stripe Checkout speaks these; anything else falls back to the browser's language. */
-const CHECKOUT_LOCALES = new Set(['en', 'ru', 'pl', 'cs', 'ro', 'bg', 'de', 'sk']);
+const CHECKOUT_LOCALES = new Set(['en', 'ru', 'pl', 'cs', 'ro', 'bg', 'de', 'sk', 'fr', 'es']);
 
 /** What the payment page and the receipt call each product. Fixed here: of what the browser sent,
  * only the address reaches Stripe. */
@@ -54,6 +54,20 @@ const PRODUCT_NAMES: Record<string, Record<Product, string>> = {
     synastry: 'Horoskop partnerski',
     child: 'Horoskop dziecka',
     bundle: 'Horoskop urodzeniowy i prognoza',
+  },
+  fr: {
+    natal: 'Thème natal',
+    forecast: 'Prévisions sur 12 mois',
+    synastry: 'Compatibilité amoureuse',
+    child: "Thème natal de l'enfant",
+    bundle: 'Thème natal et prévisions',
+  },
+  es: {
+    natal: 'Carta natal',
+    forecast: 'Previsión a 12 meses',
+    synastry: 'Compatibilidad de pareja',
+    child: 'Carta natal infantil',
+    bundle: 'Carta natal y previsión',
   },
 };
 

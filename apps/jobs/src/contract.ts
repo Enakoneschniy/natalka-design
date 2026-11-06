@@ -24,6 +24,8 @@ const COUNTRY: Record<string, string> = {
   en: 'Slovakia',
   de: 'Slowakei',
   pl: 'Słowacja',
+  fr: 'Slovaquie',
+  es: 'Eslovaquia',
 };
 
 /** The seller, in one line, in the buyer's language. */
@@ -33,7 +35,7 @@ export const sellerLine = (locale: string): string => {
 };
 
 const CONSENT_EN =
-  'The document is created right after payment; the right of withdrawal ends with its delivery.';
+  'I expressly agree that the document is created before the withdrawal period ends, and I acknowledge that I lose my right of withdrawal once it is delivered.';
 
 /** What the payment page asks the buyer to agree to. The German wording follows § 356 Abs. 6 BGB:
  * consent to start before the withdrawal period ends, and knowledge that the right lapses when
@@ -45,6 +47,10 @@ const CONSENT: Record<string, string> = {
   de: 'Ich stimme ausdrücklich zu, dass Sie vor Ablauf der Widerrufsfrist mit der Erstellung des Dokuments beginnen, und mir ist bekannt, dass ich durch diese Zustimmung mit Beginn der Vertragserfüllung mein Widerrufsrecht verliere.',
   // Art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta.
   pl: 'Wyrażam zgodę na rozpoczęcie świadczenia przed upływem terminu do odstąpienia od umowy i przyjmuję do wiadomości, że po spełnieniu świadczenia utracę prawo odstąpienia od umowy.',
+  // Art. L221-28 13° du Code de la consommation.
+  fr: "J'accepte expressément que l'exécution commence avant la fin du délai de rétractation et je reconnais que je perdrai ainsi mon droit de rétractation.",
+  // Art. 103 m) del texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios.
+  es: 'Doy mi consentimiento expreso para que la ejecución comience antes de que finalice el plazo de desistimiento y reconozco que, con ello, pierdo mi derecho de desistimiento.',
 };
 
 export const withdrawalConsent = (locale: string): string => CONSENT[locale] ?? CONSENT_EN;
@@ -106,11 +112,66 @@ const WITHDRAWAL: Record<string, string[]> = {
     "(*) Niepotrzebne skreślić.",
     'Ta wiadomość jest potwierdzeniem zawarcia umowy, o którym mowa wyżej.',
   ],
+  // The French and Spanish statutory models (annexe à l'article R. 221-1 du code de la
+  // consommation; anexo B del texto refundido de la LGDCU) and their forms, as the refund page
+  // has them word for word.
+  fr: [
+    "Droit de rétractation",
+    "Vous avez le droit de vous rétracter du présent contrat sans donner de motif dans un délai de quatorze jours.",
+    "Le délai de rétractation expire quatorze jours après le jour de la conclusion du contrat.",
+    "Pour exercer le droit de rétractation, vous devez nous notifier (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovaquie, courriel : help@chronika.me) votre décision de rétractation du présent contrat au moyen d'une déclaration dénuée d'ambiguïté (par exemple, lettre envoyée par la poste ou courrier électronique). Vous pouvez utiliser le modèle de formulaire de rétractation mais ce n'est pas obligatoire. Vous pouvez également exercer votre droit de rétractation en ligne sur notre site internet, au moyen du bouton « Se rétracter du contrat ici ». Si vous utilisez cette fonctionnalité en ligne, nous vous enverrons, dans les meilleurs délais, un accusé de réception de la rétractation sur un support durable (par exemple, par courriel), y compris son contenu ainsi que la date et l'heure de sa soumission.",
+    "Pour que le délai de rétractation soit respecté, il suffit que vous transmettiez votre communication relative à l'exercice du droit de rétractation avant l'expiration du délai de rétractation. Le plus simple est de vous rétracter par courriel à help@chronika.me.",
+    "Effets de rétractation",
+    "En cas de rétractation de votre part du présent contrat, nous vous rembourserons tous les paiements reçus de vous, y compris les frais de livraison (à l'exception des frais supplémentaires découlant du fait que vous avez choisi, le cas échéant, un mode de livraison autre que le mode moins coûteux de livraison standard proposé par nous) sans retard excessif et, en tout état de cause, au plus tard quatorze jours à compter du jour où nous sommes informés de votre décision de rétractation du présent contrat. Nous procéderons au remboursement en utilisant le même moyen de paiement que celui que vous aurez utilisé pour la transaction initiale, sauf si vous convenez expressément d'un moyen différent ; en tout état de cause, ce remboursement n'occasionnera pas de frais pour vous.",
+    "Exception au droit de rétractation",
+    "Le droit de rétractation ne peut être exercé pour un contrat de fourniture d'un contenu numérique sans support matériel dont l'exécution a commencé avant la fin du délai de rétractation et qui vous soumet à une obligation de payer (article L. 221-28, 13°, du code de la consommation), lorsque :",
+    "– vous avez donné préalablement votre consentement exprès pour que l'exécution du contrat commence avant l'expiration du délai de rétractation,",
+    "– vous avez reconnu que vous perdrez votre droit de rétractation, et",
+    "– nous vous avons fourni la confirmation de votre accord conformément au deuxième alinéa de l'article L. 221-13 du même code ; pour ce contrat conclu à distance, il s'agit de la confirmation du contrat sur un support durable, qui comprend la confirmation de votre accord exprès et de la reconnaissance de la perte de votre droit de rétractation.",
+    "Vous donnez cet accord et reconnaissez la perte de votre droit de rétractation sur la page de commande, puis à nouveau sur la page de paiement, avant de payer, en acceptant la déclaration suivante : « J'accepte expressément que l'exécution commence avant la fin du délai de rétractation et je reconnais que je perdrai ainsi mon droit de rétractation. » La préparation du document commence immédiatement après le paiement.",
+    "Modèle de formulaire de rétractation",
+    "(Veuillez compléter et renvoyer le présent formulaire uniquement si vous souhaitez vous rétracter du contrat.)",
+    "– À l'attention de coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Slovaquie, courriel : help@chronika.me :",
+    "– Je/nous (*) vous notifie/notifions (*) par la présente ma/notre (*) rétractation du contrat portant sur la vente du bien (*)/pour la prestation de services (*) ci-dessous :",
+    "– Commandé le (*)/reçu le (*) :",
+    "– Nom du (des) consommateur(s) :",
+    "– Adresse du (des) consommateur(s) :",
+    "– Signature du (des) consommateur(s) (uniquement en cas de notification du présent formulaire sur papier) :",
+    "– Date :",
+    "(*) Rayez la mention inutile.",
+    "Ce message est la confirmation du contrat mentionnée ci-dessus.",
+  ],
+  es: [
+    "Derecho de desistimiento",
+    "Tiene usted derecho a desistir del presente contrato en un plazo de catorce días naturales sin necesidad de justificación.",
+    "El plazo de desistimiento expirará a los catorce días naturales del día de la celebración del contrato.",
+    "Para ejercer el derecho de desistimiento, deberá usted notificarnos (coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Eslovaquia, correo electrónico: help@chronika.me) su decisión de desistir del contrato a través de una declaración inequívoca (por ejemplo, una carta enviada por correo postal o correo electrónico). Podrá utilizar el modelo de formulario de desistimiento que figura a continuación, aunque su uso no es obligatorio. Tiene usted asimismo la opción de cumplimentar y enviar electrónicamente el modelo de formulario de desistimiento o cualquier otra declaración inequívoca a través de nuestro sitio web, mediante el botón «Desistir del contrato». Si recurre a esa opción, le comunicaremos sin demora en un soporte duradero (por ejemplo, por correo electrónico) la recepción de dicho desistimiento.",
+    "Para cumplir el plazo de desistimiento, basta con que la comunicación relativa al ejercicio por su parte de este derecho sea enviada antes de que venza el plazo correspondiente. La forma más sencilla de desistir es escribir a help@chronika.me.",
+    "Consecuencias del desistimiento",
+    "En caso de desistimiento por su parte, le devolveremos todos los pagos recibidos de usted, incluidos los gastos de entrega (con la excepción de los gastos adicionales resultantes de la elección por su parte de una modalidad de entrega diferente a la modalidad menos costosa de entrega ordinaria que ofrezcamos) sin ninguna demora indebida y, en todo caso, a más tardar 14 días naturales a partir de la fecha en la que se nos informe de su decisión de desistir del presente contrato. Procederemos a efectuar dicho reembolso utilizando el mismo medio de pago empleado por usted para la transacción inicial, a no ser que haya usted dispuesto expresamente lo contrario; en todo caso, no incurrirá en ningún gasto como consecuencia del reembolso.",
+    "Pérdida del derecho de desistimiento",
+    "Conforme al artículo 103, letra m), del texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios y otras leyes complementarias, aprobado por el Real Decreto Legislativo 1/2007, de 16 de noviembre, el derecho de desistimiento no es aplicable al suministro de contenido digital que no se preste en un soporte material cuando la ejecución haya comenzado y, si el contrato impone al consumidor una obligación de pago, cuando:",
+    "– usted haya otorgado su consentimiento previo y expreso para iniciar la ejecución durante el plazo del derecho de desistimiento,",
+    "– haya expresado su conocimiento de que, en consecuencia, pierde su derecho de desistimiento, y",
+    "– le hayamos proporcionado la confirmación prevista en el artículo 98.7 de dicha ley; en un contrato a distancia como este, es la confirmación del contrato en un soporte duradero, que incluye la confirmación de su consentimiento previo y expreso y de su conocimiento de la pérdida del derecho de desistimiento.",
+    "Este consentimiento y este reconocimiento se prestan en la página del pedido y de nuevo en la página de pago, antes de pagar, mediante la declaración: «Doy mi consentimiento expreso para que la ejecución comience antes de que finalice el plazo de desistimiento y reconozco que, con ello, pierdo mi derecho de desistimiento.» La elaboración del documento comienza inmediatamente después del pago.",
+    "Modelo de formulario de desistimiento",
+    "(sólo debe cumplimentar y enviar el presente formulario si desea desistir del contrato)",
+    "– A la atención de coremind s. r. o., Vlčie hrdlo 1887/81, 821 07 Bratislava – Ružinov, Eslovaquia, correo electrónico: help@chronika.me:",
+    "– Por la presente le comunico/comunicamos (*) que desisto de mi/desistimos de nuestro (*) contrato de venta del siguiente bien/prestación del siguiente servicio (*)",
+    "– Pedido el/recibido el (*)",
+    "– Nombre del consumidor y usuario o de los consumidores y usuarios",
+    "– Domicilio del consumidor y usuario o de los consumidores y usuarios",
+    "– Firma del consumidor y usuario o de los consumidores y usuarios (solo si el presente formulario se presenta en papel)",
+    "– Fecha",
+    "(*) Táchese lo que no proceda.",
+    "Este correo es la confirmación del contrato mencionada más arriba.",
+  ],
 };
 
 export const withdrawalInfo = (locale: string): string[] => WITHDRAWAL[locale] ?? WITHDRAWAL_EN;
 
-/** The short lines of the German text that are headings rather than paragraphs. */
+/** The short lines of the statutory texts that are headings rather than paragraphs. */
 export const WITHDRAWAL_HEADINGS = new Set([
   'Widerrufsrecht',
   'Folgen des Widerrufs',
@@ -120,4 +181,13 @@ export const WITHDRAWAL_HEADINGS = new Set([
   'Skutki odstąpienia od umowy',
   'Utrata prawa odstąpienia od umowy',
   'Wzór formularza odstąpienia od umowy',
+  // French and Spanish.
+  "Droit de rétractation",
+  "Effets de rétractation",
+  "Exception au droit de rétractation",
+  "Modèle de formulaire de rétractation",
+  "Derecho de desistimiento",
+  "Consecuencias del desistimiento",
+  "Pérdida del derecho de desistimiento",
+  "Modelo de formulario de desistimiento",
 ]);

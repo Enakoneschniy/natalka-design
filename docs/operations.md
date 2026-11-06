@@ -49,6 +49,12 @@ reading's `lang` and would charge for a Russian reading the seller ordered in Uk
 is: push `main` (the API container brings the texts check that knows «твій»), then natalka-jobs,
 then natalka-web. No migration.
 
+A new language is the same kind of release: the site starts sending a `locale` the worker refuses
+until it knows it. English, French and Spanish (2026-11-06) went push `main` (the API container
+brings the prompts, the editor's rules and the PDF labels), then natalka-jobs and natalka-bot,
+then natalka-web. French readings are on «vous»; Spanish ones are always on «tú», whatever the
+order says (`address_for` in `packages/texts`).
+
 ## Prices and the offer
 
 The price test ended on 2026-11-02: the bundle costs €35 in the eurozone (its higher figure,

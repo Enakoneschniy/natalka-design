@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from .address import Address
+from .address import Address, address_for
 
 #: Phrases that betray a source we do not have. Checked per language we ship.
 IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
@@ -96,6 +96,26 @@ IMPLIES_KNOWLEDGE: dict[str, tuple[str, ...]] = {
         "pisałeś",
         "jak wiesz",
     ),
+    "fr": (
+        "vous avez écrit",
+        "vous m'avez dit",
+        "comme vous le savez",
+        "vous avez mentionné",
+        "vous traversez en ce moment",
+        "dans votre message",
+        "tu as écrit",
+        "comme tu le sais",
+    ),
+    "es": (
+        "escribiste",
+        "me dijiste",
+        "como sabes",
+        "mencionaste",
+        "estás atravesando ahora",
+        "en tu mensaje",
+        "usted escribió",
+        "como usted sabe",
+    ),
 }
 
 #: Machine-writing tells from the style guide.
@@ -170,6 +190,32 @@ CLICHES: dict[str, tuple[str, ...]] = {
         "należy zaznaczyć",
         "ważne jest, aby zrozumieć",
     ),
+    "fr": (
+        "dans le monde d'aujourd'hui",
+        "à l'ère du",
+        "un aspect clé",
+        "témoigne de",
+        "souligne l'importance",
+        "plongeons",
+        "explorons",
+        "en conclusion",
+        "pour résumer",
+        "il est important de noter",
+        "il convient de noter",
+    ),
+    "es": (
+        "en el mundo actual",
+        "en la era de",
+        "un aspecto clave",
+        "es un testimonio de",
+        "subraya la importancia",
+        "sumerjámonos",
+        "exploremos",
+        "en conclusión",
+        "en resumen",
+        "cabe destacar",
+        "es importante entender",
+    ),
 }
 
 #: The reading is written on formal terms. A model that slips into «ты» has not made a stylistic
@@ -187,6 +233,9 @@ INFORMAL = {
     "de": re.compile(r"\b(du|dich|dir|dein\w*)\b", re.IGNORECASE),
     # Not «ci»: it is also "those" («ci ludzie»).
     "pl": re.compile(r"\b(ty|ciebie|cię|tobie|tobą|twój|twoj\w+)\b", re.IGNORECASE),
+    # Not «ton»: it is also "tone" («le ton de la Lune»).
+    "fr": re.compile(r"\b(tu|toi|ta|tes|te)\b|\bt['’](?=\w)", re.IGNORECASE),
+    "es": re.compile(r"\b(tú|tu|tus|te|ti|contigo|tuy[oa]s?)\b", re.IGNORECASE),
 }
 
 #: A section written *about* the reader instead of *to* them reads like a horoscope column and
@@ -201,10 +250,17 @@ SECOND_PERSON = {
     "de": re.compile(r"(?<=[a-zäöüß,;:–—] )(Sie|Ihnen|Ihr\w*)\b"),
     # The formal title, capitalised as in a letter; lower-case «pani» is just "a lady".
     "pl": re.compile(r"\b(Pani|Pan|Pana|Panu|Panem|Panią|Państw\w*)\b"),
+    "fr": re.compile(r"\b(vous|votre|vos)\b", re.IGNORECASE),
+    "es": re.compile(r"\b(usted|ustedes)\b", re.IGNORECASE),
 }
 
 #: The two forms of address by name, for the problems the model is given back.
-ADDRESS_NAMES = {"de": ("«Sie»", "«du»"), "pl": ("«Pani» / «Pan»", "«ty»")}
+ADDRESS_NAMES = {
+    "de": ("«Sie»", "«du»"),
+    "pl": ("«Pani» / «Pan»", "«ty»"),
+    "fr": ("«vous»", "«tu»"),
+    "es": ("«usted»", "«tú»"),
+}
 DEFAULT_ADDRESS_NAMES = ("«вы»", "«ты»")
 
 #: Two people addressed together on informal terms. In Russian and Ukrainian that is the formal
@@ -212,6 +268,13 @@ DEFAULT_ADDRESS_NAMES = ("«вы»", "«ты»")
 INFORMAL_PLURAL = {
     "de": re.compile(r"\b(ihr|euch|euer\w*)\b", re.IGNORECASE),
     "pl": re.compile(r"\b(wy|was|wam|wami|wasz\w*)\b", re.IGNORECASE),
+    "es": re.compile(r"\b(vosotr[oa]s|os|vuestr[oa]s?)\b", re.IGNORECASE),
+}
+#: The formal address slipping into an informal reading, where it cannot be anything else. Not
+#: «вы», «Sie» or «vous»: those are also the pair in a synastry. Spanish has «vosotros» for the
+#: pair, so «usted» is only ever the formal reader — and a Spanish reading is always on «tú».
+FORMAL_IN_INFORMAL = {
+    "es": re.compile(r"\b(usted|ustedes)\b", re.IGNORECASE),
 }
 #: Below this a section is an opening or a closing line, where an impersonal sentence is fine.
 ADDRESS_MIN_CHARS = 400
@@ -270,6 +333,8 @@ GREETING = {
     "pl": re.compile(
         r"^(Droga|Drogi|Szanowna|Szanowny|Dzień dobry|Witam|Witaj)\b[^\n.,!]{0,40}[,!]"
     ),
+    "fr": re.compile(r"^(Chère|Cher|Bonjour)\b[^\n.,!]{0,40}[,!]"),
+    "es": re.compile(r"^(Querida|Querido|Hola|Estimada|Estimado)\b[^\n.,!]{0,40}[,!]"),
 }
 
 #: A German sign without its article — «in Stier» for «im Stier», «in Jungfrau» for «in der
@@ -329,6 +394,16 @@ def _address_problems(
                 f"the reading is on {formal_name}",
             )
         )
+    formal_re = FORMAL_IN_INFORMAL.get(lang)
+    formal_slip = formal_re.search(text) if formal_re and address == "ty" else None
+    if formal_slip:
+        problems.append(
+            (
+                "formal_address",
+                f"addresses the reader formally ({formal_slip.group(0)}); "
+                f"the reading is on {informal_name}",
+            )
+        )
 
     # A Polish reader whose gender is not given has no title to be addressed by — «Pani» and «Pan»
     # are a woman's and a man's — so their reading is written impersonally, by design.
@@ -365,7 +440,7 @@ def _style_problems(text: str, lang: str, *, impersonal_ok: bool) -> list[_Probl
         problems.append(
             ("greeting", "the section opens with a greeting; only the opening section greets")
         )
-    if lang in ("de", "pl"):
+    if lang in ("de", "pl", "fr", "es"):
         english = sorted({m.group(0) for m in ANGLICISMS.finditer(text)})
         if english:
             problems.append(("anglicism", f"English words: {', '.join(english[:3])}"))
@@ -458,6 +533,7 @@ def check(
     gender: str = "n",
 ) -> Report:
     problems: list[_Problem] = []
+    address = address_for(lang, address)
 
     stripped = text.strip()
     if not stripped:
