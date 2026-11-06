@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { locales } from '@/i18n/routing';
 import { checkBirth, checkEmail, checkOrder, checkSubscription, cleanText } from './validate';
 
 const TODAY = new Date('2026-10-06T12:00:00Z');
@@ -126,6 +127,11 @@ describe('checkOrder', () => {
     expect(field(checkOrder({ ...order, email: 'nope' }, TODAY))).toBe('email');
     expect(field(checkOrder({ ...order, product: 'tarot' }, TODAY))).toBe('product');
     expect(field(checkOrder({ ...order, locale: 'fr' }, TODAY))).toBe('locale');
+    // Every language of the site is a language a document can be ordered in: on 2026-11-06 /pl
+    // went live while Polish orders were still refused here.
+    for (const locale of locales) {
+      expect(checkOrder({ ...order, locale }, TODAY).ok, locale).toBe(true);
+    }
     expect(field(checkOrder({ ...order, birth: { ...person, zone: '' } }, TODAY))).toBe(
       'birth.zone',
     );
