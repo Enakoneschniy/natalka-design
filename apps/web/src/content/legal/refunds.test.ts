@@ -223,7 +223,9 @@ describe('refund policy', () => {
     ]) {
       expect(information, line).toContain(line);
     }
-    expect(renderLegal(text('fr'), 'fr')).toContain('<a href="/fr/withdraw">« Se rétracter du contrat ici »</a>');
+    expect(renderLegal(text('fr'), 'fr')).toContain(
+      '<a href="/fr/withdraw">« Se rétracter du contrat ici »</a>',
+    );
   });
 
   it('carries the French modèle de formulaire de rétractation, addressed and as a list', () => {
